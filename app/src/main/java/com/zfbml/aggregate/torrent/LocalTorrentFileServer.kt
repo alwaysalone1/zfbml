@@ -111,11 +111,6 @@ class LocalTorrentFileServer : Closeable {
     }
 
     private fun serveFile(output: OutputStream, headOnly: Boolean, servedFile: ServedFile, rangeHeader: String?) {
-        if (!servedFile.file.exists()) {
-            output.writeStatus(404, "Not Found")
-            return
-        }
-
         val range = parseRange(rangeHeader, servedFile.totalSizeBytes)
         if (range == null) {
             output.writeStatus(416, "Range Not Satisfiable")
@@ -155,6 +150,15 @@ class LocalTorrentFileServer : Closeable {
         var remaining = length
         val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
         var waitedMs = 0L
+
+        while (!file.exists()) {
+            if (waitedMs >= GROWING_FILE_WAIT_TIMEOUT_MS) {
+                throw SocketTimeoutException("Timed out waiting for torrent file ${file.name}")
+            }
+            Thread.sleep(GROWING_FILE_WAIT_STEP_MS)
+            waitedMs += GROWING_FILE_WAIT_STEP_MS
+        }
+        waitedMs = 0L
 
         RandomAccessFile(file, "r").use { raf ->
             while (remaining > 0L) {

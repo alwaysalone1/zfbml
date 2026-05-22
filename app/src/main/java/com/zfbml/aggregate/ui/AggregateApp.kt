@@ -479,6 +479,10 @@ private fun TorrentPlaceholderSurface(
                 modifier = Modifier.fillMaxWidth(),
             )
             Text("\u72B6\u6001: ${state.status ?: "\u7B49\u5F85\u4E2D"}", color = Color.White)
+            Text(
+                "\u5143\u6570\u636E: ${if (state.hasMetadata) "\u5DF2\u83B7\u53D6" else "\u7B49\u5F85"}  \u64AD\u653E\u4EE3\u7406: ${if (state.plan?.localPlaybackUrl != null) "\u5DF2\u5EFA\u7ACB" else "\u7B49\u5F85"}",
+                color = Color.White,
+            )
             Text("\u79CD\u5B50: ${formatPercent(state.progressPercent)}  \u6587\u4EF6: ${formatPercent(state.selectedFileProgressPercent)}  \u7F13\u51B2: ${formatPercent(state.plan?.bufferingPercent ?: 0f)}", color = Color.White)
             Text("\u8FDE\u63A5: ${state.connectedPeers}  \u505A\u79CD: ${state.connectedSeeds}  \u4E0B\u8F7D: ${formatBytesPerSecond(state.downloadRateBytesPerSecond)}", color = Color.White)
             state.plan?.selectedFileName?.let { name ->

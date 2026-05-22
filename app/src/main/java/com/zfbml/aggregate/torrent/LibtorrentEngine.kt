@@ -1,6 +1,7 @@
 package com.zfbml.aggregate.torrent
 
 import android.content.Context
+import android.util.Log
 import com.zfbml.aggregate.source.MediaStream
 import com.zfbml.aggregate.source.StreamProtocol
 import java.io.File
@@ -17,6 +18,7 @@ import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.libtorrent4j.AlertListener
+import org.libtorrent4j.AnnounceEntry
 import org.libtorrent4j.Priority
 import org.libtorrent4j.SessionManager
 import org.libtorrent4j.TorrentHandle
@@ -63,6 +65,9 @@ class LibtorrentEngine(
     @Volatile
     private var lastPlaybackPieceIndex: Int? = null
 
+    @Volatile
+    private var lastStatusLogAtMs: Long = 0L
+
     private var monitorJob: Job? = null
     private var listenerInstalled = false
 
@@ -105,6 +110,7 @@ class LibtorrentEngine(
             isPreparing = true,
             status = "starting",
         )
+        Log.i(TAG, "prepare stream provider=${stream.providerId} url=${stream.url.take(160)}")
 
         runCatching {
             ensureSession()
@@ -156,6 +162,7 @@ class LibtorrentEngine(
     private fun addTorrent(stream: MediaStream, saveDir: File) {
         val url = stream.url.trim()
         if (url.startsWith("magnet:", ignoreCase = true)) {
+            Log.i(TAG, "add magnet torrent")
             sessionManager.download(url, saveDir, torrent_flags_t())
             return
         }
@@ -163,6 +170,7 @@ class LibtorrentEngine(
         if (url.startsWith("http", ignoreCase = true) && url.endsWith(".torrent", ignoreCase = true)) {
             val torrentFile = File(saveDir, "source.torrent")
             downloadTorrentFile(url, torrentFile)
+            Log.i(TAG, "add torrent file bytes=${torrentFile.length()} url=${url.take(160)}")
             sessionManager.download(TorrentInfo(torrentFile), saveDir)
             return
         }
@@ -192,7 +200,17 @@ class LibtorrentEngine(
             return
         }
         currentHandle = alert.handle()
+        seedTrackers(alert.handle())
+        Log.i(TAG, "torrent added")
         refreshFromHandle(alert.handle())
+    }
+
+    private fun seedTrackers(handle: TorrentHandle) {
+        DEFAULT_TRACKERS.forEach { tracker ->
+            runCatching { handle.addTracker(AnnounceEntry(tracker)) }
+        }
+        runCatching { handle.forceDHTAnnounce() }
+        runCatching { handle.forceReannounce() }
     }
 
     private fun refreshFromAlert(alert: Alert<*>) {
@@ -233,6 +251,7 @@ class LibtorrentEngine(
             _state.value.plan ?: TorrentPlaybackPlan(stream)
         }
         val error = status.errorCode().takeIf { it.isError }?.getMessage()
+        logStatus(status.state().name.lowercase(), status.hasMetadata(), plan)
 
         _state.value = TorrentEngineState(
             stream = stream,
@@ -294,12 +313,8 @@ class LibtorrentEngine(
             ((selectedProgress.toFloat() / selected.sizeBytes.toFloat()).coerceIn(0f, 1f) * 100f)
         }
         val localFile = File(storage.filePath(selected.index, saveDir.absolutePath))
-        val localUrl = if (localFile.exists() && selectedProgress >= readyBytes) {
-            fileServer.serve(localFile, selected.sizeBytes) { offset ->
-                prioritizePlaybackOffset(handle, firstPiece, lastPiece, pieceLength, offset)
-            }
-        } else {
-            null
+        val localUrl = fileServer.serve(localFile, selected.sizeBytes) { offset ->
+            prioritizePlaybackOffset(handle, firstPiece, lastPiece, pieceLength, offset)
         }
 
         return TorrentPlaybackPlan(
@@ -359,6 +374,7 @@ class LibtorrentEngine(
     }
 
     private fun updateError(message: String) {
+        Log.e(TAG, message)
         val previous = _state.value
         _state.value = previous.copy(
             isPreparing = false,
@@ -371,11 +387,35 @@ class LibtorrentEngine(
         return replace(Regex("[^A-Za-z0-9._-]"), "_").take(96).ifBlank { "torrent" }
     }
 
+    private fun logStatus(status: String, hasMetadata: Boolean, plan: TorrentPlaybackPlan) {
+        val now = System.currentTimeMillis()
+        if (now - lastStatusLogAtMs < 5_000L) {
+            return
+        }
+        lastStatusLogAtMs = now
+        Log.i(
+            TAG,
+            "status=$status metadata=$hasMetadata file=${plan.selectedFileName.orEmpty()} " +
+                "fileProgress=${"%.2f".format(plan.selectedFileProgressPercent)} " +
+                "buffer=${"%.2f".format(plan.bufferingPercent)} urlReady=${plan.localPlaybackUrl != null}",
+        )
+    }
+
     private companion object {
+        const val TAG = "ZfbmlTorrent"
         const val MIN_PLAYBACK_READY_BYTES = 2L * 1024L * 1024L
         const val PLAYBACK_READY_BYTES = 4L * 1024L * 1024L
         const val WARMUP_PIECE_COUNT = 48
         const val USER_AGENT =
             "Mozilla/5.0 (Android; ZFBML) AppleWebKit/537.36 (KHTML, like Gecko) ZfbmlAggregate/0.2"
+        val DEFAULT_TRACKERS = listOf(
+            "udp://tracker.opentrackr.org:1337/announce",
+            "udp://open.stealth.si:80/announce",
+            "udp://tracker.torrent.eu.org:451/announce",
+            "udp://tracker.openbittorrent.com:6969/announce",
+            "https://tr.bangumi.moe:9696/announce",
+            "http://tr.bangumi.moe:6969/announce",
+            "http://t.acg.rip:6699/announce",
+        )
     }
 }
