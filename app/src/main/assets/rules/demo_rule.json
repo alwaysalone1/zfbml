@@ -1,0 +1,42 @@
+{
+  "id": "demo-rule",
+  "name": "Demo Rule Source",
+  "version": "1.0.0",
+  "author": "zfbml",
+  "baseUrl": "https://example.invalid",
+  "capabilities": ["SEARCH", "DETAIL", "STREAM"],
+  "requiresWebView": false,
+  "supportsDownload": true,
+  "defaults": {
+    "userAgent": "Mozilla/5.0 ZfbmlAggregate/0.1",
+    "referer": "https://example.invalid"
+  },
+  "search": {
+    "path": "/search?q={query}",
+    "method": "GET",
+    "itemSelector": ".item",
+    "titleSelector": ".title",
+    "urlSelector": "a",
+    "urlAttribute": "href",
+    "posterSelector": "img",
+    "posterAttribute": "src"
+  },
+  "detail": {
+    "titleSelector": "h1",
+    "summarySelector": ".summary",
+    "posterSelector": ".poster img",
+    "posterAttribute": "src"
+  },
+  "episodes": {
+    "itemSelector": ".episode",
+    "titleSelector": ".episode-title",
+    "urlSelector": "a",
+    "urlAttribute": "href"
+  },
+  "stream": {
+    "urlSelector": "video source",
+    "urlAttribute": "src",
+    "qualitySelector": ".quality",
+    "protocol": "PROGRESSIVE"
+  }
+}
