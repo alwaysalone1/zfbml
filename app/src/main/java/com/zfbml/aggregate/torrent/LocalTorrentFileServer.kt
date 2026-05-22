@@ -282,7 +282,7 @@ class LocalTorrentFileServer : Closeable {
     private companion object {
         const val SOCKET_TIMEOUT_MS = 60_000
         const val GROWING_FILE_WAIT_STEP_MS = 100L
-        const val GROWING_FILE_WAIT_TIMEOUT_MS = 30_000L
+        const val GROWING_FILE_WAIT_TIMEOUT_MS = 120_000L
         const val MAX_HEADER_LINE_BYTES = 8 * 1024
 
         fun mimeTypeFor(name: String): String {

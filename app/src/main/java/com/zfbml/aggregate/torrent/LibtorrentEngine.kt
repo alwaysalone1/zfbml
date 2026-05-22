@@ -4,7 +4,6 @@ import android.content.Context
 import com.zfbml.aggregate.source.MediaStream
 import com.zfbml.aggregate.source.StreamProtocol
 import java.io.File
-import java.net.URL
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -15,6 +14,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.OkHttpClient
+import okhttp3.Request
 import org.libtorrent4j.AlertListener
 import org.libtorrent4j.Priority
 import org.libtorrent4j.SessionManager
@@ -35,6 +36,10 @@ class LibtorrentEngine(
 ) : TorrentEngine {
     private val appContext = context.applicationContext
     private val sessionManager = SessionManager(false)
+    private val httpClient = OkHttpClient.Builder()
+        .followRedirects(true)
+        .followSslRedirects(true)
+        .build()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val rootDir: File = appContext.getExternalFilesDir("torrents")
         ?: File(appContext.filesDir, "torrents")
@@ -157,14 +162,27 @@ class LibtorrentEngine(
 
         if (url.startsWith("http", ignoreCase = true) && url.endsWith(".torrent", ignoreCase = true)) {
             val torrentFile = File(saveDir, "source.torrent")
-            URL(url).openStream().use { input ->
-                torrentFile.outputStream().use { output -> input.copyTo(output) }
-            }
+            downloadTorrentFile(url, torrentFile)
             sessionManager.download(TorrentInfo(torrentFile), saveDir)
             return
         }
 
         throw IllegalArgumentException("Only magnet links and HTTP .torrent URLs are supported by the bundled BT engine.")
+    }
+
+    private fun downloadTorrentFile(url: String, outputFile: File) {
+        val request = Request.Builder()
+            .url(url)
+            .header("User-Agent", USER_AGENT)
+            .header("Accept", "application/x-bittorrent, application/octet-stream, */*")
+            .build()
+        httpClient.newCall(request).execute().use { response ->
+            require(response.isSuccessful) { "HTTP ${response.code} while downloading torrent file" }
+            outputFile.outputStream().use { output ->
+                response.body.byteStream().use { input -> input.copyTo(output) }
+            }
+        }
+        require(outputFile.length() > 0L) { "Downloaded torrent file is empty" }
     }
 
     private fun handleAddTorrent(alert: AddTorrentAlert) {
@@ -264,7 +282,7 @@ class LibtorrentEngine(
         val selectedProgress = runCatching {
             handle.fileProgress(TorrentHandle.PIECE_GRANULARITY).getOrNull(selected.index) ?: 0L
         }.getOrDefault(0L)
-        val readyBytes = minOf(PLAYBACK_READY_BYTES, maxOf(MIN_PLAYBACK_READY_BYTES, selected.sizeBytes / 50L))
+        val readyBytes = minOf(PLAYBACK_READY_BYTES, maxOf(MIN_PLAYBACK_READY_BYTES, selected.sizeBytes / 200L))
         val bufferingPercent = if (readyBytes <= 0L) {
             0f
         } else {
@@ -355,7 +373,9 @@ class LibtorrentEngine(
 
     private companion object {
         const val MIN_PLAYBACK_READY_BYTES = 2L * 1024L * 1024L
-        const val PLAYBACK_READY_BYTES = 32L * 1024L * 1024L
+        const val PLAYBACK_READY_BYTES = 4L * 1024L * 1024L
         const val WARMUP_PIECE_COUNT = 48
+        const val USER_AGENT =
+            "Mozilla/5.0 (Android; ZFBML) AppleWebKit/537.36 (KHTML, like Gecko) ZfbmlAggregate/0.2"
     }
 }
