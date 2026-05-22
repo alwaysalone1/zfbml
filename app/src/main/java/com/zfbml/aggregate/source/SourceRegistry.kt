@@ -23,6 +23,7 @@ class SourceRegistry(
             }
             .awaitAll()
             .flatten()
+            .sortedWith(compareByDescending<SearchResult> { it.playabilityScore() }.thenBy { it.title })
     }
 
     suspend fun loadDetail(result: SearchResult): MediaDetail {
@@ -38,5 +39,27 @@ class SourceRegistry(
         }
         return provider.resolveStreams(episode)
             .sortedWith(compareByDescending<MediaStream> { it.sourceScore }.thenBy { it.quality.orEmpty() })
+    }
+
+    private fun SearchResult.playabilityScore(): Int {
+        val lower = title.lowercase()
+        var score = 0
+        if (raw["torrentUrl"]?.startsWith("http", ignoreCase = true) == true) score += 40
+        if (raw["torrentUrl"]?.startsWith("magnet:", ignoreCase = true) == true) score += 20
+        if ("mp4" in lower) score += 80
+        if ("avc" in lower || "h264" in lower || "h.264" in lower) score += 40
+        if ("1080" in lower) score += 24
+        if ("720" in lower) score += 14
+        if ("hevc" in lower || "x265" in lower || "10bit" in lower || "av1" in lower) score -= 30
+        if ("batch" in lower || "\u5408\u96C6" in lower) score -= 70
+        raw["seeders"]?.toIntOrNull()?.let { score += it.coerceAtMost(300) / 4 }
+        raw["sizeBytes"]?.toLongOrNull()?.let { bytes ->
+            score += when {
+                bytes in 150L * 1024L * 1024L..2_500L * 1024L * 1024L -> 35
+                bytes > 4L * 1024L * 1024L * 1024L -> -45
+                else -> 0
+            }
+        }
+        return score
     }
 }

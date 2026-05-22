@@ -46,21 +46,28 @@ class RssTorrentSourceProvider(
             return emptyList()
         }
         val xml = fetch(config.searchUrl(trimmed))
-        return RssTorrentParser.parse(xml, config).take(config.maxResults).map { item ->
-            val subtitle = buildList {
-                add(config.name)
-                item.quality?.let { add(it) }
-                item.sizeBytes?.let { add(formatBytes(it)) }
-                item.seeders?.let { add("${it} seeders") }
-            }.joinToString(" / ")
-            SearchResult(
-                providerId = manifest.id,
-                title = item.title,
-                url = item.pageUrl ?: item.torrentUrl,
-                subtitle = subtitle,
-                raw = item.raw(),
+        return RssTorrentParser.parse(xml, config)
+            .sortedWith(
+                compareByDescending<RssTorrentItem> { it.playabilityScore() }
+                    .thenByDescending { it.seeders ?: 0 }
+                    .thenBy { it.sizeBytes ?: Long.MAX_VALUE },
             )
-        }
+            .take(config.maxResults)
+            .map { item ->
+                val subtitle = buildList {
+                    add(config.name)
+                    item.quality?.let { add(it) }
+                    item.sizeBytes?.let { add(formatBytes(it)) }
+                    item.seeders?.let { add("${it} seeders") }
+                }.joinToString(" / ")
+                SearchResult(
+                    providerId = manifest.id,
+                    title = item.title,
+                    url = item.pageUrl ?: item.torrentUrl,
+                    subtitle = subtitle,
+                    raw = item.raw(),
+                )
+            }
     }
 
     override suspend fun loadDetail(result: SearchResult): MediaDetail {
@@ -303,6 +310,37 @@ private fun String?.parseSizeBytes(): Long? {
         else -> 1L
     }
     return (value * multiplier).toLong()
+}
+
+private fun RssTorrentItem.playabilityScore(): Int {
+    val lower = title.lowercase()
+    var score = 100
+    if (torrentUrl.startsWith("http", ignoreCase = true)) score += 18
+    if ("mp4" in lower) score += 90
+    if ("avc" in lower || "h264" in lower || "h.264" in lower) score += 50
+    if ("aac" in lower) score += 24
+    if ("1080" in lower) score += 28
+    if ("720" in lower) score += 18
+    if ("web-dl" in lower || "webrip" in lower) score += 12
+    if ("hevc" in lower || "x265" in lower || "h265" in lower || "h.265" in lower) score -= 35
+    if ("10bit" in lower || "10-bit" in lower || "10 bit" in lower) score -= 30
+    if ("av1" in lower) score -= 45
+    if ("eac-3" in lower || "eac3" in lower || "flac" in lower) score -= 18
+    if ("bdrip" in lower || "bdremux" in lower) score -= 20
+    if ("batch" in lower || "\u5408\u96C6" in lower || Regex("""\b\d{1,3}\s*-\s*\d{1,3}\b""").containsMatchIn(lower)) {
+        score -= 90
+    }
+    seeders?.let { score += it.coerceAtMost(300) / 3 }
+    sizeBytes?.let { bytes ->
+        score += when {
+            bytes in 150L * 1024L * 1024L..2_500L * 1024L * 1024L -> 42
+            bytes < 150L * 1024L * 1024L -> 4
+            bytes > 8L * 1024L * 1024L * 1024L -> -95
+            bytes > 4L * 1024L * 1024L * 1024L -> -48
+            else -> 16
+        }
+    }
+    return score
 }
 
 private fun String.urlEncode(): String = URLEncoder.encode(this, Charsets.UTF_8.name()).replace("+", "%20")

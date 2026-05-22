@@ -246,6 +246,7 @@ private fun AnimeFeatureShelf() {
 
 @Composable
 private fun ResultCard(result: SearchResult, onClick: () -> Unit) {
+    val displayUrl = result.raw["torrentUrl"] ?: result.url
     Card(
         onClick = onClick,
         modifier = Modifier
@@ -273,7 +274,7 @@ private fun ResultCard(result: SearchResult, onClick: () -> Unit) {
                 result.subtitle?.takeIf(String::isNotBlank)?.let {
                     Text(it, style = MaterialTheme.typography.bodyMedium, color = AnimeMuted, maxLines = 1)
                 }
-                Text(result.url, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(displayUrl, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
     }
