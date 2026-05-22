@@ -15,6 +15,7 @@ import com.zfbml.aggregate.source.SourceRegistry
 import com.zfbml.aggregate.source.rule.RuleSourceParser
 import com.zfbml.aggregate.source.rule.RuleSourceProvider
 import com.zfbml.aggregate.torrent.LibtorrentEngine
+import com.zfbml.aggregate.torrent.RssTorrentSourceProvider
 import com.zfbml.aggregate.torrent.TorrentSourceProvider
 import okhttp3.OkHttpClient
 
@@ -30,6 +31,11 @@ class AppGraph(
         SourceRegistry(
             buildList {
                 add(TorrentSourceProvider())
+                add(RssTorrentSourceProvider.mikan(httpClient))
+                add(RssTorrentSourceProvider.dmhy(httpClient))
+                add(RssTorrentSourceProvider.acgRip(httpClient))
+                add(RssTorrentSourceProvider.nyaa(httpClient))
+                add(RssTorrentSourceProvider.bangumiMoe(httpClient))
                 add(DemoBuiltinSourceProvider())
                 add(DirectUrlSourceProvider())
                 addAll(loadBundledRuleProviders())

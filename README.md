@@ -1,17 +1,17 @@
 # Zfbml Aggregate
 
-Android/TV first aggregate video player prototype.
+Android/TV first aggregate anime player prototype.
 
 This repository implements the foundation from the product plan:
 
 - Kotlin + Compose Android app shell.
 - Built-in `SourceProvider` interfaces and demo providers.
+- Real BT/RSS source providers for anime torrent indexes.
 - JSON rule based source loading for user imported sources.
 - Unified danmaku model, provider interface, Bilibili XML parser, and Canvas based renderer.
 - Media3 player engine abstraction with ExoPlayer as the default engine.
 - Media3 offline download service skeleton and advanced download provider abstraction.
-- WebView cookie auth session storage scoped by platform domain.
-- BitTorrent as a first-class stream protocol, with magnet parsing, scoring, and a `libtorrent4j` backed runtime.
+- BitTorrent as a first-class stream protocol, with magnet parsing, scoring, `libtorrent4j`, and a local HTTP Range proxy.
 
 ## Build
 
@@ -24,6 +24,22 @@ Open the folder in Android Studio, or run:
 The project targets Android SDK 36 and uses the JBR bundled with the local Android Studio install.
 
 ## 版本更新 / Version Notes
+
+### v0.2.3
+
+中文：
+
+- 接入首批真实 BT/RSS 资源站：Mikan、DMHY、ACG.RIP、Nyaa、Bangumi Moe。
+- 新增通用 `RssTorrentSourceProvider`，把 RSS item 统一解析为 `SearchResult`、`Episode` 和 `StreamProtocol.BITTORRENT` 播放线路。
+- 支持 RSS 中的 magnet、HTTP `.torrent`、大小、seeders、info hash、字幕组、清晰度等元数据，并进入现有 BT 播放链路。
+- 首页默认搜索词改为真实番名，方便直接做端到端搜索和播放测试。
+
+English:
+
+- Added the first real BT/RSS sources: Mikan, DMHY, ACG.RIP, Nyaa, and Bangumi Moe.
+- Added a shared `RssTorrentSourceProvider` that maps RSS items into `SearchResult`, `Episode`, and `StreamProtocol.BITTORRENT` streams.
+- Supports RSS magnet links, HTTP `.torrent` links, size, seeders, info hash, subgroup, and quality metadata before handing off to the existing BT playback path.
+- Changed the default home search query to a real anime title for immediate end-to-end testing.
 
 ### v0.2.2
 
@@ -83,7 +99,8 @@ BT is treated as the primary long-term playback route, similar to Animeko's mode
 
 - `StreamProtocol.BITTORRENT` represents magnet/torrent resources separately from HTTP streams.
 - `TorrentSourceProvider` accepts pasted magnet links or torrent URLs and resolves them into standard `MediaStream` objects.
+- `RssTorrentSourceProvider` searches public BT/RSS indexes and resolves each result into the same standard BT stream shape.
 - `LibtorrentEngine` starts a native libtorrent session, adds magnet or HTTP `.torrent` resources, resolves metadata, selects the largest video-like file, and prioritizes its pieces.
-- Once enough opening data is buffered, the engine exposes a local `file://` URL to Media3. A local HTTP range proxy remains the next step for stronger seek behavior and containers that dislike growing files.
+- Once enough opening data is buffered, the engine exposes a local HTTP Range URL to Media3 for playback.
 
-The production implementation should add persisted resume data, per-file selection UI, current-position piece reprioritization, and an embedded range server before this is considered a polished BT streaming path.
+The production implementation should add persisted resume data, per-file selection UI, richer source filtering, current-position piece reprioritization, and source health telemetry before this is considered a polished BT streaming path.

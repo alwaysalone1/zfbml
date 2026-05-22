@@ -106,7 +106,7 @@ private fun HomeScreen(
     onOpenDetail: (SearchResult) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
-    var query by remember { mutableStateOf("demo") }
+    var query by remember { mutableStateOf("\u846C\u9001\u7684\u8299\u8389\u83B2") }
     var results by remember { mutableStateOf<List<SearchResult>>(emptyList()) }
     var loading by remember { mutableStateOf(false) }
     val providers = graph.sourceRegistry.manifests
@@ -282,6 +282,9 @@ private fun ResultCard(result: SearchResult, onClick: () -> Unit) {
 private fun providerAccent(providerId: String): Color {
     return when (providerId.lowercase()) {
         "bt" -> AnimeAccentPink
+        "mikan", "dmhy" -> AnimeAccentPink
+        "acg-rip", "bangumi-moe" -> AnimeAccentAmber
+        "nyaa" -> AnimeAccentViolet
         "direct" -> AnimeAccentCyan
         "demo" -> AnimeAccentAmber
         else -> AnimeAccentViolet
