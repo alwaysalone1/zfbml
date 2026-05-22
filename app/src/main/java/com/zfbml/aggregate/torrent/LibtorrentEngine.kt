@@ -1,7 +1,6 @@
 package com.zfbml.aggregate.torrent
 
 import android.content.Context
-import android.net.Uri
 import com.zfbml.aggregate.source.MediaStream
 import com.zfbml.aggregate.source.StreamProtocol
 import java.io.File
@@ -39,6 +38,7 @@ class LibtorrentEngine(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val rootDir: File = appContext.getExternalFilesDir("torrents")
         ?: File(appContext.filesDir, "torrents")
+    private val fileServer = LocalTorrentFileServer()
 
     private val _state = MutableStateFlow(TorrentEngineState())
     override val state: StateFlow<TorrentEngineState> = _state
@@ -54,6 +54,9 @@ class LibtorrentEngine(
 
     @Volatile
     private var prioritizedFileIndex: Int? = null
+
+    @Volatile
+    private var lastPlaybackPieceIndex: Int? = null
 
     private var monitorJob: Job? = null
     private var listenerInstalled = false
@@ -123,6 +126,8 @@ class LibtorrentEngine(
         currentHandle = null
         currentSaveDir = null
         prioritizedFileIndex = null
+        lastPlaybackPieceIndex = null
+        fileServer.close()
         _state.value = TorrentEngineState()
     }
 
@@ -250,8 +255,12 @@ class LibtorrentEngine(
             prioritizeSelectedFile(handle, storage.numFiles(), selected.index)
             prioritizeSequentialPieces(handle, storage.pieceIndexAtFile(selected.index), storage.lastPieceIndexAtFile(selected.index))
             prioritizedFileIndex = selected.index
+            lastPlaybackPieceIndex = null
         }
 
+        val firstPiece = storage.pieceIndexAtFile(selected.index)
+        val lastPiece = storage.lastPieceIndexAtFile(selected.index)
+        val pieceLength = storage.pieceLength().coerceAtLeast(1)
         val selectedProgress = runCatching {
             handle.fileProgress(TorrentHandle.PIECE_GRANULARITY).getOrNull(selected.index) ?: 0L
         }.getOrDefault(0L)
@@ -268,7 +277,9 @@ class LibtorrentEngine(
         }
         val localFile = File(storage.filePath(selected.index, saveDir.absolutePath))
         val localUrl = if (localFile.exists() && selectedProgress >= readyBytes) {
-            Uri.fromFile(localFile).toString()
+            fileServer.serve(localFile, selected.sizeBytes) { offset ->
+                prioritizePlaybackOffset(handle, firstPiece, lastPiece, pieceLength, offset)
+            }
         } else {
             null
         }
@@ -299,6 +310,28 @@ class LibtorrentEngine(
         val warmupLastPiece = minOf(lastPiece, firstPiece + WARMUP_PIECE_COUNT)
         for (piece in firstPiece..warmupLastPiece) {
             runCatching { handle.setPieceDeadline(piece, (piece - firstPiece) * 250) }
+        }
+    }
+
+    private fun prioritizePlaybackOffset(
+        handle: TorrentHandle,
+        firstPiece: Int,
+        lastPiece: Int,
+        pieceLength: Int,
+        offset: Long,
+    ) {
+        if (firstPiece < 0 || lastPiece < firstPiece) {
+            return
+        }
+        val piece = (firstPiece + (offset / pieceLength).toInt()).coerceIn(firstPiece, lastPiece)
+        if (lastPlaybackPieceIndex == piece) {
+            return
+        }
+        lastPlaybackPieceIndex = piece
+        runCatching { handle.setSequentialRange(piece, lastPiece) }
+        val warmupLastPiece = minOf(lastPiece, piece + WARMUP_PIECE_COUNT)
+        for (currentPiece in piece..warmupLastPiece) {
+            runCatching { handle.setPieceDeadline(currentPiece, (currentPiece - piece) * 150) }
         }
     }
 

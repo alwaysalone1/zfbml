@@ -23,6 +23,22 @@ Open the folder in Android Studio, or run:
 
 The project targets Android SDK 36 and uses the JBR bundled with the local Android Studio install.
 
+## 版本更新 / Version Notes
+
+### v0.2.0
+
+中文：
+
+- BT 播放链路从 `file://` 升级为本地 HTTP Range 代理，Media3 可以通过 `http://127.0.0.1` 请求正在下载的视频文件。
+- 本地代理支持 `Range`、`Content-Range`、稳定 URL 复用，以及对增长中文件的短时等待。
+- BT 引擎会在播放器请求新字节范围时重新提高对应 piece 的优先级，为 seek 和边下边播打基础。
+
+English:
+
+- Upgraded the BT playback path from `file://` to a local HTTP Range proxy so Media3 can request the actively downloading video through `http://127.0.0.1`.
+- The local proxy supports `Range`, `Content-Range`, stable URL reuse, and short waits for growing files.
+- The BT engine reprioritizes pieces when the player requests a new byte range, laying the groundwork for seek-aware streaming.
+
 ## Rule Source Shape
 
 Rule sources live as JSON and can be imported at runtime later. See:
