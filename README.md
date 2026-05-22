@@ -25,6 +25,34 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.2
+
+中文：
+
+- 弹幕平台不再要求 WebView 登录授权，首页移除平台授权入口。
+- 参考 `D:\Ling1` 的弹幕接口逻辑，弹幕 Provider 改为公开网页/API 搜索、匹配集数、抓取弹幕。
+- 弹幕渲染、绘制、调度仍保留在本项目自研 `DanmakuSurface` 管线中，不复用 Ling1 的渲染实现。
+
+English:
+
+- Danmaku providers no longer require WebView login authorization, and platform auth actions were removed from the home screen.
+- Ported the danmaku API flow from `D:\Ling1`: public web/API search, episode matching, and timeline fetching.
+- Danmaku rendering, painting, and scheduling remain in this project's own `DanmakuSurface` pipeline rather than reusing Ling1 rendering code.
+
+### v0.2.1
+
+中文：
+
+- 首页改为番剧聚合视觉，打开后优先展示搜索、线路、番剧列表和 BT/弹幕/TV 状态卡片。
+- 平台账号授权入口降级到侧栏，避免首屏看起来像登录页。
+- 主要按钮和播放状态文案改为中文，便于中文用户直接试用。
+
+English:
+
+- Updated the home screen to an anime aggregation layout, prioritizing search, sources, result shelves, and BT/danmaku/TV status cards.
+- Moved platform auth actions into the side rail so the first screen no longer feels like a login page.
+- Localized primary buttons and playback status text into Chinese for easier hands-on testing.
+
 ### v0.2.0
 
 中文：

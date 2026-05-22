@@ -1,13 +1,12 @@
 package com.zfbml.aggregate.ui
 
-import android.content.res.Configuration
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -17,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -38,13 +38,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.zfbml.aggregate.AppGraph
-import com.zfbml.aggregate.auth.AuthWebView
 import com.zfbml.aggregate.danmaku.DanmakuItem
 import com.zfbml.aggregate.danmaku.DanmakuPlatform
 import com.zfbml.aggregate.danmaku.DanmakuProfile
@@ -63,12 +62,11 @@ import kotlinx.coroutines.launch
 @Composable
 fun AggregateApp(graph: AppGraph) {
     var screen by remember { mutableStateOf<AppScreen>(AppScreen.Home) }
-    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+    Surface(modifier = Modifier.fillMaxSize(), color = AnimeBackground) {
         when (val current = screen) {
             AppScreen.Home -> HomeScreen(
                 graph = graph,
                 onOpenDetail = { screen = AppScreen.Detail(it) },
-                onOpenAuth = { domain -> screen = AppScreen.Auth(domain) },
             )
             is AppScreen.Detail -> DetailScreen(
                 graph = graph,
@@ -83,10 +81,6 @@ fun AggregateApp(graph: AppGraph) {
                 stream = current.stream,
                 onBack = { screen = AppScreen.Detail(SearchResult(current.detail.providerId, current.detail.title, current.detail.url)) },
             )
-            is AppScreen.Auth -> AuthScreen(
-                domain = current.domain,
-                onBack = { screen = AppScreen.Home },
-            )
         }
     }
 }
@@ -95,46 +89,64 @@ private sealed interface AppScreen {
     data object Home : AppScreen
     data class Detail(val result: SearchResult) : AppScreen
     data class Player(val detail: MediaDetail, val episode: Episode, val stream: MediaStream) : AppScreen
-    data class Auth(val domain: String) : AppScreen
 }
+
+private val AnimeBackground = Color(0xFF10131A)
+private val AnimePanel = Color(0xFF1A1F2B)
+private val AnimeBorder = Color(0xFF2A3142)
+private val AnimeMuted = Color(0xFFAAB3C5)
+private val AnimeAccentPink = Color(0xFFE85D8E)
+private val AnimeAccentCyan = Color(0xFF41BFD6)
+private val AnimeAccentAmber = Color(0xFFE7B84A)
+private val AnimeAccentViolet = Color(0xFF8A7CF6)
 
 @Composable
 private fun HomeScreen(
     graph: AppGraph,
     onOpenDetail: (SearchResult) -> Unit,
-    onOpenAuth: (String) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     var query by remember { mutableStateOf("demo") }
     var results by remember { mutableStateOf<List<SearchResult>>(emptyList()) }
     var loading by remember { mutableStateOf(false) }
     val providers = graph.sourceRegistry.manifests
-    val authProfiles = graph.danmakuRegistry.profiles
 
     Row(
         modifier = Modifier
             .fillMaxSize()
+            .background(AnimeBackground)
             .padding(24.dp),
         horizontalArrangement = Arrangement.spacedBy(20.dp),
     ) {
         Column(
             modifier = Modifier
-                .width(360.dp)
+                .width(340.dp)
                 .fillMaxHeight(),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text("Zfbml Aggregate", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+            Text(
+                text = "\u005A\u0046\u0042\u004D\u004C \u756A\u5267\u805A\u5408",
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+            )
+            Text(
+                text = "\u0042\u0054 \u4E3B\u7EBF / \u5728\u7EBF\u6E90\u8865\u5145 / \u5F39\u5E55\u76F4\u6293",
+                style = MaterialTheme.typography.bodyMedium,
+                color = AnimeMuted,
+            )
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                label = { Text("Search or paste URL") },
+                label = { Text("\u641C\u7D22\u756A\u540D\u6216\u7C98\u8D34 magnet / \u76F4\u94FE") },
             )
             Button(
                 modifier = Modifier
                     .fillMaxWidth()
                     .focusable(),
+                colors = ButtonDefaults.buttonColors(containerColor = AnimeAccentPink, contentColor = Color.White),
                 onClick = {
                     scope.launch {
                         loading = true
@@ -143,42 +155,91 @@ private fun HomeScreen(
                     }
                 },
             ) {
-                Text("Search all sources")
+                Text("\u5168\u6E90\u641C\u7D22")
             }
-            Text("Sources", style = MaterialTheme.typography.titleMedium)
+            Text("\u64AD\u653E\u7EBF\u8DEF", style = MaterialTheme.typography.titleMedium, color = Color.White)
             providers.forEach { manifest ->
-                Text("${manifest.name}  ${manifest.version}", style = MaterialTheme.typography.bodyMedium)
-            }
-            Spacer(Modifier.height(8.dp))
-            Text("Danmaku auth", style = MaterialTheme.typography.titleMedium)
-            authProfiles.forEach { profile ->
-                val domain = when (profile.platform) {
-                    DanmakuPlatform.Bilibili -> "bilibili.com"
-                    DanmakuPlatform.Tencent -> "v.qq.com"
-                    DanmakuPlatform.Iqiyi -> "iqiyi.com"
-                    DanmakuPlatform.Youku -> "youku.com"
-                    DanmakuPlatform.Local -> ""
-                }
-                if (domain.isNotBlank()) {
-                    Button(onClick = { onOpenAuth(domain) }, modifier = Modifier.fillMaxWidth().focusable()) {
-                        Text("Login ${profile.platform}")
-                    }
-                }
+                SourceRailItem(name = manifest.name, version = manifest.version)
             }
         }
+
         Column(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text("Results", style = MaterialTheme.typography.titleLarge)
-            if (loading) {
-                CircularProgressIndicator()
+            AnimeHeroStrip()
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("\u756A\u5267\u5217\u8868", style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold)
+                Text("\u641C\u7D22\u7ED3\u679C\u4F1A\u51FA\u73B0\u5728\u8FD9\u91CC", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
             }
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(results) { result ->
-                    ResultCard(result = result, onClick = { onOpenDetail(result) })
+            if (loading) {
+                CircularProgressIndicator(color = AnimeAccentCyan)
+            }
+            if (results.isEmpty() && !loading) {
+                AnimeFeatureShelf()
+            } else {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    items(results) { result ->
+                        ResultCard(result = result, onClick = { onOpenDetail(result) })
+                    }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun SourceRailItem(name: String, version: String) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = AnimePanel),
+        border = BorderStroke(1.dp, AnimeBorder),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(name, style = MaterialTheme.typography.bodyMedium, color = Color.White, maxLines = 1)
+            Text(version, style = MaterialTheme.typography.labelMedium, color = AnimeMuted)
+        }
+    }
+}
+
+@Composable
+private fun AnimeHeroStrip() {
+    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+        HeroTile("BT", "\u78C1\u529B\u4E3B\u7EBF", AnimeAccentPink, Modifier.weight(1f))
+        HeroTile("\u5F39\u5E55", "\u65E0\u767B\u5F55\u76F4\u6293", AnimeAccentCyan, Modifier.weight(1f))
+        HeroTile("TV", "\u9065\u63A7\u4F53\u9A8C", AnimeAccentAmber, Modifier.weight(1f))
+    }
+}
+
+@Composable
+private fun HeroTile(label: String, title: String, accent: Color, modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier.height(92.dp),
+        colors = CardDefaults.cardColors(containerColor = AnimePanel),
+        border = BorderStroke(1.dp, AnimeBorder),
+    ) {
+        Column(Modifier.fillMaxSize().padding(14.dp), verticalArrangement = Arrangement.SpaceBetween) {
+            Text(label, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = accent)
+            Text(title, style = MaterialTheme.typography.bodyMedium, color = Color.White, maxLines = 1)
+        }
+    }
+}
+
+@Composable
+private fun AnimeFeatureShelf() {
+    LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        items(
+            listOf(
+                SearchResult("bt", "\u7C98\u8D34 magnet \u5F00\u59CB\u6D4B\u8BD5", "magnet:", subtitle = "BT \u4E3B\u7EBF\u8DEF"),
+                SearchResult("direct", "\u7C98\u8D34\u89C6\u9891\u76F4\u94FE", "https://", subtitle = "\u5728\u7EBF\u64AD\u653E"),
+                SearchResult("demo", "Demo \u756A\u5267\u6837\u4F8B", "demo://sample", subtitle = "\u5185\u7F6E\u6E90"),
+            ),
+        ) { item ->
+            ResultCard(result = item, onClick = {})
         }
     }
 }
@@ -190,15 +251,40 @@ private fun ResultCard(result: SearchResult, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .focusable(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        colors = CardDefaults.cardColors(containerColor = AnimePanel),
+        border = BorderStroke(1.dp, AnimeBorder),
     ) {
-        Column(Modifier.padding(16.dp)) {
-            Text(result.title, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            result.subtitle?.takeIf(String::isNotBlank)?.let {
-                Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.secondary)
+        Row(
+            Modifier.fillMaxWidth().padding(14.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier
+                    .width(58.dp)
+                    .height(78.dp)
+                    .background(providerAccent(result.providerId)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(result.providerId.take(2).uppercase(), style = MaterialTheme.typography.labelLarge, color = Color.White)
             }
-            Text(result.providerId, style = MaterialTheme.typography.labelMedium)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(result.title, style = MaterialTheme.typography.titleMedium, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                result.subtitle?.takeIf(String::isNotBlank)?.let {
+                    Text(it, style = MaterialTheme.typography.bodyMedium, color = AnimeMuted, maxLines = 1)
+                }
+                Text(result.url, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
         }
+    }
+}
+
+private fun providerAccent(providerId: String): Color {
+    return when (providerId.lowercase()) {
+        "bt" -> AnimeAccentPink
+        "direct" -> AnimeAccentCyan
+        "demo" -> AnimeAccentAmber
+        else -> AnimeAccentViolet
     }
 }
 
@@ -223,21 +309,23 @@ private fun DetailScreen(
         loading = false
     }
 
-    Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(Modifier.fillMaxSize().background(AnimeBackground).padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Button(onClick = onBack, modifier = Modifier.focusable()) { Text("Back") }
-            Text(result.title, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Button(onClick = onBack, modifier = Modifier.focusable()) { Text("\u8FD4\u56DE") }
+            Text(result.title, style = MaterialTheme.typography.headlineSmall, color = Color.White, fontWeight = FontWeight.Bold)
         }
         if (loading) {
-            CircularProgressIndicator()
+            CircularProgressIndicator(color = AnimeAccentCyan)
         }
-        error?.let { Text("Error: $it", color = MaterialTheme.colorScheme.error) }
+        error?.let { Text("\u9519\u8BEF: $it", color = MaterialTheme.colorScheme.error) }
         detail?.let { media ->
-            Text(media.summary.orEmpty(), style = MaterialTheme.typography.bodyLarge)
+            Text(media.summary.orEmpty(), style = MaterialTheme.typography.bodyLarge, color = AnimeMuted)
             LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(media.episodes) { episode ->
                     Card(
                         modifier = Modifier.fillMaxWidth().focusable(),
+                        colors = CardDefaults.cardColors(containerColor = AnimePanel),
+                        border = BorderStroke(1.dp, AnimeBorder),
                         onClick = {
                             scope.launch {
                                 val streams = graph.sourceRegistry.resolveStreams(episode)
@@ -246,8 +334,8 @@ private fun DetailScreen(
                         },
                     ) {
                         Column(Modifier.padding(16.dp)) {
-                            Text(episode.title, style = MaterialTheme.typography.titleMedium)
-                            Text(episode.url, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(episode.title, style = MaterialTheme.typography.titleMedium, color = Color.White)
+                            Text(episode.url, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }
                 }
@@ -302,7 +390,7 @@ private fun PlayerScreen(
         }
     }
 
-    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+    Box(Modifier.fillMaxSize().background(AnimeBackground)) {
         if (stream.protocol == StreamProtocol.BITTORRENT && torrentPlaybackUrl == null) {
             TorrentPlaceholderSurface(
                 stream = stream,
@@ -323,13 +411,13 @@ private fun PlayerScreen(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.72f))
+                .background(AnimePanel.copy(alpha = 0.78f))
                 .padding(12.dp),
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Button(onClick = onBack, modifier = Modifier.focusable()) { Text("Back") }
+                Button(onClick = onBack, modifier = Modifier.focusable()) { Text("\u8FD4\u56DE") }
                 Button(onClick = { danmakuEnabled = !danmakuEnabled }, modifier = Modifier.focusable()) {
-                    Text(if (danmakuEnabled) "Danmaku on" else "Danmaku off")
+                    Text(if (danmakuEnabled) "\u5F39\u5E55\u5F00" else "\u5F39\u5E55\u5173")
                 }
                 Button(
                     onClick = {
@@ -339,9 +427,9 @@ private fun PlayerScreen(
                     },
                     modifier = Modifier.focusable(),
                 ) {
-                    Text(if (stream.protocol == StreamProtocol.BITTORRENT) "BT cache" else "Cache")
+                    Text(if (stream.protocol == StreamProtocol.BITTORRENT) "BT \u7F13\u5B58" else "\u7F13\u5B58")
                 }
-                Text(stream.quality.orEmpty(), maxLines = 1)
+                Text(stream.quality.orEmpty(), color = Color.White, maxLines = 1)
                 val errorMessage = if (stream.protocol == StreamProtocol.BITTORRENT) {
                     torrentState.errorMessage
                 } else {
@@ -350,7 +438,7 @@ private fun PlayerScreen(
                 errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error, maxLines = 1) }
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Density", modifier = Modifier.width(80.dp))
+                Text("\u5F39\u5E55\u5BC6\u5EA6", color = Color.White, modifier = Modifier.width(80.dp))
                 Slider(
                     value = density,
                     onValueChange = { density = it },
@@ -369,7 +457,7 @@ private fun TorrentPlaceholderSurface(
     modifier: Modifier = Modifier,
 ) {
     Box(
-        modifier = modifier.background(MaterialTheme.colorScheme.background),
+        modifier = modifier.background(AnimeBackground),
         contentAlignment = Alignment.Center,
     ) {
         Column(
@@ -377,25 +465,26 @@ private fun TorrentPlaceholderSurface(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             horizontalAlignment = Alignment.Start,
         ) {
-            Text("BitTorrent stream", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text("BT \u64AD\u653E\u7EBF\u8DEF", style = MaterialTheme.typography.headlineSmall, color = Color.White, fontWeight = FontWeight.Bold)
             Text(
-                "Resolving torrent metadata, selecting the best video file, and buffering the opening pieces for Media3 playback.",
+                "\u6B63\u5728\u89E3\u6790\u79CD\u5B50\u5143\u6570\u636E\u3001\u9009\u62E9\u89C6\u9891\u6587\u4EF6\uFF0C\u5E76\u4E3A\u64AD\u653E\u5668\u9884\u7F13\u51B2\u5F00\u5934\u5206\u7247\u3002",
                 style = MaterialTheme.typography.bodyLarge,
+                color = AnimeMuted,
             )
             LinearProgressIndicator(
                 progress = { (state.plan?.bufferingPercent ?: 0f) / 100f },
                 modifier = Modifier.fillMaxWidth(),
             )
-            Text("Status: ${state.status ?: "waiting"}")
-            Text("Torrent: ${formatPercent(state.progressPercent)}  File: ${formatPercent(state.selectedFileProgressPercent)}  Buffer: ${formatPercent(state.plan?.bufferingPercent ?: 0f)}")
-            Text("Peers: ${state.connectedPeers}  Seeds: ${state.connectedSeeds}  Down: ${formatBytesPerSecond(state.downloadRateBytesPerSecond)}")
+            Text("\u72B6\u6001: ${state.status ?: "\u7B49\u5F85\u4E2D"}", color = Color.White)
+            Text("\u79CD\u5B50: ${formatPercent(state.progressPercent)}  \u6587\u4EF6: ${formatPercent(state.selectedFileProgressPercent)}  \u7F13\u51B2: ${formatPercent(state.plan?.bufferingPercent ?: 0f)}", color = Color.White)
+            Text("\u8FDE\u63A5: ${state.connectedPeers}  \u505A\u79CD: ${state.connectedSeeds}  \u4E0B\u8F7D: ${formatBytesPerSecond(state.downloadRateBytesPerSecond)}", color = Color.White)
             state.plan?.selectedFileName?.let { name ->
-                Text("Selected: $name", style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text("\u6587\u4EF6: $name", style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
             state.plan?.selectedFileSizeBytes?.let { size ->
-                Text("Size: ${formatBytes(size)}", style = MaterialTheme.typography.bodySmall)
+                Text("\u5927\u5C0F: ${formatBytes(size)}", style = MaterialTheme.typography.bodySmall, color = AnimeMuted)
             }
-            Text(stream.url, style = MaterialTheme.typography.bodySmall, maxLines = 3, overflow = TextOverflow.Ellipsis)
+            Text(stream.url, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 3, overflow = TextOverflow.Ellipsis)
             state.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         }
     }
@@ -421,27 +510,5 @@ private fun formatBytes(bytes: Long): String {
         "${bytes} ${units[index]}"
     } else {
         "%.1f %s".format(value, units[index])
-    }
-}
-
-@Composable
-private fun AuthScreen(domain: String, onBack: () -> Unit) {
-    val configuration = LocalConfiguration.current
-    val loginUrl = remember(domain) { "https://$domain" }
-    Column(Modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Button(onClick = onBack, modifier = Modifier.focusable()) { Text("Back") }
-            Text("Auth session: $domain", style = MaterialTheme.typography.titleMedium)
-        }
-        val webModifier = if (configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            Modifier.fillMaxSize()
-        } else {
-            Modifier.fillMaxSize()
-        }
-        AuthWebView(url = loginUrl, modifier = webModifier)
     }
 }

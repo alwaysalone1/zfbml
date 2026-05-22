@@ -1,7 +1,6 @@
 package com.zfbml.aggregate
 
 import android.content.Context
-import com.zfbml.aggregate.auth.WebViewCookieAuthSessionStore
 import com.zfbml.aggregate.danmaku.BilibiliDanmakuProvider
 import com.zfbml.aggregate.danmaku.DanmakuRegistry
 import com.zfbml.aggregate.danmaku.IqiyiDanmakuProvider
@@ -27,8 +26,6 @@ class AppGraph(
         .followSslRedirects(true)
         .build()
 
-    val authSessionStore = WebViewCookieAuthSessionStore()
-
     val sourceRegistry: SourceRegistry by lazy {
         SourceRegistry(
             buildList {
@@ -43,10 +40,10 @@ class AppGraph(
     val danmakuRegistry: DanmakuRegistry by lazy {
         DanmakuRegistry(
             listOf(
-                BilibiliDanmakuProvider(authSessionStore),
-                TencentDanmakuProvider(authSessionStore),
-                IqiyiDanmakuProvider(authSessionStore),
-                YoukuDanmakuProvider(authSessionStore),
+                BilibiliDanmakuProvider(httpClient),
+                TencentDanmakuProvider(httpClient),
+                IqiyiDanmakuProvider(httpClient),
+                YoukuDanmakuProvider(httpClient),
             ),
         )
     }
