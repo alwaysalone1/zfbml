@@ -14,6 +14,7 @@ import com.zfbml.aggregate.source.DirectUrlSourceProvider
 import com.zfbml.aggregate.source.SourceProvider
 import com.zfbml.aggregate.source.SourceRegistry
 import com.zfbml.aggregate.source.catalog.BangumiCatalogSourceProvider
+import com.zfbml.aggregate.source.catalog.BangumiCategoryRepository
 import com.zfbml.aggregate.source.catalog.BangumiCalendarRepository
 import com.zfbml.aggregate.source.rule.RuleSourceParser
 import com.zfbml.aggregate.source.rule.RuleSourceProvider
@@ -60,6 +61,10 @@ class AppGraph(
 
     val bangumiCalendarRepository: BangumiCalendarRepository by lazy {
         BangumiCalendarRepository(httpClient)
+    }
+
+    val bangumiCategoryRepository: BangumiCategoryRepository by lazy {
+        BangumiCategoryRepository(httpClient)
     }
 
     val danmakuRegistry: DanmakuRegistry by lazy {

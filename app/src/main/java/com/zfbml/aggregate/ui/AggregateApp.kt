@@ -98,6 +98,8 @@ import com.zfbml.aggregate.source.SearchResult
 import com.zfbml.aggregate.source.StreamProtocol
 import com.zfbml.aggregate.source.SourceSearchReport
 import com.zfbml.aggregate.source.catalog.BangumiCalendarRepository
+import com.zfbml.aggregate.source.catalog.BangumiCategory
+import com.zfbml.aggregate.source.catalog.BangumiCategoryResult
 import com.zfbml.aggregate.source.catalog.BangumiScheduleDay
 import com.zfbml.aggregate.torrent.TorrentEngineState
 import java.net.HttpURLConnection
@@ -205,7 +207,7 @@ private sealed interface AppScreen {
 
 private enum class AppTab(val label: String, val icon: ImageVector) {
     Discover("\u9996\u9875", Icons.Filled.Home),
-    Search("\u7247\u5E93", Icons.Filled.VideoLibrary),
+    Search("\u8ffd\u756a", Icons.Filled.Bookmarks),
     Sources("\u9891\u9053", Icons.Filled.Subscriptions),
     Settings("\u6211\u7684", Icons.Filled.AccountCircle),
 }
@@ -388,7 +390,9 @@ private fun DiscoverScreen(
     onOpenDetail: (SearchResult) -> Unit,
     onSearch: () -> Unit,
 ) {
-    val featured = remember { featuredOnlineResults() }
+    val fallbackFeatured = remember { featuredOnlineResults() }
+    var homePicks by remember { mutableStateOf<List<SearchResult>>(emptyList()) }
+    var homePicksLoading by remember { mutableStateOf(false) }
     var schedule by remember { mutableStateOf<List<BangumiScheduleDay>>(emptyList()) }
     var selectedDayId by remember { mutableStateOf(BangumiCalendarRepository.currentBangumiWeekdayId()) }
     var loading by remember { mutableStateOf(true) }
@@ -411,8 +415,16 @@ private fun DiscoverScreen(
         loading = false
     }
 
+    LaunchedEffect(Unit) {
+        homePicksLoading = true
+        homePicks = runCatching { graph.bangumiCategoryRepository.loadHomeRecommendations() }
+            .getOrDefault(emptyList())
+        homePicksLoading = false
+    }
+
     val selectedDay = schedule.firstOrNull { it.weekdayId == selectedDayId }
     val selectedItems = selectedDay?.items.orEmpty()
+    val featured = homePicks.ifEmpty { fallbackFeatured }
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(horizontal = 18.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -474,10 +486,18 @@ private fun DiscoverScreen(
             }
         }
         item {
-            SectionHeader(title = "\u63a8\u8350\u5165\u53e3", action = "", onAction = onSearch)
+            SectionHeader(title = "\u4f18\u8d28\u52a8\u6f2b\u63a8\u8350", action = "\u5168\u90e8\u5206\u7c7b", onAction = onSearch)
         }
-        items(featured) { result ->
-            WideVideoCard(result = result, onClick = { onOpenDetail(result) })
+        if (homePicksLoading && homePicks.isEmpty()) {
+            item {
+                ScheduleStatusPanel(
+                    title = "\u6b63\u5728\u52a0\u8f7d Bangumi \u63a8\u8350",
+                    subtitle = "\u4f1a\u4ece\u63a8\u8350\u3001\u9ad8\u5206\u3001\u70ed\u95e8\u548c\u5267\u573a\u7248\u4e2d\u9009\u53d6\u3002",
+                )
+            }
+        }
+        items(featured.take(HOME_RECOMMENDATION_LIMIT)) { result ->
+            ScheduleAnimeRow(result = result, onClick = { onOpenDetail(result) })
         }
     }
 }
@@ -958,6 +978,13 @@ private fun SearchScreen(
     onOpenDetail: (SearchResult) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
+    val categories = remember { graph.bangumiCategoryRepository.categories }
+    var selectedCategoryId by remember {
+        mutableStateOf(categories.firstOrNull { it.id == "recommend" }?.id ?: categories.firstOrNull()?.id.orEmpty())
+    }
+    var categoryResult by remember { mutableStateOf<BangumiCategoryResult?>(null) }
+    var categoryLoading by remember { mutableStateOf(false) }
+    var categoryError by remember { mutableStateOf<String?>(null) }
     var query by remember(initialQuery) { mutableStateOf(initialQuery?.takeIf(String::isNotBlank).orEmpty()) }
     var results by remember { mutableStateOf<List<SearchResult>>(emptyList()) }
     var loading by remember { mutableStateOf(false) }
@@ -983,89 +1010,201 @@ private fun SearchScreen(
         }
     }
 
+    LaunchedEffect(selectedCategoryId) {
+        if (selectedCategoryId.isBlank()) return@LaunchedEffect
+        categoryLoading = true
+        categoryError = null
+        categoryResult = null
+        runCatching { graph.bangumiCategoryRepository.loadCategory(selectedCategoryId) }
+            .onSuccess { categoryResult = it }
+            .onFailure { error ->
+                categoryResult = null
+                categoryError = error.message ?: error::class.simpleName.orEmpty().ifBlank { "\u65e0\u8be6\u7ec6\u9519\u8bef" }
+            }
+        categoryLoading = false
+    }
+
     LaunchedEffect(initialQuery) {
         if (!searched && !initialQuery.isNullOrBlank()) {
             runSearch()
         }
     }
 
-    BoxWithConstraints(
+    val selectedCategory = categories.firstOrNull { it.id == selectedCategoryId } ?: categoryResult?.category
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .background(AnimeBackground)
             .padding(24.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        if (maxWidth < 720.dp) {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                item {
-                    SearchControls(
-                        query = query,
-                        onQueryChange = { query = it },
-                        onSearch = ::runSearch,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-                item {
-                    ResultsHeader()
-                }
-                searchStatusItems(
-                    loading = loading,
-                    searched = searched,
-                    searchMessage = searchMessage,
-                    results = results,
-                    onOpenDetail = onOpenDetail,
+        item {
+            TrackingHeader()
+        }
+        item {
+            CategoryButtonGrid(
+                categories = categories,
+                selectedCategoryId = selectedCategoryId,
+                onSelected = { selectedCategoryId = it },
+            )
+        }
+        item {
+            SectionHeader(
+                title = selectedCategory?.title ?: "\u8ffd\u756a\u9891\u9053",
+                action = categoryResult?.items?.takeIf { it.isNotEmpty() }?.let { "${it.size} \u90e8" }.orEmpty(),
+                onAction = {},
+            )
+        }
+        selectedCategory?.subtitle?.takeIf(String::isNotBlank)?.let { subtitle ->
+            item {
+                Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+            }
+        }
+        if (categoryLoading) {
+            item {
+                ScheduleStatusPanel(
+                    title = "\u6b63\u5728\u52a0\u8f7d\u5206\u7c7b\u5185\u5bb9",
+                    subtitle = "Bangumi \u6761\u76ee\u6b63\u5728\u540c\u6b65\u3002",
+                )
+            }
+        }
+        categoryError?.let { message ->
+            item {
+                ScheduleStatusPanel(
+                    title = "\u5206\u7c7b\u52a0\u8f7d\u5931\u8d25",
+                    subtitle = message,
+                )
+            }
+        }
+        val categoryItems = categoryResult?.items.orEmpty()
+        if (!categoryLoading && categoryItems.isEmpty()) {
+            item {
+                ScheduleStatusPanel(
+                    title = "\u8fd9\u4e2a\u5206\u7c7b\u6682\u65e0\u53ef\u5c55\u793a\u6761\u76ee",
+                    subtitle = "\u53ef\u4ee5\u5207\u6362\u5176\u4ed6\u5206\u7c7b\uff0c\u6216\u5728\u4e0b\u65b9\u76f4\u63a5\u641c\u7d22\u756a\u540d\u3002",
                 )
             }
         } else {
-            Row(
-                modifier = Modifier.fillMaxSize(),
-                horizontalArrangement = Arrangement.spacedBy(20.dp),
-            ) {
-                Column(
-                    modifier = Modifier
-                        .width(340.dp)
-                        .fillMaxHeight(),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    SearchControls(
-                        query = query,
-                        onQueryChange = { query = it },
-                        onSearch = ::runSearch,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    SearchHintPanel()
-                }
+            items(categoryItems) { result ->
+                ScheduleAnimeRow(result = result, onClick = { onOpenDetail(result) })
+            }
+        }
+        item {
+            SearchControls(
+                query = query,
+                onQueryChange = { query = it },
+                onSearch = ::runSearch,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        if (searched || loading || searchMessage != null || results.isNotEmpty()) {
+            item {
+                ResultsHeader()
+            }
+            searchStatusItems(
+                loading = loading,
+                searched = searched,
+                searchMessage = searchMessage,
+                results = results,
+                onOpenDetail = onOpenDetail,
+            )
+        }
+    }
+}
 
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    ResultsHeader()
-                    if (loading) {
-                        CircularProgressIndicator(color = AnimeAccentCyan)
-                    }
-                    searchMessage?.let { message ->
-                        Text(message, style = MaterialTheme.typography.bodyMedium, color = AnimeAccentAmber)
-                    }
-                    if (results.isEmpty() && !loading) {
-                        if (searched) {
-                            EmptySearchState()
-                        } else {
-                            AnimeFeatureShelf()
-                        }
-                    } else {
-                        LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            items(results) { result ->
-                                ResultCard(result = result, onClick = { onOpenDetail(result) })
-                            }
-                        }
-                    }
+@Composable
+private fun TrackingHeader() {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(
+            text = "\u8ffd\u756a\u9891\u9053",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            color = Color.White,
+        )
+        Text(
+            text = "Bangumi \u5206\u7c7b\u699c\u5355 + \u591a\u6e90\u7ebf\u8def\u5339\u914d\uff0c\u5148\u627e\u756a\uff0c\u518d\u9009\u96c6\u64ad\u653e\u3002",
+            style = MaterialTheme.typography.bodyMedium,
+            color = AnimeMuted,
+        )
+    }
+}
+
+@Composable
+private fun CategoryButtonGrid(
+    categories: List<BangumiCategory>,
+    selectedCategoryId: String,
+    onSelected: (String) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        categories.chunked(2).forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                row.forEach { category ->
+                    CategoryButton(
+                        category = category,
+                        selected = category.id == selectedCategoryId,
+                        onClick = { onSelected(category.id) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                if (row.size == 1) {
+                    Spacer(Modifier.weight(1f))
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun CategoryButton(
+    category: BangumiCategory,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        onClick = onClick,
+        modifier = modifier.height(82.dp).focusable(),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(containerColor = if (selected) AnimePanelSoft else AnimePanel),
+        border = BorderStroke(1.dp, if (selected) AnimeAccentCyan else AnimeBorder),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxSize().padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier.size(42.dp).background(categoryAccent(category.id), RoundedCornerShape(8.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = category.badge,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                )
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(category.title, style = MaterialTheme.typography.titleMedium, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(category.subtitle, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+        }
+    }
+}
+
+private fun categoryAccent(categoryId: String): Color {
+    return when (categoryId) {
+        "recommend" -> AnimeAccentPink
+        "japanese" -> AnimeAccentCyan
+        "chinese" -> AnimeAccentAmber
+        "american" -> AnimeAccentViolet
+        "movie" -> Color(0xFFEC6F66)
+        "hot" -> Color(0xFFFF8A3D)
+        "high-score" -> AnimeAccentGreen
+        "most-followed" -> Color(0xFF5FA8FF)
+        "most-watched" -> Color(0xFFB178FF)
+        else -> AnimeAccentCyan
     }
 }
 
@@ -1176,7 +1315,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             Text("\u8BBE\u7F6E", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
-            Text("\u7248\u672C 0.2.6", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+            Text("\u7248\u672C 0.2.9", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         }
         item {
             StatusPanel(
@@ -1241,13 +1380,13 @@ private fun SearchControls(
 ) {
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
-            text = "\u627E\u7247\u770B\u7247",
+            text = "\u76f4\u63a5\u641c\u7d22",
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
             color = Color.White,
         )
         Text(
-            text = "\u8F93\u5165\u756A\u540D\u3001\u5267\u540D\u6216\u89C6\u9891\u94FE\u63A5",
+            text = "\u8f93\u5165\u756a\u540d\u3001\u5267\u540d\u6216\u89c6\u9891\u94fe\u63a5",
             style = MaterialTheme.typography.bodyMedium,
             color = AnimeMuted,
         )
@@ -1265,7 +1404,7 @@ private fun SearchControls(
             colors = ButtonDefaults.buttonColors(containerColor = AnimeAccentPink, contentColor = Color.White),
             onClick = onSearch,
         ) {
-            Text("\u641C\u7D22\u7247\u6E90")
+            Text("\u641c\u7d22\u756a\u5267")
         }
     }
 }
@@ -2032,3 +2171,4 @@ private fun formatBytes(bytes: Long): String {
 }
 
 private const val HOME_SCHEDULE_LIMIT = 12
+private const val HOME_RECOMMENDATION_LIMIT = 10
