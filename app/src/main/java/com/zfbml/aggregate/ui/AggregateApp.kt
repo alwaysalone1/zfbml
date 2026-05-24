@@ -664,8 +664,12 @@ private fun HomeFeedPage(
 ) {
     val selectedDay = schedule.firstOrNull { it.weekdayId == selectedDayId }
     val selectedItems = selectedDay?.items.orEmpty()
-    val continueItem = selectedItems.firstOrNull() ?: featured.firstOrNull()
-    val guessItems = featured.rotatingWindow(start = guessBatch * 5, count = 6)
+    val feedSelection = splitSpotlightFeed(featured, spotlightCount = 5)
+    val remainder = feedSelection.remainder.ifEmpty { featured.distinctBy { it.stableMediaKey() } }
+    val continueItem = selectedItems.firstOrNull()
+        ?: remainder.firstOrNull()
+        ?: feedSelection.spotlight.firstOrNull()
+    val guessItems = remainder.rotatingWindow(start = guessBatch * 5, count = 6)
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 18.dp, vertical = 12.dp),
@@ -674,7 +678,7 @@ private fun HomeFeedPage(
         item {
             HomeHeroCarousel(
                 title = "\u7cbe\u9009\u9996\u63a8",
-                items = featured,
+                items = feedSelection.spotlight,
                 onOpenDetail = onOpenDetail,
             )
         }
@@ -765,7 +769,9 @@ private fun CategoryFeedPage(
     onOpenDetail: (SearchResult) -> Unit,
 ) {
     val items = result?.items.orEmpty()
-    val heroItems = items.takeIf { it.isNotEmpty() } ?: fallback
+    val feedSelection = splitSpotlightFeed(items, fallback = fallback, spotlightCount = 5)
+    val heroItems = feedSelection.spotlight
+    val listItems = if (items.isEmpty()) emptyList() else feedSelection.remainder
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 18.dp, vertical = 12.dp),
@@ -800,11 +806,11 @@ private fun CategoryFeedPage(
         item {
             SectionHeader(
                 title = "\u7cbe\u9009\u70ed\u64ad\u65b0\u756a",
-                action = if (items.isNotEmpty()) "\u5168\u90e8 ${items.size}" else "",
+                action = if (listItems.isNotEmpty()) "\u5168\u90e8 ${listItems.size}" else "",
                 onAction = {},
             )
         }
-        if (items.isEmpty() && !loading) {
+        if (listItems.isEmpty() && !loading) {
             item {
                 ScheduleStatusPanel(
                     title = "\u6682\u65e0\u53ef\u5c55\u793a\u6761\u76ee",
@@ -812,7 +818,7 @@ private fun CategoryFeedPage(
                 )
             }
         } else {
-            items(items) { item ->
+            items(listItems) { item ->
                 ScheduleAnimeRow(result = item, onClick = { onOpenDetail(item) })
             }
         }
@@ -825,49 +831,137 @@ private fun HomeHeroCarousel(
     items: List<SearchResult>,
     onOpenDetail: (SearchResult) -> Unit,
 ) {
-    val visible = items.ifEmpty { featuredOnlineResults() }.take(8)
+    val visible = items.ifEmpty { featuredOnlineResults() }.distinctBy { it.stableMediaKey() }.take(8)
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(title, style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold)
             Text("\u6ed1\u52a8\u6311\u4e00\u90e8\u5f00\u59cb", style = MaterialTheme.typography.bodySmall, color = AnimeMuted)
         }
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            items(visible) { result ->
-                HeroCarouselCard(result = result, onClick = { onOpenDetail(result) })
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            val cardWidth = (maxWidth * 0.94f).coerceAtLeast(320.dp).coerceAtMost(560.dp)
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                items(visible.size) { index ->
+                    val result = visible[index]
+                    val companion = if (visible.size > 1) visible[(index + 1) % visible.size] else null
+                    HeroCarouselCard(
+                        result = result,
+                        index = index,
+                        companion = companion,
+                        onClick = { onOpenDetail(result) },
+                        modifier = Modifier.width(cardWidth).height(226.dp),
+                    )
+                }
             }
         }
     }
 }
 
 @Composable
-private fun HeroCarouselCard(result: SearchResult, onClick: () -> Unit) {
+private fun HeroCarouselCard(
+    result: SearchResult,
+    index: Int,
+    companion: SearchResult?,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val accent = providerAccent(result.providerId)
+    val subtitle = result.subtitle?.takeIf { it.isNotBlank() } ?: providerDisplayName(result.providerId)
     ElevatedCard(
         onClick = onClick,
-        modifier = Modifier.width(304.dp).height(186.dp).focusable(),
+        modifier = modifier.focusable(),
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.elevatedCardColors(containerColor = AnimePanel),
     ) {
-        Row(Modifier.fillMaxSize()) {
-            Column(
-                modifier = Modifier.weight(1f).fillMaxHeight().padding(14.dp),
-                verticalArrangement = Arrangement.SpaceBetween,
+        BoxWithConstraints(Modifier.fillMaxSize().background(AnimePanelSoft)) {
+            val showCompanion = companion != null && maxWidth >= 380.dp
+            val posterWidth = if (showCompanion) 126.dp else 118.dp
+            val titleStyle = if (showCompanion) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.titleLarge
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(4.dp)
+                    .background(accent)
+                    .align(Alignment.TopStart),
+            )
+            Row(
+                modifier = Modifier.fillMaxSize().padding(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    VideoMetaChip(result.raw["categoryTitle"] ?: "\u63a8\u8350")
-                    Text(result.title, style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                    Text(result.subtitle.orEmpty(), style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Box(modifier = Modifier.width(posterWidth).fillMaxHeight()) {
+                    PosterArtwork(
+                        posterUrl = result.posterUrl,
+                        accent = accent,
+                        modifier = Modifier.fillMaxSize(),
+                        shape = RoundedCornerShape(8.dp),
+                    )
+                    Box(
+                        modifier = Modifier
+                            .align(Alignment.BottomStart)
+                            .padding(8.dp)
+                            .background(Color.Black.copy(alpha = 0.58f), RoundedCornerShape(6.dp))
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                    ) {
+                        Text(
+                            text = "#%02d \u7126\u70b9".format(index + 1),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = AnimeAccentCyan, modifier = Modifier.size(20.dp))
-                    Text("\u8fdb\u5165\u8be6\u60c5", style = MaterialTheme.typography.labelLarge, color = AnimeAccentCyan)
+                Column(
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    verticalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            VideoMetaChip(result.raw["categoryTitle"] ?: "\u4eca\u65e5\u9996\u63a8")
+                            VideoMetaChip(result.raw["rating"]?.let { "\u8bc4\u5206 $it" } ?: providerDisplayName(result.providerId))
+                        }
+                        Text(
+                            result.title,
+                            style = titleStyle,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            subtitle,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = AnimeMuted,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = AnimeAccentCyan, modifier = Modifier.size(22.dp))
+                        Text("\u8fdb\u5165\u8be6\u60c5", style = MaterialTheme.typography.labelLarge, color = AnimeAccentCyan)
+                    }
+                }
+                companion?.takeIf { showCompanion }?.let { next ->
+                    Column(
+                        modifier = Modifier.width(68.dp).fillMaxHeight(),
+                        verticalArrangement = Arrangement.SpaceBetween,
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text("NEXT", style = MaterialTheme.typography.labelSmall, color = AnimeMuted, fontWeight = FontWeight.Bold)
+                        PosterArtwork(
+                            posterUrl = next.posterUrl,
+                            accent = providerAccent(next.providerId),
+                            modifier = Modifier.size(width = 58.dp, height = 82.dp),
+                            shape = RoundedCornerShape(7.dp),
+                        )
+                        Text(
+                            next.title,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.White,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
             }
-            PosterArtwork(
-                posterUrl = result.posterUrl,
-                accent = providerAccent(result.providerId),
-                modifier = Modifier.width(116.dp).fillMaxHeight(),
-                shape = RoundedCornerShape(topEnd = 8.dp, bottomEnd = 8.dp),
-            )
         }
     }
 }
@@ -912,6 +1006,44 @@ private fun <T> List<T>.rotatingWindow(start: Int, count: Int): List<T> {
     val safeStart = ((start % size) + size) % size
     val safeCount = count.coerceAtMost(size)
     return (0 until safeCount).map { index -> this[(safeStart + index) % size] }
+}
+
+private data class FeedSelection(
+    val spotlight: List<SearchResult>,
+    val remainder: List<SearchResult>,
+)
+
+private fun splitSpotlightFeed(
+    items: List<SearchResult>,
+    fallback: List<SearchResult> = emptyList(),
+    spotlightCount: Int = 5,
+): FeedSelection {
+    val uniqueItems = items.distinctBy { it.stableMediaKey() }
+    val source = uniqueItems.ifEmpty { fallback.distinctBy { it.stableMediaKey() } }
+    if (source.isEmpty()) return FeedSelection(spotlight = emptyList(), remainder = emptyList())
+
+    val spotlight = source
+        .sortedWith(
+            compareByDescending<SearchResult> { it.feedScore() }
+                .thenBy { it.title },
+        )
+        .take(spotlightCount.coerceAtLeast(1))
+    val spotlightKeys = spotlight.map { it.stableMediaKey() }.toSet()
+    return FeedSelection(
+        spotlight = spotlight,
+        remainder = uniqueItems.filterNot { it.stableMediaKey() in spotlightKeys },
+    )
+}
+
+private fun SearchResult.stableMediaKey(): String {
+    return raw["subjectId"] ?: raw["id"] ?: url.ifBlank { title }
+}
+
+private fun SearchResult.feedScore(): Double {
+    val rating = raw["rating"]?.toDoubleOrNull() ?: 0.0
+    val doing = raw["doing"]?.toDoubleOrNull() ?: 0.0
+    val collect = raw["collect"]?.toDoubleOrNull() ?: 0.0
+    return rating * 10_000.0 + doing * 3.0 + collect
 }
 
 @Composable
@@ -1243,6 +1375,9 @@ private fun VideoMetaChip(text: String) {
         text = text,
         style = MaterialTheme.typography.labelMedium,
         color = Color.White,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        softWrap = false,
         modifier = Modifier
             .background(Color.White.copy(alpha = 0.12f), RoundedCornerShape(6.dp))
             .padding(horizontal = 9.dp, vertical = 5.dp),
@@ -1290,7 +1425,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.10")
+                setRequestProperty("User-Agent", "ZFBML/0.2.11")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -1667,7 +1802,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             Text("\u8BBE\u7F6E", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
-            Text("\u7248\u672C 0.2.10", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+            Text("\u7248\u672C 0.2.11", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         }
         item {
             StatusPanel(
