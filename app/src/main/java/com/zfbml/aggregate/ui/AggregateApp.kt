@@ -97,6 +97,8 @@ import com.zfbml.aggregate.source.RouteCandidate
 import com.zfbml.aggregate.source.SearchResult
 import com.zfbml.aggregate.source.StreamProtocol
 import com.zfbml.aggregate.source.SourceSearchReport
+import com.zfbml.aggregate.source.catalog.BangumiCalendarRepository
+import com.zfbml.aggregate.source.catalog.BangumiScheduleDay
 import com.zfbml.aggregate.torrent.TorrentEngineState
 import java.net.HttpURLConnection
 import java.net.URL
@@ -320,6 +322,7 @@ private fun MainTabContent(
     Box(modifier = modifier.background(AnimeBackground)) {
         when (selectedTab) {
             AppTab.Discover -> DiscoverScreen(
+                graph = graph,
                 onOpenDetail = onOpenDetail,
                 onSearch = { onTabSelected(AppTab.Search) },
             )
@@ -383,10 +386,36 @@ private fun AppNavigationRail(
 
 @Composable
 private fun DiscoverScreen(
+    graph: AppGraph,
     onOpenDetail: (SearchResult) -> Unit,
     onSearch: () -> Unit,
 ) {
     val featured = remember { featuredOnlineResults() }
+    var schedule by remember { mutableStateOf<List<BangumiScheduleDay>>(emptyList()) }
+    var selectedDayId by remember { mutableStateOf(BangumiCalendarRepository.currentBangumiWeekdayId()) }
+    var loading by remember { mutableStateOf(true) }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) {
+        loading = true
+        error = null
+        runCatching { graph.bangumiCalendarRepository.loadWeeklySchedule() }
+            .onSuccess { days ->
+                schedule = days
+                val currentDay = days.firstOrNull { it.weekdayId == selectedDayId && it.items.isNotEmpty() }
+                if (currentDay == null) {
+                    days.firstOrNull { it.items.isNotEmpty() }?.let { selectedDayId = it.weekdayId }
+                }
+            }
+            .onFailure { failure ->
+                error = failure.message ?: failure::class.simpleName.orEmpty().ifBlank { "\u672a\u77e5\u9519\u8bef" }
+            }
+        loading = false
+    }
+
+    val selectedDay = schedule.firstOrNull { it.weekdayId == selectedDayId }
+    val selectedItems = selectedDay?.items.orEmpty()
+    val hero = selectedItems.firstOrNull() ?: featured.first()
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(horizontal = 18.dp, vertical = 16.dp),
         verticalArrangement = Arrangement.spacedBy(18.dp),
@@ -395,13 +424,56 @@ private fun DiscoverScreen(
             HomeTopBar(onSearch = onSearch)
         }
         item {
-            FeaturedBanner(result = featured.first(), onClick = { onOpenDetail(featured.first()) })
+            ScheduleHeroBanner(
+                result = hero,
+                dayLabel = selectedDay?.weekdayCn ?: "\u4eca\u65e5\u653e\u9001",
+                onClick = { onOpenDetail(hero) },
+            )
         }
         item {
-            ContinueWatchingRow(result = featured.first(), onClick = { onOpenDetail(featured.first()) })
+            ScheduleDaySelector(
+                days = schedule,
+                selectedDayId = selectedDayId,
+                onSelected = { selectedDayId = it },
+            )
+        }
+        if (loading) {
+            item {
+                ScheduleStatusPanel(
+                    title = "\u6b63\u5728\u52a0\u8f7d\u65b0\u756a\u65f6\u95f4\u8868",
+                    subtitle = "Bangumi \u6bcf\u65e5\u653e\u9001\u6570\u636e\u540c\u6b65\u4e2d",
+                )
+            }
+        }
+        error?.let { message ->
+            item {
+                ScheduleStatusPanel(
+                    title = "\u65b0\u756a\u65f6\u95f4\u8868\u52a0\u8f7d\u5931\u8d25",
+                    subtitle = message,
+                )
+            }
         }
         item {
-            SectionHeader(title = "\u70ED\u95E8\u63A8\u8350", action = "\u66F4\u591A", onAction = onSearch)
+            SectionHeader(
+                title = selectedDay?.weekdayCn ?: "\u65b0\u756a\u65f6\u95f4\u8868",
+                action = if (selectedItems.isNotEmpty()) "${selectedItems.size} \u90e8" else "\u641c\u7d22",
+                onAction = onSearch,
+            )
+        }
+        if (selectedItems.isNotEmpty()) {
+            items(selectedItems) { result ->
+                ScheduleAnimeRow(result = result, onClick = { onOpenDetail(result) })
+            }
+        } else {
+            item {
+                ScheduleStatusPanel(
+                    title = "\u6682\u65e0\u5f53\u65e5\u653e\u9001\u6570\u636e",
+                    subtitle = "\u5148\u5c55\u793a\u672c\u5730\u63a8\u8350\uff0c\u4f60\u4e5f\u53ef\u4ee5\u76f4\u63a5\u641c\u7d22\u756a\u540d\u3002",
+                )
+            }
+        }
+        item {
+            SectionHeader(title = "\u70ed\u95e8\u63a8\u8350", action = "\u66f4\u591a", onAction = onSearch)
         }
         item {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -411,7 +483,7 @@ private fun DiscoverScreen(
             }
         }
         item {
-            SectionHeader(title = "\u9891\u9053\u7CBE\u9009", action = "\u6362\u4E00\u6279", onAction = onSearch)
+            SectionHeader(title = "\u9891\u9053\u7cbe\u9009", action = "\u6362\u4e00\u6279", onAction = onSearch)
         }
         items(featured.drop(1) + featured.take(1)) { result ->
             WideVideoCard(result = result, onClick = { onOpenDetail(result) })
@@ -509,6 +581,161 @@ private fun FeaturedBanner(result: SearchResult, onClick: () -> Unit) {
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ScheduleHeroBanner(result: SearchResult, dayLabel: String, onClick: () -> Unit) {
+    ElevatedCard(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth().height(210.dp).focusable(),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = Color(0xFF1D2028)),
+    ) {
+        Box(Modifier.fillMaxSize()) {
+            PosterArtwork(
+                posterUrl = result.posterUrl,
+                accent = AnimeAccentViolet.copy(alpha = 0.34f),
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .size(width = 188.dp, height = 210.dp),
+                shape = RoundedCornerShape(topEnd = 8.dp, bottomEnd = 8.dp),
+            )
+            Column(
+                modifier = Modifier.fillMaxSize().padding(18.dp),
+                verticalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(dayLabel, style = MaterialTheme.typography.labelLarge, color = AnimeAccentAmber)
+                    Text(result.title, style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 2)
+                    Text(
+                        result.subtitle.orEmpty().ifBlank { "\u65b0\u756a\u65f6\u95f4\u8868 / \u756a\u5267\u8be6\u60c5 / \u591a\u7ebf\u8def\u64ad\u653e" },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = AnimeMuted,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Button(
+                        onClick = onClick,
+                        colors = ButtonDefaults.buttonColors(containerColor = AnimeAccentPink, contentColor = Color.White),
+                        modifier = Modifier.focusable(),
+                    ) {
+                        Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("\u8fdb\u5165\u8be6\u60c5")
+                    }
+                    VideoMetaChip("\u4eca\u65e5\u653e\u9001")
+                    VideoMetaChip("\u53ef\u9009\u7ebf\u8def")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ScheduleDaySelector(
+    days: List<BangumiScheduleDay>,
+    selectedDayId: Int,
+    onSelected: (Int) -> Unit,
+) {
+    val visibleDays = days.ifEmpty { fallbackScheduleDays() }
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        items(visibleDays) { day ->
+            val selected = day.weekdayId == selectedDayId
+            Card(
+                onClick = { onSelected(day.weekdayId) },
+                modifier = Modifier.width(86.dp).height(58.dp).focusable(),
+                shape = RoundedCornerShape(8.dp),
+                colors = CardDefaults.cardColors(containerColor = if (selected) AnimeAccentPink else AnimePanel),
+                border = BorderStroke(1.dp, if (selected) AnimeAccentPink else AnimeBorder),
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp, vertical = 7.dp),
+                    verticalArrangement = Arrangement.SpaceBetween,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(day.weekdayCn.removePrefix("\u661f\u671f"), style = MaterialTheme.typography.labelLarge, color = Color.White, maxLines = 1)
+                    Text("${day.items.size} \u90e8", style = MaterialTheme.typography.bodySmall, color = if (selected) Color.White else AnimeMuted, maxLines = 1)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ScheduleStatusPanel(title: String, subtitle: String) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(containerColor = AnimePanel),
+        border = BorderStroke(1.dp, AnimeBorder),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(title, style = MaterialTheme.typography.titleMedium, color = Color.White)
+            Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+        }
+    }
+}
+
+@Composable
+private fun ScheduleAnimeRow(result: SearchResult, onClick: () -> Unit) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth().focusable(),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(containerColor = AnimePanel),
+        border = BorderStroke(1.dp, AnimeBorder),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            PosterArtwork(
+                posterUrl = result.posterUrl,
+                accent = AnimeAccentViolet,
+                modifier = Modifier.size(width = 96.dp, height = 128.dp),
+                shape = RoundedCornerShape(6.dp),
+            )
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                Text(result.title, style = MaterialTheme.typography.titleMedium, color = Color.White, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(result.subtitle.orEmpty(), style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    result.raw["rating"]?.let { VideoMetaChip(it) }
+                    result.raw["doing"]?.let { VideoMetaChip("$it \u5728\u770b") }
+                    VideoMetaChip("\u8be6\u60c5")
+                }
+            }
+            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = AnimeAccentCyan, modifier = Modifier.size(26.dp))
+                Text("\u9009\u96c6", style = MaterialTheme.typography.labelLarge, color = AnimeAccentCyan)
+            }
+        }
+    }
+}
+
+private fun fallbackScheduleDays(): List<BangumiScheduleDay> {
+    val names = listOf(
+        1 to "\u661f\u671f\u4e00",
+        2 to "\u661f\u671f\u4e8c",
+        3 to "\u661f\u671f\u4e09",
+        4 to "\u661f\u671f\u56db",
+        5 to "\u661f\u671f\u4e94",
+        6 to "\u661f\u671f\u516d",
+        7 to "\u661f\u671f\u65e5",
+    )
+    return names.map { (id, name) ->
+        BangumiScheduleDay(
+            weekdayId = id,
+            weekdayCn = name,
+            weekdayEn = "",
+            items = emptyList(),
+        )
     }
 }
 
