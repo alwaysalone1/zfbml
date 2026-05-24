@@ -2,6 +2,7 @@ package com.zfbml.aggregate.ui
 
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
@@ -22,6 +23,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
@@ -207,7 +210,7 @@ private sealed interface AppScreen {
 
 private enum class AppTab(val label: String, val icon: ImageVector) {
     Discover("\u9996\u9875", Icons.Filled.Home),
-    Search("\u8ffd\u756a", Icons.Filled.Bookmarks),
+    Search("\u641c\u7d22", Icons.Filled.Search),
     Sources("\u9891\u9053", Icons.Filled.Subscriptions),
     Settings("\u6211\u7684", Icons.Filled.AccountCircle),
 }
@@ -384,15 +387,25 @@ private fun AppNavigationRail(
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun DiscoverScreen(
     graph: AppGraph,
     onOpenDetail: (SearchResult) -> Unit,
     onSearch: () -> Unit,
 ) {
+    val scope = rememberCoroutineScope()
+    val categories = remember { graph.bangumiCategoryRepository.categories }
+    val pages = remember(categories) { homePages(categories) }
+    val pagerState = rememberPagerState(pageCount = { pages.size })
     val fallbackFeatured = remember { featuredOnlineResults() }
     var homePicks by remember { mutableStateOf<List<SearchResult>>(emptyList()) }
     var homePicksLoading by remember { mutableStateOf(false) }
+    var guessBatch by remember { mutableStateOf(0) }
+    var showCalendar by remember { mutableStateOf(false) }
+    var categoryResults by remember { mutableStateOf<Map<String, BangumiCategoryResult>>(emptyMap()) }
+    var categoryLoadingIds by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var categoryErrors by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
     var schedule by remember { mutableStateOf<List<BangumiScheduleDay>>(emptyList()) }
     var selectedDayId by remember { mutableStateOf(BangumiCalendarRepository.currentBangumiWeekdayId()) }
     var loading by remember { mutableStateOf(true) }
@@ -422,84 +435,483 @@ private fun DiscoverScreen(
         homePicksLoading = false
     }
 
+    val currentPage = pages.getOrNull(pagerState.currentPage)
+    LaunchedEffect(currentPage) {
+        val categoryId = (currentPage as? HomePage.Category)?.category?.id ?: return@LaunchedEffect
+        if (categoryResults.containsKey(categoryId) || categoryId in categoryLoadingIds) return@LaunchedEffect
+        categoryLoadingIds = categoryLoadingIds + categoryId
+        categoryErrors = categoryErrors - categoryId
+        runCatching { graph.bangumiCategoryRepository.loadCategory(categoryId) }
+            .onSuccess { result -> categoryResults = categoryResults + (categoryId to result) }
+            .onFailure { failure ->
+                categoryErrors = categoryErrors + (
+                    categoryId to (failure.message ?: failure::class.simpleName.orEmpty().ifBlank { "\u65e0\u8be6\u7ec6\u9519\u8bef" })
+                )
+            }
+        categoryLoadingIds = categoryLoadingIds - categoryId
+    }
+
+    val featured = homePicks.ifEmpty { fallbackFeatured }
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(AnimeBackground),
+    ) {
+        HomePinnedHeader(
+            onSearch = onSearch,
+            calendarExpanded = showCalendar,
+            onCalendar = {
+                showCalendar = !showCalendar
+                scope.launch { pagerState.animateScrollToPage(0) }
+            },
+        )
+        HomeCategoryBar(
+            pages = pages,
+            selectedIndex = pagerState.currentPage,
+            onSelected = { index -> scope.launch { pagerState.animateScrollToPage(index) } },
+        )
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.weight(1f),
+        ) { pageIndex ->
+            when (val page = pages[pageIndex]) {
+                HomePage.Home -> HomeFeedPage(
+                    featured = featured,
+                    homeLoading = homePicksLoading,
+                    schedule = schedule,
+                    selectedDayId = selectedDayId,
+                    onDaySelected = { selectedDayId = it },
+                    scheduleLoading = loading,
+                    scheduleError = error,
+                    calendarExpanded = showCalendar,
+                    guessBatch = guessBatch,
+                    onShuffleGuess = { guessBatch += 1 },
+                    onOpenDetail = onOpenDetail,
+                )
+                is HomePage.Category -> CategoryFeedPage(
+                    category = page.category,
+                    result = categoryResults[page.category.id],
+                    loading = page.category.id in categoryLoadingIds,
+                    error = categoryErrors[page.category.id],
+                    fallback = featured,
+                    onOpenDetail = onOpenDetail,
+                )
+            }
+        }
+    }
+}
+
+private sealed interface HomePage {
+    data object Home : HomePage
+    data class Category(val category: BangumiCategory) : HomePage
+}
+
+private fun homePages(categories: List<BangumiCategory>): List<HomePage> {
+    val byId = categories.associateBy { it.id }
+    val orderedCategoryIds = listOf(
+        "chinese",
+        "japanese",
+        "american",
+        "movie",
+        "hot",
+        "recommend",
+        "high-score",
+        "most-followed",
+        "most-watched",
+    )
+    return listOf(HomePage.Home) + orderedCategoryIds.mapNotNull { id ->
+        byId[id]?.let { HomePage.Category(it) }
+    }
+}
+
+private fun HomePage.title(): String {
+    return when (this) {
+        HomePage.Home -> "\u9996\u9875"
+        is HomePage.Category -> category.title
+    }
+}
+
+@Composable
+private fun HomePinnedHeader(
+    onSearch: () -> Unit,
+    calendarExpanded: Boolean,
+    onCalendar: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(AnimeBackground)
+            .padding(horizontal = 18.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            BrandMark(Modifier.size(42.dp))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                Text(
+                    text = "\u8ffd\u756a\u4e0d\u8ff7\u8def",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = "ZFBML",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = AnimeAccentCyan,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                )
+            }
+            Button(
+                onClick = onCalendar,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (calendarExpanded) AnimeAccentCyan else AnimePanelSoft,
+                    contentColor = if (calendarExpanded) AnimeBackground else Color.White,
+                ),
+                modifier = Modifier.height(42.dp).focusable(),
+                shape = RoundedCornerShape(8.dp),
+                contentPadding = PaddingValues(horizontal = 12.dp),
+            ) {
+                Icon(Icons.Filled.Bookmarks, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(5.dp))
+                Text("\u65e5\u5386", maxLines = 1)
+            }
+        }
+        Card(
+            onClick = onSearch,
+            modifier = Modifier.fillMaxWidth().height(48.dp).focusable(),
+            shape = RoundedCornerShape(8.dp),
+            colors = CardDefaults.cardColors(containerColor = AnimePanel),
+            border = BorderStroke(1.dp, AnimeBorder),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(Icons.Filled.Search, contentDescription = null, tint = AnimeAccentCyan, modifier = Modifier.size(22.dp))
+                Text(
+                    text = "\u641c\u756a\u540d\u3001\u7c98\u8d34\u94fe\u63a5\u6216\u627e\u64ad\u653e\u7ebf\u8def",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = AnimeMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+                Text("\u641c\u7d22", style = MaterialTheme.typography.labelLarge, color = AnimeAccentCyan)
+            }
+        }
+    }
+}
+
+@Composable
+private fun HomeCategoryBar(
+    pages: List<HomePage>,
+    selectedIndex: Int,
+    onSelected: (Int) -> Unit,
+) {
+    LazyRow(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(AnimeBackground)
+            .padding(start = 18.dp, end = 18.dp, bottom = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        items(pages.size) { index ->
+            val selected = selectedIndex == index
+            Card(
+                onClick = { onSelected(index) },
+                modifier = Modifier.height(42.dp).focusable(),
+                shape = RoundedCornerShape(8.dp),
+                colors = CardDefaults.cardColors(containerColor = if (selected) AnimePanelSoft else Color.Transparent),
+                border = BorderStroke(1.dp, if (selected) AnimeAccentCyan else AnimeBorder),
+            ) {
+                Box(
+                    modifier = Modifier.padding(horizontal = 14.dp).fillMaxHeight(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text = pages[index].title(),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = if (selected) AnimeAccentCyan else AnimeMuted,
+                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                        maxLines = 1,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HomeFeedPage(
+    featured: List<SearchResult>,
+    homeLoading: Boolean,
+    schedule: List<BangumiScheduleDay>,
+    selectedDayId: Int,
+    onDaySelected: (Int) -> Unit,
+    scheduleLoading: Boolean,
+    scheduleError: String?,
+    calendarExpanded: Boolean,
+    guessBatch: Int,
+    onShuffleGuess: () -> Unit,
+    onOpenDetail: (SearchResult) -> Unit,
+) {
     val selectedDay = schedule.firstOrNull { it.weekdayId == selectedDayId }
     val selectedItems = selectedDay?.items.orEmpty()
-    val featured = homePicks.ifEmpty { fallbackFeatured }
+    val continueItem = selectedItems.firstOrNull() ?: featured.firstOrNull()
+    val guessItems = featured.rotatingWindow(start = guessBatch * 5, count = 6)
     LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(horizontal = 18.dp, vertical = 16.dp),
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item {
-            HomeTopBar(onSearch = onSearch)
-        }
-        item {
-            HomeSearchEntry(onClick = onSearch)
-        }
-        item {
-            ScheduleDaySelector(
-                days = schedule,
-                selectedDayId = selectedDayId,
-                onSelected = { selectedDayId = it },
+            HomeHeroCarousel(
+                title = "\u7cbe\u9009\u9996\u63a8",
+                items = featured,
+                onOpenDetail = onOpenDetail,
             )
+        }
+        if (homeLoading && featured.isEmpty()) {
+            item {
+                ScheduleStatusPanel(
+                    title = "\u6b63\u5728\u52a0\u8f7d\u9996\u9875\u63a8\u8350",
+                    subtitle = "Bangumi \u63a8\u8350\u3001\u9ad8\u5206\u548c\u70ed\u95e8\u699c\u5355\u540c\u6b65\u4e2d\u3002",
+                )
+            }
+        }
+        if (calendarExpanded) {
+            item {
+                ScheduleDaySelector(
+                    days = schedule,
+                    selectedDayId = selectedDayId,
+                    onSelected = onDaySelected,
+                )
+            }
+            if (scheduleLoading) {
+                item {
+                    ScheduleStatusPanel(
+                        title = "\u6b63\u5728\u52a0\u8f7d\u65b0\u756a\u65f6\u95f4\u8868",
+                        subtitle = "Bangumi \u6bcf\u65e5\u653e\u9001\u6570\u636e\u540c\u6b65\u4e2d\u3002",
+                    )
+                }
+            }
+            scheduleError?.let { message ->
+                item {
+                    ScheduleStatusPanel(
+                        title = "\u65b0\u756a\u65f6\u95f4\u8868\u52a0\u8f7d\u5931\u8d25",
+                        subtitle = message,
+                    )
+                }
+            }
+            item {
+                SectionHeader(
+                    title = selectedDay?.weekdayCn ?: "\u8ffd\u756a\u65e5\u5386",
+                    action = if (selectedItems.isNotEmpty()) "${selectedItems.size} \u90e8" else "",
+                    onAction = {},
+                )
+            }
+            if (selectedItems.isEmpty() && !scheduleLoading) {
+                item {
+                    ScheduleStatusPanel(
+                        title = "\u6682\u65e0\u5f53\u65e5\u653e\u9001\u6570\u636e",
+                        subtitle = "\u53ef\u4ee5\u5207\u6362\u5176\u4ed6\u65e5\u671f\uff0c\u6216\u76f4\u63a5\u641c\u7d22\u756a\u540d\u3002",
+                    )
+                }
+            } else {
+                items(selectedItems.take(6)) { result ->
+                    ScheduleAnimeRow(result = result, onClick = { onOpenDetail(result) })
+                }
+            }
+        }
+        continueItem?.let { result ->
+            item {
+                SectionHeader(title = "\u6b63\u5728\u64ad\u653e", action = "\u8ffd\u756a", onAction = {})
+            }
+            item {
+                ContinueWatchingRow(result = result, onClick = { onOpenDetail(result) })
+            }
+        }
+        item {
+            SectionHeader(title = "\u731c\u4f60\u60f3\u8ffd", action = "\u6362\u4e00\u6279", onAction = onShuffleGuess)
+        }
+        item {
+            PosterRail(items = guessItems, onOpenDetail = onOpenDetail)
+        }
+        if (selectedItems.isNotEmpty()) {
+            item {
+                SectionHeader(title = "\u4eca\u65e5\u70ed\u64ad", action = "\u65e5\u5386", onAction = {})
+            }
+            items(selectedItems.take(5)) { result ->
+                ScheduleAnimeRow(result = result, onClick = { onOpenDetail(result) })
+            }
+        }
+    }
+}
+
+@Composable
+private fun CategoryFeedPage(
+    category: BangumiCategory,
+    result: BangumiCategoryResult?,
+    loading: Boolean,
+    error: String?,
+    fallback: List<SearchResult>,
+    onOpenDetail: (SearchResult) -> Unit,
+) {
+    val items = result?.items.orEmpty()
+    val heroItems = items.takeIf { it.isNotEmpty() } ?: fallback
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        item {
+            HomeHeroCarousel(
+                title = category.title,
+                items = heroItems,
+                onOpenDetail = onOpenDetail,
+            )
+        }
+        item {
+            CategoryInsightStrip(category = category, items = items)
         }
         if (loading) {
             item {
                 ScheduleStatusPanel(
-                    title = "\u6b63\u5728\u52a0\u8f7d\u65b0\u756a\u65f6\u95f4\u8868",
-                    subtitle = "Bangumi \u6bcf\u65e5\u653e\u9001\u6570\u636e\u540c\u6b65\u4e2d",
+                    title = "\u6b63\u5728\u52a0\u8f7d${category.title}",
+                    subtitle = "Bangumi \u5206\u7c7b\u699c\u5355\u540c\u6b65\u4e2d\u3002",
                 )
             }
         }
         error?.let { message ->
             item {
                 ScheduleStatusPanel(
-                    title = "\u65b0\u756a\u65f6\u95f4\u8868\u52a0\u8f7d\u5931\u8d25",
+                    title = "${category.title}\u52a0\u8f7d\u5931\u8d25",
                     subtitle = message,
                 )
             }
         }
         item {
             SectionHeader(
-                title = selectedDay?.weekdayCn ?: "\u65b0\u756a\u65f6\u95f4\u8868",
-                action = if (selectedItems.isNotEmpty()) "${selectedItems.size} \u90e8" else "",
-                onAction = onSearch,
+                title = "\u7cbe\u9009\u70ed\u64ad\u65b0\u756a",
+                action = if (items.isNotEmpty()) "\u5168\u90e8 ${items.size}" else "",
+                onAction = {},
             )
         }
-        if (selectedItems.isNotEmpty()) {
-            items(selectedItems.take(HOME_SCHEDULE_LIMIT)) { result ->
-                ScheduleAnimeRow(result = result, onClick = { onOpenDetail(result) })
-            }
-            if (selectedItems.size > HOME_SCHEDULE_LIMIT) {
-                item {
-                    ScheduleStatusPanel(
-                        title = "\u5df2\u6536\u8d77\u66f4\u591a\u6761\u76ee",
-                        subtitle = "\u4f7f\u7528\u641c\u7d22\u53ef\u4ee5\u66f4\u5feb\u627e\u5230\u60f3\u770b\u7684\u756a\u3002",
-                    )
-                }
+        if (items.isEmpty() && !loading) {
+            item {
+                ScheduleStatusPanel(
+                    title = "\u6682\u65e0\u53ef\u5c55\u793a\u6761\u76ee",
+                    subtitle = "\u53ef\u4ee5\u5207\u5230\u5176\u4ed6\u5206\u7c7b\uff0c\u6216\u76f4\u63a5\u641c\u7d22\u756a\u540d\u3002",
+                )
             }
         } else {
-            item {
-                ScheduleStatusPanel(
-                    title = "\u6682\u65e0\u5f53\u65e5\u653e\u9001\u6570\u636e",
-                    subtitle = "\u5148\u5c55\u793a\u672c\u5730\u63a8\u8350\uff0c\u4f60\u4e5f\u53ef\u4ee5\u76f4\u63a5\u641c\u7d22\u756a\u540d\u3002",
-                )
+            items(items) { item ->
+                ScheduleAnimeRow(result = item, onClick = { onOpenDetail(item) })
             }
-        }
-        item {
-            SectionHeader(title = "\u4f18\u8d28\u52a8\u6f2b\u63a8\u8350", action = "\u5168\u90e8\u5206\u7c7b", onAction = onSearch)
-        }
-        if (homePicksLoading && homePicks.isEmpty()) {
-            item {
-                ScheduleStatusPanel(
-                    title = "\u6b63\u5728\u52a0\u8f7d Bangumi \u63a8\u8350",
-                    subtitle = "\u4f1a\u4ece\u63a8\u8350\u3001\u9ad8\u5206\u3001\u70ed\u95e8\u548c\u5267\u573a\u7248\u4e2d\u9009\u53d6\u3002",
-                )
-            }
-        }
-        items(featured.take(HOME_RECOMMENDATION_LIMIT)) { result ->
-            ScheduleAnimeRow(result = result, onClick = { onOpenDetail(result) })
         }
     }
+}
+
+@Composable
+private fun HomeHeroCarousel(
+    title: String,
+    items: List<SearchResult>,
+    onOpenDetail: (SearchResult) -> Unit,
+) {
+    val visible = items.ifEmpty { featuredOnlineResults() }.take(8)
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(title, style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold)
+            Text("\u6ed1\u52a8\u6311\u4e00\u90e8\u5f00\u59cb", style = MaterialTheme.typography.bodySmall, color = AnimeMuted)
+        }
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            items(visible) { result ->
+                HeroCarouselCard(result = result, onClick = { onOpenDetail(result) })
+            }
+        }
+    }
+}
+
+@Composable
+private fun HeroCarouselCard(result: SearchResult, onClick: () -> Unit) {
+    ElevatedCard(
+        onClick = onClick,
+        modifier = Modifier.width(304.dp).height(186.dp).focusable(),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.elevatedCardColors(containerColor = AnimePanel),
+    ) {
+        Row(Modifier.fillMaxSize()) {
+            Column(
+                modifier = Modifier.weight(1f).fillMaxHeight().padding(14.dp),
+                verticalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    VideoMetaChip(result.raw["categoryTitle"] ?: "\u63a8\u8350")
+                    Text(result.title, style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text(result.subtitle.orEmpty(), style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = AnimeAccentCyan, modifier = Modifier.size(20.dp))
+                    Text("\u8fdb\u5165\u8be6\u60c5", style = MaterialTheme.typography.labelLarge, color = AnimeAccentCyan)
+                }
+            }
+            PosterArtwork(
+                posterUrl = result.posterUrl,
+                accent = providerAccent(result.providerId),
+                modifier = Modifier.width(116.dp).fillMaxHeight(),
+                shape = RoundedCornerShape(topEnd = 8.dp, bottomEnd = 8.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun PosterRail(items: List<SearchResult>, onOpenDetail: (SearchResult) -> Unit) {
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        items(items.ifEmpty { featuredOnlineResults() }.take(8)) { item ->
+            PosterVideoCard(result = item, onClick = { onOpenDetail(item) })
+        }
+    }
+}
+
+@Composable
+private fun CategoryInsightStrip(category: BangumiCategory, items: List<SearchResult>) {
+    val topRating = items.mapNotNull { it.raw["rating"]?.toDoubleOrNull() }.maxOrNull()
+    val watching = items.mapNotNull { it.raw["doing"]?.toIntOrNull() }.maxOrNull()
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+        InsightTile(category.badge, category.subtitle, categoryAccent(category.id), Modifier.weight(1f))
+        InsightTile(topRating?.let { "%.1f".format(it) } ?: "--", "\u6700\u9ad8\u8bc4\u5206", AnimeAccentGreen, Modifier.weight(1f))
+        InsightTile(watching?.toString() ?: "--", "\u5728\u770b\u70ed\u5ea6", AnimeAccentCyan, Modifier.weight(1f))
+    }
+}
+
+@Composable
+private fun InsightTile(label: String, title: String, accent: Color, modifier: Modifier = Modifier) {
+    Card(
+        modifier = modifier.height(82.dp),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(containerColor = AnimePanel),
+        border = BorderStroke(1.dp, AnimeBorder),
+    ) {
+        Column(Modifier.fillMaxSize().padding(10.dp), verticalArrangement = Arrangement.SpaceBetween) {
+            Text(label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = accent, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(title, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+    }
+}
+
+private fun <T> List<T>.rotatingWindow(start: Int, count: Int): List<T> {
+    if (isEmpty()) return emptyList()
+    val safeStart = ((start % size) + size) % size
+    val safeCount = count.coerceAtMost(size)
+    return (0 until safeCount).map { index -> this[(safeStart + index) % size] }
 }
 
 @Composable
@@ -878,7 +1290,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.7")
+                setRequestProperty("User-Agent", "ZFBML/0.2.10")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -978,13 +1390,6 @@ private fun SearchScreen(
     onOpenDetail: (SearchResult) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
-    val categories = remember { graph.bangumiCategoryRepository.categories }
-    var selectedCategoryId by remember {
-        mutableStateOf(categories.firstOrNull { it.id == "recommend" }?.id ?: categories.firstOrNull()?.id.orEmpty())
-    }
-    var categoryResult by remember { mutableStateOf<BangumiCategoryResult?>(null) }
-    var categoryLoading by remember { mutableStateOf(false) }
-    var categoryError by remember { mutableStateOf<String?>(null) }
     var query by remember(initialQuery) { mutableStateOf(initialQuery?.takeIf(String::isNotBlank).orEmpty()) }
     var results by remember { mutableStateOf<List<SearchResult>>(emptyList()) }
     var loading by remember { mutableStateOf(false) }
@@ -1010,27 +1415,12 @@ private fun SearchScreen(
         }
     }
 
-    LaunchedEffect(selectedCategoryId) {
-        if (selectedCategoryId.isBlank()) return@LaunchedEffect
-        categoryLoading = true
-        categoryError = null
-        categoryResult = null
-        runCatching { graph.bangumiCategoryRepository.loadCategory(selectedCategoryId) }
-            .onSuccess { categoryResult = it }
-            .onFailure { error ->
-                categoryResult = null
-                categoryError = error.message ?: error::class.simpleName.orEmpty().ifBlank { "\u65e0\u8be6\u7ec6\u9519\u8bef" }
-            }
-        categoryLoading = false
-    }
-
     LaunchedEffect(initialQuery) {
         if (!searched && !initialQuery.isNullOrBlank()) {
             runSearch()
         }
     }
 
-    val selectedCategory = categories.firstOrNull { it.id == selectedCategoryId } ?: categoryResult?.category
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -1039,54 +1429,18 @@ private fun SearchScreen(
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item {
-            TrackingHeader()
-        }
-        item {
-            CategoryButtonGrid(
-                categories = categories,
-                selectedCategoryId = selectedCategoryId,
-                onSelected = { selectedCategoryId = it },
-            )
-        }
-        item {
-            SectionHeader(
-                title = selectedCategory?.title ?: "\u8ffd\u756a\u9891\u9053",
-                action = categoryResult?.items?.takeIf { it.isNotEmpty() }?.let { "${it.size} \u90e8" }.orEmpty(),
-                onAction = {},
-            )
-        }
-        selectedCategory?.subtitle?.takeIf(String::isNotBlank)?.let { subtitle ->
-            item {
-                Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
-            }
-        }
-        if (categoryLoading) {
-            item {
-                ScheduleStatusPanel(
-                    title = "\u6b63\u5728\u52a0\u8f7d\u5206\u7c7b\u5185\u5bb9",
-                    subtitle = "Bangumi \u6761\u76ee\u6b63\u5728\u540c\u6b65\u3002",
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    text = "\u641c\u7d22",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
                 )
-            }
-        }
-        categoryError?.let { message ->
-            item {
-                ScheduleStatusPanel(
-                    title = "\u5206\u7c7b\u52a0\u8f7d\u5931\u8d25",
-                    subtitle = message,
+                Text(
+                    text = "\u5206\u7c7b\u548c\u63a8\u8350\u5df2\u653e\u5728\u9996\u9875\uff0c\u8fd9\u91cc\u4e13\u95e8\u7528\u6765\u7cbe\u51c6\u627e\u7247\u3002",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = AnimeMuted,
                 )
-            }
-        }
-        val categoryItems = categoryResult?.items.orEmpty()
-        if (!categoryLoading && categoryItems.isEmpty()) {
-            item {
-                ScheduleStatusPanel(
-                    title = "\u8fd9\u4e2a\u5206\u7c7b\u6682\u65e0\u53ef\u5c55\u793a\u6761\u76ee",
-                    subtitle = "\u53ef\u4ee5\u5207\u6362\u5176\u4ed6\u5206\u7c7b\uff0c\u6216\u5728\u4e0b\u65b9\u76f4\u63a5\u641c\u7d22\u756a\u540d\u3002",
-                )
-            }
-        } else {
-            items(categoryItems) { result ->
-                ScheduleAnimeRow(result = result, onClick = { onOpenDetail(result) })
             }
         }
         item {
@@ -1097,18 +1451,16 @@ private fun SearchScreen(
                 modifier = Modifier.fillMaxWidth(),
             )
         }
-        if (searched || loading || searchMessage != null || results.isNotEmpty()) {
-            item {
-                ResultsHeader()
-            }
-            searchStatusItems(
-                loading = loading,
-                searched = searched,
-                searchMessage = searchMessage,
-                results = results,
-                onOpenDetail = onOpenDetail,
-            )
+        item {
+            ResultsHeader()
         }
+        searchStatusItems(
+            loading = loading,
+            searched = searched,
+            searchMessage = searchMessage,
+            results = results,
+            onOpenDetail = onOpenDetail,
+        )
     }
 }
 
@@ -1315,7 +1667,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             Text("\u8BBE\u7F6E", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
-            Text("\u7248\u672C 0.2.9", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+            Text("\u7248\u672C 0.2.10", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         }
         item {
             StatusPanel(

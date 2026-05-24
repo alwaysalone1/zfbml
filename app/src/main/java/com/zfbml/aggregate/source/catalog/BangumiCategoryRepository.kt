@@ -269,7 +269,7 @@ class BangumiCategoryRepository(
 
     private companion object {
         const val BASE_URL = "https://api.bgm.tv/v0"
-        const val USER_AGENT = "ZFBML/0.2.9 (https://github.com/alwaysalone1/zfbml)"
+        const val USER_AGENT = "ZFBML/0.2.10 (https://github.com/alwaysalone1/zfbml)"
         const val DEFAULT_LIMIT = 24
         const val HOME_LIMIT = 12
         const val MAX_LIMIT = 50
