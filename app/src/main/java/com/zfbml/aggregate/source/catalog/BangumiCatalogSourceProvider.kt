@@ -300,7 +300,7 @@ class BangumiCatalogSourceProvider(
         const val ID = "bangumi-catalog"
         const val BASE_URL = "https://api.bgm.tv/v0"
         const val USER_AGENT = "ZFBML/0.2.7 (https://github.com/alwaysalone1/zfbml)"
-        const val RESOURCE_SEARCH_TIMEOUT_MS = 8_000L
+        const val RESOURCE_SEARCH_TIMEOUT_MS = 5_000L
         val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
         val json = Json {
             ignoreUnknownKeys = true

@@ -38,12 +38,16 @@ class MediaRouteResolver(
             .awaitAll()
             .flatten()
             .distinctBy { "${it.result.providerId}|${it.result.url}" }
+            .filter { hit -> isEpisodeCompatible(hit.result.title, request.episodeIndex) }
             .sortedByDescending { it.score }
             .take(MAX_SEARCH_HITS)
 
         hits.flatMap { hit ->
             val detail = runCatching { hit.provider.loadDetail(hit.result) }.getOrNull() ?: return@flatMap emptyList()
             detail.episodes
+                .filter { episode ->
+                    isEpisodeCompatible(episode.index ?: TorrentTitleScorer.extractEpisode(episode.title), request.episodeIndex)
+                }
                 .sortedByDescending { episode -> scoreEpisode(episode, request, hit.score) }
                 .take(MAX_EPISODES_PER_HIT)
                 .flatMap { candidateEpisode ->
@@ -135,6 +139,14 @@ class MediaRouteResolver(
         return score
     }
 
+    private fun isEpisodeCompatible(title: String, expected: Int?): Boolean {
+        return isEpisodeCompatible(TorrentTitleScorer.extractEpisode(title), expected)
+    }
+
+    private fun isEpisodeCompatible(candidate: Int?, expected: Int?): Boolean {
+        return expected == null || candidate == null || candidate == expected
+    }
+
     private fun episodeScore(candidate: Int?, expected: Int?): Int {
         if (expected == null) return 0
         return when (candidate) {
@@ -171,7 +183,7 @@ class MediaRouteResolver(
     )
 
     private companion object {
-        const val MAX_ALIAS_SEARCH_COUNT = 4
+        const val MAX_ALIAS_SEARCH_COUNT = 2
         const val MAX_SEARCH_HITS = 12
         const val MAX_EPISODES_PER_HIT = 2
         const val MAX_ROUTES = 24

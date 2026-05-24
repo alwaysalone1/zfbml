@@ -113,7 +113,7 @@ fun AggregateApp(graph: AppGraph, initialQuery: String? = null) {
     var screen by remember { mutableStateOf<AppScreen>(AppScreen.Main) }
     var showSplash by remember { mutableStateOf(true) }
     LaunchedEffect(Unit) {
-        delay(2300)
+        delay(900)
         showSplash = false
     }
     Surface(modifier = Modifier.fillMaxSize(), color = AnimeBackground) {
@@ -207,7 +207,6 @@ private enum class AppTab(val label: String, val icon: ImageVector) {
     Discover("\u9996\u9875", Icons.Filled.Home),
     Search("\u7247\u5E93", Icons.Filled.VideoLibrary),
     Sources("\u9891\u9053", Icons.Filled.Subscriptions),
-    Cache("\u79BB\u7EBF", Icons.Filled.CloudDownload),
     Settings("\u6211\u7684", Icons.Filled.AccountCircle),
 }
 
@@ -332,7 +331,6 @@ private fun MainTabContent(
                 onOpenDetail = onOpenDetail,
             )
             AppTab.Sources -> SourcesScreen(graph = graph)
-            AppTab.Cache -> CacheScreen()
             AppTab.Settings -> SettingsScreen(graph = graph)
         }
     }
@@ -415,20 +413,15 @@ private fun DiscoverScreen(
 
     val selectedDay = schedule.firstOrNull { it.weekdayId == selectedDayId }
     val selectedItems = selectedDay?.items.orEmpty()
-    val hero = selectedItems.firstOrNull() ?: featured.first()
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(horizontal = 18.dp, vertical = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(18.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item {
             HomeTopBar(onSearch = onSearch)
         }
         item {
-            ScheduleHeroBanner(
-                result = hero,
-                dayLabel = selectedDay?.weekdayCn ?: "\u4eca\u65e5\u653e\u9001",
-                onClick = { onOpenDetail(hero) },
-            )
+            HomeSearchEntry(onClick = onSearch)
         }
         item {
             ScheduleDaySelector(
@@ -456,13 +449,21 @@ private fun DiscoverScreen(
         item {
             SectionHeader(
                 title = selectedDay?.weekdayCn ?: "\u65b0\u756a\u65f6\u95f4\u8868",
-                action = if (selectedItems.isNotEmpty()) "${selectedItems.size} \u90e8" else "\u641c\u7d22",
+                action = if (selectedItems.isNotEmpty()) "${selectedItems.size} \u90e8" else "",
                 onAction = onSearch,
             )
         }
         if (selectedItems.isNotEmpty()) {
-            items(selectedItems) { result ->
+            items(selectedItems.take(HOME_SCHEDULE_LIMIT)) { result ->
                 ScheduleAnimeRow(result = result, onClick = { onOpenDetail(result) })
+            }
+            if (selectedItems.size > HOME_SCHEDULE_LIMIT) {
+                item {
+                    ScheduleStatusPanel(
+                        title = "\u5df2\u6536\u8d77\u66f4\u591a\u6761\u76ee",
+                        subtitle = "\u4f7f\u7528\u641c\u7d22\u53ef\u4ee5\u66f4\u5feb\u627e\u5230\u60f3\u770b\u7684\u756a\u3002",
+                    )
+                }
             }
         } else {
             item {
@@ -473,19 +474,9 @@ private fun DiscoverScreen(
             }
         }
         item {
-            SectionHeader(title = "\u70ed\u95e8\u63a8\u8350", action = "\u66f4\u591a", onAction = onSearch)
+            SectionHeader(title = "\u63a8\u8350\u5165\u53e3", action = "", onAction = onSearch)
         }
-        item {
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(featured) { result ->
-                    PosterVideoCard(result = result, onClick = { onOpenDetail(result) })
-                }
-            }
-        }
-        item {
-            SectionHeader(title = "\u9891\u9053\u7cbe\u9009", action = "\u6362\u4e00\u6279", onAction = onSearch)
-        }
-        items(featured.drop(1) + featured.take(1)) { result ->
+        items(featured) { result ->
             WideVideoCard(result = result, onClick = { onOpenDetail(result) })
         }
     }
@@ -531,6 +522,35 @@ private fun HomeTopBar(onSearch: () -> Unit) {
                 .focusable(),
         ) {
             Icon(Icons.Filled.Search, contentDescription = "\u641C\u7D22", tint = Color.White)
+        }
+    }
+}
+
+@Composable
+private fun HomeSearchEntry(onClick: () -> Unit) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth().focusable(),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(containerColor = AnimePanel),
+        border = BorderStroke(1.dp, AnimeBorder),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(14.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier.size(42.dp).background(AnimePanelSoft, RoundedCornerShape(8.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.Search, contentDescription = null, tint = AnimeAccentCyan)
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text("\u641c\u7d22\u756a\u540d\u6216\u7c98\u8d34\u64ad\u653e\u94fe\u63a5", style = MaterialTheme.typography.titleMedium, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text("Bangumi \u8d44\u6599\u5e93 + \u591a\u6e90\u7ebf\u8def\u5339\u914d", style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            Text("\u53bb\u641c", style = MaterialTheme.typography.labelLarge, color = AnimeAccentCyan)
         }
     }
 }
@@ -641,23 +661,23 @@ private fun ScheduleDaySelector(
     onSelected: (Int) -> Unit,
 ) {
     val visibleDays = days.ifEmpty { fallbackScheduleDays() }
-    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         items(visibleDays) { day ->
             val selected = day.weekdayId == selectedDayId
             Card(
                 onClick = { onSelected(day.weekdayId) },
-                modifier = Modifier.width(86.dp).height(58.dp).focusable(),
+                modifier = Modifier.width(76.dp).height(50.dp).focusable(),
                 shape = RoundedCornerShape(8.dp),
-                colors = CardDefaults.cardColors(containerColor = if (selected) AnimeAccentPink else AnimePanel),
-                border = BorderStroke(1.dp, if (selected) AnimeAccentPink else AnimeBorder),
+                colors = CardDefaults.cardColors(containerColor = if (selected) AnimePanelSoft else AnimePanel),
+                border = BorderStroke(1.dp, if (selected) AnimeAccentCyan else AnimeBorder),
             ) {
                 Column(
-                    modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp, vertical = 7.dp),
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp, vertical = 6.dp),
                     verticalArrangement = Arrangement.SpaceBetween,
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(day.weekdayCn.removePrefix("\u661f\u671f"), style = MaterialTheme.typography.labelLarge, color = Color.White, maxLines = 1)
-                    Text("${day.items.size} \u90e8", style = MaterialTheme.typography.bodySmall, color = if (selected) Color.White else AnimeMuted, maxLines = 1)
+                    Text("${day.items.size}", style = MaterialTheme.typography.bodySmall, color = if (selected) AnimeAccentCyan else AnimeMuted, maxLines = 1)
                 }
             }
         }
@@ -692,28 +712,27 @@ private fun ScheduleAnimeRow(result: SearchResult, onClick: () -> Unit) {
         border = BorderStroke(1.dp, AnimeBorder),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            modifier = Modifier.fillMaxWidth().padding(10.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             PosterArtwork(
                 posterUrl = result.posterUrl,
                 accent = AnimeAccentViolet,
-                modifier = Modifier.size(width = 96.dp, height = 128.dp),
+                modifier = Modifier.size(width = 72.dp, height = 96.dp),
                 shape = RoundedCornerShape(6.dp),
             )
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                 Text(result.title, style = MaterialTheme.typography.titleMedium, color = Color.White, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                Text(result.subtitle.orEmpty(), style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(result.subtitle.orEmpty(), style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     result.raw["rating"]?.let { VideoMetaChip(it) }
                     result.raw["doing"]?.let { VideoMetaChip("$it \u5728\u770b") }
-                    VideoMetaChip("\u8be6\u60c5")
                 }
             }
             Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = AnimeAccentCyan, modifier = Modifier.size(26.dp))
-                Text("\u9009\u96c6", style = MaterialTheme.typography.labelLarge, color = AnimeAccentCyan)
+                Text("\u8be6\u60c5", style = MaterialTheme.typography.labelLarge, color = AnimeAccentCyan)
             }
         }
     }
@@ -778,8 +797,10 @@ private fun SectionHeader(title: String, action: String, onAction: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(title, style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold)
-        TextButton(onClick = onAction, modifier = Modifier.focusable()) {
-            Text(action, color = AnimeAccentCyan)
+        if (action.isNotBlank()) {
+            TextButton(onClick = onAction, modifier = Modifier.focusable()) {
+                Text(action, color = AnimeAccentCyan)
+            }
         }
     }
 }
@@ -937,14 +958,14 @@ private fun SearchScreen(
     onOpenDetail: (SearchResult) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
-    var query by remember(initialQuery) { mutableStateOf(initialQuery?.takeIf(String::isNotBlank) ?: "\u846C\u9001\u7684\u8299\u8389\u83B2") }
+    var query by remember(initialQuery) { mutableStateOf(initialQuery?.takeIf(String::isNotBlank).orEmpty()) }
     var results by remember { mutableStateOf<List<SearchResult>>(emptyList()) }
     var loading by remember { mutableStateOf(false) }
     var searched by remember { mutableStateOf(false) }
     var searchMessage by remember { mutableStateOf<String?>(null) }
-    val providers = graph.sourceRegistry.manifests
 
     fun runSearch() {
+        if (query.trim().isBlank()) return
         scope.launch {
             searched = true
             loading = true
@@ -963,7 +984,7 @@ private fun SearchScreen(
     }
 
     LaunchedEffect(initialQuery) {
-        if (!searched) {
+        if (!searched && !initialQuery.isNullOrBlank()) {
             runSearch()
         }
     }
@@ -997,12 +1018,6 @@ private fun SearchScreen(
                     results = results,
                     onOpenDetail = onOpenDetail,
                 )
-                item {
-                    Text("\u64AD\u653E\u7EBF\u8DEF", style = MaterialTheme.typography.titleMedium, color = Color.White)
-                }
-                items(providers) { manifest ->
-                    SourceRailItem(name = manifest.name, version = manifest.version)
-                }
             }
         } else {
             Row(
@@ -1021,17 +1036,13 @@ private fun SearchScreen(
                         onSearch = ::runSearch,
                         modifier = Modifier.fillMaxWidth(),
                     )
-                    Text("\u64AD\u653E\u7EBF\u8DEF", style = MaterialTheme.typography.titleMedium, color = Color.White)
-                    providers.forEach { manifest ->
-                        SourceRailItem(name = manifest.name, version = manifest.version)
-                    }
+                    SearchHintPanel()
                 }
 
                 Column(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    AnimeHeroStrip()
                     ResultsHeader()
                     if (loading) {
                         CircularProgressIndicator(color = AnimeAccentCyan)
@@ -1260,10 +1271,25 @@ private fun SearchControls(
 }
 
 @Composable
+private fun SearchHintPanel() {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = AnimePanel),
+        border = BorderStroke(1.dp, AnimeBorder),
+        shape = RoundedCornerShape(8.dp),
+    ) {
+        Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("\u641c\u7d22\u540e\u5148\u8fdb\u5165\u756a\u5267\u8be6\u60c5", style = MaterialTheme.typography.titleSmall, color = Color.White)
+            Text("\u5728\u8be6\u60c5\u9875\u9009\u96c6\uff0c\u518d\u7531\u5e94\u7528\u81ea\u52a8\u5339\u914d Mikan / DMHY / Nyaa \u7b49\u64ad\u653e\u7ebf\u8def\u3002", style = MaterialTheme.typography.bodySmall, color = AnimeMuted)
+        }
+    }
+}
+
+@Composable
 private fun ResultsHeader() {
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text("\u7247\u5355", style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold)
-        Text("\u5148\u770B\u756A\u5267\u8D44\u6599\uFF0C\u518D\u81EA\u52A8\u5339\u914D\u64AD\u653E\u7EBF\u8DEF", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+        Text("\u641c\u7d22\u7ed3\u679c", style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold)
+        Text("\u9009\u62e9\u756a\u5267\u8fdb\u5165\u8be6\u60c5", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
     }
 }
 
@@ -1290,8 +1316,8 @@ private fun androidx.compose.foundation.lazy.LazyListScope.searchStatusItems(
                 EmptySearchState()
             }
         } else {
-            items(featureShelfItems()) { item ->
-                ResultCard(result = item, onClick = {})
+            item {
+                SearchHintPanel()
             }
         }
     } else {
@@ -1535,9 +1561,19 @@ private fun DetailScreen(
                 }
             }
             item {
+                SectionHeader(title = "\u9009\u96c6", action = "${media.episodes.size} \u96c6", onAction = {})
+            }
+            item {
+                EpisodeSelectorRow(
+                    episodes = media.episodes,
+                    selectedEpisodeId = selectedEpisode?.id,
+                    onEpisodeSelected = { loadRoutesFor(it) },
+                )
+            }
+            item {
                 SectionHeader(
                     title = "\u64ad\u653e\u7ebf\u8def",
-                    action = selectedEpisode?.title ?: "\u9009\u62e9\u5267\u96c6",
+                    action = selectedEpisode?.index?.let { "\u7b2c $it \u96c6" }.orEmpty(),
                     onAction = {},
                 )
             }
@@ -1563,16 +1599,6 @@ private fun DetailScreen(
                     },
                 )
             }
-            item {
-                SectionHeader(title = "\u9009\u96C6", action = "${media.episodes.size} \u96C6", onAction = {})
-            }
-            items(media.episodes) { episode ->
-                EpisodeVideoRow(
-                    episode = episode,
-                    selected = selectedEpisode?.id == episode.id,
-                    onClick = { loadRoutesFor(episode) },
-                )
-            }
         }
     }
 }
@@ -1586,27 +1612,26 @@ private fun DetailHero(media: MediaDetail, onPlayFirst: () -> Unit) {
         border = BorderStroke(1.dp, AnimeBorder),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.fillMaxWidth().padding(14.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             PosterArtwork(
                 posterUrl = media.posterUrl,
                 accent = providerAccent(media.providerId),
-                modifier = Modifier.size(width = 118.dp, height = 164.dp),
+                modifier = Modifier.size(width = 96.dp, height = 132.dp),
             )
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text(media.title, style = MaterialTheme.typography.headlineSmall, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(media.title, style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    VideoMetaChip("\u9AD8\u6E05")
-                    VideoMetaChip("\u5F39\u5E55")
                     VideoMetaChip("\u591A\u7EBF\u8DEF")
+                    VideoMetaChip("\u5F39\u5E55")
                 }
                 Text(
                     media.summary.orEmpty().ifBlank { "\u5DF2\u4E3A\u4F60\u5339\u914D\u53EF\u64AD\u653E\u7EBF\u8DEF\uFF0C\u9009\u62E9\u5267\u96C6\u5373\u53EF\u5F00\u59CB\u89C2\u770B\u3002" },
                     style = MaterialTheme.typography.bodyMedium,
                     color = AnimeMuted,
-                    maxLines = 3,
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Button(
@@ -1617,6 +1642,36 @@ private fun DetailHero(media: MediaDetail, onPlayFirst: () -> Unit) {
                     Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(4.dp))
                     Text("\u64AD\u653E\u7B2C 1 \u96C6")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun EpisodeSelectorRow(
+    episodes: List<Episode>,
+    selectedEpisodeId: String?,
+    onEpisodeSelected: (Episode) -> Unit,
+) {
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        items(episodes) { episode ->
+            val selected = episode.id == selectedEpisodeId
+            Card(
+                onClick = { onEpisodeSelected(episode) },
+                modifier = Modifier.width(96.dp).height(54.dp).focusable(),
+                shape = RoundedCornerShape(8.dp),
+                colors = CardDefaults.cardColors(containerColor = if (selected) AnimePanelSoft else AnimePanel),
+                border = BorderStroke(1.dp, if (selected) AnimeAccentCyan else AnimeBorder),
+            ) {
+                Box(Modifier.fillMaxSize().padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = episode.index?.let { "\u7b2c $it \u96c6" } ?: episode.title,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = if (selected) AnimeAccentCyan else Color.White,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 }
             }
         }
@@ -1702,23 +1757,23 @@ private fun RouteCandidateRow(route: RouteCandidate, onClick: () -> Unit) {
         border = BorderStroke(1.dp, AnimeBorder),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxWidth().padding(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
-                modifier = Modifier.size(width = 96.dp, height = 58.dp).background(providerAccent(route.sourceId), RoundedCornerShape(6.dp)),
+                modifier = Modifier.size(42.dp).background(providerAccent(route.sourceId), RoundedCornerShape(8.dp)),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(route.sourceName.take(6), style = MaterialTheme.typography.labelLarge, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1)
+                Text(route.sourceName.take(1), style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1)
             }
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(route.sourceName, style = MaterialTheme.typography.titleMedium, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     route.quality?.let { VideoMetaChip(it) }
                     route.subgroup?.takeIf(String::isNotBlank)?.let { VideoMetaChip(it.take(10)) }
                 }
-                Text(route.title, style = MaterialTheme.typography.bodyMedium, color = AnimeMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(route.title, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(
                     route.routeName.orEmpty().ifBlank { route.protocol.displayName() },
                     style = MaterialTheme.typography.bodySmall,
@@ -1729,7 +1784,6 @@ private fun RouteCandidateRow(route: RouteCandidate, onClick: () -> Unit) {
             }
             Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(route.protocol.displayName(), style = MaterialTheme.typography.labelLarge, color = AnimeAccentAmber)
-                Text("\u5339\u914D ${route.score}", style = MaterialTheme.typography.bodySmall, color = AnimeMuted)
                 route.sizeBytes?.let { Text(formatBytes(it), style = MaterialTheme.typography.bodySmall, color = AnimeMuted) }
             }
         }
@@ -1976,3 +2030,5 @@ private fun formatBytes(bytes: Long): String {
         "%.1f %s".format(value, units[index])
     }
 }
+
+private const val HOME_SCHEDULE_LIMIT = 12
