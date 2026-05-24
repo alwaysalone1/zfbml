@@ -8,34 +8,48 @@ import com.zfbml.aggregate.danmaku.TencentDanmakuProvider
 import com.zfbml.aggregate.danmaku.YoukuDanmakuProvider
 import com.zfbml.aggregate.download.Media3DownloadCoordinator
 import com.zfbml.aggregate.download.YtDlpAdvancedDownloadProvider
+import com.zfbml.aggregate.network.Ipv4FirstDns
 import com.zfbml.aggregate.source.DemoBuiltinSourceProvider
 import com.zfbml.aggregate.source.DirectUrlSourceProvider
 import com.zfbml.aggregate.source.SourceProvider
 import com.zfbml.aggregate.source.SourceRegistry
+import com.zfbml.aggregate.source.catalog.BangumiCatalogSourceProvider
 import com.zfbml.aggregate.source.rule.RuleSourceParser
 import com.zfbml.aggregate.source.rule.RuleSourceProvider
 import com.zfbml.aggregate.torrent.LibtorrentEngine
 import com.zfbml.aggregate.torrent.RssTorrentSourceProvider
 import com.zfbml.aggregate.torrent.TorrentSourceProvider
+import java.util.concurrent.TimeUnit
 import okhttp3.OkHttpClient
 
 class AppGraph(
     private val context: Context,
 ) {
     private val httpClient = OkHttpClient.Builder()
+        .dns(Ipv4FirstDns)
+        .connectTimeout(8, TimeUnit.SECONDS)
+        .readTimeout(12, TimeUnit.SECONDS)
+        .callTimeout(15, TimeUnit.SECONDS)
         .followRedirects(true)
         .followSslRedirects(true)
         .build()
 
+    private val resourceProviders: List<SourceProvider> by lazy {
+        buildList {
+            add(TorrentSourceProvider())
+            add(RssTorrentSourceProvider.mikan(httpClient))
+            add(RssTorrentSourceProvider.dmhy(httpClient))
+            add(RssTorrentSourceProvider.acgRip(httpClient))
+            add(RssTorrentSourceProvider.nyaa(httpClient))
+            add(RssTorrentSourceProvider.bangumiMoe(httpClient))
+        }
+    }
+
     val sourceRegistry: SourceRegistry by lazy {
         SourceRegistry(
             buildList {
-                add(TorrentSourceProvider())
-                add(RssTorrentSourceProvider.mikan(httpClient))
-                add(RssTorrentSourceProvider.dmhy(httpClient))
-                add(RssTorrentSourceProvider.acgRip(httpClient))
-                add(RssTorrentSourceProvider.nyaa(httpClient))
-                add(RssTorrentSourceProvider.bangumiMoe(httpClient))
+                add(BangumiCatalogSourceProvider(httpClient, resourceProviders))
+                addAll(resourceProviders)
                 add(DemoBuiltinSourceProvider())
                 add(DirectUrlSourceProvider())
                 addAll(loadBundledRuleProviders())

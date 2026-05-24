@@ -5,7 +5,7 @@ import kotlinx.coroutines.delay
 class DemoBuiltinSourceProvider : SourceProvider {
     override val manifest = SourceManifest(
         id = "builtin-demo",
-        name = "Built-in Demo",
+        name = "Online Demo",
         version = "1.0.0",
         author = "zfbml",
         capabilities = setOf(
@@ -25,15 +25,15 @@ class DemoBuiltinSourceProvider : SourceProvider {
         return listOf(
             SearchResult(
                 providerId = manifest.id,
-                title = "Demo Movie: $normalized",
-                url = "demo://movie/$normalized",
-                subtitle = "Media3 progressive sample stream",
+                title = "\u661F\u6D77\u8FFD\u756A\u5385",
+                url = "demo://movie/sintel?query=$normalized",
+                subtitle = "\u9AD8\u6E05\u5728\u7EBF\u6F14\u793A\u3001\u81EA\u9002\u5E94\u6E05\u6670\u5EA6",
             ),
             SearchResult(
                 providerId = manifest.id,
-                title = "Demo Series: $normalized",
-                url = "demo://series/$normalized",
-                subtitle = "Multiple qualities and danmaku sample",
+                title = "\u4ECA\u65E5\u65B0\u756A\u653E\u9001",
+                url = "demo://series/mux-hls?query=$normalized",
+                subtitle = "\u6D41\u7545\u64AD\u653E\u3001\u591A\u6E05\u6670\u5EA6\u81EA\u52A8\u5207\u6362",
             ),
         )
     }
@@ -43,14 +43,14 @@ class DemoBuiltinSourceProvider : SourceProvider {
             Episode(
                 providerId = manifest.id,
                 id = "ep-1",
-                title = "Episode 1",
+                title = "\u7B2C 1 \u96C6",
                 url = "${result.url}/ep1",
                 index = 1,
             ),
             Episode(
                 providerId = manifest.id,
                 id = "ep-2",
-                title = "Episode 2",
+                title = "\u7B2C 2 \u96C6",
                 url = "${result.url}/ep2",
                 index = 2,
             ),
@@ -59,18 +59,28 @@ class DemoBuiltinSourceProvider : SourceProvider {
             providerId = manifest.id,
             title = result.title,
             url = result.url,
-            summary = "Local demo provider used to validate source, player, danmaku, and download flows.",
+            summary = "\u5DF2\u4E3A\u4F60\u51C6\u5907\u9AD8\u6E05\u6F14\u793A\u7247\u6E90\uFF0C\u53EF\u76F4\u63A5\u8FDB\u5165\u64AD\u653E\u9875\u68C0\u67E5\u753B\u9762\u3001\u5F39\u5E55\u548C\u79BB\u7EBF\u4F53\u9A8C\u3002",
             episodes = episodes,
         )
     }
 
     override suspend fun resolveStreams(episode: Episode): List<MediaStream> {
-        val headers = mapOf("User-Agent" to "ZfbmlAggregate/0.1")
+        val headers = emptyMap<String, String>()
         return listOf(
             MediaStream(
                 id = "${episode.id}-hls",
                 providerId = manifest.id,
-                url = "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+                url = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
+                protocol = StreamProtocol.HLS,
+                quality = "auto",
+                codec = "h264/aac",
+                headers = headers,
+                sourceScore = 100,
+            ),
+            MediaStream(
+                id = "${episode.id}-mp4",
+                providerId = manifest.id,
+                url = "https://media.w3.org/2010/05/sintel/trailer.mp4",
                 protocol = StreamProtocol.PROGRESSIVE,
                 quality = "1080p",
                 codec = "h264/aac",
@@ -80,12 +90,12 @@ class DemoBuiltinSourceProvider : SourceProvider {
             MediaStream(
                 id = "${episode.id}-backup",
                 providerId = manifest.id,
-                url = "https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4",
+                url = "https://filesamples.com/samples/video/mp4/sample_640x360.mp4",
                 protocol = StreamProtocol.PROGRESSIVE,
-                quality = "720p",
+                quality = "360p",
                 codec = "h264/aac",
                 headers = headers,
-                sourceScore = 70,
+                sourceScore = 60,
             ),
         )
     }

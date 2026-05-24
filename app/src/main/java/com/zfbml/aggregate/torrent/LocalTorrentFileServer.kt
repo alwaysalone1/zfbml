@@ -37,6 +37,7 @@ class LocalTorrentFileServer : Closeable {
         totalSizeBytes: Long,
         mimeType: String = mimeTypeFor(file.name),
         onRangeRequested: (Long) -> Unit = {},
+        isRangeAvailable: (Long, Long) -> Boolean = { _, _ -> true },
     ): String {
         val server = ensureStarted()
         val pathKey = file.canonicalPath
@@ -46,6 +47,7 @@ class LocalTorrentFileServer : Closeable {
             totalSizeBytes = totalSizeBytes,
             mimeType = mimeType,
             onRangeRequested = onRangeRequested,
+            isRangeAvailable = isRangeAvailable,
         )
         val encodedName = URLEncoder.encode(file.name, StandardCharsets.UTF_8.name())
         return "http://127.0.0.1:${server.localPort}/$token/$encodedName"
@@ -68,7 +70,9 @@ class LocalTorrentFileServer : Closeable {
         acceptJob = scope.launch {
             while (isActive && !socket.isClosed) {
                 val client = runCatching { socket.accept() }.getOrNull() ?: continue
-                launch { handle(client) }
+                launch {
+                    runCatching { handle(client) }
+                }
             }
         }
         return socket
@@ -113,7 +117,7 @@ class LocalTorrentFileServer : Closeable {
     private fun serveFile(output: OutputStream, headOnly: Boolean, servedFile: ServedFile, rangeHeader: String?) {
         val range = parseRange(rangeHeader, servedFile.totalSizeBytes)
         if (range == null) {
-            output.writeStatus(416, "Range Not Satisfiable")
+            output.writeRangeNotSatisfiable(servedFile.totalSizeBytes)
             return
         }
 
@@ -127,13 +131,15 @@ class LocalTorrentFileServer : Closeable {
                 append("Content-Type: ").append(servedFile.mimeType).append("\r\n")
                 append("Accept-Ranges: bytes\r\n")
                 append("Content-Length: ").append(bodyLength).append("\r\n")
-                append("Content-Range: bytes ")
-                    .append(range.start)
-                    .append('-')
-                    .append(range.end)
-                    .append('/')
-                    .append(servedFile.totalSizeBytes)
-                    .append("\r\n")
+                if (range.partial) {
+                    append("Content-Range: bytes ")
+                        .append(range.start)
+                        .append('-')
+                        .append(range.end)
+                        .append('/')
+                        .append(servedFile.totalSizeBytes)
+                        .append("\r\n")
+                }
                 append("Cache-Control: no-store\r\n")
                 append("Connection: close\r\n")
                 append("\r\n")
@@ -141,14 +147,15 @@ class LocalTorrentFileServer : Closeable {
         )
 
         if (!headOnly) {
-            streamGrowingFile(output, servedFile.file, range.start, bodyLength)
+            streamGrowingFile(output, servedFile, range.start, bodyLength)
         }
     }
 
-    private fun streamGrowingFile(output: OutputStream, file: File, start: Long, length: Long) {
+    private fun streamGrowingFile(output: OutputStream, servedFile: ServedFile, start: Long, length: Long) {
+        val file = servedFile.file
         var position = start
         var remaining = length
-        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+        val buffer = ByteArray(STREAM_BUFFER_SIZE)
         var waitedMs = 0L
 
         while (!file.exists()) {
@@ -162,6 +169,13 @@ class LocalTorrentFileServer : Closeable {
 
         RandomAccessFile(file, "r").use { raf ->
             while (remaining > 0L) {
+                val requestedReadSize = minOf(buffer.size.toLong(), remaining).toInt()
+                val requestedEnd = position + requestedReadSize - 1L
+                servedFile.onRangeRequested(position)
+                if (!waitForRange(servedFile, position, requestedEnd)) {
+                    throw SocketTimeoutException("Timed out waiting for torrent data at byte $position")
+                }
+
                 val available = file.length() - position
                 if (available <= 0L) {
                     if (waitedMs >= GROWING_FILE_WAIT_TIMEOUT_MS) {
@@ -173,7 +187,7 @@ class LocalTorrentFileServer : Closeable {
                 }
 
                 waitedMs = 0L
-                val readSize = minOf(buffer.size.toLong(), available, remaining).toInt()
+                val readSize = minOf(requestedReadSize.toLong(), available, remaining).toInt()
                 raf.seek(position)
                 val read = raf.read(buffer, 0, readSize)
                 if (read <= 0) {
@@ -186,6 +200,24 @@ class LocalTorrentFileServer : Closeable {
                 position += read
                 remaining -= read
             }
+        }
+    }
+
+    private fun waitForRange(servedFile: ServedFile, start: Long, end: Long): Boolean {
+        var waitedMs = 0L
+        while (true) {
+            if (
+                servedFile.file.exists() &&
+                servedFile.file.length() > start &&
+                servedFile.isRangeAvailable(start, end)
+            ) {
+                return true
+            }
+            if (waitedMs >= GROWING_FILE_WAIT_TIMEOUT_MS) {
+                return false
+            }
+            Thread.sleep(GROWING_FILE_WAIT_STEP_MS)
+            waitedMs += GROWING_FILE_WAIT_STEP_MS
         }
     }
 
@@ -265,6 +297,16 @@ class LocalTorrentFileServer : Closeable {
         )
     }
 
+    private fun OutputStream.writeRangeNotSatisfiable(totalSizeBytes: Long) {
+        writeAscii(
+            "HTTP/1.1 416 Range Not Satisfiable\r\n" +
+                "Content-Range: bytes */$totalSizeBytes\r\n" +
+                "Content-Length: 0\r\n" +
+                "Connection: close\r\n" +
+                "\r\n",
+        )
+    }
+
     private fun OutputStream.writeAscii(value: String) {
         write(value.toByteArray(StandardCharsets.ISO_8859_1))
         flush()
@@ -275,6 +317,7 @@ class LocalTorrentFileServer : Closeable {
         val totalSizeBytes: Long,
         val mimeType: String,
         val onRangeRequested: (Long) -> Unit,
+        val isRangeAvailable: (Long, Long) -> Boolean,
     )
 
     private data class ByteRange(
@@ -285,6 +328,7 @@ class LocalTorrentFileServer : Closeable {
 
     private companion object {
         const val SOCKET_TIMEOUT_MS = 60_000
+        const val STREAM_BUFFER_SIZE = 64 * 1024
         const val GROWING_FILE_WAIT_STEP_MS = 100L
         const val GROWING_FILE_WAIT_TIMEOUT_MS = 120_000L
         const val MAX_HEADER_LINE_BYTES = 8 * 1024

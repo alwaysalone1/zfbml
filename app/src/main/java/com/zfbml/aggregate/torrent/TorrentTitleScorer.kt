@@ -44,6 +44,7 @@ object TorrentTitleScorer {
             Regex("""\[(\d{1,3})]"""),
             Regex("""\b[Ee][Pp]?\.?\s*(\d{1,3})\b"""),
             Regex("""[-#]\s*(\d{1,3})\b"""),
+            Regex("\u7b2c\\s*(\\d{1,3})\\s*[\u8bdd\u8a71\u96c6]"),
             Regex("""第\s*(\d{1,3})\s*[话話集]"""),
         )
         return patterns.firstNotNullOfOrNull { regex ->

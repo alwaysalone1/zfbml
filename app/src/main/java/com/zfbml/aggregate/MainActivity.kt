@@ -12,17 +12,23 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val graph = (application as ZfbmlApp).graph
+        val initialQuery = intent.getStringExtra(EXTRA_INITIAL_QUERY)
+            ?: intent.dataString
         setContent {
             MaterialTheme(
                 colorScheme = darkColorScheme(
-                    primary = Color(0xFF00A884),
-                    secondary = Color(0xFF80CBC4),
-                    background = Color(0xFF101418),
-                    surface = Color(0xFF171C20),
+                    primary = Color(0xFFFF5C8A),
+                    secondary = Color(0xFF32D3E6),
+                    background = Color(0xFF0D0D10),
+                    surface = Color(0xFF18181C),
                 ),
             ) {
-                AggregateApp(graph)
+                AggregateApp(graph, initialQuery = initialQuery)
             }
         }
+    }
+
+    private companion object {
+        const val EXTRA_INITIAL_QUERY = "zfbml.query"
     }
 }

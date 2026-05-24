@@ -42,7 +42,12 @@ class RssTorrentSourceProvider(
 
     override suspend fun search(query: String): List<SearchResult> {
         val trimmed = query.trim()
-        if (trimmed.isBlank() || trimmed.startsWith("magnet:", ignoreCase = true)) {
+        if (
+            trimmed.isBlank() ||
+            trimmed.startsWith("magnet:", ignoreCase = true) ||
+            trimmed.startsWith("http://", ignoreCase = true) ||
+            trimmed.startsWith("https://", ignoreCase = true)
+        ) {
             return emptyList()
         }
         val xml = fetch(config.searchUrl(trimmed))

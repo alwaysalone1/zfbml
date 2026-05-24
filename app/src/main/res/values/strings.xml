@@ -1,5 +1,7 @@
 <resources>
-    <string name="app_name">Zfbml Aggregate</string>
-    <string name="download_channel_name">Downloads</string>
-    <string name="download_channel_description">Video download progress</string>
+    <string name="app_name">追番不迷路</string>
+    <string name="app_brand">ZFBML</string>
+    <string name="app_tagline">追番不迷路</string>
+    <string name="download_channel_name">离线缓存</string>
+    <string name="download_channel_description">视频离线缓存进度</string>
 </resources>

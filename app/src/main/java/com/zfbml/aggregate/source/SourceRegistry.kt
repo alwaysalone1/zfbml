@@ -3,6 +3,7 @@ package com.zfbml.aggregate.source
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withTimeout
 
 class SourceRegistry(
     providers: List<SourceProvider>,
@@ -13,17 +14,42 @@ class SourceRegistry(
 
     fun provider(id: String): SourceProvider? = providersById[id]
 
-    suspend fun searchAll(query: String): List<SearchResult> = coroutineScope {
-        providersById.values
+    suspend fun searchAll(query: String): List<SearchResult> = searchAllWithReport(query).results
+
+    suspend fun searchAllWithReport(query: String): SourceSearchReport = coroutineScope {
+        val outcomes = providersById.values
             .filter { SourceCapability.SEARCH in it.manifest.capabilities }
             .map { provider ->
                 async {
-                    runCatching { provider.search(query) }.getOrDefault(emptyList())
+                    runCatching { withTimeout(SEARCH_PROVIDER_TIMEOUT_MS) { provider.search(query) } }
+                        .fold(
+                            onSuccess = { results ->
+                                SourceSearchOutcome(
+                                    results = results,
+                                    failure = null,
+                                )
+                            },
+                            onFailure = { error ->
+                                SourceSearchOutcome(
+                                    results = emptyList(),
+                                    failure = SourceSearchFailure(
+                                        providerId = provider.manifest.id,
+                                        providerName = provider.manifest.name,
+                                        message = error.message ?: error::class.simpleName.orEmpty().ifBlank { "Unknown error" },
+                                    ),
+                                )
+                            },
+                        )
                 }
             }
             .awaitAll()
-            .flatten()
-            .sortedWith(compareByDescending<SearchResult> { it.playabilityScore() }.thenBy { it.title })
+
+        SourceSearchReport(
+            results = outcomes
+                .flatMap { it.results }
+                .sortedWith(compareByDescending<SearchResult> { it.playabilityScore() }.thenBy { it.title }),
+            failures = outcomes.mapNotNull { it.failure },
+        )
     }
 
     suspend fun loadDetail(result: SearchResult): MediaDetail {
@@ -41,9 +67,19 @@ class SourceRegistry(
             .sortedWith(compareByDescending<MediaStream> { it.sourceScore }.thenBy { it.quality.orEmpty() })
     }
 
+    suspend fun resolveRouteCandidates(episode: Episode): List<RouteCandidate> {
+        return resolveStreams(episode)
+            .map { stream -> stream.toRouteCandidate(episode) }
+            .sortedWith(compareByDescending<RouteCandidate> { it.score }.thenBy { it.title })
+    }
+
     private fun SearchResult.playabilityScore(): Int {
         val lower = title.lowercase()
         var score = 0
+        if (providerId == "bangumi-catalog") score += 260
+        if (providerId == "direct-url") score += 200
+        if (providerId == "bt") score += 200
+        if (!posterUrl.isNullOrBlank()) score += 20
         if (raw["torrentUrl"]?.startsWith("http", ignoreCase = true) == true) score += 40
         if (raw["torrentUrl"]?.startsWith("magnet:", ignoreCase = true) == true) score += 20
         if ("mp4" in lower) score += 80
@@ -62,4 +98,53 @@ class SourceRegistry(
         }
         return score
     }
+
+    private fun MediaStream.toRouteCandidate(episode: Episode): RouteCandidate {
+        val sourceId = metadata["routeProviderId"] ?: providerId
+        val sourceName = metadata["routeProviderName"]
+            ?: metadata["sourceName"]
+            ?: providersById[sourceId]?.manifest?.name
+            ?: providerDisplayId(sourceId)
+        return RouteCandidate(
+            stream = this,
+            sourceId = sourceId,
+            sourceName = sourceName,
+            title = metadata["routeTitle"] ?: metadata["catalogTitle"] ?: episode.title,
+            routeName = metadata["routeSubtitle"]?.takeIf { it.isNotBlank() } ?: quality,
+            episodeTitle = metadata["routeEpisodeTitle"] ?: metadata["episodeTitle"] ?: episode.title,
+            episodeIndex = metadata["routeEpisodeIndex"]?.toIntOrNull()
+                ?: metadata["episodeIndex"]?.toIntOrNull()
+                ?: episode.index,
+            quality = quality ?: metadata["quality"],
+            subgroup = metadata["subgroup"],
+            protocol = protocol,
+            score = metadata["routeScore"]?.toIntOrNull() ?: sourceScore,
+            publishedAt = metadata["publishedAt"],
+            sizeBytes = metadata["sizeBytes"]?.toLongOrNull(),
+        )
+    }
+
+    private fun providerDisplayId(sourceId: String): String {
+        return sourceId.replace('-', ' ').replaceFirstChar { it.uppercase() }
+    }
+
+    private companion object {
+        const val SEARCH_PROVIDER_TIMEOUT_MS = 15_000L
+    }
 }
+
+data class SourceSearchReport(
+    val results: List<SearchResult>,
+    val failures: List<SourceSearchFailure>,
+)
+
+data class SourceSearchFailure(
+    val providerId: String,
+    val providerName: String,
+    val message: String,
+)
+
+private data class SourceSearchOutcome(
+    val results: List<SearchResult>,
+    val failure: SourceSearchFailure?,
+)

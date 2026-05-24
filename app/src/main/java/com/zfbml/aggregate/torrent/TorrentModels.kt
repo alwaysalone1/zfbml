@@ -29,6 +29,8 @@ data class TorrentPlaybackPlan(
     val selectedFileName: String? = null,
     val selectedFileIndex: Int? = null,
     val selectedFileSizeBytes: Long? = null,
+    val selectedFileContiguousBytes: Long = 0L,
+    val playbackReadyBytes: Long = 0L,
     val selectedFileProgressPercent: Float = 0f,
     val localPlaybackUrl: String? = null,
     val bufferingPercent: Float = 0f,
@@ -47,6 +49,7 @@ data class TorrentEngineState(
     val uploadRateBytesPerSecond: Int = 0,
     val connectedPeers: Int = 0,
     val connectedSeeds: Int = 0,
+    val resumeDataBytes: Long = 0L,
     val errorMessage: String? = null,
 )
 
