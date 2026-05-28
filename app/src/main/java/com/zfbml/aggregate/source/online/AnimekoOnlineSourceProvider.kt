@@ -358,11 +358,12 @@ class AnimekoOnlineSourceProvider(
         depth: Int,
     ): String? {
         val decoded = pageText.decodeHtmlPayload()
-        extractMacCmsPlayerUrl(decoded)?.let { playerUrl ->
+        AnimekoOnlineExtractors.extractMacCmsPlayerUrl(decoded)?.let { playerUrl ->
             if (playerUrl.looksLikePlayableVideo()) return playerUrl.normalizeUrl(baseUrl)
         }
-        findVideoByConfiguredRegex(config, decoded)?.let { return it.normalizeUrl(baseUrl) }
-        findGenericVideoUrl(decoded)?.let { return it.normalizeUrl(baseUrl) }
+        AnimekoOnlineExtractors.findVideoByConfiguredRegex(config.matchVideoUrl, decoded)
+            ?.let { return it.normalizeUrl(baseUrl) }
+        AnimekoOnlineExtractors.findGenericVideoUrl(decoded)?.let { return it.normalizeUrl(baseUrl) }
 
         if (depth >= MAX_NESTED_DEPTH || !config.enableNestedUrl) return null
         val nestedUrls = Jsoup.parse(decoded, baseUrl)
@@ -379,55 +380,6 @@ class AnimekoOnlineSourceProvider(
             resolveVideoUrl(config, nestedText, nestedUrl, depth + 1)?.let { return it }
         }
         return null
-    }
-
-    private fun extractMacCmsPlayerUrl(text: String): String? {
-        extractMacCmsUrlField(text)?.let { return it }
-        val match = Regex("""player_[a-zA-Z0-9_]+\s*=\s*(\{.*?})\s*(?:</script>|;)""", RegexOption.DOT_MATCHES_ALL)
-            .find(text)
-            ?: return null
-        return runCatching {
-            val obj = json.parseToJsonElement(match.groupValues[1]).jsonObject
-            val encrypt = obj["encrypt"]?.jsonPrimitive?.intOrNull ?: 0
-            val rawUrl = obj["url"]?.jsonPrimitive?.contentOrNull.orEmpty()
-            when (encrypt) {
-                1 -> rawUrl.urlDecode()
-                2 -> String(android.util.Base64.decode(rawUrl, android.util.Base64.DEFAULT), Charsets.UTF_8).urlDecode()
-                else -> rawUrl
-            }
-        }.getOrNull()?.decodeWebEscapes()
-    }
-
-    private fun extractMacCmsUrlField(text: String): String? {
-        val match = Regex(
-            """player_[a-zA-Z0-9_]+\s*=\s*\{.*?"encrypt"\s*:\s*(\d+).*?"url"\s*:\s*"([^"]*)"""",
-            setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE),
-        ).find(text) ?: return null
-        val encrypt = match.groupValues.getOrNull(1)?.toIntOrNull() ?: 0
-        val encodedUrl = match.groupValues.getOrNull(2).orEmpty().decodeJsonStringLiteral()
-        return when (encrypt) {
-            1 -> encodedUrl.urlDecode()
-            2 -> runCatching {
-                String(android.util.Base64.decode(encodedUrl, android.util.Base64.DEFAULT), Charsets.UTF_8).urlDecode()
-            }.getOrDefault(encodedUrl)
-            else -> encodedUrl
-        }.decodeWebEscapes()
-    }
-
-    private fun findVideoByConfiguredRegex(config: OnlineSelectorConfig, text: String): String? {
-        val regex = config.videoRegex() ?: return null
-        return regex.findAll(text)
-            .mapNotNull { match ->
-                match.groups["v"]?.value
-                    ?: match.value.substringAfter("url=", missingDelimiterValue = match.value)
-            }
-            .firstOrNull { it.looksLikePlayableVideo() }
-    }
-
-    private fun findGenericVideoUrl(text: String): String? {
-        return GENERIC_VIDEO_URL_REGEX.findAll(text)
-            .map { it.value.decodeWebEscapes() }
-            .firstOrNull { it.looksLikePlayableVideo() }
     }
 
     private suspend fun fetchDocument(config: OnlineSelectorConfig, url: String, referer: String?): Document {
@@ -485,7 +437,7 @@ class AnimekoOnlineSourceProvider(
                 selectLists = ".module-card-item>.module-card-item-info>.module-card-item-title>a",
                 channelFormatId = "index-grouped",
                 selectChannelNames = "div>div>div>div>div>div.module-tab-items-box>.module-tab-item>span",
-                matchChannelName = "(?!高清线路3)",
+                matchChannelName = "^(?!.*\u9ad8\u6e05\u7ebf\u8def3).*$",
                 selectEpisodeLists = ".module-play-list-content",
                 selectEpisodesFromList = "a",
                 matchEpisodeSortFromName = "\\u7b2c\\s*(?<ep>.+)\\s*[\\u8bdd\\u96c6]",
@@ -524,7 +476,7 @@ class AnimekoOnlineSourceProvider(
         const val ID = "animeko-online"
         const val TAG = "ZfbmlOnlineSource"
         const val DEFAULT_SUBSCRIPTION_URL = "https://sub.creamycake.org/v1/css1.json"
-        const val USER_AGENT = "ZFBML/0.2.12 (https://github.com/alwaysalone1/zfbml)"
+        const val USER_AGENT = "ZFBML/0.2.13 (https://github.com/alwaysalone1/zfbml)"
         const val DEFAULT_BROWSER_UA =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
         const val RAW_SOURCE_ID = "onlineSourceId"
@@ -539,10 +491,6 @@ class AnimekoOnlineSourceProvider(
         const val ONLINE_STREAM_BASE_SCORE = 260
         const val DEFAULT_VIDEO_REGEX =
             "(^http(s)?://(?!.*http).+\\.(mp4|m3u8|flv|mkv))|(url=(?<v>http(s)?://.+\\.(mp4|m3u8|flv|mkv)))|((bilivideo|akamaized|szbdyd)\\.com(?!.*\\.ts))"
-        val GENERIC_VIDEO_URL_REGEX = Regex(
-            """https?:\\?/\\?/[^"'\s<>]+?(?:\.m3u8|\.mp4|\.mkv|\.flv)(?:\?[^"'\s<>]*)?""",
-            setOf(RegexOption.IGNORE_CASE),
-        )
         val json = Json {
             ignoreUnknownKeys = true
             coerceInputValues = true
@@ -551,7 +499,70 @@ class AnimekoOnlineSourceProvider(
     }
 }
 
-private data class OnlineSelectorConfig(
+internal object AnimekoOnlineExtractors {
+    fun extractMacCmsPlayerUrl(text: String): String? {
+        extractMacCmsUrlField(text)?.let { return it }
+        val match = Regex("""player_[a-zA-Z0-9_]+\s*=\s*(\{.*?})\s*(?:</script>|;)""", RegexOption.DOT_MATCHES_ALL)
+            .find(text)
+            ?: return null
+        return runCatching {
+            val obj = json.parseToJsonElement(match.groupValues[1]).jsonObject
+            val encrypt = obj["encrypt"]?.jsonPrimitive?.intOrNull ?: 0
+            val rawUrl = obj["url"]?.jsonPrimitive?.contentOrNull.orEmpty()
+            when (encrypt) {
+                1 -> rawUrl.urlDecode()
+                2 -> String(android.util.Base64.decode(rawUrl, android.util.Base64.DEFAULT), Charsets.UTF_8).urlDecode()
+                else -> rawUrl
+            }
+        }.getOrNull()?.decodeWebEscapes()
+    }
+
+    fun findVideoByConfiguredRegex(matchVideoUrl: String, text: String): String? {
+        if (matchVideoUrl.isBlank()) return null
+        val regex = runCatching { Regex(matchVideoUrl, RegexOption.IGNORE_CASE) }.getOrNull() ?: return null
+        return regex.findAll(text)
+            .mapNotNull { match ->
+                match.groups["v"]?.value
+                    ?: match.value.substringAfter("url=", missingDelimiterValue = match.value)
+            }
+            .firstOrNull { it.looksLikePlayableVideo() }
+    }
+
+    fun findGenericVideoUrl(text: String): String? {
+        return GENERIC_VIDEO_URL_REGEX.findAll(text)
+            .map { it.value.decodeWebEscapes() }
+            .firstOrNull { it.looksLikePlayableVideo() }
+    }
+
+    private fun extractMacCmsUrlField(text: String): String? {
+        val match = Regex(
+            """player_[a-zA-Z0-9_]+\s*=\s*\{.*?"encrypt"\s*:\s*(\d+).*?"url"\s*:\s*"([^"]*)"""",
+            setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE),
+        ).find(text) ?: return null
+        val encrypt = match.groupValues.getOrNull(1)?.toIntOrNull() ?: 0
+        val encodedUrl = match.groupValues.getOrNull(2).orEmpty().decodeJsonStringLiteral()
+        return when (encrypt) {
+            1 -> encodedUrl.urlDecode()
+            2 -> runCatching {
+                String(android.util.Base64.decode(encodedUrl, android.util.Base64.DEFAULT), Charsets.UTF_8).urlDecode()
+            }.getOrDefault(encodedUrl)
+            else -> encodedUrl
+        }.decodeWebEscapes()
+    }
+
+    private val GENERIC_VIDEO_URL_REGEX = Regex(
+        """https?:\\?/\\?/[^"'\s<>]+?(?:\.m3u8|\.mp4|\.mkv|\.flv)(?:\?[^"'\s<>]*)?""",
+        setOf(RegexOption.IGNORE_CASE),
+    )
+
+    private val json = Json {
+        ignoreUnknownKeys = true
+        coerceInputValues = true
+        isLenient = true
+    }
+}
+
+internal data class OnlineSelectorConfig(
     val id: String,
     val name: String,
     val searchUrl: String,
@@ -582,16 +593,7 @@ private data class OnlineSelectorConfig(
     val tier: Int = 4,
 ) {
     fun searchKeyword(raw: String): String {
-        var value = raw.trim()
-        if (searchRemoveSpecial) {
-            value = value.replace(Regex("""[\[\]【】()（）:：!！?？.,，。_-]+"""), " ")
-                .replace(Regex("""\s+"""), " ")
-                .trim()
-        }
-        if (searchUseOnlyFirstWord) {
-            value = value.split(Regex("""[\s/／]+""")).firstOrNull().orEmpty().ifBlank { value }
-        }
-        return value.take(32)
+        return normalizeOnlineSearchKeyword(raw, searchRemoveSpecial, searchUseOnlyFirstWord)
     }
 
     fun channelMatches(channelName: String): Boolean {
@@ -819,7 +821,7 @@ private fun Element.bestImageUrl(): String? {
     return attrs.firstNotNullOfOrNull { attr -> attr(attr).takeIf(String::isNotBlank) }
 }
 
-private fun parseEpisodeIndex(title: String, pattern: String): Int? {
+internal fun parseEpisodeIndex(title: String, pattern: String): Int? {
     if (pattern.isBlank()) return null
     return runCatching {
         val match = Regex(pattern).find(title) ?: return null
@@ -908,7 +910,24 @@ private fun String.decodeHtmlPayload(): String {
     return decodedString.decodeWebEscapes()
 }
 
-private fun titleMatchesQuery(title: String, query: String): Boolean {
+internal fun normalizeOnlineSearchKeyword(
+    raw: String,
+    removeSpecial: Boolean,
+    useOnlyFirstWord: Boolean,
+): String {
+    var value = raw.trim()
+    if (removeSpecial) {
+        value = value.replace(Regex("""[\[\]【】()（）:：!！?？.,，。、_\-]+"""), " ")
+            .replace(Regex("""\s+"""), " ")
+            .trim()
+    }
+    if (useOnlyFirstWord) {
+        value = value.split(Regex("""[\s/|+]+""")).firstOrNull().orEmpty().ifBlank { value }
+    }
+    return value.take(32)
+}
+
+internal fun titleMatchesQuery(title: String, query: String): Boolean {
     val normalizedTitle = title.normalizeTitleForMatch()
     val normalizedQuery = query.normalizeTitleForMatch()
     if (normalizedTitle.isBlank() || normalizedQuery.isBlank()) return false
