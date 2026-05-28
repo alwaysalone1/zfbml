@@ -79,6 +79,8 @@ class SourceRegistry(
         if (providerId == "bangumi-catalog") score += 260
         if (providerId == "direct-url") score += 200
         if (providerId == "bt") score += 200
+        if (providerId == "animeko-online" || raw["mediaKind"] == "online") score += 230
+        raw["sourceTier"]?.toIntOrNull()?.let { score -= it * 8 }
         if (!posterUrl.isNullOrBlank()) score += 20
         if (raw["torrentUrl"]?.startsWith("http", ignoreCase = true) == true) score += 40
         if (raw["torrentUrl"]?.startsWith("magnet:", ignoreCase = true) == true) score += 20

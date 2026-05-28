@@ -5,13 +5,13 @@ Android/TV first aggregate anime player prototype.
 This repository implements the foundation from the product plan:
 
 - Kotlin + Compose Android app shell.
-- Built-in `SourceProvider` interfaces and demo providers.
-- Real BT/RSS source providers for anime torrent indexes.
+- Built-in `SourceProvider` interfaces plus Animeko-compatible online source subscription loading.
+- Online HLS/MP4 route aggregation first, with real BT/RSS providers kept as fallback resources.
 - JSON rule based source loading for user imported sources.
 - Unified danmaku model, provider interface, Bilibili XML parser, and Canvas based renderer.
 - Media3 player engine abstraction with ExoPlayer as the default engine.
 - Media3 offline download service skeleton and advanced download provider abstraction.
-- BitTorrent as a first-class stream protocol, with magnet parsing, scoring, `libtorrent4j`, and a local HTTP Range proxy.
+- BitTorrent as an experimental auxiliary stream protocol, with magnet parsing, scoring, `libtorrent4j`, and a local HTTP Range proxy.
 
 ## Build
 
@@ -24,6 +24,22 @@ Open the folder in Android Studio, or run:
 The project targets Android SDK 36 and uses the JBR bundled with the local Android Studio install.
 
 ## 版本更新 / Version Notes
+
+### v0.2.12
+
+中文：
+
+- 接入 Animeko 兼容的在线视频源订阅，默认读取 `css1.json` 中的 `web-selector` 线路配置。
+- Bangumi 条目详情页现在优先解析在线视频线路，成功拿到 HLS/MP4 后直接进入 Media3 播放；BT/RSS 只作为无在线线路时的补充。
+- 新增详情页线路来源切换条，可按 `omofun111`、`叽哔动漫`、`稀饭动漫` 等来源筛选播放线路。
+- 已在模拟器验证真实在线线路可以进入播放器并达到 `READY / isPlaying=true`。
+
+English:
+
+- Added Animeko-compatible online source subscription loading, using `web-selector` route configs from `css1.json`.
+- Bangumi detail pages now resolve online video routes first and hand HLS/MP4 streams directly to Media3; BT/RSS is kept as a fallback when no online route is available.
+- Added route source chips on the detail page so lines can be filtered by providers such as `omofun111`, `jibim`, and `xifan`.
+- Verified on the emulator that real online routes enter the player and reach `READY / isPlaying=true`.
 
 ### v0.2.6
 
@@ -137,14 +153,14 @@ app/src/main/assets/rules/demo_rule.json
 
 The first implementation supports CSS selectors through Jsoup. XPath fields are preserved in the data model so a full XPath engine can be added without changing the public rule schema.
 
-## BitTorrent Playback Track
+## Online Sources and BitTorrent Track
 
-BT is treated as the primary long-term playback route, similar to Animeko's model:
+The current playback priority is online first, BT fallback:
 
-- `StreamProtocol.BITTORRENT` represents magnet/torrent resources separately from HTTP streams.
-- `TorrentSourceProvider` accepts pasted magnet links or torrent URLs and resolves them into standard `MediaStream` objects.
-- `RssTorrentSourceProvider` searches public BT/RSS indexes and resolves each result into the same standard BT stream shape.
-- `LibtorrentEngine` starts a native libtorrent session, adds magnet or HTTP `.torrent` resources, resolves metadata, selects the largest video-like file, and prioritizes its pieces.
-- Once enough opening data is buffered, the engine exposes a local HTTP Range URL to Media3 for playback.
+- `AnimekoOnlineSourceProvider` loads Animeko-compatible `web-selector` configs, searches multiple video sites with Bangumi titles and aliases, parses episode/channel pages, and resolves HLS/MP4 playback URLs.
+- `MediaRouteResolver` returns playable online routes first; BT/RSS routes are queried only when online resolution fails.
+- `StreamProtocol.HLS` and `StreamProtocol.PROGRESSIVE` are handed directly to Media3 for normal video-app playback.
+- `StreamProtocol.BITTORRENT` still represents magnet/torrent resources separately from HTTP streams, but this path is currently experimental because emulator testing showed crash/stability issues on BT playback.
+- `TorrentSourceProvider` and `RssTorrentSourceProvider` remain available for pasted magnet links, torrent URLs, and public BT/RSS indexes while the online route quality is evaluated.
 
-The production implementation should add persisted resume data, per-file selection UI, richer source filtering, current-position piece reprioritization, and source health telemetry before this is considered a polished BT streaming path.
+Before BT is promoted again, the production implementation should add crash isolation, persisted resume data, per-file selection UI, richer source filtering, current-position piece reprioritization, and source health telemetry.

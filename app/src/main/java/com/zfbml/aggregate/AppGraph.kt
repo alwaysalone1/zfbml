@@ -9,13 +9,13 @@ import com.zfbml.aggregate.danmaku.YoukuDanmakuProvider
 import com.zfbml.aggregate.download.Media3DownloadCoordinator
 import com.zfbml.aggregate.download.YtDlpAdvancedDownloadProvider
 import com.zfbml.aggregate.network.Ipv4FirstDns
-import com.zfbml.aggregate.source.DemoBuiltinSourceProvider
 import com.zfbml.aggregate.source.DirectUrlSourceProvider
 import com.zfbml.aggregate.source.SourceProvider
 import com.zfbml.aggregate.source.SourceRegistry
 import com.zfbml.aggregate.source.catalog.BangumiCatalogSourceProvider
 import com.zfbml.aggregate.source.catalog.BangumiCategoryRepository
 import com.zfbml.aggregate.source.catalog.BangumiCalendarRepository
+import com.zfbml.aggregate.source.online.AnimekoOnlineSourceProvider
 import com.zfbml.aggregate.source.rule.RuleSourceParser
 import com.zfbml.aggregate.source.rule.RuleSourceProvider
 import com.zfbml.aggregate.torrent.LibtorrentEngine
@@ -38,6 +38,7 @@ class AppGraph(
 
     private val resourceProviders: List<SourceProvider> by lazy {
         buildList {
+            add(AnimekoOnlineSourceProvider(context.applicationContext, httpClient))
             add(TorrentSourceProvider())
             add(RssTorrentSourceProvider.mikan(httpClient))
             add(RssTorrentSourceProvider.dmhy(httpClient))
@@ -52,7 +53,6 @@ class AppGraph(
             buildList {
                 add(BangumiCatalogSourceProvider(httpClient, resourceProviders))
                 addAll(resourceProviders)
-                add(DemoBuiltinSourceProvider())
                 add(DirectUrlSourceProvider())
                 addAll(loadBundledRuleProviders())
             },

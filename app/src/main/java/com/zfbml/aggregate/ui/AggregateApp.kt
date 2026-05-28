@@ -1906,7 +1906,7 @@ private fun SearchHintPanel() {
     ) {
         Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("\u641c\u7d22\u540e\u5148\u8fdb\u5165\u756a\u5267\u8be6\u60c5", style = MaterialTheme.typography.titleSmall, color = Color.White)
-            Text("\u5728\u8be6\u60c5\u9875\u9009\u96c6\uff0c\u518d\u7531\u5e94\u7528\u81ea\u52a8\u5339\u914d Mikan / DMHY / Nyaa \u7b49\u64ad\u653e\u7ebf\u8def\u3002", style = MaterialTheme.typography.bodySmall, color = AnimeMuted)
+            Text("\u5728\u8be6\u60c5\u9875\u9009\u96c6\uff0c\u5e94\u7528\u4f18\u5148\u5339\u914d\u5728\u7ebf\u89c6\u9891\u7ebf\u8def\uff0cBT \u4f5c\u4e3a\u5907\u7528\u8865\u5145\u3002", style = MaterialTheme.typography.bodySmall, color = AnimeMuted)
         }
     }
 }
@@ -2113,11 +2113,13 @@ private fun DetailScreen(
     var routes by remember(result) { mutableStateOf<List<RouteCandidate>>(emptyList()) }
     var routesLoading by remember(result) { mutableStateOf(false) }
     var routesError by remember(result) { mutableStateOf<String?>(null) }
+    var routeSourceFilter by remember(result) { mutableStateOf<String?>(null) }
 
     fun loadRoutesFor(episode: Episode, autoPlay: Boolean = false) {
         selectedEpisode = episode
         routes = emptyList()
         routesError = null
+        routeSourceFilter = null
         routesLoading = true
         scope.launch {
             runCatching { graph.sourceRegistry.resolveRouteCandidates(episode) }
@@ -2143,6 +2145,7 @@ private fun DetailScreen(
         error = null
         routes = emptyList()
         routesError = null
+        routeSourceFilter = null
         routesLoading = false
         runCatching { graph.sourceRegistry.loadDetail(result) }
             .onSuccess { media ->
@@ -2203,6 +2206,18 @@ private fun DetailScreen(
                     onAction = {},
                 )
             }
+            val visibleRoutes = routes.filter { route ->
+                routeSourceFilter == null || route.sourceId == routeSourceFilter
+            }
+            if (routes.isNotEmpty()) {
+                item {
+                    RouteSourceSelector(
+                        routes = routes,
+                        selectedSourceId = routeSourceFilter,
+                        onSelected = { routeSourceFilter = it },
+                    )
+                }
+            }
             if (routesLoading) {
                 item {
                     RouteLoadingPanel(selectedEpisode = selectedEpisode)
@@ -2216,7 +2231,7 @@ private fun DetailScreen(
                     EmptyRoutePanel()
                 }
             }
-            items(routes) { route ->
+            items(visibleRoutes) { route ->
                 RouteCandidateRow(
                     route = route,
                     onClick = {
@@ -2326,7 +2341,7 @@ private fun EpisodeVideoRow(episode: Episode, selected: Boolean, onClick: () -> 
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(episode.title, style = MaterialTheme.typography.titleMedium, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text("\u70B9\u51FB\u5339\u914D Mikan / DMHY / Nyaa \u7B49\u64AD\u653E\u7EBF\u8DEF", style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1)
+                Text("\u70B9\u51FB\u4F18\u5148\u5339\u914D\u5728\u7EBF\u89C6\u9891\u7EBF\u8DEF\uFF0CBT \u4F5C\u4E3A\u5907\u7528", style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1)
             }
             Text(if (selected) "\u5DF2\u9009" else "\u627E\u7EBF\u8DEF", style = MaterialTheme.typography.labelLarge, color = AnimeAccentCyan)
         }
@@ -2372,6 +2387,69 @@ private fun EmptyRoutePanel() {
         }
     }
 }
+
+@Composable
+private fun RouteSourceSelector(
+    routes: List<RouteCandidate>,
+    selectedSourceId: String?,
+    onSelected: (String?) -> Unit,
+) {
+    val groups = routes
+        .groupBy { it.sourceId }
+        .map { (sourceId, sourceRoutes) ->
+            RouteSourceGroup(
+                id = sourceId,
+                name = sourceRoutes.firstOrNull()?.sourceName ?: sourceId,
+                count = sourceRoutes.size,
+                isOnline = sourceRoutes.any { it.protocol != StreamProtocol.BITTORRENT },
+            )
+        }
+        .sortedWith(compareByDescending<RouteSourceGroup> { it.isOnline }.thenBy { it.name })
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        item {
+            RouteSourceChip(
+                label = "\u5168\u90e8 ${routes.size}",
+                selected = selectedSourceId == null,
+                onClick = { onSelected(null) },
+            )
+        }
+        items(groups) { group ->
+            RouteSourceChip(
+                label = "${group.name} ${group.count}",
+                selected = selectedSourceId == group.id,
+                onClick = { onSelected(group.id) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun RouteSourceChip(label: String, selected: Boolean, onClick: () -> Unit) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.height(42.dp).focusable(),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(containerColor = if (selected) AnimeAccentCyan.copy(alpha = 0.22f) else AnimePanel),
+        border = BorderStroke(1.dp, if (selected) AnimeAccentCyan else AnimeBorder),
+    ) {
+        Box(Modifier.padding(horizontal = 14.dp).fillMaxHeight(), contentAlignment = Alignment.Center) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelLarge,
+                color = if (selected) AnimeAccentCyan else Color.White,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+private data class RouteSourceGroup(
+    val id: String,
+    val name: String,
+    val count: Int,
+    val isOnline: Boolean,
+)
 
 @Composable
 private fun RouteCandidateRow(route: RouteCandidate, onClick: () -> Unit) {

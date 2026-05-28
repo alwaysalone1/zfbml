@@ -42,7 +42,31 @@ class MediaRouteResolver(
             .sortedByDescending { it.score }
             .take(MAX_SEARCH_HITS)
 
-        hits.flatMap { hit ->
+        val onlineHits = hits
+            .filter { hit -> hit.result.raw["mediaKind"] == "online" }
+            .take(MAX_ONLINE_HITS)
+        val onlineRoutes = resolveHits(onlineHits, request)
+        val fallbackRoutes = if (onlineRoutes.isEmpty()) {
+            resolveHits(
+                hits.filterNot { hit -> hit.result.raw["mediaKind"] == "online" }
+                    .take(MAX_FALLBACK_HITS),
+                request,
+            )
+        } else {
+            emptyList()
+        }
+
+        (onlineRoutes + fallbackRoutes)
+            .distinctBy { "${it.sourceId}|${it.stream.url}" }
+            .sortedWith(compareByDescending<RouteCandidate> { it.score }.thenBy { it.title })
+            .take(MAX_ROUTES)
+    }
+
+    private suspend fun resolveHits(
+        hits: List<SearchHit>,
+        request: MediaFetchRequest,
+    ): List<RouteCandidate> {
+        return hits.flatMap { hit ->
             val detail = runCatching { hit.provider.loadDetail(hit.result) }.getOrNull() ?: return@flatMap emptyList()
             detail.episodes
                 .filter { episode ->
@@ -57,7 +81,7 @@ class MediaRouteResolver(
                         .map { stream ->
                             val score = (stream.sourceScore + hit.score / 2 + episodeScore / 4)
                                 .coerceIn(0, 360)
-                            val metadata = stream.metadata + buildMap {
+                            val resolverMetadata = buildMap {
                                 put("routeProviderId", hit.provider.manifest.id)
                                 put("routeProviderName", hit.provider.manifest.name)
                                 put("routeTitle", hit.result.title)
@@ -68,6 +92,7 @@ class MediaRouteResolver(
                                 put("routeEpisodeTitle", candidateEpisode.title)
                                 candidateEpisode.index?.let { put("routeEpisodeIndex", it.toString()) }
                             }
+                            val metadata = resolverMetadata + stream.metadata
                             val normalizedStream = stream.copy(
                                 id = "${request.sourceEpisode.id}:${stream.id}",
                                 downloadPolicy = if (stream.protocol == StreamProtocol.BITTORRENT) {
@@ -98,7 +123,7 @@ class MediaRouteResolver(
     ): RouteCandidate {
         return RouteCandidate(
             stream = this,
-            sourceId = sourceId,
+            sourceId = metadata["routeProviderId"] ?: sourceId,
             sourceName = metadata["routeProviderName"] ?: metadata["sourceName"] ?: sourceName,
             title = metadata["routeTitle"] ?: fallbackTitle,
             routeName = metadata["routeSubtitle"]?.takeIf { it.isNotBlank() } ?: quality,
@@ -119,6 +144,8 @@ class MediaRouteResolver(
         var score = 60
         if (lower.contains(alias.lowercase())) score += 80
         if (request.subjectNames.any { lower.contains(it.lowercase()) }) score += 50
+        if (result.raw["mediaKind"] == "online") score += 420
+        result.raw["sourceTier"]?.toIntOrNull()?.let { score -= it * 8 }
         score += episodeScore(TorrentTitleScorer.extractEpisode(title), request.episodeIndex)
         score += qualityScore(lower)
         if ("batch" in lower || "\u5408\u96c6" in lower || Regex("""\b\d{1,3}\s*-\s*\d{1,3}\b""").containsMatchIn(lower)) {
@@ -184,7 +211,9 @@ class MediaRouteResolver(
 
     private companion object {
         const val MAX_ALIAS_SEARCH_COUNT = 2
-        const val MAX_SEARCH_HITS = 12
+        const val MAX_SEARCH_HITS = 24
+        const val MAX_ONLINE_HITS = 5
+        const val MAX_FALLBACK_HITS = 10
         const val MAX_EPISODES_PER_HIT = 2
         const val MAX_ROUTES = 24
     }

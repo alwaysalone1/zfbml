@@ -43,6 +43,7 @@ class BangumiCatalogSourceProvider(
             SourceCapability.DETAIL,
             SourceCapability.EPISODES,
             SourceCapability.STREAM,
+            SourceCapability.WEBVIEW_SNIFF,
             SourceCapability.BITTORRENT,
         ),
         domains = setOf("api.bgm.tv", "bgm.tv"),
@@ -299,8 +300,8 @@ class BangumiCatalogSourceProvider(
     private companion object {
         const val ID = "bangumi-catalog"
         const val BASE_URL = "https://api.bgm.tv/v0"
-        const val USER_AGENT = "ZFBML/0.2.11 (https://github.com/alwaysalone1/zfbml)"
-        const val RESOURCE_SEARCH_TIMEOUT_MS = 5_000L
+        const val USER_AGENT = "ZFBML/0.2.12 (https://github.com/alwaysalone1/zfbml)"
+        const val RESOURCE_SEARCH_TIMEOUT_MS = 12_000L
         val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
         val json = Json {
             ignoreUnknownKeys = true
