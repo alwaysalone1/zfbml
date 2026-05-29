@@ -3,6 +3,8 @@ package com.zfbml.aggregate.player
 import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.MotionEvent
+import android.view.View
+import android.view.ViewGroup
 import androidx.annotation.OptIn
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -39,11 +41,24 @@ fun PlayerViewSurface(
 }
 
 private fun PlayerView.bindSurfaceTap(onSurfaceTap: (() -> Unit)?) {
-    isClickable = onSurfaceTap != null
-    setOnTouchListener { _, event ->
+    val enabled = onSurfaceTap != null
+    val listener = View.OnTouchListener { _, event ->
         if (onSurfaceTap != null && event.action == MotionEvent.ACTION_UP) {
             onSurfaceTap()
         }
-        onSurfaceTap != null
+        enabled
+    }
+    val touchListener = if (enabled) listener else null
+    bindTapListenerRecursive(touchListener)
+    post { bindTapListenerRecursive(touchListener) }
+}
+
+private fun View.bindTapListenerRecursive(listener: View.OnTouchListener?) {
+    isClickable = listener != null
+    setOnTouchListener(listener)
+    if (this is ViewGroup) {
+        for (index in 0 until childCount) {
+            getChildAt(index).bindTapListenerRecursive(listener)
+        }
     }
 }

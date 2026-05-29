@@ -26,6 +26,7 @@ fun DanmakuSurface(
 ) {
     val layoutEngine = remember { DanmakuLayoutEngine() }
     val fillPaint = rememberTextPaint()
+    val measurePaint = rememberTextPaint()
     val strokePaint = rememberTextPaint().apply {
         style = Paint.Style.STROKE
         strokeJoin = Paint.Join.ROUND
@@ -42,6 +43,23 @@ fun DanmakuSurface(
     Canvas(modifier = modifier) {
         frameTimeMs
         val playbackMs = playbackMsProvider()
+        val metricsCache = HashMap<DanmakuItem, DanmakuTextMetrics>()
+        fun metricsFor(item: DanmakuItem): DanmakuTextMetrics {
+            return metricsCache.getOrPut(item) {
+                val textSizePx = with(density) {
+                    (item.fontSizeSp * profile.fontScale * settings.fontScale).sp.toPx()
+                }
+                measurePaint.textSize = textSizePx
+                val fontMetrics = measurePaint.fontMetrics
+                val rawLineHeight = fontMetrics.descent - fontMetrics.ascent
+                DanmakuTextMetrics(
+                    textSizePx = textSizePx,
+                    widthPx = measurePaint.measureText(item.text).coerceAtLeast(1f),
+                    lineHeightPx = (rawLineHeight * 1.18f).coerceAtLeast(textSizePx * 1.25f),
+                    baselineOffsetPx = (-fontMetrics.ascent + rawLineHeight * 0.08f).coerceAtLeast(1f),
+                )
+            }
+        }
         val rendered = layoutEngine.layout(
             items = items,
             playbackMs = playbackMs,
@@ -49,18 +67,17 @@ fun DanmakuSurface(
             heightPx = size.height,
             profile = profile,
             settings = settings,
+            measureText = ::metricsFor,
         )
         drawIntoCanvas { canvas ->
             val native = canvas.nativeCanvas
             rendered.forEach { entry ->
-                val textSizePx = with(density) {
-                    (entry.item.fontSizeSp * profile.fontScale * settings.fontScale).sp.toPx()
-                }
+                val metrics = metricsFor(entry.item)
                 val color = entry.item.color.withAlpha(entry.alpha)
-                strokePaint.textSize = textSizePx
+                strokePaint.textSize = metrics.textSizePx
                 strokePaint.strokeWidth = profile.strokeWidthPx
                 strokePaint.color = 0xCC000000.toInt()
-                fillPaint.textSize = textSizePx
+                fillPaint.textSize = metrics.textSizePx
                 fillPaint.color = color
                 fillPaint.setShadowLayer(profile.shadowRadiusPx, 1f, 1f, 0x88000000.toInt())
                 native.drawText(entry.item.text, entry.x, entry.y, strokePaint)

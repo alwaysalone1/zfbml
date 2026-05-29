@@ -25,6 +25,21 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.18
+
+中文：
+- 修正弹幕层按 `sp` 当像素排轨导致的重叠问题，渲染前会用真实文本宽高计算轨道高度。
+- 弹幕布局改为滚动、顶部、底部分区调度，同轨滚动弹幕会做安全间距和追尾检测，过载时主动丢弃会碰撞的弹幕。
+- 播放器底部控制区改为更接近国内移动端视频 App 的弹幕输入条 + 文本快捷项布局，弱化厚重胶囊按钮。
+- 增强视频 Surface 点按事件绑定，避免原生 `PlayerView`/`TextureView` 吃掉触摸导致隐藏控件后不好唤出。
+
+English:
+
+- Fixed danmaku overlap caused by laying out tracks with raw `sp` values instead of measured pixel text metrics.
+- Reworked danmaku scheduling into separate scrolling/top/bottom lanes with spacing and catch-up checks; overloaded comments are dropped instead of being drawn on top of each other.
+- Adjusted the bottom player controls toward a China-market mobile video layout with a danmaku input strip and lightweight text actions instead of heavy pill buttons.
+- Hardened player surface tap handling so the native `PlayerView`/`TextureView` does not swallow taps when controls are hidden.
+
 ### v0.2.17
 
 中文：

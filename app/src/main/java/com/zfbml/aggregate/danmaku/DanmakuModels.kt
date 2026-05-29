@@ -43,7 +43,7 @@ data class DanmakuProfile(
     val scrollDurationMs: Long = 8_500,
     val topDurationMs: Long = 4_500,
     val bottomDurationMs: Long = 4_500,
-    val maxTracks: Int = 12,
+    val maxTracks: Int = 18,
     val maxItemsPerMinute: Int = 1_000,
     val supportsAdvanced: Boolean = false,
 )

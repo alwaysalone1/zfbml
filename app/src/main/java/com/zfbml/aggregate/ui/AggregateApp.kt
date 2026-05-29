@@ -95,6 +95,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
 import com.zfbml.aggregate.AppGraph
 import com.zfbml.aggregate.danmaku.DanmakuItem
 import com.zfbml.aggregate.danmaku.DanmakuPlatform
@@ -1441,7 +1442,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.17")
+                setRequestProperty("User-Agent", "ZFBML/0.2.18")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2622,6 +2623,8 @@ private fun PlayerScreen(
         state.errorMessage
     }
     val revealControls = { controlsVisible = true }
+    val danmakuTopPadding = if (controlsVisible) 58.dp else 8.dp
+    val danmakuBottomPadding = if (controlsVisible) 150.dp else 8.dp
 
     Box(Modifier.fillMaxSize().background(AnimeBackground)) {
         if (currentStream.protocol == StreamProtocol.BITTORRENT && torrentPlaybackUrl == null) {
@@ -2654,12 +2657,15 @@ private fun PlayerScreen(
             playbackMsProvider = engine::currentPositionMs,
             profile = profile,
             settings = DanmakuSettings(enabled = danmakuEnabled, density = density),
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = danmakuTopPadding, bottom = danmakuBottomPadding),
         )
         if (controlsVisible) {
             Box(
                 modifier = Modifier
                     .matchParentSize()
+                    .zIndex(2f)
                     .background(Color.Transparent)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
@@ -2672,6 +2678,7 @@ private fun PlayerScreen(
             Box(
                 modifier = Modifier
                     .matchParentSize()
+                    .zIndex(2f)
                     .background(Color.Transparent)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
@@ -2684,13 +2691,13 @@ private fun PlayerScreen(
         PlayerEdgeProgress(
             positionMs = playbackPositionMs,
             durationMs = playbackDurationMs,
-            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
+            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().zIndex(3f),
         )
         AnimatedVisibility(
             visible = controlsVisible,
             enter = fadeIn(),
             exit = fadeOut(),
-            modifier = Modifier.align(Alignment.TopCenter),
+            modifier = Modifier.align(Alignment.TopCenter).zIndex(4f),
         ) {
             PlayerTopOverlay(
                 title = detail.title,
@@ -2705,7 +2712,7 @@ private fun PlayerScreen(
             visible = controlsVisible,
             enter = fadeIn(),
             exit = fadeOut(),
-            modifier = Modifier.align(Alignment.Center),
+            modifier = Modifier.align(Alignment.Center).zIndex(4f),
         ) {
             PlayerCenterControls(
                 isPlaying = state.isPlaying,
@@ -2733,7 +2740,7 @@ private fun PlayerScreen(
             visible = controlsVisible,
             enter = fadeIn(),
             exit = fadeOut(),
-            modifier = Modifier.align(Alignment.BottomCenter),
+            modifier = Modifier.align(Alignment.BottomCenter).zIndex(4f),
         ) {
             PlayerBottomControls(
                 currentStream = currentStream,
@@ -2912,7 +2919,7 @@ private fun PlayerBottomControls(
                 ),
             )
             .padding(horizontal = 10.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(7.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -2987,6 +2994,11 @@ private fun PlayerBottomControls(
             }
         }
 
+        PlayerDanmakuInputBar(
+            danmakuEnabled = danmakuEnabled,
+            modifier = Modifier.fillMaxWidth(),
+        )
+
         PlayerActionBar(
             quality = quality,
             danmakuEnabled = danmakuEnabled,
@@ -3010,6 +3022,43 @@ private fun PlayerBottomControls(
 }
 
 @Composable
+private fun PlayerDanmakuInputBar(
+    danmakuEnabled: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .height(38.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color.Black.copy(alpha = 0.38f))
+            .padding(horizontal = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Icon(
+            Icons.Filled.ClosedCaption,
+            contentDescription = null,
+            tint = if (danmakuEnabled) AnimeAccentPink else Color.White.copy(alpha = 0.46f),
+            modifier = Modifier.size(18.dp),
+        )
+        Text(
+            text = if (danmakuEnabled) "发个友善的弹幕" else "弹幕已关闭",
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.White.copy(alpha = 0.7f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            text = "发送",
+            style = MaterialTheme.typography.labelMedium,
+            color = if (danmakuEnabled) AnimeAccentPink else Color.White.copy(alpha = 0.36f),
+            fontWeight = FontWeight.Bold,
+        )
+    }
+}
+
+@Composable
 private fun PlayerActionBar(
     quality: String,
     danmakuEnabled: Boolean,
@@ -3022,11 +3071,11 @@ private fun PlayerActionBar(
 ) {
     LazyRow(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
         contentPadding = PaddingValues(horizontal = 2.dp),
     ) {
         item {
-            PlayerActionChip(
+            PlayerTextAction(
                 icon = Icons.Filled.ClosedCaption,
                 text = if (danmakuEnabled) "弹幕 开" else "弹幕 关",
                 selected = danmakuEnabled,
@@ -3034,17 +3083,17 @@ private fun PlayerActionBar(
             )
         }
         item {
-            PlayerActionChip(
+            PlayerTextAction(
                 icon = null,
                 text = "密度 ${formatDanmakuDensity(density)}",
                 onClick = { onDensityChange(nextDanmakuDensity(density)) },
             )
         }
-        item { PlayerInfoPill("清晰度 $quality") }
-        item { PlayerInfoPill("倍速 1.0x") }
+        item { PlayerTextAction(icon = null, text = "清晰度 $quality", onClick = {}) }
+        item { PlayerTextAction(icon = null, text = "倍速 1.0x", onClick = {}) }
         item {
-            PlayerActionChip(
-                icon = Icons.Filled.Bookmarks,
+            PlayerTextAction(
+                icon = Icons.Filled.CloudDownload,
                 text = "缓存",
                 enabled = offlineEnabled,
                 onClick = onOffline,
@@ -3054,28 +3103,25 @@ private fun PlayerActionBar(
 }
 
 @Composable
-private fun PlayerActionChip(
+private fun PlayerTextAction(
     icon: ImageVector?,
     text: String,
     selected: Boolean = false,
     enabled: Boolean = true,
     onClick: () -> Unit,
 ) {
-    Button(
+    TextButton(
         onClick = onClick,
         enabled = enabled,
         modifier = Modifier.height(34.dp).focusable(),
-        shape = RoundedCornerShape(8.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = if (selected) AnimeAccentPink else Color.Black.copy(alpha = 0.42f),
-            contentColor = Color.White,
-            disabledContainerColor = Color.White.copy(alpha = 0.08f),
+        colors = ButtonDefaults.textButtonColors(
+            contentColor = if (selected) AnimeAccentPink else Color.White.copy(alpha = 0.9f),
             disabledContentColor = Color.White.copy(alpha = 0.36f),
         ),
-        contentPadding = PaddingValues(horizontal = 10.dp),
+        contentPadding = PaddingValues(horizontal = 0.dp),
     ) {
         if (icon != null) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp))
+            Icon(icon, contentDescription = null, modifier = Modifier.size(17.dp))
             Spacer(Modifier.width(5.dp))
         }
         Text(text, style = MaterialTheme.typography.labelMedium, maxLines = 1)
