@@ -10,6 +10,7 @@ import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.Tracks
+import androidx.media3.common.VideoSize
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.DefaultLoadControl
@@ -27,12 +28,15 @@ class ExoPlayerEngine(
 ) : PlayerEngine {
     private val appContext = context.applicationContext
     private val mainHandler = Handler(Looper.getMainLooper())
+    private val httpFactory = DefaultHttpDataSource.Factory()
+        .setAllowCrossProtocolRedirects(true)
+        .setConnectTimeoutMs(HTTP_CONNECT_TIMEOUT_MS)
+        .setReadTimeoutMs(HTTP_READ_TIMEOUT_MS)
     private val _state = MutableStateFlow(PlayerEngineState())
     override val state: StateFlow<PlayerEngineState> = _state
 
-    private var exoPlayer: ExoPlayer = buildPlayer(emptyMap())
+    private var exoPlayer: ExoPlayer = buildPlayer()
     private var progressLogger: Runnable? = null
-    private var currentHeaders: Map<String, String> = emptyMap()
     private var listenerPlayer: ExoPlayer? = null
 
     val player: Player
@@ -40,22 +44,19 @@ class ExoPlayerEngine(
 
     override fun prepare(stream: MediaStream, playWhenReady: Boolean) {
         stopProgressLogging()
-        if (stream.headers != currentHeaders) {
-            exoPlayer.release()
-            exoPlayer = buildPlayer(stream.headers)
-            currentHeaders = stream.headers
-            listenerPlayer = null
-        } else {
-            exoPlayer.stop()
-            exoPlayer.clearMediaItems()
-        }
+        httpFactory.setDefaultRequestProperties(stream.headers)
+        exoPlayer.stop()
+        exoPlayer.clearMediaItems()
         ensureListener()
         val itemBuilder = MediaItem.Builder().setUri(stream.url)
         mimeType(stream.protocol)?.let(itemBuilder::setMimeType)
         exoPlayer.setMediaItem(itemBuilder.build())
         exoPlayer.playWhenReady = playWhenReady
         exoPlayer.prepare()
-        _state.value = PlayerEngineState(stream = stream)
+        _state.value = PlayerEngineState(
+            stream = stream,
+            playbackStateLabel = exoPlayer.playbackState.label(),
+        )
         Log.i(TAG, "prepare protocol=${stream.protocol} quality=${stream.quality} url=${stream.url.take(160)}")
         startProgressLogging()
     }
@@ -71,6 +72,7 @@ class ExoPlayerEngine(
                         it.copy(
                             isReady = playbackState == Player.STATE_READY,
                             isPlaying = exoPlayer.isPlaying,
+                            playbackStateLabel = playbackState.label(),
                         )
                     }
                 }
@@ -86,6 +88,17 @@ class ExoPlayerEngine(
 
                 override fun onRenderedFirstFrame() {
                     Log.i(TAG, "rendered first video frame")
+                    _state.update { it.copy(hasRenderedFirstFrame = true) }
+                }
+
+                override fun onVideoSizeChanged(videoSize: VideoSize) {
+                    val label = if (videoSize.width > 0 && videoSize.height > 0) {
+                        "${videoSize.width}x${videoSize.height}"
+                    } else {
+                        null
+                    }
+                    Log.i(TAG, "videoSize=$label")
+                    _state.update { it.copy(videoSizeLabel = label) }
                 }
 
                 override fun onTracksChanged(tracks: Tracks) {
@@ -113,7 +126,8 @@ class ExoPlayerEngine(
                     TAG,
                     "progress state=${exoPlayer.playbackState.label()} isPlaying=${exoPlayer.isPlaying} " +
                         "positionMs=${exoPlayer.currentPosition} bufferedMs=${exoPlayer.bufferedPosition} " +
-                        "durationMs=${exoPlayer.duration} playWhenReady=${exoPlayer.playWhenReady}",
+                        "durationMs=${exoPlayer.duration} playWhenReady=${exoPlayer.playWhenReady} " +
+                        "firstFrame=${_state.value.hasRenderedFirstFrame} videoSize=${_state.value.videoSizeLabel.orEmpty()}",
                 )
                 mainHandler.postDelayed(this, PROGRESS_LOG_INTERVAL_MS)
             }
@@ -127,12 +141,7 @@ class ExoPlayerEngine(
         progressLogger = null
     }
 
-    private fun buildPlayer(headers: Map<String, String>): ExoPlayer {
-        val httpFactory = DefaultHttpDataSource.Factory()
-            .setAllowCrossProtocolRedirects(true)
-            .setConnectTimeoutMs(HTTP_CONNECT_TIMEOUT_MS)
-            .setReadTimeoutMs(HTTP_READ_TIMEOUT_MS)
-            .setDefaultRequestProperties(headers)
+    private fun buildPlayer(): ExoPlayer {
         val loadControl = DefaultLoadControl.Builder()
             .setBufferDurationsMs(
                 MIN_BUFFER_MS,
@@ -167,9 +176,9 @@ class ExoPlayerEngine(
         const val PROGRESS_LOG_INTERVAL_MS = 5_000L
         const val HTTP_CONNECT_TIMEOUT_MS = 15_000
         const val HTTP_READ_TIMEOUT_MS = 180_000
-        const val MIN_BUFFER_MS = 30_000
-        const val MAX_BUFFER_MS = 180_000
-        const val BUFFER_FOR_PLAYBACK_MS = 20_000
-        const val BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS = 30_000
+        const val MIN_BUFFER_MS = 3_000
+        const val MAX_BUFFER_MS = 60_000
+        const val BUFFER_FOR_PLAYBACK_MS = 1_000
+        const val BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS = 2_500
     }
 }

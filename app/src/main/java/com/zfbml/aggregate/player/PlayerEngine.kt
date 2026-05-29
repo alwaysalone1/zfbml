@@ -17,5 +17,8 @@ data class PlayerEngineState(
     val stream: MediaStream? = null,
     val isReady: Boolean = false,
     val isPlaying: Boolean = false,
+    val playbackStateLabel: String = "IDLE",
+    val hasRenderedFirstFrame: Boolean = false,
+    val videoSizeLabel: String? = null,
     val errorMessage: String? = null,
 )

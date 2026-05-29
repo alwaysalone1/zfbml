@@ -2563,6 +2563,18 @@ private fun PlayerScreen(
         } else {
             PlayerViewSurface(engine = engine, modifier = Modifier.fillMaxSize())
         }
+        if (
+            (stream.protocol != StreamProtocol.BITTORRENT || torrentPlaybackUrl != null) &&
+            !state.hasRenderedFirstFrame &&
+            state.errorMessage == null
+        ) {
+            VideoStartupOverlay(
+                playbackState = state.playbackStateLabel,
+                videoSize = state.videoSizeLabel,
+                protocol = if (stream.protocol == StreamProtocol.BITTORRENT) StreamProtocol.PROGRESSIVE else stream.protocol,
+                modifier = Modifier.align(Alignment.Center),
+            )
+        }
         DanmakuSurface(
             items = danmakuItems,
             playbackMsProvider = engine::currentPositionMs,
@@ -2659,6 +2671,41 @@ private fun PlayerScreen(
                     modifier = Modifier.weight(1f).focusable(),
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun VideoStartupOverlay(
+    playbackState: String,
+    videoSize: String?,
+    protocol: StreamProtocol,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier.width(300.dp),
+        shape = RoundedCornerShape(8.dp),
+        color = AnimePanel.copy(alpha = 0.84f),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f)),
+    ) {
+        Column(
+            modifier = Modifier.padding(18.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            CircularProgressIndicator(color = AnimeAccentCyan, modifier = Modifier.size(30.dp))
+            Text("正在加载画面", style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold)
+            Text(
+                listOfNotNull(
+                    playbackState,
+                    protocol.displayName(),
+                    videoSize,
+                ).joinToString(" / "),
+                style = MaterialTheme.typography.bodySmall,
+                color = AnimeMuted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }

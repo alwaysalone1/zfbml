@@ -1,5 +1,6 @@
 package com.zfbml.aggregate.player
 
+import android.graphics.Color
 import android.view.LayoutInflater
 import androidx.annotation.OptIn
 import androidx.compose.runtime.Composable
@@ -21,6 +22,7 @@ fun PlayerViewSurface(
             (LayoutInflater.from(context).inflate(R.layout.view_player, null) as PlayerView).apply {
                 useController = false
                 keepScreenOn = true
+                setShutterBackgroundColor(Color.TRANSPARENT)
                 player = engine.player
             }
         },

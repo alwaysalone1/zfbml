@@ -56,6 +56,29 @@ class MediaRouteResolverTest {
         assertEquals("1080p", routes.first().quality)
     }
 
+    @Test
+    fun resolverPrefersHlsWhenEpisodeMatchIsEquivalent() = runTest {
+        val provider = FakeMixedProtocolProvider()
+        val request = MediaFetchRequest.fromEpisode(
+            Episode(
+                providerId = "bangumi-catalog",
+                id = "catalog-1",
+                title = "Episode 1",
+                url = "bangumi://subject/1/episode/1",
+                index = 1,
+                raw = mapOf(
+                    "subjectNameCn" to "Test Anime",
+                    "subjectName" to "Test JP",
+                ),
+            ),
+        )
+
+        val routes = MediaRouteResolver(listOf(provider), providerTimeoutMs = 1_000L).resolve(request)
+
+        assertTrue(routes.size >= 2)
+        assertEquals(StreamProtocol.HLS, routes.first().protocol)
+    }
+
     private class FakeRouteProvider : SourceProvider {
         override val manifest = SourceManifest(
             id = "fake",
@@ -106,6 +129,64 @@ class MediaRouteResolverTest {
                     url = episode.url,
                     protocol = StreamProtocol.PROGRESSIVE,
                     quality = if (episode.index == 2) "1080p" else "720p",
+                    sourceScore = 60,
+                ),
+            )
+        }
+    }
+
+    private class FakeMixedProtocolProvider : SourceProvider {
+        override val manifest = SourceManifest(
+            id = "fake-mixed",
+            name = "Fake Mixed Source",
+            version = "1",
+            author = "test",
+            capabilities = setOf(SourceCapability.SEARCH, SourceCapability.DETAIL, SourceCapability.STREAM),
+        )
+
+        override suspend fun search(query: String): List<SearchResult> {
+            return listOf(
+                SearchResult(
+                    providerId = manifest.id,
+                    title = "$query - 01 1080p",
+                    url = "fake://mixed/1",
+                ),
+            )
+        }
+
+        override suspend fun loadDetail(result: SearchResult): MediaDetail {
+            return MediaDetail(
+                providerId = manifest.id,
+                title = result.title,
+                url = result.url,
+                episodes = listOf(
+                    Episode(
+                        providerId = manifest.id,
+                        id = "mixed-ep-1",
+                        title = result.title,
+                        url = "${result.url}/stream",
+                        index = 1,
+                    ),
+                ),
+            )
+        }
+
+        override suspend fun resolveStreams(episode: Episode): List<MediaStream> {
+            return listOf(
+                MediaStream(
+                    id = "${episode.id}-mp4",
+                    providerId = manifest.id,
+                    url = "${episode.url}.mp4",
+                    protocol = StreamProtocol.PROGRESSIVE,
+                    quality = "1080p",
+                    sourceScore = 60,
+                ),
+                MediaStream(
+                    id = "${episode.id}-hls",
+                    providerId = manifest.id,
+                    url = "${episode.url}.m3u8",
+                    protocol = StreamProtocol.HLS,
+                    quality = "1080p",
                     sourceScore = 60,
                 ),
             )

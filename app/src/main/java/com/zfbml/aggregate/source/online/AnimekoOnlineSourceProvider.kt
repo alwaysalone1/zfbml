@@ -154,8 +154,12 @@ class AnimekoOnlineSourceProvider(
             Log.w(TAG, "resolve empty source=${config.name} episode=${episode.title} page=${episode.url}")
             return emptyList()
         }
-        Log.i(TAG, "resolved source=${config.name} episode=${episode.title} url=${videoUrl.take(160)}")
         val protocol = inferProtocol(videoUrl)
+        if (!isPlayableStreamUrl(config, episode.url, videoUrl, protocol)) {
+            Log.w(TAG, "resolved but unavailable source=${config.name} episode=${episode.title} url=${videoUrl.take(160)}")
+            return emptyList()
+        }
+        Log.i(TAG, "resolved source=${config.name} episode=${episode.title} protocol=$protocol url=${videoUrl.take(160)}")
         return listOf(
             MediaStream(
                 id = "${episode.id}:${videoUrl.hashCode()}",
@@ -184,6 +188,40 @@ class AnimekoOnlineSourceProvider(
                 ),
             ),
         )
+    }
+
+    private suspend fun isPlayableStreamUrl(
+        config: OnlineSelectorConfig,
+        referer: String,
+        videoUrl: String,
+        protocol: StreamProtocol,
+    ): Boolean = withContext(Dispatchers.IO) {
+        val requestBuilder = Request.Builder().url(videoUrl)
+        requestHeaders(config, referer, videoHeaders = true).forEach { (key, value) ->
+            requestBuilder.header(key, value)
+        }
+        if (protocol == StreamProtocol.PROGRESSIVE) {
+            requestBuilder.header("Range", "bytes=0-0")
+        }
+        runCatching {
+            onlineClient.newCall(requestBuilder.build()).execute().use { response ->
+                if (!response.isSuccessful) {
+                    Log.w(TAG, "stream check failed status=${response.code} url=${videoUrl.take(160)}")
+                    return@use false
+                }
+                if (protocol == StreamProtocol.HLS) {
+                    val body = response.body?.string().orEmpty()
+                    body.contains("#EXTM3U") ||
+                        body.contains("#EXT-X") ||
+                        body.contains(".ts", ignoreCase = true)
+                } else {
+                    true
+                }
+            }
+        }.getOrElse { error ->
+            Log.w(TAG, "stream check failed url=${videoUrl.take(160)}", error)
+            false
+        }
     }
 
     private suspend fun configs(): List<OnlineSelectorConfig> {
@@ -476,7 +514,7 @@ class AnimekoOnlineSourceProvider(
         const val ID = "animeko-online"
         const val TAG = "ZfbmlOnlineSource"
         const val DEFAULT_SUBSCRIPTION_URL = "https://sub.creamycake.org/v1/css1.json"
-        const val USER_AGENT = "ZFBML/0.2.13 (https://github.com/alwaysalone1/zfbml)"
+        const val USER_AGENT = "ZFBML/0.2.14 (https://github.com/alwaysalone1/zfbml)"
         const val DEFAULT_BROWSER_UA =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
         const val RAW_SOURCE_ID = "onlineSourceId"

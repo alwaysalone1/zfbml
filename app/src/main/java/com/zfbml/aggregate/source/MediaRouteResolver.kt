@@ -58,7 +58,7 @@ class MediaRouteResolver(
 
         (onlineRoutes + fallbackRoutes)
             .distinctBy { "${it.sourceId}|${it.stream.url}" }
-            .sortedWith(compareByDescending<RouteCandidate> { it.score }.thenBy { it.title })
+            .sortedWith(routeComparator())
             .take(MAX_ROUTES)
     }
 
@@ -79,7 +79,7 @@ class MediaRouteResolver(
                     runCatching { hit.provider.resolveStreams(candidateEpisode) }
                         .getOrDefault(emptyList())
                         .map { stream ->
-                            val score = (stream.sourceScore + hit.score / 2 + episodeScore / 4)
+                            val score = (stream.sourceScore + hit.score / 2 + episodeScore / 4 + protocolScore(stream.protocol))
                                 .coerceIn(0, 360)
                             val resolverMetadata = buildMap {
                                 put("routeProviderId", hit.provider.manifest.id)
@@ -110,9 +110,9 @@ class MediaRouteResolver(
                             )
                         }
                 }
-        }
+            }
             .distinctBy { "${it.sourceId}|${it.stream.url}" }
-            .sortedWith(compareByDescending<RouteCandidate> { it.score }.thenBy { it.title })
+            .sortedWith(routeComparator())
             .take(MAX_ROUTES)
     }
 
@@ -191,6 +191,22 @@ class MediaRouteResolver(
         if ("mp4" in lower || "avc" in lower || "h264" in lower || "h.264" in lower) score += 24
         if ("hevc" in lower || "x265" in lower || "h265" in lower || "10bit" in lower || "av1" in lower) score -= 26
         return score
+    }
+
+    private fun protocolScore(protocol: StreamProtocol): Int {
+        return when (protocol) {
+            StreamProtocol.HLS -> 36
+            StreamProtocol.DASH -> 28
+            StreamProtocol.PROGRESSIVE -> 8
+            StreamProtocol.SMOOTH_STREAMING -> 4
+            else -> 0
+        }
+    }
+
+    private fun routeComparator(): Comparator<RouteCandidate> {
+        return compareByDescending<RouteCandidate> { it.score }
+            .thenByDescending { protocolScore(it.protocol) }
+            .thenBy { it.title }
     }
 
     private fun sizeScore(bytes: Long): Int {
