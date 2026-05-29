@@ -1,11 +1,16 @@
 package com.zfbml.aggregate.ui
 
 import android.graphics.BitmapFactory
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -1436,7 +1441,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.16")
+                setRequestProperty("User-Agent", "ZFBML/0.2.17")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2541,6 +2546,7 @@ private fun PlayerScreen(
     var danmakuItems by remember { mutableStateOf<List<DanmakuItem>>(emptyList()) }
     var danmakuEnabled by remember { mutableStateOf(true) }
     var density by remember { mutableFloatStateOf(1f) }
+    var controlsVisible by remember(currentStream.id) { mutableStateOf(true) }
     var playbackPositionMs by remember(currentStream.id) { mutableStateOf(0L) }
     var playbackDurationMs by remember(currentStream.id) { mutableStateOf(0L) }
     val profile = remember { DanmakuProfile(DanmakuPlatform.Bilibili, supportsAdvanced = true) }
@@ -2574,6 +2580,12 @@ private fun PlayerScreen(
             delay(500)
         }
     }
+    LaunchedEffect(controlsVisible, state.isPlaying, state.errorMessage, routeNotice) {
+        if (controlsVisible && state.isPlaying && state.errorMessage == null && routeNotice == null) {
+            delay(4_000)
+            controlsVisible = false
+        }
+    }
     LaunchedEffect(state.errorMessage, currentStream.id, routeOptions) {
         val errorMessage = state.errorMessage ?: return@LaunchedEffect
         if (currentStream.protocol == StreamProtocol.BITTORRENT || currentStream.id in failedStreamIds) return@LaunchedEffect
@@ -2590,6 +2602,11 @@ private fun PlayerScreen(
             routeNotice = "当前线路失败：$errorMessage"
         }
     }
+    LaunchedEffect(state.hasRenderedFirstFrame, state.isPlaying, currentStream.id) {
+        if ((state.hasRenderedFirstFrame || state.isPlaying) && routeNotice != null) {
+            routeNotice = null
+        }
+    }
     DisposableEffect(Unit) {
         onDispose {
             engine.release()
@@ -2604,6 +2621,7 @@ private fun PlayerScreen(
     } else {
         state.errorMessage
     }
+    val revealControls = { controlsVisible = true }
 
     Box(Modifier.fillMaxSize().background(AnimeBackground)) {
         if (currentStream.protocol == StreamProtocol.BITTORRENT && torrentPlaybackUrl == null) {
@@ -2613,7 +2631,11 @@ private fun PlayerScreen(
                 modifier = Modifier.fillMaxSize(),
             )
         } else {
-            PlayerViewSurface(engine = engine, modifier = Modifier.fillMaxSize())
+            PlayerViewSurface(
+                engine = engine,
+                modifier = Modifier.fillMaxSize(),
+                onSurfaceTap = revealControls,
+            )
         }
         if (
             (currentStream.protocol != StreamProtocol.BITTORRENT || torrentPlaybackUrl != null) &&
@@ -2634,63 +2656,123 @@ private fun PlayerScreen(
             settings = DanmakuSettings(enabled = danmakuEnabled, density = density),
             modifier = Modifier.fillMaxSize(),
         )
-        PlayerTopOverlay(
-            title = detail.title,
-            episodeTitle = episode.title,
-            routeLabel = routeLabel,
-            playbackState = state.playbackStateLabel,
-            onBack = onBack,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .fillMaxWidth(),
-        )
-        PlayerCenterControls(
-            isPlaying = state.isPlaying,
-            onSeekBackward = {
-                engine.player.seekTo((engine.currentPositionMs() - 10_000L).coerceAtLeast(0L))
-            },
-            onTogglePlay = {
-                if (state.isPlaying) {
-                    engine.player.pause()
-                } else {
-                    engine.player.play()
-                }
-            },
-            onSeekForward = {
-                val duration = normalizePlaybackDurationMs(engine.player.duration)
-                val target = engine.currentPositionMs() + 10_000L
-                engine.player.seekTo(if (duration > 0L) target.coerceAtMost(duration) else target)
-            },
-            modifier = Modifier.align(Alignment.Center),
-        )
-        PlayerBottomControls(
-            currentStream = currentStream,
-            currentRoute = currentRoute,
-            routeOptions = routeOptions,
-            selectedStreamId = currentStream.id,
-            routeNotice = routeNotice,
-            errorMessage = effectiveErrorMessage,
-            danmakuEnabled = danmakuEnabled,
-            density = density,
+        if (controlsVisible) {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(Color.Transparent)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                    ) {
+                        controlsVisible = false
+                    },
+            )
+        } else {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(Color.Transparent)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                    ) {
+                        controlsVisible = true
+                    },
+            )
+        }
+        PlayerEdgeProgress(
             positionMs = playbackPositionMs,
             durationMs = playbackDurationMs,
-            onSeek = { engine.player.seekTo(it) },
-            onRouteSelected = { route ->
-                failedStreamIds = emptySet()
-                routeNotice = null
-                currentStream = route.stream
-            },
-            onToggleDanmaku = { danmakuEnabled = !danmakuEnabled },
-            onDensityChange = { density = it },
-            onOffline = {
-                if (currentStream.protocol != StreamProtocol.BITTORRENT) {
-                    graph.media3DownloadCoordinator.enqueue(currentStream, "${detail.title} ${episode.title}")
-                }
-            },
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth(),
+            modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth(),
         )
+        AnimatedVisibility(
+            visible = controlsVisible,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.TopCenter),
+        ) {
+            PlayerTopOverlay(
+                title = detail.title,
+                episodeTitle = episode.title,
+                routeLabel = routeLabel,
+                playbackState = state.playbackStateLabel,
+                onBack = onBack,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        AnimatedVisibility(
+            visible = controlsVisible,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.Center),
+        ) {
+            PlayerCenterControls(
+                isPlaying = state.isPlaying,
+                onSeekBackward = {
+                    controlsVisible = true
+                    engine.player.seekTo((engine.currentPositionMs() - 10_000L).coerceAtLeast(0L))
+                },
+                onTogglePlay = {
+                    controlsVisible = true
+                    if (state.isPlaying) {
+                        engine.player.pause()
+                    } else {
+                        engine.player.play()
+                    }
+                },
+                onSeekForward = {
+                    controlsVisible = true
+                    val duration = normalizePlaybackDurationMs(engine.player.duration)
+                    val target = engine.currentPositionMs() + 10_000L
+                    engine.player.seekTo(if (duration > 0L) target.coerceAtMost(duration) else target)
+                },
+            )
+        }
+        AnimatedVisibility(
+            visible = controlsVisible,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.BottomCenter),
+        ) {
+            PlayerBottomControls(
+                currentStream = currentStream,
+                currentRoute = currentRoute,
+                routeOptions = routeOptions,
+                selectedStreamId = currentStream.id,
+                routeNotice = routeNotice,
+                errorMessage = effectiveErrorMessage,
+                danmakuEnabled = danmakuEnabled,
+                density = density,
+                positionMs = playbackPositionMs,
+                durationMs = playbackDurationMs,
+                onSeek = {
+                    controlsVisible = true
+                    engine.player.seekTo(it)
+                },
+                onRouteSelected = { route ->
+                    controlsVisible = true
+                    failedStreamIds = emptySet()
+                    routeNotice = null
+                    currentStream = route.stream
+                },
+                onToggleDanmaku = {
+                    controlsVisible = true
+                    danmakuEnabled = !danmakuEnabled
+                },
+                onDensityChange = {
+                    controlsVisible = true
+                    density = it
+                },
+                onOffline = {
+                    controlsVisible = true
+                    if (currentStream.protocol != StreamProtocol.BITTORRENT) {
+                        graph.media3DownloadCoordinator.enqueue(currentStream, "${detail.title} ${episode.title}")
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
     }
 }
 
@@ -2824,18 +2906,18 @@ private fun PlayerBottomControls(
                 Brush.verticalGradient(
                     colors = listOf(
                         Color.Transparent,
-                        Color.Black.copy(alpha = 0.64f),
-                        Color.Black.copy(alpha = 0.9f),
+                        Color.Black.copy(alpha = 0.56f),
+                        Color.Black.copy(alpha = 0.88f),
                     ),
                 ),
             )
-            .padding(horizontal = 14.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
                 text = formatPlaybackTime(displayPositionMs),
@@ -2857,7 +2939,7 @@ private fun PlayerBottomControls(
                         activeTrackColor = AnimeAccentPink,
                         inactiveTrackColor = Color.White.copy(alpha = 0.24f),
                     ),
-                    modifier = Modifier.weight(1f).height(34.dp).focusable(),
+                    modifier = Modifier.weight(1f).height(30.dp).focusable(),
                 )
             } else {
                 LinearProgressIndicator(
@@ -2877,7 +2959,7 @@ private fun PlayerBottomControls(
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(
@@ -2903,19 +2985,18 @@ private fun PlayerBottomControls(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            PlayerCircleButton(
-                icon = Icons.Filled.ClosedCaption,
-                contentDescription = if (danmakuEnabled) "关闭弹幕" else "开启弹幕",
-                onClick = onToggleDanmaku,
-                selected = danmakuEnabled,
-            )
-            PlayerCircleButton(
-                icon = Icons.Filled.Bookmarks,
-                contentDescription = "离线缓存",
-                onClick = onOffline,
-                enabled = currentStream.protocol != StreamProtocol.BITTORRENT,
-            )
         }
+
+        PlayerActionBar(
+            quality = quality,
+            danmakuEnabled = danmakuEnabled,
+            density = density,
+            offlineEnabled = currentStream.protocol != StreamProtocol.BITTORRENT,
+            onToggleDanmaku = onToggleDanmaku,
+            onDensityChange = onDensityChange,
+            onOffline = onOffline,
+            modifier = Modifier.fillMaxWidth(),
+        )
 
         if (routeOptions.size > 1) {
             PlayerRouteSelector(
@@ -2925,30 +3006,114 @@ private fun PlayerBottomControls(
             )
         }
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            Text(
-                text = "弹幕密度",
-                color = Color.White.copy(alpha = 0.76f),
-                style = MaterialTheme.typography.labelMedium,
-                modifier = Modifier.width(64.dp),
+    }
+}
+
+@Composable
+private fun PlayerActionBar(
+    quality: String,
+    danmakuEnabled: Boolean,
+    density: Float,
+    offlineEnabled: Boolean,
+    onToggleDanmaku: () -> Unit,
+    onDensityChange: (Float) -> Unit,
+    onOffline: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    LazyRow(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(horizontal = 2.dp),
+    ) {
+        item {
+            PlayerActionChip(
+                icon = Icons.Filled.ClosedCaption,
+                text = if (danmakuEnabled) "弹幕 开" else "弹幕 关",
+                selected = danmakuEnabled,
+                onClick = onToggleDanmaku,
             )
-            Slider(
-                value = density,
-                onValueChange = onDensityChange,
-                valueRange = 0.2f..1.5f,
-                colors = SliderDefaults.colors(
-                    thumbColor = AnimeAccentCyan,
-                    activeTrackColor = AnimeAccentCyan,
-                    inactiveTrackColor = Color.White.copy(alpha = 0.2f),
-                ),
-                modifier = Modifier.weight(1f).height(32.dp).focusable(),
+        }
+        item {
+            PlayerActionChip(
+                icon = null,
+                text = "密度 ${formatDanmakuDensity(density)}",
+                onClick = { onDensityChange(nextDanmakuDensity(density)) },
+            )
+        }
+        item { PlayerInfoPill("清晰度 $quality") }
+        item { PlayerInfoPill("倍速 1.0x") }
+        item {
+            PlayerActionChip(
+                icon = Icons.Filled.Bookmarks,
+                text = "缓存",
+                enabled = offlineEnabled,
+                onClick = onOffline,
             )
         }
     }
+}
+
+@Composable
+private fun PlayerActionChip(
+    icon: ImageVector?,
+    text: String,
+    selected: Boolean = false,
+    enabled: Boolean = true,
+    onClick: () -> Unit,
+) {
+    Button(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = Modifier.height(34.dp).focusable(),
+        shape = RoundedCornerShape(8.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (selected) AnimeAccentPink else Color.Black.copy(alpha = 0.42f),
+            contentColor = Color.White,
+            disabledContainerColor = Color.White.copy(alpha = 0.08f),
+            disabledContentColor = Color.White.copy(alpha = 0.36f),
+        ),
+        contentPadding = PaddingValues(horizontal = 10.dp),
+    ) {
+        if (icon != null) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(5.dp))
+        }
+        Text(text, style = MaterialTheme.typography.labelMedium, maxLines = 1)
+    }
+}
+
+@Composable
+private fun PlayerInfoPill(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelMedium,
+        color = Color.White.copy(alpha = 0.88f),
+        maxLines = 1,
+        modifier = Modifier
+            .height(34.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color.Black.copy(alpha = 0.34f))
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+    )
+}
+
+@Composable
+private fun PlayerEdgeProgress(
+    positionMs: Long,
+    durationMs: Long,
+    modifier: Modifier = Modifier,
+) {
+    val progress = if (durationMs > 0L) {
+        (positionMs.toFloat() / durationMs.toFloat()).coerceIn(0f, 1f)
+    } else {
+        0f
+    }
+    LinearProgressIndicator(
+        progress = { progress },
+        modifier = modifier.height(2.dp),
+        color = AnimeAccentPink,
+        trackColor = Color.Transparent,
+    )
 }
 
 @Composable
@@ -3162,6 +3327,22 @@ private fun formatPlaybackTime(ms: Long): String {
         "%d:%02d:%02d".format(hours, minutes, seconds)
     } else {
         "%02d:%02d".format(minutes, seconds)
+    }
+}
+
+private fun nextDanmakuDensity(density: Float): Float {
+    return when {
+        density < 0.75f -> 1f
+        density < 1.25f -> 1.5f
+        else -> 0.5f
+    }
+}
+
+private fun formatDanmakuDensity(density: Float): String {
+    return when {
+        density < 0.75f -> "50%"
+        density < 1.25f -> "100%"
+        else -> "150%"
     }
 }
 

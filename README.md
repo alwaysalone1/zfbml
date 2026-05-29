@@ -25,6 +25,19 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.17
+
+中文：
+- 参考 B 站手机端播放器的轻量叠层结构，加入点按显示/隐藏控件和播放中 4 秒自动收起，减少遮挡画面。
+- 底部控制栏改为贴边进度 + 横向快捷胶囊，弹幕开关、弹幕密度档位、清晰度、倍速和缓存入口更接近移动端视频播放器。
+- 保留真实线路切换能力，多个播放线路仍会在底部以横向小按钮展示。
+
+English:
+
+- Refined the player toward a Bilibili-style mobile overlay with tap-to-show controls and 4-second auto-hide during playback.
+- Reworked the bottom controls into an edge progress bar plus compact action chips for danmaku, danmaku density, quality, speed, and offline cache.
+- Kept real in-player route switching available as a compact horizontal route row when multiple streams exist.
+
 ### v0.2.16
 
 中文：

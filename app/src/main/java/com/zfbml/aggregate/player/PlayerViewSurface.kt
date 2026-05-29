@@ -2,6 +2,7 @@ package com.zfbml.aggregate.player
 
 import android.graphics.Color
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import androidx.annotation.OptIn
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -15,6 +16,7 @@ import com.zfbml.aggregate.R
 fun PlayerViewSurface(
     engine: ExoPlayerEngine,
     modifier: Modifier = Modifier,
+    onSurfaceTap: (() -> Unit)? = null,
 ) {
     AndroidView(
         modifier = modifier,
@@ -23,6 +25,7 @@ fun PlayerViewSurface(
                 useController = false
                 keepScreenOn = true
                 setShutterBackgroundColor(Color.TRANSPARENT)
+                bindSurfaceTap(onSurfaceTap)
                 player = engine.player
             }
         },
@@ -30,6 +33,17 @@ fun PlayerViewSurface(
             if (view.player !== engine.player) {
                 view.player = engine.player
             }
+            view.bindSurfaceTap(onSurfaceTap)
         },
     )
+}
+
+private fun PlayerView.bindSurfaceTap(onSurfaceTap: (() -> Unit)?) {
+    isClickable = onSurfaceTap != null
+    setOnTouchListener { _, event ->
+        if (onSurfaceTap != null && event.action == MotionEvent.ACTION_UP) {
+            onSurfaceTap()
+        }
+        onSurfaceTap != null
+    }
 }
