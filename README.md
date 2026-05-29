@@ -25,6 +25,19 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.15
+
+中文：
+- 播放器现在会接收详情页解析出的整组播放线路，在播放页底部提供横向线路切换入口。
+- 当前非 BT 线路播放失败时，会按解析排序自动尝试下一条可用线路，减少黑屏后必须返回详情页重选的情况。
+- 模拟器复测真实 `omofun111` 在线线路，确认仍能渲染 1080p 视频首帧并持续播放。
+
+English:
+
+- The player now receives the full route set resolved on the detail page and exposes in-player route switching.
+- When a non-BT route fails, playback automatically tries the next available route in resolved order instead of forcing the user back to the detail page.
+- Re-verified a real `omofun111` online route on the emulator, including 1080p first-frame rendering and continued playback.
+
 ### v0.2.14
 
 中文：

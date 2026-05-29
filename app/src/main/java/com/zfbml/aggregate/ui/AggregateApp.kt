@@ -137,13 +137,14 @@ fun AggregateApp(graph: AppGraph, initialQuery: String? = null) {
                     graph = graph,
                     result = current.result,
                     onBack = { screen = AppScreen.Main },
-                    onPlay = { detail, episode, stream -> screen = AppScreen.Player(detail, episode, stream) },
+                    onPlay = { detail, episode, stream, routes -> screen = AppScreen.Player(detail, episode, stream, routes) },
                 )
                 is AppScreen.Player -> PlayerScreen(
                     graph = graph,
                     detail = current.detail,
                     episode = current.episode,
                     stream = current.stream,
+                    routes = current.routes,
                     onBack = { screen = AppScreen.Detail(SearchResult(current.detail.providerId, current.detail.title, current.detail.url)) },
                 )
             }
@@ -205,7 +206,12 @@ private fun BrandSplashScreen() {
 private sealed interface AppScreen {
     data object Main : AppScreen
     data class Detail(val result: SearchResult) : AppScreen
-    data class Player(val detail: MediaDetail, val episode: Episode, val stream: MediaStream) : AppScreen
+    data class Player(
+        val detail: MediaDetail,
+        val episode: Episode,
+        val stream: MediaStream,
+        val routes: List<RouteCandidate>,
+    ) : AppScreen
 }
 
 private enum class AppTab(val label: String, val icon: ImageVector) {
@@ -2103,7 +2109,7 @@ private fun DetailScreen(
     graph: AppGraph,
     result: SearchResult,
     onBack: () -> Unit,
-    onPlay: (MediaDetail, Episode, MediaStream) -> Unit,
+    onPlay: (MediaDetail, Episode, MediaStream, List<RouteCandidate>) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     var detail by remember(result) { mutableStateOf<MediaDetail?>(null) }
@@ -2129,7 +2135,7 @@ private fun DetailScreen(
                         val media = detail
                         val firstRoute = candidates.firstOrNull()
                         if (media != null && firstRoute != null) {
-                            onPlay(media, episode, firstRoute.stream)
+                            onPlay(media, episode, firstRoute.stream, candidates)
                         }
                     }
                 }
@@ -2236,7 +2242,7 @@ private fun DetailScreen(
                     route = route,
                     onClick = {
                         val episode = selectedEpisode ?: return@RouteCandidateRow
-                        onPlay(media, episode, route.stream)
+                        onPlay(media, episode, route.stream, routes)
                     },
                 )
             }
@@ -2513,6 +2519,7 @@ private fun PlayerScreen(
     detail: MediaDetail,
     episode: Episode,
     stream: MediaStream,
+    routes: List<RouteCandidate>,
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -2520,30 +2527,53 @@ private fun PlayerScreen(
     val state by engine.state.collectAsState()
     val torrentState by graph.torrentEngine.state.collectAsState()
     val torrentPlaybackUrl = torrentState.plan?.localPlaybackUrl
+    val routeOptions = remember(routes) {
+        routes.distinctBy { it.stream.id }
+    }
+    var currentStream by remember(stream.id) { mutableStateOf(stream) }
+    var failedStreamIds by remember(stream.id, routes) { mutableStateOf<Set<String>>(emptySet()) }
+    var routeNotice by remember(stream.id) { mutableStateOf<String?>(null) }
     var danmakuItems by remember { mutableStateOf<List<DanmakuItem>>(emptyList()) }
     var danmakuEnabled by remember { mutableStateOf(true) }
     var density by remember { mutableFloatStateOf(1f) }
     val profile = remember { DanmakuProfile(DanmakuPlatform.Bilibili, supportsAdvanced = true) }
 
-    LaunchedEffect(stream) {
-        if (stream.protocol == StreamProtocol.BITTORRENT) {
-            graph.torrentEngine.prepare(stream)
+    LaunchedEffect(currentStream) {
+        if (currentStream.protocol == StreamProtocol.BITTORRENT) {
+            graph.torrentEngine.prepare(currentStream)
         } else {
-            engine.prepare(stream)
+            graph.torrentEngine.release()
+            engine.prepare(currentStream)
         }
         val match = graph.danmakuRegistry.matchAll(detail, episode).firstOrNull()
         danmakuItems = match?.let { graph.danmakuRegistry.provider(it.providerId)?.fetchTimeline(it) }.orEmpty()
     }
-    LaunchedEffect(stream.id, torrentPlaybackUrl) {
-        if (stream.protocol == StreamProtocol.BITTORRENT && torrentPlaybackUrl != null) {
+    LaunchedEffect(currentStream.id, torrentPlaybackUrl) {
+        if (currentStream.protocol == StreamProtocol.BITTORRENT && torrentPlaybackUrl != null) {
             engine.prepare(
-                stream.copy(
-                    id = "${stream.id}:local",
+                currentStream.copy(
+                    id = "${currentStream.id}:local",
                     url = torrentPlaybackUrl,
                     protocol = StreamProtocol.PROGRESSIVE,
                     headers = emptyMap(),
                 ),
             )
+        }
+    }
+    LaunchedEffect(state.errorMessage, currentStream.id, routeOptions) {
+        val errorMessage = state.errorMessage ?: return@LaunchedEffect
+        if (currentStream.protocol == StreamProtocol.BITTORRENT || currentStream.id in failedStreamIds) return@LaunchedEffect
+        val failedIds = failedStreamIds + currentStream.id
+        failedStreamIds = failedIds
+        val nextRoute = routeOptions.firstOrNull { route ->
+            route.stream.id !in failedIds &&
+                route.stream.protocol != StreamProtocol.WEBVIEW_ONLY
+        }
+        if (nextRoute != null) {
+            routeNotice = "线路失败，已自动切换到 ${nextRoute.sourceName} ${nextRoute.routeName.orEmpty().ifBlank { nextRoute.protocol.displayName() }}"
+            currentStream = nextRoute.stream
+        } else {
+            routeNotice = "当前线路失败：$errorMessage"
         }
     }
     DisposableEffect(Unit) {
@@ -2554,9 +2584,9 @@ private fun PlayerScreen(
     }
 
     Box(Modifier.fillMaxSize().background(AnimeBackground)) {
-        if (stream.protocol == StreamProtocol.BITTORRENT && torrentPlaybackUrl == null) {
+        if (currentStream.protocol == StreamProtocol.BITTORRENT && torrentPlaybackUrl == null) {
             TorrentPlaceholderSurface(
-                stream = stream,
+                stream = currentStream,
                 state = torrentState,
                 modifier = Modifier.fillMaxSize(),
             )
@@ -2564,14 +2594,14 @@ private fun PlayerScreen(
             PlayerViewSurface(engine = engine, modifier = Modifier.fillMaxSize())
         }
         if (
-            (stream.protocol != StreamProtocol.BITTORRENT || torrentPlaybackUrl != null) &&
+            (currentStream.protocol != StreamProtocol.BITTORRENT || torrentPlaybackUrl != null) &&
             !state.hasRenderedFirstFrame &&
             state.errorMessage == null
         ) {
             VideoStartupOverlay(
                 playbackState = state.playbackStateLabel,
                 videoSize = state.videoSizeLabel,
-                protocol = if (stream.protocol == StreamProtocol.BITTORRENT) StreamProtocol.PROGRESSIVE else stream.protocol,
+                protocol = if (currentStream.protocol == StreamProtocol.BITTORRENT) StreamProtocol.PROGRESSIVE else currentStream.protocol,
                 modifier = Modifier.align(Alignment.Center),
             )
         }
@@ -2635,8 +2665,8 @@ private fun PlayerScreen(
                 }
                 Button(
                     onClick = {
-                        if (stream.protocol != StreamProtocol.BITTORRENT) {
-                            graph.media3DownloadCoordinator.enqueue(stream, "${detail.title} ${episode.title}")
+                        if (currentStream.protocol != StreamProtocol.BITTORRENT) {
+                            graph.media3DownloadCoordinator.enqueue(currentStream, "${detail.title} ${episode.title}")
                         }
                     },
                     modifier = Modifier.weight(1f).height(48.dp).focusable(),
@@ -2654,13 +2684,32 @@ private fun PlayerScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("\u6E05\u6670\u5EA6 ${stream.quality.orEmpty().ifBlank { "\u81EA\u52A8" }}", color = AnimeMuted, maxLines = 1)
-                val errorMessage = if (stream.protocol == StreamProtocol.BITTORRENT) {
+                val currentRoute = routeOptions.firstOrNull { it.stream.id == currentStream.id || it.stream.url == currentStream.url }
+                Text(
+                    "\u6E05\u6670\u5EA6 ${currentStream.quality.orEmpty().ifBlank { "\u81EA\u52A8" }}  ${currentRoute?.sourceName.orEmpty()}",
+                    color = AnimeMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                val errorMessage = if (currentStream.protocol == StreamProtocol.BITTORRENT) {
                     torrentState.errorMessage
                 } else {
                     state.errorMessage
                 }
-                errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error, maxLines = 1) }
+                (routeNotice ?: errorMessage)?.let { message ->
+                    Text(message, color = if (routeNotice != null) AnimeAccentAmber else MaterialTheme.colorScheme.error, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+            }
+            if (routeOptions.size > 1) {
+                PlayerRouteSelector(
+                    routes = routeOptions,
+                    selectedStreamId = currentStream.id,
+                    onSelected = { route ->
+                        failedStreamIds = emptySet()
+                        routeNotice = null
+                        currentStream = route.stream
+                    },
+                )
             }
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
                 Text("\u5F39\u5E55\u5BC6\u5EA6", color = Color.White, modifier = Modifier.width(80.dp))
@@ -2669,6 +2718,40 @@ private fun PlayerScreen(
                     onValueChange = { density = it },
                     valueRange = 0.2f..1.5f,
                     modifier = Modifier.weight(1f).focusable(),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PlayerRouteSelector(
+    routes: List<RouteCandidate>,
+    selectedStreamId: String,
+    onSelected: (RouteCandidate) -> Unit,
+) {
+    LazyRow(
+        modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(horizontal = 2.dp),
+    ) {
+        items(routes) { route ->
+            val selected = route.stream.id == selectedStreamId
+            Button(
+                onClick = { onSelected(route) },
+                modifier = Modifier.height(42.dp).focusable(),
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = if (selected) AnimeAccentCyan else AnimePanelSoft,
+                    contentColor = if (selected) AnimeBackground else Color.White,
+                ),
+                contentPadding = PaddingValues(horizontal = 12.dp),
+            ) {
+                Text(
+                    text = "${route.sourceName} ${route.routeName.orEmpty().ifBlank { route.protocol.displayName() }}",
+                    style = MaterialTheme.typography.labelLarge,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }
