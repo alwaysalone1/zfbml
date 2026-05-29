@@ -25,6 +25,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
@@ -35,10 +36,12 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Bookmarks
 import androidx.compose.material.icons.filled.ClosedCaption
 import androidx.compose.material.icons.filled.CloudDownload
+import androidx.compose.material.icons.filled.Forward10
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Replay10
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Subscriptions
 import androidx.compose.material.icons.filled.VideoLibrary
@@ -58,6 +61,7 @@ import androidx.compose.material3.NavigationRail
 import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -76,6 +80,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
@@ -1431,7 +1436,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.11")
+                setRequestProperty("User-Agent", "ZFBML/0.2.16")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2536,6 +2541,8 @@ private fun PlayerScreen(
     var danmakuItems by remember { mutableStateOf<List<DanmakuItem>>(emptyList()) }
     var danmakuEnabled by remember { mutableStateOf(true) }
     var density by remember { mutableFloatStateOf(1f) }
+    var playbackPositionMs by remember(currentStream.id) { mutableStateOf(0L) }
+    var playbackDurationMs by remember(currentStream.id) { mutableStateOf(0L) }
     val profile = remember { DanmakuProfile(DanmakuPlatform.Bilibili, supportsAdvanced = true) }
 
     LaunchedEffect(currentStream) {
@@ -2560,6 +2567,13 @@ private fun PlayerScreen(
             )
         }
     }
+    LaunchedEffect(currentStream.id) {
+        while (true) {
+            playbackPositionMs = engine.currentPositionMs().coerceAtLeast(0L)
+            playbackDurationMs = normalizePlaybackDurationMs(engine.player.duration)
+            delay(500)
+        }
+    }
     LaunchedEffect(state.errorMessage, currentStream.id, routeOptions) {
         val errorMessage = state.errorMessage ?: return@LaunchedEffect
         if (currentStream.protocol == StreamProtocol.BITTORRENT || currentStream.id in failedStreamIds) return@LaunchedEffect
@@ -2581,6 +2595,14 @@ private fun PlayerScreen(
             engine.release()
             graph.torrentEngine.release()
         }
+    }
+
+    val currentRoute = routeOptions.firstOrNull { it.stream.id == currentStream.id || it.stream.url == currentStream.url }
+    val routeLabel = playerRouteLabel(currentStream, currentRoute)
+    val effectiveErrorMessage = if (currentStream.protocol == StreamProtocol.BITTORRENT) {
+        torrentState.errorMessage
+    } else {
+        state.errorMessage
     }
 
     Box(Modifier.fillMaxSize().background(AnimeBackground)) {
@@ -2612,116 +2634,392 @@ private fun PlayerScreen(
             settings = DanmakuSettings(enabled = danmakuEnabled, density = density),
             modifier = Modifier.fillMaxSize(),
         )
-        Column(
+        PlayerTopOverlay(
+            title = detail.title,
+            episodeTitle = episode.title,
+            routeLabel = routeLabel,
+            playbackState = state.playbackStateLabel,
+            onBack = onBack,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth(),
+        )
+        PlayerCenterControls(
+            isPlaying = state.isPlaying,
+            onSeekBackward = {
+                engine.player.seekTo((engine.currentPositionMs() - 10_000L).coerceAtLeast(0L))
+            },
+            onTogglePlay = {
+                if (state.isPlaying) {
+                    engine.player.pause()
+                } else {
+                    engine.player.play()
+                }
+            },
+            onSeekForward = {
+                val duration = normalizePlaybackDurationMs(engine.player.duration)
+                val target = engine.currentPositionMs() + 10_000L
+                engine.player.seekTo(if (duration > 0L) target.coerceAtMost(duration) else target)
+            },
+            modifier = Modifier.align(Alignment.Center),
+        )
+        PlayerBottomControls(
+            currentStream = currentStream,
+            currentRoute = currentRoute,
+            routeOptions = routeOptions,
+            selectedStreamId = currentStream.id,
+            routeNotice = routeNotice,
+            errorMessage = effectiveErrorMessage,
+            danmakuEnabled = danmakuEnabled,
+            density = density,
+            positionMs = playbackPositionMs,
+            durationMs = playbackDurationMs,
+            onSeek = { engine.player.seekTo(it) },
+            onRouteSelected = { route ->
+                failedStreamIds = emptySet()
+                routeNotice = null
+                currentStream = route.stream
+            },
+            onToggleDanmaku = { danmakuEnabled = !danmakuEnabled },
+            onDensityChange = { density = it },
+            onOffline = {
+                if (currentStream.protocol != StreamProtocol.BITTORRENT) {
+                    graph.media3DownloadCoordinator.enqueue(currentStream, "${detail.title} ${episode.title}")
+                }
+            },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .background(AnimePanel.copy(alpha = 0.78f))
-                .padding(12.dp),
+                .fillMaxWidth(),
+        )
+    }
+}
+
+@Composable
+private fun PlayerTopOverlay(
+    title: String,
+    episodeTitle: String,
+    routeLabel: String,
+    playbackState: String,
+    onBack: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color.Black.copy(alpha = 0.82f),
+                        Color.Black.copy(alpha = 0.46f),
+                        Color.Transparent,
+                    ),
+                ),
+            )
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Button(
-                    onClick = onBack,
-                    modifier = Modifier.weight(1f).height(48.dp).focusable(),
-                    shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = AnimePanelSoft, contentColor = Color.White),
-                    contentPadding = PaddingValues(horizontal = 8.dp),
-                ) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text("\u8FD4\u56DE")
-                }
-                Button(
-                    onClick = {
-                        if (state.isPlaying) {
-                            engine.player.pause()
-                        } else {
-                            engine.player.play()
-                        }
-                    },
-                    modifier = Modifier.weight(1f).height(48.dp).focusable(),
-                    shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = AnimeAccentPink, contentColor = Color.White),
-                    contentPadding = PaddingValues(horizontal = 8.dp),
-                ) {
-                    Icon(if (state.isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text(if (state.isPlaying) "\u6682\u505C" else "\u64AD\u653E")
-                }
-                Button(
-                    onClick = { danmakuEnabled = !danmakuEnabled },
-                    modifier = Modifier.weight(1f).height(48.dp).focusable(),
-                    shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = AnimePanelSoft, contentColor = Color.White),
-                    contentPadding = PaddingValues(horizontal = 8.dp),
-                ) {
-                    Icon(Icons.Filled.ClosedCaption, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text(if (danmakuEnabled) "\u5F39\u5E55\u5F00" else "\u5F39\u5E55\u5173")
-                }
-                Button(
-                    onClick = {
-                        if (currentStream.protocol != StreamProtocol.BITTORRENT) {
-                            graph.media3DownloadCoordinator.enqueue(currentStream, "${detail.title} ${episode.title}")
-                        }
-                    },
-                    modifier = Modifier.weight(1f).height(48.dp).focusable(),
-                    shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = AnimePanelSoft, contentColor = Color.White),
-                    contentPadding = PaddingValues(horizontal = 8.dp),
-                ) {
-                    Icon(Icons.Filled.Bookmarks, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text("\u79BB\u7EBF")
-                }
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                val currentRoute = routeOptions.firstOrNull { it.stream.id == currentStream.id || it.stream.url == currentStream.url }
+            PlayerCircleButton(
+                icon = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "返回详情",
+                onClick = onBack,
+            )
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(
-                    "\u6E05\u6670\u5EA6 ${currentStream.quality.orEmpty().ifBlank { "\u81EA\u52A8" }}  ${currentRoute?.sourceName.orEmpty()}",
-                    color = AnimeMuted,
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                val errorMessage = if (currentStream.protocol == StreamProtocol.BITTORRENT) {
-                    torrentState.errorMessage
-                } else {
-                    state.errorMessage
-                }
-                (routeNotice ?: errorMessage)?.let { message ->
-                    Text(message, color = if (routeNotice != null) AnimeAccentAmber else MaterialTheme.colorScheme.error, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                }
-            }
-            if (routeOptions.size > 1) {
-                PlayerRouteSelector(
-                    routes = routeOptions,
-                    selectedStreamId = currentStream.id,
-                    onSelected = { route ->
-                        failedStreamIds = emptySet()
-                        routeNotice = null
-                        currentStream = route.stream
-                    },
+                Text(
+                    text = listOf(episodeTitle, playbackState).filter { it.isNotBlank() }.joinToString(" · "),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.78f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
-                Text("\u5F39\u5E55\u5BC6\u5EA6", color = Color.White, modifier = Modifier.width(80.dp))
-                Slider(
-                    value = density,
-                    onValueChange = { density = it },
-                    valueRange = 0.2f..1.5f,
-                    modifier = Modifier.weight(1f).focusable(),
-                )
-            }
+            PlayerPill(text = routeLabel, color = AnimeAccentCyan, modifier = Modifier.width(168.dp))
         }
     }
+}
+
+@Composable
+private fun PlayerCenterControls(
+    isPlaying: Boolean,
+    onSeekBackward: () -> Unit,
+    onTogglePlay: () -> Unit,
+    onSeekForward: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color.Black.copy(alpha = 0.34f))
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(18.dp),
+    ) {
+        PlayerCircleButton(
+            icon = Icons.Filled.Replay10,
+            contentDescription = "后退 10 秒",
+            onClick = onSeekBackward,
+        )
+        PlayerCircleButton(
+            icon = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+            contentDescription = if (isPlaying) "暂停" else "播放",
+            onClick = onTogglePlay,
+            prominent = true,
+            selected = true,
+        )
+        PlayerCircleButton(
+            icon = Icons.Filled.Forward10,
+            contentDescription = "快进 10 秒",
+            onClick = onSeekForward,
+        )
+    }
+}
+
+@Composable
+private fun PlayerBottomControls(
+    currentStream: MediaStream,
+    currentRoute: RouteCandidate?,
+    routeOptions: List<RouteCandidate>,
+    selectedStreamId: String,
+    routeNotice: String?,
+    errorMessage: String?,
+    danmakuEnabled: Boolean,
+    density: Float,
+    positionMs: Long,
+    durationMs: Long,
+    onSeek: (Long) -> Unit,
+    onRouteSelected: (RouteCandidate) -> Unit,
+    onToggleDanmaku: () -> Unit,
+    onDensityChange: (Float) -> Unit,
+    onOffline: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var pendingSeekMs by remember(selectedStreamId) { mutableStateOf<Long?>(null) }
+    val displayPositionMs = if (durationMs > 0L) {
+        (pendingSeekMs ?: positionMs).coerceIn(0L, durationMs)
+    } else {
+        0L
+    }
+    val routeName = currentRoute?.routeName.orEmpty().ifBlank { currentStream.protocol.displayName() }
+    val sourceName = currentRoute?.sourceName ?: currentStream.metadata["routeProviderName"] ?: currentStream.providerId
+    val quality = currentStream.quality.orEmpty().ifBlank { "自动" }
+    val routeSummary = if (quality != "自动" && routeName.contains(quality, ignoreCase = true)) {
+        "$sourceName · $routeName"
+    } else {
+        "$sourceName · $routeName · $quality"
+    }
+
+    Column(
+        modifier = modifier
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color.Transparent,
+                        Color.Black.copy(alpha = 0.64f),
+                        Color.Black.copy(alpha = 0.9f),
+                    ),
+                ),
+            )
+            .padding(horizontal = 14.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Text(
+                text = formatPlaybackTime(displayPositionMs),
+                style = MaterialTheme.typography.labelMedium,
+                color = Color.White,
+                modifier = Modifier.width(48.dp),
+            )
+            if (durationMs > 0L) {
+                Slider(
+                    value = displayPositionMs.toFloat(),
+                    onValueChange = { pendingSeekMs = it.toLong() },
+                    onValueChangeFinished = {
+                        pendingSeekMs?.let(onSeek)
+                        pendingSeekMs = null
+                    },
+                    valueRange = 0f..durationMs.toFloat(),
+                    colors = SliderDefaults.colors(
+                        thumbColor = AnimeAccentPink,
+                        activeTrackColor = AnimeAccentPink,
+                        inactiveTrackColor = Color.White.copy(alpha = 0.24f),
+                    ),
+                    modifier = Modifier.weight(1f).height(34.dp).focusable(),
+                )
+            } else {
+                LinearProgressIndicator(
+                    modifier = Modifier.weight(1f).height(3.dp),
+                    color = AnimeAccentCyan,
+                    trackColor = Color.White.copy(alpha = 0.18f),
+                )
+            }
+            Text(
+                text = if (durationMs > 0L) formatPlaybackTime(durationMs) else "--:--",
+                style = MaterialTheme.typography.labelMedium,
+                color = Color.White.copy(alpha = 0.78f),
+                modifier = Modifier.width(48.dp),
+            )
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(
+                    text = routeSummary,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                (routeNotice ?: errorMessage)?.let { message ->
+                    Text(
+                        text = message,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (routeNotice != null) AnimeAccentAmber else MaterialTheme.colorScheme.error,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                } ?: Text(
+                    text = "${currentStream.protocol.displayName()} · ${currentStream.codec.orEmpty().ifBlank { "自适应解码" }}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.64f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            PlayerCircleButton(
+                icon = Icons.Filled.ClosedCaption,
+                contentDescription = if (danmakuEnabled) "关闭弹幕" else "开启弹幕",
+                onClick = onToggleDanmaku,
+                selected = danmakuEnabled,
+            )
+            PlayerCircleButton(
+                icon = Icons.Filled.Bookmarks,
+                contentDescription = "离线缓存",
+                onClick = onOffline,
+                enabled = currentStream.protocol != StreamProtocol.BITTORRENT,
+            )
+        }
+
+        if (routeOptions.size > 1) {
+            PlayerRouteSelector(
+                routes = routeOptions,
+                selectedStreamId = selectedStreamId,
+                onSelected = onRouteSelected,
+            )
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Text(
+                text = "弹幕密度",
+                color = Color.White.copy(alpha = 0.76f),
+                style = MaterialTheme.typography.labelMedium,
+                modifier = Modifier.width(64.dp),
+            )
+            Slider(
+                value = density,
+                onValueChange = onDensityChange,
+                valueRange = 0.2f..1.5f,
+                colors = SliderDefaults.colors(
+                    thumbColor = AnimeAccentCyan,
+                    activeTrackColor = AnimeAccentCyan,
+                    inactiveTrackColor = Color.White.copy(alpha = 0.2f),
+                ),
+                modifier = Modifier.weight(1f).height(32.dp).focusable(),
+            )
+        }
+    }
+}
+
+@Composable
+private fun PlayerCircleButton(
+    icon: ImageVector,
+    contentDescription: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    selected: Boolean = false,
+    prominent: Boolean = false,
+    enabled: Boolean = true,
+) {
+    val size = if (prominent) 62.dp else 44.dp
+    val iconSize = if (prominent) 34.dp else 22.dp
+    val backgroundColor = when {
+        !enabled -> Color.White.copy(alpha = 0.08f)
+        selected -> AnimeAccentPink
+        else -> Color.Black.copy(alpha = 0.46f)
+    }
+    val iconColor = when {
+        !enabled -> Color.White.copy(alpha = 0.3f)
+        selected -> Color.White
+        else -> Color.White.copy(alpha = 0.9f)
+    }
+
+    IconButton(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier
+            .size(size)
+            .clip(CircleShape)
+            .background(backgroundColor)
+            .focusable(),
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            tint = iconColor,
+            modifier = Modifier.size(iconSize),
+        )
+    }
+}
+
+@Composable
+private fun PlayerPill(
+    text: String,
+    color: Color,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelMedium,
+        color = color,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier = modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color.Black.copy(alpha = 0.42f))
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+    )
+}
+
+private fun playerRouteLabel(stream: MediaStream, route: RouteCandidate?): String {
+    return listOf(
+        route?.sourceName ?: stream.metadata["routeProviderName"],
+        stream.quality?.takeIf { it.isNotBlank() },
+        stream.protocol.displayName(),
+    )
+        .filterNotNull()
+        .joinToString(" · ")
+        .ifBlank { stream.protocol.displayName() }
 }
 
 @Composable
@@ -2731,7 +3029,7 @@ private fun PlayerRouteSelector(
     onSelected: (RouteCandidate) -> Unit,
 ) {
     LazyRow(
-        modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+        modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         contentPadding = PaddingValues(horizontal = 2.dp),
     ) {
@@ -2739,17 +3037,17 @@ private fun PlayerRouteSelector(
             val selected = route.stream.id == selectedStreamId
             Button(
                 onClick = { onSelected(route) },
-                modifier = Modifier.height(42.dp).focusable(),
+                modifier = Modifier.height(36.dp).focusable(),
                 shape = RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (selected) AnimeAccentCyan else AnimePanelSoft,
-                    contentColor = if (selected) AnimeBackground else Color.White,
+                    containerColor = if (selected) AnimeAccentCyan else Color.Black.copy(alpha = 0.42f),
+                    contentColor = if (selected) AnimeBackground else Color.White.copy(alpha = 0.88f),
                 ),
-                contentPadding = PaddingValues(horizontal = 12.dp),
+                contentPadding = PaddingValues(horizontal = 10.dp),
             ) {
                 Text(
                     text = "${route.sourceName} ${route.routeName.orEmpty().ifBlank { route.protocol.displayName() }}",
-                    style = MaterialTheme.typography.labelLarge,
+                    style = MaterialTheme.typography.labelMedium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -2848,6 +3146,23 @@ private fun formatBytesPerSecond(bytesPerSecond: Int): String {
 
 private fun formatPercent(percent: Float): String {
     return "%.1f%%".format(percent)
+}
+
+private fun normalizePlaybackDurationMs(durationMs: Long): Long {
+    val maxReasonableDurationMs = 24L * 60L * 60L * 1000L
+    return durationMs.takeIf { it in 1L..maxReasonableDurationMs } ?: 0L
+}
+
+private fun formatPlaybackTime(ms: Long): String {
+    val totalSeconds = (ms / 1000L).coerceAtLeast(0L)
+    val hours = totalSeconds / 3600L
+    val minutes = (totalSeconds % 3600L) / 60L
+    val seconds = totalSeconds % 60L
+    return if (hours > 0L) {
+        "%d:%02d:%02d".format(hours, minutes, seconds)
+    } else {
+        "%02d:%02d".format(minutes, seconds)
+    }
 }
 
 private fun formatBytes(bytes: Long): String {
