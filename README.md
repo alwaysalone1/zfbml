@@ -25,6 +25,17 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.19
+
+中文：
+- 加固播放器点按唤出控件：`PlayerView` 后续动态加入的 `TextureView`/子视图也会自动继承点按监听，避免播放起帧后控件难以再次呼出。
+- 继续保持弹幕层与播放器控制区分层，隐藏控件时点按画面可回到国内移动端视频 App 常见的沉浸式控制叠层。
+
+English:
+
+- Hardened tap-to-show player controls by binding dynamically inserted `TextureView`/child views inside `PlayerView`, preventing the video surface from swallowing taps after playback starts.
+- Kept danmaku and controls layered separately so tapping the hidden-control video surface returns to the immersive mobile video overlay.
+
 ### v0.2.18
 
 中文：

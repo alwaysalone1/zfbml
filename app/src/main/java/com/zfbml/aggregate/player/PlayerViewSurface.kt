@@ -57,6 +57,19 @@ private fun View.bindTapListenerRecursive(listener: View.OnTouchListener?) {
     isClickable = listener != null
     setOnTouchListener(listener)
     if (this is ViewGroup) {
+        setOnHierarchyChangeListener(
+            if (listener != null) {
+                object : ViewGroup.OnHierarchyChangeListener {
+                    override fun onChildViewAdded(parent: View?, child: View?) {
+                        child?.bindTapListenerRecursive(listener)
+                    }
+
+                    override fun onChildViewRemoved(parent: View?, child: View?) = Unit
+                }
+            } else {
+                null
+            },
+        )
         for (index in 0 until childCount) {
             getChildAt(index).bindTapListenerRecursive(listener)
         }
