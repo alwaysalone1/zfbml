@@ -82,6 +82,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -1385,9 +1386,14 @@ private fun ContinueWatchingRow(result: SearchResult, onClick: () -> Unit) {
 }
 
 @Composable
-private fun SectionHeader(title: String, action: String, onAction: () -> Unit) {
+private fun SectionHeader(
+    title: String,
+    action: String,
+    onAction: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -1456,7 +1462,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.21")
+                setRequestProperty("User-Agent", "ZFBML/0.2.22")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2145,22 +2151,25 @@ private fun DetailScreen(
     var routesLoading by remember(result) { mutableStateOf(false) }
     var routesError by remember(result) { mutableStateOf<String?>(null) }
     var routeSourceFilter by remember(result) { mutableStateOf<String?>(null) }
+    var routesExpanded by remember(result) { mutableStateOf(false) }
 
     fun loadRoutesFor(episode: Episode, autoPlay: Boolean = false) {
         selectedEpisode = episode
         routes = emptyList()
         routesError = null
         routeSourceFilter = null
+        routesExpanded = false
         routesLoading = true
         scope.launch {
             runCatching { graph.sourceRegistry.resolveRouteCandidates(episode) }
                 .onSuccess { candidates ->
-                    routes = candidates
+                    val sortedCandidates = sortRoutesForUi(candidates)
+                    routes = sortedCandidates
                     if (autoPlay) {
                         val media = detail
-                        val firstRoute = candidates.firstOrNull()
+                        val firstRoute = sortedCandidates.firstOrNull()
                         if (media != null && firstRoute != null) {
-                            onPlay(media, episode, firstRoute.stream, candidates)
+                            onPlay(media, episode, firstRoute.stream, sortedCandidates)
                         }
                     }
                 }
@@ -2177,6 +2186,7 @@ private fun DetailScreen(
         routes = emptyList()
         routesError = null
         routeSourceFilter = null
+        routesExpanded = false
         routesLoading = false
         runCatching { graph.sourceRegistry.loadDetail(result) }
             .onSuccess { media ->
@@ -2189,134 +2199,367 @@ private fun DetailScreen(
         loading = false
     }
 
+    val routeUiState = buildRouteUiState(
+        selectedEpisode = selectedEpisode,
+        routes = routes,
+        loading = routesLoading,
+        error = routesError,
+        selectedSourceId = routeSourceFilter,
+    )
+
     LazyColumn(
-        modifier = Modifier.fillMaxSize().background(AnimeBackground).padding(18.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        modifier = Modifier.fillMaxSize().background(AnimeBackground),
+        contentPadding = PaddingValues(bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(18.dp),
     ) {
         item {
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 IconButton(
                     onClick = onBack,
                     modifier = Modifier.background(AnimePanelSoft, RoundedCornerShape(8.dp)).focusable(),
                 ) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "\u8FD4\u56DE", tint = Color.White)
                 }
-                Text(result.title, style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(result.title, style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text("追番详情", style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1)
+                }
             }
         }
         if (loading) {
             item {
-                CircularProgressIndicator(color = AnimeAccentCyan)
+                Box(Modifier.fillMaxWidth().height(180.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(color = AnimeAccentCyan)
+                }
             }
         }
         error?.let {
-            item { Text("\u52A0\u8F7D\u5931\u8D25: $it", color = MaterialTheme.colorScheme.error) }
+            item {
+                Text(
+                    "\u52A0\u8F7D\u5931\u8D25: $it",
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(horizontal = 18.dp),
+                )
+            }
         }
         detail?.let { media ->
             item {
-                DetailHero(media = media) {
-                    media.episodes.firstOrNull()?.let { episode ->
-                        loadRoutesFor(episode, autoPlay = true)
-                    }
-                }
+                DetailHero(
+                    media = media,
+                    selectedEpisode = selectedEpisode,
+                    routeUiState = routeUiState,
+                    onPlay = {
+                        val episode = selectedEpisode ?: media.episodes.firstOrNull()
+                        if (episode != null) {
+                            val bestRoute = buildRouteUiState(episode, routes, routesLoading, routesError).bestRoute
+                            if (bestRoute != null) {
+                                onPlay(media, episode, bestRoute.stream, sortRoutesForUi(routes))
+                            } else {
+                                loadRoutesFor(episode, autoPlay = true)
+                            }
+                        }
+                    },
+                    onToggleRoutes = { routesExpanded = !routesExpanded },
+                    modifier = Modifier.padding(horizontal = 18.dp),
+                )
             }
             item {
-                SectionHeader(title = "\u9009\u96c6", action = "${media.episodes.size} \u96c6", onAction = {})
+                SectionHeader(
+                    title = "\u5267\u96c6\u5217\u8868",
+                    action = "${media.episodes.size} \u96c6",
+                    onAction = {},
+                    modifier = Modifier.padding(horizontal = 18.dp),
+                )
             }
             item {
                 EpisodeSelectorRow(
                     episodes = media.episodes,
                     selectedEpisodeId = selectedEpisode?.id,
                     onEpisodeSelected = { loadRoutesFor(it) },
+                    modifier = Modifier.padding(horizontal = 18.dp),
                 )
             }
             item {
-                SectionHeader(
-                    title = "\u64ad\u653e\u7ebf\u8def",
-                    action = selectedEpisode?.index?.let { "\u7b2c $it \u96c6" }.orEmpty(),
-                    onAction = {},
+                DetailRouteStatusCard(
+                    state = routeUiState,
+                    expanded = routesExpanded,
+                    onToggleExpanded = { routesExpanded = !routesExpanded },
+                    onPlayBest = {
+                        val episode = selectedEpisode ?: return@DetailRouteStatusCard
+                        routeUiState.bestRoute?.let { route ->
+                            onPlay(media, episode, route.stream, sortRoutesForUi(routes))
+                        }
+                    },
+                    modifier = Modifier.padding(horizontal = 18.dp),
                 )
             }
-            val visibleRoutes = routes.filter { route ->
-                routeSourceFilter == null || route.sourceId == routeSourceFilter
-            }
-            if (routes.isNotEmpty()) {
-                item {
-                    RouteSourceSelector(
-                        routes = routes,
-                        selectedSourceId = routeSourceFilter,
-                        onSelected = { routeSourceFilter = it },
+            if (routesExpanded) {
+                if (routes.isNotEmpty()) {
+                    item {
+                        RouteSourceSelector(
+                            routes = routes,
+                            selectedSourceId = routeSourceFilter,
+                            onSelected = { routeSourceFilter = it },
+                            modifier = Modifier.padding(horizontal = 18.dp),
+                        )
+                    }
+                }
+                if (routesLoading) {
+                    item {
+                        RouteLoadingPanel(selectedEpisode = selectedEpisode, modifier = Modifier.padding(horizontal = 18.dp))
+                    }
+                }
+                routesError?.let { message ->
+                    item {
+                        Text(
+                            "\u7ebf\u8def\u52a0\u8f7d\u5931\u8d25: $message",
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(horizontal = 18.dp),
+                        )
+                    }
+                }
+                if (!routesLoading && selectedEpisode != null && routes.isEmpty() && routesError == null) {
+                    item {
+                        EmptyRoutePanel(modifier = Modifier.padding(horizontal = 18.dp))
+                    }
+                }
+                items(routeUiState.visibleRoutes, key = { it.stream.id }) { route ->
+                    RouteCandidateRow(
+                        route = route,
+                        recommended = route.stream.id == routeUiState.bestRoute?.stream?.id,
+                        onClick = {
+                            val episode = selectedEpisode ?: return@RouteCandidateRow
+                            onPlay(media, episode, route.stream, sortRoutesForUi(routes))
+                        },
+                        modifier = Modifier.padding(horizontal = 18.dp),
                     )
                 }
-            }
-            if (routesLoading) {
-                item {
-                    RouteLoadingPanel(selectedEpisode = selectedEpisode)
-                }
-            }
-            routesError?.let { message ->
-                item { Text("\u7ebf\u8def\u52a0\u8f7d\u5931\u8d25: $message", color = MaterialTheme.colorScheme.error) }
-            }
-            if (!routesLoading && selectedEpisode != null && routes.isEmpty() && routesError == null) {
-                item {
-                    EmptyRoutePanel()
-                }
-            }
-            items(visibleRoutes) { route ->
-                RouteCandidateRow(
-                    route = route,
-                    onClick = {
-                        val episode = selectedEpisode ?: return@RouteCandidateRow
-                        onPlay(media, episode, route.stream, routes)
-                    },
-                )
             }
         }
     }
 }
 
 @Composable
-private fun DetailHero(media: MediaDetail, onPlayFirst: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = AnimePanel),
-        border = BorderStroke(1.dp, AnimeBorder),
+private fun DetailHero(
+    media: MediaDetail,
+    selectedEpisode: Episode?,
+    routeUiState: RouteUiState,
+    onPlay: () -> Unit,
+    onToggleRoutes: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = 360.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(AnimePanel),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(14.dp),
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
-            verticalAlignment = Alignment.CenterVertically,
+        PosterArtwork(
+            posterUrl = media.posterUrl,
+            accent = providerAccent(media.providerId),
+            modifier = Modifier.matchParentSize().alpha(0.34f),
+            shape = RoundedCornerShape(8.dp),
+            contentScale = ContentScale.Crop,
+        )
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Black.copy(alpha = 0.12f),
+                            AnimeBackground.copy(alpha = 0.78f),
+                            AnimeBackground.copy(alpha = 0.96f),
+                        ),
+                    ),
+                ),
+        )
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            PosterArtwork(
-                posterUrl = media.posterUrl,
-                accent = providerAccent(media.providerId),
-                modifier = Modifier.size(width = 96.dp, height = 132.dp),
-            )
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(media.title, style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    VideoMetaChip("\u591A\u7EBF\u8DEF")
-                    VideoMetaChip("\u5F39\u5E55")
-                }
-                Text(
-                    media.summary.orEmpty().ifBlank { "\u5DF2\u4E3A\u4F60\u5339\u914D\u53EF\u64AD\u653E\u7EBF\u8DEF\uFF0C\u9009\u62E9\u5267\u96C6\u5373\u53EF\u5F00\u59CB\u89C2\u770B\u3002" },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = AnimeMuted,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                verticalAlignment = Alignment.Bottom,
+            ) {
+                PosterArtwork(
+                    posterUrl = media.posterUrl,
+                    accent = providerAccent(media.providerId),
+                    modifier = Modifier.size(width = 116.dp, height = 164.dp),
+                    shape = RoundedCornerShape(8.dp),
                 )
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                    Text(
+                        media.title,
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        VideoMetaChip(selectedEpisode?.index?.let { "第 $it 集" } ?: "自动选集")
+                        VideoMetaChip("${media.episodes.size.coerceAtLeast(1)} 集")
+                        VideoMetaChip("多源")
+                    }
+                    Text(
+                        media.summary.orEmpty().ifBlank { "已为你自动匹配在线视频源，优先选择稳定 HLS/MP4，BT 作为兜底。" },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White.copy(alpha = 0.82f),
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+            RouteStatsRow(routeUiState)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Button(
-                    onClick = onPlayFirst,
+                    onClick = onPlay,
                     colors = ButtonDefaults.buttonColors(containerColor = AnimeAccentPink, contentColor = Color.White),
-                    modifier = Modifier.focusable(),
+                    modifier = Modifier.weight(1f).height(48.dp).focusable(),
+                    shape = RoundedCornerShape(8.dp),
                 ) {
-                    Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(if (routeUiState.canPlay) "立即观看" else "自动找源")
+                }
+                TextButton(
+                    onClick = onToggleRoutes,
+                    modifier = Modifier.height(48.dp).focusable(),
+                ) {
+                    Icon(Icons.Filled.VideoLibrary, contentDescription = null, tint = AnimeAccentCyan, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(4.dp))
-                    Text("\u64AD\u653E\u7B2C 1 \u96C6")
+                    Text("线路", color = AnimeAccentCyan)
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun RouteStatsRow(state: RouteUiState) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        RouteStatPill("在线", state.onlineCount.toString(), AnimeAccentCyan)
+        RouteStatPill("BT", state.btCount.toString(), AnimeAccentAmber)
+        RouteStatPill("来源", state.sourceCount.toString(), AnimeAccentViolet)
+        if (state.failedCount > 0) {
+            RouteStatPill("失败", state.failedCount.toString(), MaterialTheme.colorScheme.error)
+        }
+    }
+}
+
+@Composable
+private fun RouteStatPill(label: String, value: String, color: Color) {
+    Row(
+        modifier = Modifier
+            .height(32.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color.Black.copy(alpha = 0.38f))
+            .padding(horizontal = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.7f), maxLines = 1)
+        Text(value, style = MaterialTheme.typography.labelLarge, color = color, fontWeight = FontWeight.Bold, maxLines = 1)
+    }
+}
+
+@Composable
+private fun DetailRouteStatusCard(
+    state: RouteUiState,
+    expanded: Boolean,
+    onToggleExpanded: () -> Unit,
+    onPlayBest: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val accent = when (state.status) {
+        RouteLoadStatus.Ready -> AnimeAccentGreen
+        RouteLoadStatus.Loading -> AnimeAccentCyan
+        RouteLoadStatus.Failed -> MaterialTheme.colorScheme.error
+        RouteLoadStatus.Empty -> AnimeAccentAmber
+        RouteLoadStatus.Idle -> AnimeMuted
+    }
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(8.dp),
+        color = AnimePanel,
+        border = BorderStroke(1.dp, AnimeBorder),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier.size(44.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.18f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (state.status == RouteLoadStatus.Loading) {
+                        CircularProgressIndicator(color = accent, modifier = Modifier.size(22.dp))
+                    } else {
+                        Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = accent, modifier = Modifier.size(24.dp))
+                    }
+                }
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text(state.message, style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold)
+                    Text(state.detail, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                }
+                TextButton(onClick = onToggleExpanded, modifier = Modifier.height(38.dp).focusable()) {
+                    Text(if (expanded) "收起" else "换源", color = AnimeAccentCyan, style = MaterialTheme.typography.labelLarge)
+                }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                SourceModePill("自动推荐", state.bestRoute?.sourceName ?: "等待匹配", selected = true, modifier = Modifier.weight(1f))
+                Button(
+                    onClick = onPlayBest,
+                    enabled = state.canPlay,
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = AnimeAccentPink, contentColor = Color.White),
+                    modifier = Modifier.height(42.dp).focusable(),
+                    contentPadding = PaddingValues(horizontal = 12.dp),
+                ) {
+                    Text("播放", maxLines = 1)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SourceModePill(title: String, value: String, selected: Boolean, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .height(42.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(if (selected) AnimeAccentCyan.copy(alpha = 0.14f) else Color.White.copy(alpha = 0.06f))
+            .padding(horizontal = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(title, style = MaterialTheme.typography.labelMedium, color = AnimeAccentCyan, maxLines = 1)
+        Text(value, style = MaterialTheme.typography.bodyMedium, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -2325,22 +2568,33 @@ private fun EpisodeSelectorRow(
     episodes: List<Episode>,
     selectedEpisodeId: String?,
     onEpisodeSelected: (Episode) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    LazyRow(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         items(episodes) { episode ->
             val selected = episode.id == selectedEpisodeId
             Card(
                 onClick = { onEpisodeSelected(episode) },
-                modifier = Modifier.width(96.dp).height(54.dp).focusable(),
+                modifier = Modifier.width(118.dp).height(72.dp).focusable(),
                 shape = RoundedCornerShape(8.dp),
                 colors = CardDefaults.cardColors(containerColor = if (selected) AnimePanelSoft else AnimePanel),
                 border = BorderStroke(1.dp, if (selected) AnimeAccentCyan else AnimeBorder),
             ) {
-                Box(Modifier.fillMaxSize().padding(horizontal = 8.dp), contentAlignment = Alignment.Center) {
+                Column(
+                    Modifier.fillMaxSize().padding(10.dp),
+                    verticalArrangement = Arrangement.SpaceBetween,
+                ) {
                     Text(
-                        text = episode.index?.let { "\u7b2c $it \u96c6" } ?: episode.title,
-                        style = MaterialTheme.typography.labelLarge,
+                        text = episode.index?.let { "%02d".format(it) } ?: "SP",
+                        style = MaterialTheme.typography.titleMedium,
                         color = if (selected) AnimeAccentCyan else Color.White,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                    )
+                    Text(
+                        text = episode.title,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (selected) Color.White else AnimeMuted,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -2380,9 +2634,9 @@ private fun EpisodeVideoRow(episode: Episode, selected: Boolean, onClick: () -> 
 }
 
 @Composable
-private fun RouteLoadingPanel(selectedEpisode: Episode?) {
+private fun RouteLoadingPanel(selectedEpisode: Episode?, modifier: Modifier = Modifier) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(containerColor = AnimePanel),
         border = BorderStroke(1.dp, AnimeBorder),
@@ -2402,9 +2656,9 @@ private fun RouteLoadingPanel(selectedEpisode: Episode?) {
 }
 
 @Composable
-private fun EmptyRoutePanel() {
+private fun EmptyRoutePanel(modifier: Modifier = Modifier) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(containerColor = AnimePanel),
         border = BorderStroke(1.dp, AnimeBorder),
@@ -2424,6 +2678,7 @@ private fun RouteSourceSelector(
     routes: List<RouteCandidate>,
     selectedSourceId: String?,
     onSelected: (String?) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val groups = routes
         .groupBy { it.sourceId }
@@ -2436,7 +2691,7 @@ private fun RouteSourceSelector(
             )
         }
         .sortedWith(compareByDescending<RouteSourceGroup> { it.isOnline }.thenBy { it.name })
-    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    LazyRow(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         item {
             RouteSourceChip(
                 label = "\u5168\u90e8 ${routes.size}",
@@ -2483,16 +2738,21 @@ private data class RouteSourceGroup(
 )
 
 @Composable
-private fun RouteCandidateRow(route: RouteCandidate, onClick: () -> Unit) {
+private fun RouteCandidateRow(
+    route: RouteCandidate,
+    recommended: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     Card(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth().focusable(),
+        modifier = modifier.fillMaxWidth().focusable(),
         shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = AnimePanel),
-        border = BorderStroke(1.dp, AnimeBorder),
+        colors = CardDefaults.cardColors(containerColor = if (recommended) AnimePanelSoft else AnimePanel),
+        border = BorderStroke(1.dp, if (recommended) AnimeAccentCyan else AnimeBorder),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(10.dp),
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -2505,6 +2765,7 @@ private fun RouteCandidateRow(route: RouteCandidate, onClick: () -> Unit) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(route.sourceName, style = MaterialTheme.typography.titleMedium, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    if (recommended) VideoMetaChip("推荐")
                     route.quality?.let { VideoMetaChip(it) }
                     route.subgroup?.takeIf(String::isNotBlank)?.let { VideoMetaChip(it.take(10)) }
                 }
@@ -2518,7 +2779,7 @@ private fun RouteCandidateRow(route: RouteCandidate, onClick: () -> Unit) {
                 )
             }
             Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(route.protocol.displayName(), style = MaterialTheme.typography.labelLarge, color = AnimeAccentAmber)
+                Text(route.protocol.displayName(), style = MaterialTheme.typography.labelLarge, color = if (recommended) AnimeAccentCyan else AnimeAccentAmber)
                 route.sizeBytes?.let { Text(formatBytes(it), style = MaterialTheme.typography.bodySmall, color = AnimeMuted) }
             }
         }
@@ -2555,27 +2816,54 @@ private fun PlayerScreen(
     val torrentPlaybackUrl = torrentState.plan?.localPlaybackUrl
     var currentEpisode by remember(episode.id) { mutableStateOf(episode) }
     var playerRoutes by remember(episode.id, stream.id) { mutableStateOf(routes) }
-    val routeOptions = remember(playerRoutes) { playerRoutes.distinctBy { it.stream.id } }
     var currentStream by remember(stream.id) { mutableStateOf(stream) }
     var failedStreamIds by remember(stream.id, playerRoutes) { mutableStateOf<Set<String>>(emptySet()) }
+    val routeOptions = remember(playerRoutes, failedStreamIds) {
+        sortRoutesForUi(playerRoutes, failedStreamIds).distinctBy { it.stream.id }
+    }
     var routeNotice by remember(stream.id) { mutableStateOf<String?>(null) }
     var danmakuItems by remember { mutableStateOf<List<DanmakuItem>>(emptyList()) }
     var danmakuEnabled by remember { mutableStateOf(true) }
-    var density by remember { mutableFloatStateOf(1f) }
-    var danmakuAlpha by remember { mutableFloatStateOf(0.9f) }
-    var danmakuFontScale by remember { mutableFloatStateOf(1f) }
+    var density by remember { mutableFloatStateOf(0.45f) }
+    var danmakuAlpha by remember { mutableFloatStateOf(0.82f) }
+    var danmakuFontScale by remember { mutableFloatStateOf(0.82f) }
     var playbackSpeed by remember { mutableFloatStateOf(1f) }
     var activePanel by remember(stream.id) { mutableStateOf<PlayerPanel?>(null) }
     var episodeLoadingId by remember { mutableStateOf<String?>(null) }
     var controlsVisible by remember(currentStream.id) { mutableStateOf(true) }
+    var controlsRevealSerial by remember(currentStream.id) { mutableIntStateOf(0) }
     var playbackPositionMs by remember(currentStream.id) { mutableStateOf(0L) }
     var playbackDurationMs by remember(currentStream.id) { mutableStateOf(0L) }
-    val profile = remember { DanmakuProfile(DanmakuPlatform.Bilibili, supportsAdvanced = true) }
+    val profile = remember {
+        DanmakuProfile(
+            platform = DanmakuPlatform.Bilibili,
+            fontScale = 0.86f,
+            strokeWidthPx = 3f,
+            shadowRadiusPx = 3f,
+            maxTracks = 12,
+            maxItemsPerMinute = 420,
+            supportsAdvanced = true,
+        )
+    }
+
+    fun revealControls() {
+        controlsVisible = true
+        controlsRevealSerial += 1
+    }
+
+    fun toggleControls() {
+        if (controlsVisible && activePanel == null) {
+            controlsVisible = false
+        } else {
+            revealControls()
+        }
+    }
 
     LaunchedEffect(playbackSpeed) {
         engine.player.setPlaybackSpeed(playbackSpeed)
     }
     LaunchedEffect(currentStream.id, currentEpisode.id) {
+        revealControls()
         if (currentStream.protocol == StreamProtocol.BITTORRENT) {
             graph.torrentEngine.prepare(currentStream)
         } else {
@@ -2609,6 +2897,11 @@ private fun PlayerScreen(
             activePanel = null
         }
     }
+    LaunchedEffect(state.hasRenderedFirstFrame, currentStream.id) {
+        if (state.hasRenderedFirstFrame) {
+            revealControls()
+        }
+    }
     LaunchedEffect(state.errorMessage, currentStream.id, routeOptions) {
         val errorMessage = state.errorMessage ?: return@LaunchedEffect
         if (currentStream.protocol == StreamProtocol.BITTORRENT || currentStream.id in failedStreamIds) return@LaunchedEffect
@@ -2638,14 +2931,13 @@ private fun PlayerScreen(
     }
 
     val currentRoute = routeOptions.firstOrNull { it.stream.id == currentStream.id || it.stream.url == currentStream.url }
-    val routeLabel = playerRouteLabel(currentStream, currentRoute)
     val effectiveErrorMessage = if (currentStream.protocol == StreamProtocol.BITTORRENT) {
         torrentState.errorMessage
     } else {
         state.errorMessage
     }
     fun selectRoute(route: RouteCandidate) {
-        controlsVisible = true
+        revealControls()
         activePanel = null
         failedStreamIds = emptySet()
         routeNotice = null
@@ -2654,20 +2946,22 @@ private fun PlayerScreen(
 
     fun selectEpisode(target: Episode) {
         if (target.id == currentEpisode.id || episodeLoadingId != null) return
-        controlsVisible = true
+        revealControls()
         routeNotice = "正在加载 ${target.title} 的播放线路..."
         episodeLoadingId = target.id
         scope.launch {
             val result = runCatching { graph.sourceRegistry.resolveRouteCandidates(target) }
             result
                 .onSuccess { candidates ->
-                    val firstRoute = candidates.firstOrNull()
+                    val sortedCandidates = sortRoutesForUi(candidates)
+                    val firstRoute = sortedCandidates.firstOrNull()
                     if (firstRoute != null) {
                         currentEpisode = target
-                        playerRoutes = candidates
+                        playerRoutes = sortedCandidates
                         failedStreamIds = emptySet()
                         routeNotice = null
                         activePanel = null
+                        revealControls()
                         currentStream = firstRoute.stream
                     } else {
                         routeNotice = "${target.title} 暂时没有可用播放线路"
@@ -2680,13 +2974,21 @@ private fun PlayerScreen(
         }
     }
 
-    val revealControls = { controlsVisible = true }
-    val danmakuTopPadding = if (controlsVisible) 58.dp else 8.dp
+    val danmakuTopPadding = if (controlsVisible) 56.dp else 8.dp
     val danmakuBottomPadding = when {
         !controlsVisible -> 8.dp
-        activePanel != null -> 240.dp
-        else -> 150.dp
+        activePanel != null -> 210.dp
+        else -> 118.dp
     }
+    val overlayState = buildPlayerOverlayState(
+        title = detail.title,
+        episodeTitle = currentEpisode.title,
+        stream = currentStream,
+        route = currentRoute,
+        playbackState = state.playbackStateLabel,
+        notice = routeNotice,
+        error = effectiveErrorMessage,
+    )
 
     Box(Modifier.fillMaxSize().background(AnimeBackground)) {
         if (currentStream.protocol == StreamProtocol.BITTORRENT && torrentPlaybackUrl == null) {
@@ -2699,7 +3001,7 @@ private fun PlayerScreen(
             PlayerViewSurface(
                 engine = engine,
                 modifier = Modifier.fillMaxSize(),
-                onSurfaceTap = revealControls,
+                onSurfaceTap = ::toggleControls,
             )
         }
         if (
@@ -2754,10 +3056,7 @@ private fun PlayerScreen(
             modifier = Modifier.align(Alignment.TopCenter).zIndex(4f),
         ) {
             PlayerTopOverlay(
-                title = detail.title,
-                episodeTitle = currentEpisode.title,
-                routeLabel = routeLabel,
-                playbackState = state.playbackStateLabel,
+                overlayState = overlayState,
                 onBack = onBack,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -2771,11 +3070,11 @@ private fun PlayerScreen(
             PlayerCenterControls(
                 isPlaying = state.isPlaying,
                 onSeekBackward = {
-                    controlsVisible = true
+                    revealControls()
                     engine.player.seekTo((engine.currentPositionMs() - 10_000L).coerceAtLeast(0L))
                 },
                 onTogglePlay = {
-                    controlsVisible = true
+                    revealControls()
                     if (state.isPlaying) {
                         engine.player.pause()
                     } else {
@@ -2783,7 +3082,7 @@ private fun PlayerScreen(
                     }
                 },
                 onSeekForward = {
-                    controlsVisible = true
+                    revealControls()
                     val duration = normalizePlaybackDurationMs(engine.player.duration)
                     val target = engine.currentPositionMs() + 10_000L
                     engine.player.seekTo(if (duration > 0L) target.coerceAtMost(duration) else target)
@@ -2810,19 +3109,19 @@ private fun PlayerScreen(
                 positionMs = playbackPositionMs,
                 durationMs = playbackDurationMs,
                 onSeek = {
-                    controlsVisible = true
+                    revealControls()
                     engine.player.seekTo(it)
                 },
                 onShowPanel = { panel ->
-                    controlsVisible = true
+                    revealControls()
                     activePanel = panel
                 },
                 onToggleDanmaku = {
-                    controlsVisible = true
+                    revealControls()
                     danmakuEnabled = !danmakuEnabled
                 },
                 onOffline = {
-                    controlsVisible = true
+                    revealControls()
                     if (currentStream.protocol != StreamProtocol.BITTORRENT) {
                         graph.media3DownloadCoordinator.enqueue(currentStream, "${detail.title} ${currentEpisode.title}")
                     }
@@ -2855,23 +3154,23 @@ private fun PlayerScreen(
                     onRouteSelected = ::selectRoute,
                     onEpisodeSelected = ::selectEpisode,
                     onToggleDanmaku = {
-                        controlsVisible = true
+                        revealControls()
                         danmakuEnabled = !danmakuEnabled
                     },
                     onDensityChange = {
-                        controlsVisible = true
+                        revealControls()
                         density = it
                     },
                     onDanmakuAlphaChange = {
-                        controlsVisible = true
+                        revealControls()
                         danmakuAlpha = it
                     },
                     onDanmakuFontScaleChange = {
-                        controlsVisible = true
+                        revealControls()
                         danmakuFontScale = it
                     },
                     onSpeedSelected = {
-                        controlsVisible = true
+                        revealControls()
                         playbackSpeed = it
                         activePanel = null
                     },
@@ -2884,10 +3183,7 @@ private fun PlayerScreen(
 
 @Composable
 private fun PlayerTopOverlay(
-    title: String,
-    episodeTitle: String,
-    routeLabel: String,
-    playbackState: String,
+    overlayState: PlayerOverlayState,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -2916,7 +3212,7 @@ private fun PlayerTopOverlay(
             )
             Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(
-                    text = title,
+                    text = overlayState.title,
                     style = MaterialTheme.typography.titleMedium,
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
@@ -2924,14 +3220,14 @@ private fun PlayerTopOverlay(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = listOf(episodeTitle, playbackState).filter { it.isNotBlank() }.joinToString(" · "),
+                    text = listOf(overlayState.episodeTitle, overlayState.playbackState).filter { it.isNotBlank() }.joinToString(" · "),
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.White.copy(alpha = 0.78f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            PlayerPill(text = routeLabel, color = AnimeAccentCyan, modifier = Modifier.width(168.dp))
+            PlayerPill(text = overlayState.routeLabel, color = AnimeAccentCyan, modifier = Modifier.width(168.dp))
         }
     }
 }
@@ -3368,9 +3664,9 @@ private fun PlayerDanmakuSettingsPanel(
         PlayerSliderSetting(
             title = "密度",
             valueText = formatDanmakuDensity(density),
-            value = density.coerceIn(0.5f, 1.5f),
-            valueRange = 0.5f..1.5f,
-            steps = 1,
+            value = density.coerceIn(0.35f, 1.1f),
+            valueRange = 0.35f..1.1f,
+            steps = 2,
             onValueChange = onDensityChange,
         )
         PlayerSliderSetting(
@@ -3384,9 +3680,9 @@ private fun PlayerDanmakuSettingsPanel(
         PlayerSliderSetting(
             title = "字号",
             valueText = formatScaleLabel(fontScale),
-            value = fontScale.coerceIn(0.75f, 1.35f),
-            valueRange = 0.75f..1.35f,
-            steps = 11,
+            value = fontScale.coerceIn(0.7f, 1.15f),
+            valueRange = 0.7f..1.15f,
+            steps = 8,
             onValueChange = onFontScaleChange,
         )
     }
@@ -3879,17 +4175,17 @@ private fun formatPlaybackTime(ms: Long): String {
 
 private fun nextDanmakuDensity(density: Float): Float {
     return when {
-        density < 0.75f -> 1f
-        density < 1.25f -> 1.5f
-        else -> 0.5f
+        density < 0.55f -> 0.75f
+        density < 0.9f -> 1.1f
+        else -> 0.35f
     }
 }
 
 private fun formatDanmakuDensity(density: Float): String {
     return when {
-        density < 0.75f -> "50%"
-        density < 1.25f -> "100%"
-        else -> "150%"
+        density < 0.55f -> "45%"
+        density < 0.9f -> "75%"
+        else -> "110%"
     }
 }
 

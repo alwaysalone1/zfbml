@@ -25,6 +25,19 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.22
+
+中文：
+- 参考 B 站竖屏播放器与 Animeko 详情页，把详情页首屏改为“海报沉浸头图 + 立即观看 + 自动最佳线路状态”，弱化原来像线路列表工具的观感。
+- 新增线路 UI 状态模型，详情页会展示在线源、BT、来源数量和失败数量；线路详情默认收起，用户需要时再展开换源。
+- 播放页控制层改为更轻的移动端视频叠层，播放时会自动收起；选集和线路切换会按 HLS/MP4 在线源优先、BT 兜底的 UI 策略排序。
+
+English:
+
+- Reworked the detail first screen after reviewing Bilibili's portrait player and Animeko's detail flow, using an immersive poster header, a primary watch action, and an automatic best-route status.
+- Added a route UI state model so the detail page shows online, BT, source, and failed-route counts while keeping detailed source switching collapsed until needed.
+- Made the player overlay lighter and auto-hiding; episode and route switching now use a UI sorting policy that prefers online HLS/MP4 routes before BT fallback routes.
+
 ### v0.2.21
 
 中文：
