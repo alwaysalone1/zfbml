@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import androidx.annotation.OptIn
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.PlayerView
@@ -20,8 +21,18 @@ fun PlayerViewSurface(
     modifier: Modifier = Modifier,
     onSurfaceTap: (() -> Unit)? = null,
 ) {
+    val touchModifier = if (onSurfaceTap != null) {
+        modifier.pointerInteropFilter { event ->
+            if (event.action == MotionEvent.ACTION_UP) {
+                onSurfaceTap()
+            }
+            true
+        }
+    } else {
+        modifier
+    }
     AndroidView(
-        modifier = modifier,
+        modifier = touchModifier,
         factory = { context ->
             (LayoutInflater.from(context).inflate(R.layout.view_player, null) as PlayerView).apply {
                 useController = false

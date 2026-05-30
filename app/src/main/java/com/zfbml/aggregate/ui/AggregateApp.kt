@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -37,17 +38,22 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Bookmarks
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ClosedCaption
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Forward10
+import androidx.compose.material.icons.filled.HighQuality
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Replay10
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Subscriptions
 import androidx.compose.material.icons.filled.VideoLibrary
 import androidx.compose.material3.Button
@@ -230,6 +236,14 @@ private enum class AppTab(val label: String, val icon: ImageVector) {
     Search("\u641c\u7d22", Icons.Filled.Search),
     Sources("\u9891\u9053", Icons.Filled.Subscriptions),
     Settings("\u6211\u7684", Icons.Filled.AccountCircle),
+}
+
+private enum class PlayerPanel {
+    Danmaku,
+    Quality,
+    Speed,
+    Route,
+    Episode,
 }
 
 private val AnimeBackground = Color(0xFF0D0D10)
@@ -1442,7 +1456,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.19")
+                setRequestProperty("User-Agent", "ZFBML/0.2.20")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2534,32 +2548,41 @@ private fun PlayerScreen(
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val engine = remember { ExoPlayerEngine(context) }
     val state by engine.state.collectAsState()
     val torrentState by graph.torrentEngine.state.collectAsState()
     val torrentPlaybackUrl = torrentState.plan?.localPlaybackUrl
-    val routeOptions = remember(routes) {
-        routes.distinctBy { it.stream.id }
-    }
+    var currentEpisode by remember(episode.id) { mutableStateOf(episode) }
+    var playerRoutes by remember(episode.id, stream.id) { mutableStateOf(routes) }
+    val routeOptions = remember(playerRoutes) { playerRoutes.distinctBy { it.stream.id } }
     var currentStream by remember(stream.id) { mutableStateOf(stream) }
-    var failedStreamIds by remember(stream.id, routes) { mutableStateOf<Set<String>>(emptySet()) }
+    var failedStreamIds by remember(stream.id, playerRoutes) { mutableStateOf<Set<String>>(emptySet()) }
     var routeNotice by remember(stream.id) { mutableStateOf<String?>(null) }
     var danmakuItems by remember { mutableStateOf<List<DanmakuItem>>(emptyList()) }
     var danmakuEnabled by remember { mutableStateOf(true) }
     var density by remember { mutableFloatStateOf(1f) }
+    var danmakuAlpha by remember { mutableFloatStateOf(0.9f) }
+    var danmakuFontScale by remember { mutableFloatStateOf(1f) }
+    var playbackSpeed by remember { mutableFloatStateOf(1f) }
+    var activePanel by remember(stream.id) { mutableStateOf<PlayerPanel?>(null) }
+    var episodeLoadingId by remember { mutableStateOf<String?>(null) }
     var controlsVisible by remember(currentStream.id) { mutableStateOf(true) }
     var playbackPositionMs by remember(currentStream.id) { mutableStateOf(0L) }
     var playbackDurationMs by remember(currentStream.id) { mutableStateOf(0L) }
     val profile = remember { DanmakuProfile(DanmakuPlatform.Bilibili, supportsAdvanced = true) }
 
-    LaunchedEffect(currentStream) {
+    LaunchedEffect(playbackSpeed) {
+        engine.player.setPlaybackSpeed(playbackSpeed)
+    }
+    LaunchedEffect(currentStream.id, currentEpisode.id) {
         if (currentStream.protocol == StreamProtocol.BITTORRENT) {
             graph.torrentEngine.prepare(currentStream)
         } else {
             graph.torrentEngine.release()
             engine.prepare(currentStream)
         }
-        val match = graph.danmakuRegistry.matchAll(detail, episode).firstOrNull()
+        val match = graph.danmakuRegistry.matchAll(detail, currentEpisode).firstOrNull()
         danmakuItems = match?.let { graph.danmakuRegistry.provider(it.providerId)?.fetchTimeline(it) }.orEmpty()
     }
     LaunchedEffect(currentStream.id, torrentPlaybackUrl) {
@@ -2581,10 +2604,9 @@ private fun PlayerScreen(
             delay(500)
         }
     }
-    LaunchedEffect(controlsVisible, state.isPlaying, state.errorMessage, routeNotice) {
-        if (controlsVisible && state.isPlaying && state.errorMessage == null && routeNotice == null) {
-            delay(4_000)
-            controlsVisible = false
+    LaunchedEffect(controlsVisible) {
+        if (!controlsVisible) {
+            activePanel = null
         }
     }
     LaunchedEffect(state.errorMessage, currentStream.id, routeOptions) {
@@ -2622,9 +2644,49 @@ private fun PlayerScreen(
     } else {
         state.errorMessage
     }
+    fun selectRoute(route: RouteCandidate) {
+        controlsVisible = true
+        activePanel = null
+        failedStreamIds = emptySet()
+        routeNotice = null
+        currentStream = route.stream
+    }
+
+    fun selectEpisode(target: Episode) {
+        if (target.id == currentEpisode.id || episodeLoadingId != null) return
+        controlsVisible = true
+        routeNotice = "正在加载 ${target.title} 的播放线路..."
+        episodeLoadingId = target.id
+        scope.launch {
+            val result = runCatching { graph.sourceRegistry.resolveRouteCandidates(target) }
+            result
+                .onSuccess { candidates ->
+                    val firstRoute = candidates.firstOrNull()
+                    if (firstRoute != null) {
+                        currentEpisode = target
+                        playerRoutes = candidates
+                        failedStreamIds = emptySet()
+                        routeNotice = null
+                        activePanel = null
+                        currentStream = firstRoute.stream
+                    } else {
+                        routeNotice = "${target.title} 暂时没有可用播放线路"
+                    }
+                }
+                .onFailure { failure ->
+                    routeNotice = "选集加载失败：${failure.message ?: failure::class.simpleName.orEmpty().ifBlank { "未知错误" }}"
+                }
+            episodeLoadingId = null
+        }
+    }
+
     val revealControls = { controlsVisible = true }
     val danmakuTopPadding = if (controlsVisible) 58.dp else 8.dp
-    val danmakuBottomPadding = if (controlsVisible) 150.dp else 8.dp
+    val danmakuBottomPadding = when {
+        !controlsVisible -> 8.dp
+        activePanel != null -> 240.dp
+        else -> 150.dp
+    }
 
     Box(Modifier.fillMaxSize().background(AnimeBackground)) {
         if (currentStream.protocol == StreamProtocol.BITTORRENT && torrentPlaybackUrl == null) {
@@ -2656,35 +2718,27 @@ private fun PlayerScreen(
             items = danmakuItems,
             playbackMsProvider = engine::currentPositionMs,
             profile = profile,
-            settings = DanmakuSettings(enabled = danmakuEnabled, density = density),
+            settings = DanmakuSettings(
+                enabled = danmakuEnabled,
+                alpha = danmakuAlpha,
+                density = density,
+                fontScale = danmakuFontScale,
+            ),
             modifier = Modifier
                 .fillMaxSize()
                 .padding(top = danmakuTopPadding, bottom = danmakuBottomPadding),
         )
-        if (controlsVisible) {
+        if (!controlsVisible) {
             Box(
                 modifier = Modifier
                     .matchParentSize()
-                    .zIndex(2f)
-                    .background(Color.Transparent)
+                    .zIndex(10f)
+                    .background(Color.Black.copy(alpha = 0.001f))
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
                     ) {
-                        controlsVisible = false
-                    },
-            )
-        } else {
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .zIndex(2f)
-                    .background(Color.Transparent)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                    ) {
-                        controlsVisible = true
+                        revealControls()
                     },
             )
         }
@@ -2701,7 +2755,7 @@ private fun PlayerScreen(
         ) {
             PlayerTopOverlay(
                 title = detail.title,
-                episodeTitle = episode.title,
+                episodeTitle = currentEpisode.title,
                 routeLabel = routeLabel,
                 playbackState = state.playbackStateLabel,
                 onBack = onBack,
@@ -2709,7 +2763,7 @@ private fun PlayerScreen(
             )
         }
         AnimatedVisibility(
-            visible = controlsVisible,
+            visible = controlsVisible && activePanel == null,
             enter = fadeIn(),
             exit = fadeOut(),
             modifier = Modifier.align(Alignment.Center).zIndex(4f),
@@ -2737,7 +2791,7 @@ private fun PlayerScreen(
             )
         }
         AnimatedVisibility(
-            visible = controlsVisible,
+            visible = controlsVisible && activePanel == null,
             enter = fadeIn(),
             exit = fadeOut(),
             modifier = Modifier.align(Alignment.BottomCenter).zIndex(4f),
@@ -2746,39 +2800,84 @@ private fun PlayerScreen(
                 currentStream = currentStream,
                 currentRoute = currentRoute,
                 routeOptions = routeOptions,
-                selectedStreamId = currentStream.id,
                 routeNotice = routeNotice,
                 errorMessage = effectiveErrorMessage,
                 danmakuEnabled = danmakuEnabled,
                 density = density,
+                playbackSpeed = playbackSpeed,
+                activePanel = activePanel,
+                episodeCount = detail.episodes.size,
                 positionMs = playbackPositionMs,
                 durationMs = playbackDurationMs,
                 onSeek = {
                     controlsVisible = true
                     engine.player.seekTo(it)
                 },
-                onRouteSelected = { route ->
+                onShowPanel = { panel ->
                     controlsVisible = true
-                    failedStreamIds = emptySet()
-                    routeNotice = null
-                    currentStream = route.stream
+                    activePanel = panel
                 },
                 onToggleDanmaku = {
                     controlsVisible = true
                     danmakuEnabled = !danmakuEnabled
                 },
-                onDensityChange = {
-                    controlsVisible = true
-                    density = it
-                },
                 onOffline = {
                     controlsVisible = true
                     if (currentStream.protocol != StreamProtocol.BITTORRENT) {
-                        graph.media3DownloadCoordinator.enqueue(currentStream, "${detail.title} ${episode.title}")
+                        graph.media3DownloadCoordinator.enqueue(currentStream, "${detail.title} ${currentEpisode.title}")
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
             )
+        }
+        AnimatedVisibility(
+            visible = controlsVisible && activePanel != null,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.matchParentSize().zIndex(5f),
+        ) {
+            activePanel?.let { panel ->
+                PlayerOptionPanel(
+                    panel = panel,
+                    detail = detail,
+                    currentEpisode = currentEpisode,
+                    routeOptions = routeOptions,
+                    selectedStreamId = currentStream.id,
+                    currentStream = currentStream,
+                    danmakuEnabled = danmakuEnabled,
+                    density = density,
+                    danmakuAlpha = danmakuAlpha,
+                    danmakuFontScale = danmakuFontScale,
+                    playbackSpeed = playbackSpeed,
+                    episodeLoadingId = episodeLoadingId,
+                    routeNotice = routeNotice,
+                    onDismiss = { activePanel = null },
+                    onRouteSelected = ::selectRoute,
+                    onEpisodeSelected = ::selectEpisode,
+                    onToggleDanmaku = {
+                        controlsVisible = true
+                        danmakuEnabled = !danmakuEnabled
+                    },
+                    onDensityChange = {
+                        controlsVisible = true
+                        density = it
+                    },
+                    onDanmakuAlphaChange = {
+                        controlsVisible = true
+                        danmakuAlpha = it
+                    },
+                    onDanmakuFontScaleChange = {
+                        controlsVisible = true
+                        danmakuFontScale = it
+                    },
+                    onSpeedSelected = {
+                        controlsVisible = true
+                        playbackSpeed = it
+                        activePanel = null
+                    },
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
         }
     }
 }
@@ -2878,21 +2977,22 @@ private fun PlayerBottomControls(
     currentStream: MediaStream,
     currentRoute: RouteCandidate?,
     routeOptions: List<RouteCandidate>,
-    selectedStreamId: String,
     routeNotice: String?,
     errorMessage: String?,
     danmakuEnabled: Boolean,
     density: Float,
+    playbackSpeed: Float,
+    activePanel: PlayerPanel?,
+    episodeCount: Int,
     positionMs: Long,
     durationMs: Long,
     onSeek: (Long) -> Unit,
-    onRouteSelected: (RouteCandidate) -> Unit,
+    onShowPanel: (PlayerPanel) -> Unit,
     onToggleDanmaku: () -> Unit,
-    onDensityChange: (Float) -> Unit,
     onOffline: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var pendingSeekMs by remember(selectedStreamId) { mutableStateOf<Long?>(null) }
+    var pendingSeekMs by remember(currentStream.id) { mutableStateOf<Long?>(null) }
     val displayPositionMs = if (durationMs > 0L) {
         (pendingSeekMs ?: positionMs).coerceIn(0L, durationMs)
     } else {
@@ -3001,23 +3101,18 @@ private fun PlayerBottomControls(
 
         PlayerActionBar(
             quality = quality,
+            routeCount = routeOptions.size,
+            episodeCount = episodeCount,
             danmakuEnabled = danmakuEnabled,
             density = density,
+            playbackSpeed = playbackSpeed,
+            activePanel = activePanel,
             offlineEnabled = currentStream.protocol != StreamProtocol.BITTORRENT,
             onToggleDanmaku = onToggleDanmaku,
-            onDensityChange = onDensityChange,
+            onShowPanel = onShowPanel,
             onOffline = onOffline,
             modifier = Modifier.fillMaxWidth(),
         )
-
-        if (routeOptions.size > 1) {
-            PlayerRouteSelector(
-                routes = routeOptions,
-                selectedStreamId = selectedStreamId,
-                onSelected = onRouteSelected,
-            )
-        }
-
     }
 }
 
@@ -3061,11 +3156,15 @@ private fun PlayerDanmakuInputBar(
 @Composable
 private fun PlayerActionBar(
     quality: String,
+    routeCount: Int,
+    episodeCount: Int,
     danmakuEnabled: Boolean,
     density: Float,
+    playbackSpeed: Float,
+    activePanel: PlayerPanel?,
     offlineEnabled: Boolean,
     onToggleDanmaku: () -> Unit,
-    onDensityChange: (Float) -> Unit,
+    onShowPanel: (PlayerPanel) -> Unit,
     onOffline: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -3084,13 +3183,47 @@ private fun PlayerActionBar(
         }
         item {
             PlayerTextAction(
-                icon = null,
-                text = "密度 ${formatDanmakuDensity(density)}",
-                onClick = { onDensityChange(nextDanmakuDensity(density)) },
+                icon = Icons.Filled.Settings,
+                text = "弹幕 ${formatDanmakuDensity(density)}",
+                selected = activePanel == PlayerPanel.Danmaku,
+                onClick = { onShowPanel(PlayerPanel.Danmaku) },
             )
         }
-        item { PlayerTextAction(icon = null, text = "清晰度 $quality", onClick = {}) }
-        item { PlayerTextAction(icon = null, text = "倍速 1.0x", onClick = {}) }
+        item {
+            PlayerTextAction(
+                icon = Icons.Filled.HighQuality,
+                text = "清晰度 $quality",
+                selected = activePanel == PlayerPanel.Quality,
+                enabled = routeCount > 0,
+                onClick = { onShowPanel(PlayerPanel.Quality) },
+            )
+        }
+        item {
+            PlayerTextAction(
+                icon = Icons.Filled.Speed,
+                text = "倍速 ${formatPlaybackSpeed(playbackSpeed)}",
+                selected = activePanel == PlayerPanel.Speed,
+                onClick = { onShowPanel(PlayerPanel.Speed) },
+            )
+        }
+        item {
+            PlayerTextAction(
+                icon = Icons.Filled.VideoLibrary,
+                text = "线路 ${routeCount.coerceAtLeast(1)}",
+                selected = activePanel == PlayerPanel.Route,
+                enabled = routeCount > 1,
+                onClick = { onShowPanel(PlayerPanel.Route) },
+            )
+        }
+        item {
+            PlayerTextAction(
+                icon = Icons.AutoMirrored.Filled.PlaylistPlay,
+                text = "选集",
+                selected = activePanel == PlayerPanel.Episode,
+                enabled = episodeCount > 1,
+                onClick = { onShowPanel(PlayerPanel.Episode) },
+            )
+        }
         item {
             PlayerTextAction(
                 icon = Icons.Filled.CloudDownload,
@@ -3098,6 +3231,357 @@ private fun PlayerActionBar(
                 enabled = offlineEnabled,
                 onClick = onOffline,
             )
+        }
+    }
+}
+
+@Composable
+private fun PlayerOptionPanel(
+    panel: PlayerPanel,
+    detail: MediaDetail,
+    currentEpisode: Episode,
+    routeOptions: List<RouteCandidate>,
+    selectedStreamId: String,
+    currentStream: MediaStream,
+    danmakuEnabled: Boolean,
+    density: Float,
+    danmakuAlpha: Float,
+    danmakuFontScale: Float,
+    playbackSpeed: Float,
+    episodeLoadingId: String?,
+    routeNotice: String?,
+    onDismiss: () -> Unit,
+    onRouteSelected: (RouteCandidate) -> Unit,
+    onEpisodeSelected: (Episode) -> Unit,
+    onToggleDanmaku: () -> Unit,
+    onDensityChange: (Float) -> Unit,
+    onDanmakuAlphaChange: (Float) -> Unit,
+    onDanmakuFontScaleChange: (Float) -> Unit,
+    onSpeedSelected: (Float) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    BoxWithConstraints(modifier = modifier) {
+        val landscape = maxWidth > maxHeight
+        val panelWidth = if (maxWidth < 420.dp) maxWidth else 380.dp
+        val panelHeight = if (maxHeight < 420.dp) maxHeight else 390.dp
+        val panelModifier = if (landscape) {
+            Modifier.align(Alignment.CenterEnd).fillMaxHeight().width(panelWidth)
+        } else {
+            Modifier.align(Alignment.BottomCenter).fillMaxWidth().heightIn(max = panelHeight)
+        }
+        val panelShape = if (landscape) {
+            RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp)
+        } else {
+            RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)
+        }
+
+        Surface(
+            modifier = panelModifier,
+            shape = panelShape,
+            color = Color.Black.copy(alpha = 0.9f),
+            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f)),
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                PlayerPanelHeader(title = playerPanelTitle(panel), onDismiss = onDismiss)
+                Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
+                    when (panel) {
+                        PlayerPanel.Danmaku -> PlayerDanmakuSettingsPanel(
+                            danmakuEnabled = danmakuEnabled,
+                            density = density,
+                            alpha = danmakuAlpha,
+                            fontScale = danmakuFontScale,
+                            onToggleDanmaku = onToggleDanmaku,
+                            onDensityChange = onDensityChange,
+                            onAlphaChange = onDanmakuAlphaChange,
+                            onFontScaleChange = onDanmakuFontScaleChange,
+                        )
+                        PlayerPanel.Quality -> PlayerQualityPanel(
+                            routes = routeOptions,
+                            currentStream = currentStream,
+                            onRouteSelected = onRouteSelected,
+                        )
+                        PlayerPanel.Speed -> PlayerSpeedPanel(
+                            playbackSpeed = playbackSpeed,
+                            onSpeedSelected = onSpeedSelected,
+                        )
+                        PlayerPanel.Route -> PlayerRoutePanel(
+                            routes = routeOptions,
+                            selectedStreamId = selectedStreamId,
+                            routeNotice = routeNotice,
+                            onRouteSelected = onRouteSelected,
+                        )
+                        PlayerPanel.Episode -> PlayerEpisodePanel(
+                            detail = detail,
+                            currentEpisode = currentEpisode,
+                            episodeLoadingId = episodeLoadingId,
+                            onEpisodeSelected = onEpisodeSelected,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PlayerPanelHeader(title: String, onDismiss: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            color = Color.White,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.weight(1f),
+        )
+        TextButton(onClick = onDismiss, modifier = Modifier.height(34.dp)) {
+            Text("关闭", color = Color.White.copy(alpha = 0.82f), style = MaterialTheme.typography.labelMedium)
+        }
+    }
+}
+
+@Composable
+private fun PlayerDanmakuSettingsPanel(
+    danmakuEnabled: Boolean,
+    density: Float,
+    alpha: Float,
+    fontScale: Float,
+    onToggleDanmaku: () -> Unit,
+    onDensityChange: (Float) -> Unit,
+    onAlphaChange: (Float) -> Unit,
+    onFontScaleChange: (Float) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        PlayerSelectableRow(
+            title = if (danmakuEnabled) "弹幕已开启" else "弹幕已关闭",
+            subtitle = "点击切换弹幕显示状态",
+            selected = danmakuEnabled,
+            icon = Icons.Filled.ClosedCaption,
+            onClick = onToggleDanmaku,
+        )
+        PlayerSliderSetting(
+            title = "密度",
+            valueText = formatDanmakuDensity(density),
+            value = density.coerceIn(0.5f, 1.5f),
+            valueRange = 0.5f..1.5f,
+            steps = 1,
+            onValueChange = onDensityChange,
+        )
+        PlayerSliderSetting(
+            title = "透明度",
+            valueText = formatPercentLabel(alpha),
+            value = alpha.coerceIn(0.35f, 1f),
+            valueRange = 0.35f..1f,
+            steps = 12,
+            onValueChange = onAlphaChange,
+        )
+        PlayerSliderSetting(
+            title = "字号",
+            valueText = formatScaleLabel(fontScale),
+            value = fontScale.coerceIn(0.75f, 1.35f),
+            valueRange = 0.75f..1.35f,
+            steps = 11,
+            onValueChange = onFontScaleChange,
+        )
+    }
+}
+
+@Composable
+private fun PlayerQualityPanel(
+    routes: List<RouteCandidate>,
+    currentStream: MediaStream,
+    onRouteSelected: (RouteCandidate) -> Unit,
+) {
+    val qualityRoutes = remember(routes) {
+        routes
+            .groupBy { playerQualityLabel(it) }
+            .mapNotNull { (_, group) -> group.maxByOrNull { it.score } }
+            .sortedByDescending { it.score }
+    }
+    if (qualityRoutes.isEmpty()) {
+        Text("当前线路没有提供可切换清晰度", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+        return
+    }
+    val currentQuality = currentStream.quality.orEmpty().ifBlank { "自动" }
+    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        items(qualityRoutes, key = { it.stream.id }) { route ->
+            val quality = playerQualityLabel(route)
+            PlayerSelectableRow(
+                title = quality,
+                subtitle = "${route.sourceName} · ${route.routeName.orEmpty().ifBlank { route.protocol.displayName() }}",
+                selected = quality == currentQuality || route.stream.id == currentStream.id,
+                icon = Icons.Filled.HighQuality,
+                onClick = { onRouteSelected(route) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun PlayerSpeedPanel(
+    playbackSpeed: Float,
+    onSpeedSelected: (Float) -> Unit,
+) {
+    val speeds = listOf(0.5f, 0.75f, 1f, 1.25f, 1.5f, 2f)
+    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        items(speeds) { speed ->
+            PlayerSelectableRow(
+                title = formatPlaybackSpeed(speed),
+                subtitle = if (speed == 1f) "标准速度" else null,
+                selected = speed == playbackSpeed,
+                icon = Icons.Filled.Speed,
+                onClick = { onSpeedSelected(speed) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun PlayerRoutePanel(
+    routes: List<RouteCandidate>,
+    selectedStreamId: String,
+    routeNotice: String?,
+    onRouteSelected: (RouteCandidate) -> Unit,
+) {
+    if (routeNotice != null) {
+        Text(routeNotice, style = MaterialTheme.typography.bodySmall, color = AnimeAccentAmber)
+    }
+    if (routes.isEmpty()) {
+        Text("暂时没有可用播放线路", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+        return
+    }
+    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        items(routes, key = { it.stream.id }) { route ->
+            PlayerSelectableRow(
+                title = "${route.sourceName} · ${route.routeName.orEmpty().ifBlank { route.protocol.displayName() }}",
+                subtitle = listOfNotNull(route.quality, route.subgroup, route.protocol.displayName()).joinToString(" · "),
+                selected = route.stream.id == selectedStreamId,
+                icon = Icons.Filled.VideoLibrary,
+                onClick = { onRouteSelected(route) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun PlayerEpisodePanel(
+    detail: MediaDetail,
+    currentEpisode: Episode,
+    episodeLoadingId: String?,
+    onEpisodeSelected: (Episode) -> Unit,
+) {
+    if (detail.episodes.isEmpty()) {
+        Text("当前条目没有可切换选集", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+        return
+    }
+    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        items(detail.episodes, key = { it.id }) { item ->
+            val loading = episodeLoadingId == item.id
+            PlayerSelectableRow(
+                title = item.title,
+                subtitle = item.index?.let { "第 $it 集" },
+                selected = item.id == currentEpisode.id,
+                enabled = episodeLoadingId == null || loading,
+                icon = Icons.AutoMirrored.Filled.PlaylistPlay,
+                trailing = if (loading) "加载中" else null,
+                onClick = { onEpisodeSelected(item) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun PlayerSliderSetting(
+    title: String,
+    valueText: String,
+    value: Float,
+    valueRange: ClosedFloatingPointRange<Float>,
+    steps: Int,
+    onValueChange: (Float) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(title, style = MaterialTheme.typography.bodyMedium, color = Color.White, modifier = Modifier.weight(1f))
+            Text(valueText, style = MaterialTheme.typography.labelMedium, color = AnimeAccentCyan)
+        }
+        Slider(
+            value = value,
+            onValueChange = onValueChange,
+            valueRange = valueRange,
+            steps = steps,
+            colors = SliderDefaults.colors(
+                thumbColor = AnimeAccentPink,
+                activeTrackColor = AnimeAccentPink,
+                inactiveTrackColor = Color.White.copy(alpha = 0.22f),
+            ),
+            modifier = Modifier.fillMaxWidth().height(30.dp),
+        )
+    }
+}
+
+@Composable
+private fun PlayerSelectableRow(
+    title: String,
+    subtitle: String? = null,
+    selected: Boolean,
+    icon: ImageVector? = null,
+    enabled: Boolean = true,
+    trailing: String? = null,
+    onClick: () -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(
+                when {
+                    selected -> AnimeAccentPink.copy(alpha = 0.18f)
+                    else -> Color.White.copy(alpha = 0.06f)
+                },
+            )
+            .clickable(enabled = enabled) { onClick() }
+            .padding(horizontal = 12.dp, vertical = 9.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        if (icon != null) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = if (selected) AnimeAccentPink else Color.White.copy(alpha = if (enabled) 0.76f else 0.32f),
+                modifier = Modifier.size(19.dp),
+            )
+        }
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                title,
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color.White.copy(alpha = if (enabled) 0.94f else 0.42f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            subtitle?.takeIf { it.isNotBlank() }?.let {
+                Text(
+                    it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = AnimeMuted.copy(alpha = if (enabled) 0.86f else 0.38f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+        trailing?.let {
+            Text(it, style = MaterialTheme.typography.labelSmall, color = AnimeAccentAmber, maxLines = 1)
+        }
+        if (selected) {
+            Icon(Icons.Filled.Check, contentDescription = null, tint = AnimeAccentPink, modifier = Modifier.size(18.dp))
         }
     }
 }
@@ -3231,6 +3715,23 @@ private fun playerRouteLabel(stream: MediaStream, route: RouteCandidate?): Strin
         .filterNotNull()
         .joinToString(" · ")
         .ifBlank { stream.protocol.displayName() }
+}
+
+private fun playerPanelTitle(panel: PlayerPanel): String {
+    return when (panel) {
+        PlayerPanel.Danmaku -> "弹幕设置"
+        PlayerPanel.Quality -> "清晰度"
+        PlayerPanel.Speed -> "播放速度"
+        PlayerPanel.Route -> "播放线路"
+        PlayerPanel.Episode -> "选集"
+    }
+}
+
+private fun playerQualityLabel(route: RouteCandidate): String {
+    return route.quality
+        ?: route.stream.quality?.takeIf { it.isNotBlank() }
+        ?: route.routeName?.takeIf { it.isNotBlank() }
+        ?: route.protocol.displayName()
 }
 
 @Composable
@@ -3390,6 +3891,19 @@ private fun formatDanmakuDensity(density: Float): String {
         density < 1.25f -> "100%"
         else -> "150%"
     }
+}
+
+private fun formatPlaybackSpeed(speed: Float): String {
+    val number = "%.2f".format(speed).trimEnd('0').trimEnd('.')
+    return "${if (number.contains(".")) number else "$number.0"}x"
+}
+
+private fun formatPercentLabel(value: Float): String {
+    return "%.0f%%".format(value.coerceIn(0f, 1f) * 100f)
+}
+
+private fun formatScaleLabel(value: Float): String {
+    return "%.0f%%".format(value * 100f)
 }
 
 private fun formatBytes(bytes: Long): String {

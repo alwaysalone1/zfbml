@@ -25,6 +25,19 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.20
+
+中文：
+- 将播放器底部“清晰度 / 倍速 / 线路 / 选集 / 弹幕设置”改为可操作的半屏或侧边面板，避免把所有线路按钮长期堆在底部。
+- 倍速切换现在会直接写入播放器；清晰度与线路面板会切换真实 `MediaStream`；选集面板会在播放器内重新解析线路并切到新集。
+- 弹幕设置面板新增开关、密度、透明度、字号控制，渲染层会按设置实时更新。
+
+English:
+
+- Replaced the overloaded bottom row with actionable half-sheet/side-drawer panels for quality, speed, routes, episodes, and danmaku settings.
+- Speed selection now updates the player directly; quality and route panels switch real `MediaStream` entries; the episode panel resolves routes in-player before switching.
+- Added danmaku controls for visibility, density, opacity, and font size, with the rendering layer updated from those settings.
+
 ### v0.2.19
 
 中文：

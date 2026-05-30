@@ -514,7 +514,7 @@ class AnimekoOnlineSourceProvider(
         const val ID = "animeko-online"
         const val TAG = "ZfbmlOnlineSource"
         const val DEFAULT_SUBSCRIPTION_URL = "https://sub.creamycake.org/v1/css1.json"
-        const val USER_AGENT = "ZFBML/0.2.19 (https://github.com/alwaysalone1/zfbml)"
+        const val USER_AGENT = "ZFBML/0.2.20 (https://github.com/alwaysalone1/zfbml)"
         const val DEFAULT_BROWSER_UA =
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
         const val RAW_SOURCE_ID = "onlineSourceId"
