@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.23
+
+中文：
+
+- 播放器点击命中层改为 Compose 透明层，放在视频与弹幕之上、控制按钮之下，避免 `TextureView`/`PlayerView` 吃掉触摸导致控制层无法唤出，同时不压住播放器按钮。
+- 恢复更接近 B 站移动端的点击显示/隐藏与播放中自动收起逻辑，同时保留顶部标题、中心暂停/快退/快进、底部进度/弹幕/清晰度/倍速/线路入口。
+- 弹幕层约束到 16:9 视频画面区域，并下调默认密度、字号和透明度，让真实弹幕不再铺满竖屏黑边。
+
+English:
+
+- Moved player tap handling to a Compose transparent layer above video/danmaku and below controls so `TextureView`/`PlayerView` no longer swallows control toggles while player buttons remain clickable.
+- Restored a Bilibili-like tap-to-show/hide and playback auto-hide flow while keeping the top title, center transport controls, and bottom progress/danmaku/quality/speed/route actions.
+- Constrained danmaku to the 16:9 video area and reduced default density, size, and opacity so real comments no longer flood the portrait letterbox.
+
 ### v0.2.22
 
 中文：

@@ -13,6 +13,7 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -1462,7 +1463,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.22")
+                setRequestProperty("User-Agent", "ZFBML/0.2.23")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2824,9 +2825,9 @@ private fun PlayerScreen(
     var routeNotice by remember(stream.id) { mutableStateOf<String?>(null) }
     var danmakuItems by remember { mutableStateOf<List<DanmakuItem>>(emptyList()) }
     var danmakuEnabled by remember { mutableStateOf(true) }
-    var density by remember { mutableFloatStateOf(0.45f) }
-    var danmakuAlpha by remember { mutableFloatStateOf(0.82f) }
-    var danmakuFontScale by remember { mutableFloatStateOf(0.82f) }
+    var density by remember { mutableFloatStateOf(0.32f) }
+    var danmakuAlpha by remember { mutableFloatStateOf(0.76f) }
+    var danmakuFontScale by remember { mutableFloatStateOf(0.72f) }
     var playbackSpeed by remember { mutableFloatStateOf(1f) }
     var activePanel by remember(stream.id) { mutableStateOf<PlayerPanel?>(null) }
     var episodeLoadingId by remember { mutableStateOf<String?>(null) }
@@ -2837,11 +2838,11 @@ private fun PlayerScreen(
     val profile = remember {
         DanmakuProfile(
             platform = DanmakuPlatform.Bilibili,
-            fontScale = 0.86f,
-            strokeWidthPx = 3f,
-            shadowRadiusPx = 3f,
-            maxTracks = 12,
-            maxItemsPerMinute = 420,
+            fontScale = 0.76f,
+            strokeWidthPx = 2.5f,
+            shadowRadiusPx = 2.5f,
+            maxTracks = 7,
+            maxItemsPerMinute = 260,
             supportsAdvanced = true,
         )
     }
@@ -2900,6 +2901,15 @@ private fun PlayerScreen(
     LaunchedEffect(state.hasRenderedFirstFrame, currentStream.id) {
         if (state.hasRenderedFirstFrame) {
             revealControls()
+        }
+    }
+    LaunchedEffect(controlsVisible, activePanel, state.isPlaying, currentStream.id, controlsRevealSerial) {
+        if (controlsVisible && activePanel == null && state.isPlaying) {
+            val revealSerial = controlsRevealSerial
+            delay(6_000)
+            if (controlsVisible && activePanel == null && state.isPlaying && controlsRevealSerial == revealSerial) {
+                controlsVisible = false
+            }
         }
     }
     LaunchedEffect(state.errorMessage, currentStream.id, routeOptions) {
@@ -3001,7 +3011,6 @@ private fun PlayerScreen(
             PlayerViewSurface(
                 engine = engine,
                 modifier = Modifier.fillMaxSize(),
-                onSurfaceTap = ::toggleControls,
             )
         }
         if (
@@ -3027,23 +3036,23 @@ private fun PlayerScreen(
                 fontScale = danmakuFontScale,
             ),
             modifier = Modifier
-                .fillMaxSize()
+                .align(Alignment.Center)
+                .fillMaxWidth()
+                .aspectRatio(16f / 9f)
                 .padding(top = danmakuTopPadding, bottom = danmakuBottomPadding),
         )
-        if (!controlsVisible) {
-            Box(
-                modifier = Modifier
-                    .matchParentSize()
-                    .zIndex(10f)
-                    .background(Color.Black.copy(alpha = 0.001f))
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                    ) {
-                        revealControls()
-                    },
-            )
-        }
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .zIndex(3.5f)
+                .background(Color.Black.copy(alpha = 0.001f))
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                ) {
+                    toggleControls()
+                },
+        )
         PlayerEdgeProgress(
             positionMs = playbackPositionMs,
             durationMs = playbackDurationMs,
@@ -3664,8 +3673,8 @@ private fun PlayerDanmakuSettingsPanel(
         PlayerSliderSetting(
             title = "密度",
             valueText = formatDanmakuDensity(density),
-            value = density.coerceIn(0.35f, 1.1f),
-            valueRange = 0.35f..1.1f,
+            value = density.coerceIn(0.3f, 1f),
+            valueRange = 0.3f..1f,
             steps = 2,
             onValueChange = onDensityChange,
         )
@@ -3680,8 +3689,8 @@ private fun PlayerDanmakuSettingsPanel(
         PlayerSliderSetting(
             title = "字号",
             valueText = formatScaleLabel(fontScale),
-            value = fontScale.coerceIn(0.7f, 1.15f),
-            valueRange = 0.7f..1.15f,
+            value = fontScale.coerceIn(0.62f, 1.08f),
+            valueRange = 0.62f..1.08f,
             steps = 8,
             onValueChange = onFontScaleChange,
         )
@@ -4175,17 +4184,17 @@ private fun formatPlaybackTime(ms: Long): String {
 
 private fun nextDanmakuDensity(density: Float): Float {
     return when {
-        density < 0.55f -> 0.75f
-        density < 0.9f -> 1.1f
-        else -> 0.35f
+        density < 0.45f -> 0.62f
+        density < 0.82f -> 1f
+        else -> 0.3f
     }
 }
 
 private fun formatDanmakuDensity(density: Float): String {
     return when {
-        density < 0.55f -> "45%"
-        density < 0.9f -> "75%"
-        else -> "110%"
+        density < 0.45f -> "30%"
+        density < 0.82f -> "60%"
+        else -> "100%"
     }
 }
 
