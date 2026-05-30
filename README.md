@@ -25,6 +25,19 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.21
+
+中文：
+- 调整 Bangumi 条目到在线视频源的别名搜索顺序，优先使用中文名、中文别名，再使用外文原名，避免国漫条目把真正可搜的中文名挤出搜索窗口。
+- 优化线路匹配评分：完整片名会优先于“包含片名”的衍生条目，降低解说、预告、粤语等非正片命中的优先级，减少先解析失效线路导致的长时间无结果。
+- 给单个线路命中解析增加超时兜底，避免某个慢源或失效页面长期拖住详情页线路加载。
+
+English:
+
+- Reordered Bangumi-to-online-source aliases so Chinese titles and Chinese aliases are searched before foreign original names, which improves Chinese-animation route discovery.
+- Improved route scoring so exact titles beat containing variants, while commentary, trailers, and dubbed variants are ranked lower when the catalog title does not request them.
+- Added a per-hit timeout guard during route resolution so one slow or broken source cannot stall the detail page route loading for too long.
+
 ### v0.2.20
 
 中文：

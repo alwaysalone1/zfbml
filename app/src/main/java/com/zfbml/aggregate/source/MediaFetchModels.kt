@@ -11,18 +11,20 @@ data class MediaFetchRequest(
 ) {
     companion object {
         fun fromEpisode(episode: Episode): MediaFetchRequest {
-            val aliases = buildList {
+            val distinctAliases = buildList {
                 add(episode.raw["subjectNameCn"])
-                add(episode.raw["subjectName"])
                 add(episode.raw["subjectTitle"])
                 episode.raw["subjectAliases"]
                     ?.split("|")
                     ?.forEach { add(it) }
+                add(episode.raw["subjectName"])
             }
                 .filterNotNull()
                 .map { it.trim() }
                 .filter { it.length >= 2 }
-                .distinct()
+                .distinctBy { it.normalizedAliasKey() }
+            val cjkAliases = distinctAliases.filter { it.containsCjkCharacter() }
+            val aliases = cjkAliases.ifEmpty { distinctAliases }
 
             return MediaFetchRequest(
                 subjectId = episode.raw["subjectId"],
@@ -33,6 +35,19 @@ data class MediaFetchRequest(
                 episodeTitle = episode.raw["episodeTitle"] ?: episode.title,
                 sourceEpisode = episode,
             )
+        }
+
+        private fun String.normalizedAliasKey(): String {
+            return lowercase()
+                .replace(Regex("""[\[\]【】()（）:：!！?？.,，。~～_\-\s]+"""), "")
+        }
+
+        private fun String.containsCjkCharacter(): Boolean {
+            return any { char ->
+                char in '\u4e00'..'\u9fff' ||
+                    char in '\u3040'..'\u30ff' ||
+                    char in '\u3400'..'\u4dbf'
+            }
         }
     }
 }

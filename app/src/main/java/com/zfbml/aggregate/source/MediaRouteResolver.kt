@@ -67,53 +67,62 @@ class MediaRouteResolver(
         request: MediaFetchRequest,
     ): List<RouteCandidate> {
         return hits.flatMap { hit ->
-            val detail = runCatching { hit.provider.loadDetail(hit.result) }.getOrNull() ?: return@flatMap emptyList()
-            detail.episodes
-                .filter { episode ->
-                    isEpisodeCompatible(episode.index ?: TorrentTitleScorer.extractEpisode(episode.title), request.episodeIndex)
-                }
-                .sortedByDescending { episode -> scoreEpisode(episode, request, hit.score) }
-                .take(MAX_EPISODES_PER_HIT)
-                .flatMap { candidateEpisode ->
-                    val episodeScore = scoreEpisode(candidateEpisode, request, hit.score)
-                    runCatching { hit.provider.resolveStreams(candidateEpisode) }
-                        .getOrDefault(emptyList())
-                        .map { stream ->
-                            val score = (stream.sourceScore + hit.score / 2 + episodeScore / 4 + protocolScore(stream.protocol))
-                                .coerceIn(0, 360)
-                            val resolverMetadata = buildMap {
-                                put("routeProviderId", hit.provider.manifest.id)
-                                put("routeProviderName", hit.provider.manifest.name)
-                                put("routeTitle", hit.result.title)
-                                put("routeSubtitle", hit.result.subtitle.orEmpty())
-                                put("routeUrl", hit.result.url)
-                                put("routeAlias", hit.alias)
-                                put("routeScore", score.toString())
-                                put("routeEpisodeTitle", candidateEpisode.title)
-                                candidateEpisode.index?.let { put("routeEpisodeIndex", it.toString()) }
-                            }
-                            val metadata = resolverMetadata + stream.metadata
-                            val normalizedStream = stream.copy(
-                                id = "${request.sourceEpisode.id}:${stream.id}",
-                                downloadPolicy = if (stream.protocol == StreamProtocol.BITTORRENT) {
-                                    DownloadPolicy.CacheOnly
-                                } else {
-                                    stream.downloadPolicy
-                                },
-                                sourceScore = score,
-                                metadata = metadata,
-                            )
-                            normalizedStream.toRouteCandidate(
-                                sourceId = hit.provider.manifest.id,
-                                sourceName = hit.provider.manifest.name,
-                                fallbackTitle = hit.result.title,
-                            )
-                        }
-                }
+            withTimeoutOrNull(providerTimeoutMs) {
+                resolveHit(hit, request)
+            }.orEmpty()
             }
             .distinctBy { "${it.sourceId}|${it.stream.url}" }
             .sortedWith(routeComparator())
             .take(MAX_ROUTES)
+    }
+
+    private suspend fun resolveHit(
+        hit: SearchHit,
+        request: MediaFetchRequest,
+    ): List<RouteCandidate> {
+        val detail = runCatching { hit.provider.loadDetail(hit.result) }.getOrNull() ?: return emptyList()
+        return detail.episodes
+            .filter { episode ->
+                isEpisodeCompatible(episode.index ?: TorrentTitleScorer.extractEpisode(episode.title), request.episodeIndex)
+            }
+            .sortedByDescending { episode -> scoreEpisode(episode, request, hit.score) }
+            .take(MAX_EPISODES_PER_HIT)
+            .flatMap { candidateEpisode ->
+                val episodeScore = scoreEpisode(candidateEpisode, request, hit.score)
+                runCatching { hit.provider.resolveStreams(candidateEpisode) }
+                    .getOrDefault(emptyList())
+                    .map { stream ->
+                        val score = (stream.sourceScore + hit.score / 2 + episodeScore / 4 + protocolScore(stream.protocol))
+                            .coerceIn(0, 900)
+                        val resolverMetadata = buildMap {
+                            put("routeProviderId", hit.provider.manifest.id)
+                            put("routeProviderName", hit.provider.manifest.name)
+                            put("routeTitle", hit.result.title)
+                            put("routeSubtitle", hit.result.subtitle.orEmpty())
+                            put("routeUrl", hit.result.url)
+                            put("routeAlias", hit.alias)
+                            put("routeScore", score.toString())
+                            put("routeEpisodeTitle", candidateEpisode.title)
+                            candidateEpisode.index?.let { put("routeEpisodeIndex", it.toString()) }
+                        }
+                        val metadata = resolverMetadata + stream.metadata
+                        val normalizedStream = stream.copy(
+                            id = "${request.sourceEpisode.id}:${stream.id}",
+                            downloadPolicy = if (stream.protocol == StreamProtocol.BITTORRENT) {
+                                DownloadPolicy.CacheOnly
+                            } else {
+                                stream.downloadPolicy
+                            },
+                            sourceScore = score,
+                            metadata = metadata,
+                        )
+                        normalizedStream.toRouteCandidate(
+                            sourceId = hit.provider.manifest.id,
+                            sourceName = hit.provider.manifest.name,
+                            fallbackTitle = hit.result.title,
+                        )
+                    }
+            }
     }
 
     private fun MediaStream.toRouteCandidate(
@@ -141,11 +150,25 @@ class MediaRouteResolver(
     private fun scoreResult(result: SearchResult, request: MediaFetchRequest, alias: String): Int {
         val title = result.title
         val lower = title.lowercase()
+        val normalizedTitle = title.normalizeTitleForRouteScore()
+        val normalizedAlias = alias.normalizeTitleForRouteScore()
         var score = 60
-        if (lower.contains(alias.lowercase())) score += 80
-        if (request.subjectNames.any { lower.contains(it.lowercase()) }) score += 50
+        score += when {
+            normalizedTitle == normalizedAlias -> 170
+            normalizedTitle.startsWith(normalizedAlias) -> 120
+            normalizedTitle.contains(normalizedAlias) -> 80
+            else -> 0
+        }
+        if (request.subjectNames.any { name ->
+                val normalizedName = name.normalizeTitleForRouteScore()
+                normalizedName.isNotBlank() && normalizedTitle == normalizedName
+            }
+        ) {
+            score += 90
+        }
         if (result.raw["mediaKind"] == "online") score += 420
         result.raw["sourceTier"]?.toIntOrNull()?.let { score -= it * 8 }
+        if (isLikelyUnrelatedVariant(lower, request)) score -= 110
         score += episodeScore(TorrentTitleScorer.extractEpisode(title), request.episodeIndex)
         score += qualityScore(lower)
         if ("batch" in lower || "\u5408\u96c6" in lower || Regex("""\b\d{1,3}\s*-\s*\d{1,3}\b""").containsMatchIn(lower)) {
@@ -203,6 +226,19 @@ class MediaRouteResolver(
         }
     }
 
+    private fun isLikelyUnrelatedVariant(lower: String, request: MediaFetchRequest): Boolean {
+        val blockedTokens = listOf("\u89e3\u8bf4", "\u9884\u544a", "\u82b1\u7d6e", "\u7ca4\u8bed", "\u56fd\u8bed")
+        return blockedTokens.any { token ->
+            token in lower && request.subjectNames.none { token in it.lowercase() }
+        }
+    }
+
+    private fun String.normalizeTitleForRouteScore(): String {
+        return lowercase()
+            .replace(Regex("""[\[\]【】()（）:：!！?？.,，。~～_\-\s]+"""), "")
+            .trim()
+    }
+
     private fun routeComparator(): Comparator<RouteCandidate> {
         return compareByDescending<RouteCandidate> { it.score }
             .thenByDescending { protocolScore(it.protocol) }
@@ -226,9 +262,9 @@ class MediaRouteResolver(
     )
 
     private companion object {
-        const val MAX_ALIAS_SEARCH_COUNT = 2
+        const val MAX_ALIAS_SEARCH_COUNT = 4
         const val MAX_SEARCH_HITS = 24
-        const val MAX_ONLINE_HITS = 5
+        const val MAX_ONLINE_HITS = 8
         const val MAX_FALLBACK_HITS = 10
         const val MAX_EPISODES_PER_HIT = 2
         const val MAX_ROUTES = 24
