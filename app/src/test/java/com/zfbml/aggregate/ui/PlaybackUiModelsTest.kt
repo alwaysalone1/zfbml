@@ -60,6 +60,21 @@ class PlaybackUiModelsTest {
         assertEquals("HTTP 500", failed.detail)
     }
 
+    @Test
+    fun nextPlayableRouteSkipsCurrentFailedAndWebViewOnly() {
+        val current = route("current", StreamProtocol.HLS, 900, quality = "1080p")
+        val webView = route("webview", StreamProtocol.WEBVIEW_ONLY, 2_000, quality = "1080p")
+        val fallback = route("fallback", StreamProtocol.PROGRESSIVE, 300, quality = "720p")
+
+        val next = nextPlayableRoute(
+            routes = listOf(current, webView, fallback),
+            currentStreamId = "current",
+            failedStreamIds = setOf("older-failed"),
+        )
+
+        assertEquals("fallback", next?.stream?.id)
+    }
+
     private fun episode(): Episode {
         return Episode(
             providerId = "bangumi-catalog",

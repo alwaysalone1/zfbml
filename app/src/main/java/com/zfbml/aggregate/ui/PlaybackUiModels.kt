@@ -108,6 +108,20 @@ internal fun sortRoutesForUi(
     )
 }
 
+internal fun nextPlayableRoute(
+    routes: List<RouteCandidate>,
+    currentStreamId: String,
+    failedStreamIds: Set<String> = emptySet(),
+): RouteCandidate? {
+    val excludedIds = failedStreamIds + currentStreamId
+    return sortRoutesForUi(routes, excludedIds)
+        .distinctBy { it.stream.id }
+        .firstOrNull { route ->
+            route.stream.id !in excludedIds &&
+                route.stream.protocol != StreamProtocol.WEBVIEW_ONLY
+        }
+}
+
 internal fun buildPlayerOverlayState(
     title: String,
     episodeTitle: String,

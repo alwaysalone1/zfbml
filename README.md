@@ -25,6 +25,19 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.25
+
+中文：
+- 播放器增加线路失败补救动作：当前线路报错时，竖屏观看信息卡和底部控制条会直接给出“重试当前”和“下一线路”，减少用户卡在错误提示里的挫败感。
+- 自动换线逻辑抽成可测试的 UI 模型，失败线路会降级排序，WebView-only 线路不会被自动选为下一条播放兜底。
+- 播放线路面板会标记已经失败的线路，用户手动换源时可以更清楚地避开坏源。
+
+English:
+
+- Added explicit recovery actions for failed playback routes: retry the current route or jump to the next route directly from the portrait info card and player controls.
+- Moved next-route selection into a tested UI model so failed streams are demoted and WebView-only entries are skipped for automatic fallback.
+- The route panel now marks failed routes, making manual source switching clearer when a source breaks during playback.
+
 ### v0.2.24
 
 中文：

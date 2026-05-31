@@ -51,6 +51,7 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Replay10
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
@@ -1463,7 +1464,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.24")
+                setRequestProperty("User-Agent", "ZFBML/0.2.25")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2917,10 +2918,7 @@ private fun PlayerScreen(
         if (currentStream.protocol == StreamProtocol.BITTORRENT || currentStream.id in failedStreamIds) return@LaunchedEffect
         val failedIds = failedStreamIds + currentStream.id
         failedStreamIds = failedIds
-        val nextRoute = routeOptions.firstOrNull { route ->
-            route.stream.id !in failedIds &&
-                route.stream.protocol != StreamProtocol.WEBVIEW_ONLY
-        }
+        val nextRoute = nextPlayableRoute(playerRoutes, currentStream.id, failedIds)
         if (nextRoute != null) {
             routeNotice = "线路失败，已自动切换到 ${nextRoute.sourceName} ${nextRoute.routeName.orEmpty().ifBlank { nextRoute.protocol.displayName() }}"
             currentStream = nextRoute.stream
@@ -2946,12 +2944,44 @@ private fun PlayerScreen(
     } else {
         state.errorMessage
     }
+    val hasPlaybackIssue = effectiveErrorMessage != null
+    val nextRoute = nextPlayableRoute(playerRoutes, currentStream.id, failedStreamIds)
+
     fun selectRoute(route: RouteCandidate) {
         revealControls()
         activePanel = null
         failedStreamIds = emptySet()
         routeNotice = null
         currentStream = route.stream
+    }
+
+    fun retryCurrentRoute() {
+        revealControls()
+        activePanel = null
+        failedStreamIds = failedStreamIds - currentStream.id
+        routeNotice = "正在重试当前线路..."
+        if (currentStream.protocol == StreamProtocol.BITTORRENT) {
+            scope.launch {
+                graph.torrentEngine.prepare(currentStream)
+            }
+        } else {
+            graph.torrentEngine.release()
+            engine.prepare(currentStream)
+        }
+    }
+
+    fun selectNextRoute() {
+        revealControls()
+        activePanel = null
+        val failedIds = failedStreamIds + currentStream.id
+        failedStreamIds = failedIds
+        val route = nextPlayableRoute(playerRoutes, currentStream.id, failedIds)
+        if (route != null) {
+            routeNotice = "已切换到 ${route.sourceName} ${route.routeName.orEmpty().ifBlank { route.protocol.displayName() }}"
+            currentStream = route.stream
+        } else {
+            routeNotice = "没有更多可自动播放线路，可重试当前线路或手动换源"
+        }
     }
 
     fun selectEpisode(target: Episode) {
@@ -3123,6 +3153,8 @@ private fun PlayerScreen(
                     positionMs = playbackPositionMs,
                     durationMs = playbackDurationMs,
                     compact = compact,
+                    hasPlaybackIssue = hasPlaybackIssue,
+                    canSelectNextRoute = nextRoute != null,
                     onSeek = {
                         revealControls()
                         engine.player.seekTo(it)
@@ -3141,6 +3173,8 @@ private fun PlayerScreen(
                             graph.media3DownloadCoordinator.enqueue(currentStream, "${detail.title} ${currentEpisode.title}")
                         }
                     },
+                    onRetryRoute = ::retryCurrentRoute,
+                    onNextRoute = ::selectNextRoute,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -3167,11 +3201,15 @@ private fun PlayerScreen(
                     routeNotice = routeNotice,
                     errorMessage = effectiveErrorMessage,
                     episodeLoadingId = episodeLoadingId,
+                    hasPlaybackIssue = hasPlaybackIssue,
+                    canSelectNextRoute = nextRoute != null,
                     onShowPanel = { panel ->
                         revealControls()
                         controlsVisible = true
                         activePanel = panel
                     },
+                    onRetryRoute = ::retryCurrentRoute,
+                    onNextRoute = ::selectNextRoute,
                     onEpisodeSelected = ::selectEpisode,
                     modifier = Modifier.weight(1f),
                 )
@@ -3203,6 +3241,7 @@ private fun PlayerScreen(
                     playbackSpeed = playbackSpeed,
                     episodeLoadingId = episodeLoadingId,
                     routeNotice = routeNotice,
+                    failedStreamIds = failedStreamIds,
                     onDismiss = { activePanel = null },
                     onRouteSelected = ::selectRoute,
                     onEpisodeSelected = ::selectEpisode,
@@ -3245,7 +3284,11 @@ private fun PortraitWatchInfoPanel(
     routeNotice: String?,
     errorMessage: String?,
     episodeLoadingId: String?,
+    hasPlaybackIssue: Boolean,
+    canSelectNextRoute: Boolean,
     onShowPanel: (PlayerPanel) -> Unit,
+    onRetryRoute: () -> Unit,
+    onNextRoute: () -> Unit,
     onEpisodeSelected: (Episode) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -3326,6 +3369,27 @@ private fun PortraitWatchInfoPanel(
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                         )
+                    }
+                    if (hasPlaybackIssue) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                            TextButton(
+                                onClick = onRetryRoute,
+                                modifier = Modifier.weight(1f).height(40.dp).background(Color.White.copy(alpha = 0.06f), RoundedCornerShape(8.dp)),
+                            ) {
+                                Icon(Icons.Filled.Refresh, contentDescription = null, tint = AnimeAccentPink, modifier = Modifier.size(17.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("重试当前", color = AnimeAccentPink)
+                            }
+                            TextButton(
+                                onClick = onNextRoute,
+                                enabled = canSelectNextRoute,
+                                modifier = Modifier.weight(1f).height(40.dp).background(Color.White.copy(alpha = 0.06f), RoundedCornerShape(8.dp)),
+                            ) {
+                                Icon(Icons.Filled.VideoLibrary, contentDescription = null, tint = if (canSelectNextRoute) AnimeAccentCyan else AnimeMuted, modifier = Modifier.size(17.dp))
+                                Spacer(Modifier.width(6.dp))
+                                Text("下一线路", color = if (canSelectNextRoute) AnimeAccentCyan else AnimeMuted)
+                            }
+                        }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
                         PortraitPanelAction(
@@ -3540,10 +3604,14 @@ private fun PlayerBottomControls(
     positionMs: Long,
     durationMs: Long,
     compact: Boolean,
+    hasPlaybackIssue: Boolean,
+    canSelectNextRoute: Boolean,
     onSeek: (Long) -> Unit,
     onShowPanel: (PlayerPanel) -> Unit,
     onToggleDanmaku: () -> Unit,
     onOffline: () -> Unit,
+    onRetryRoute: () -> Unit,
+    onNextRoute: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var pendingSeekMs by remember(currentStream.id) { mutableStateOf<Long?>(null) }
@@ -3664,9 +3732,13 @@ private fun PlayerBottomControls(
             playbackSpeed = playbackSpeed,
             activePanel = activePanel,
             offlineEnabled = currentStream.protocol != StreamProtocol.BITTORRENT,
+            hasPlaybackIssue = hasPlaybackIssue,
+            canSelectNextRoute = canSelectNextRoute,
             onToggleDanmaku = onToggleDanmaku,
             onShowPanel = onShowPanel,
             onOffline = onOffline,
+            onRetryRoute = onRetryRoute,
+            onNextRoute = onNextRoute,
             modifier = Modifier.fillMaxWidth(),
         )
     }
@@ -3719,9 +3791,13 @@ private fun PlayerActionBar(
     playbackSpeed: Float,
     activePanel: PlayerPanel?,
     offlineEnabled: Boolean,
+    hasPlaybackIssue: Boolean,
+    canSelectNextRoute: Boolean,
     onToggleDanmaku: () -> Unit,
     onShowPanel: (PlayerPanel) -> Unit,
     onOffline: () -> Unit,
+    onRetryRoute: () -> Unit,
+    onNextRoute: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyRow(
@@ -3729,6 +3805,24 @@ private fun PlayerActionBar(
         horizontalArrangement = Arrangement.spacedBy(14.dp),
         contentPadding = PaddingValues(horizontal = 2.dp),
     ) {
+        if (hasPlaybackIssue) {
+            item {
+                PlayerTextAction(
+                    icon = Icons.Filled.Refresh,
+                    text = "重试",
+                    selected = true,
+                    onClick = onRetryRoute,
+                )
+            }
+            item {
+                PlayerTextAction(
+                    icon = Icons.Filled.VideoLibrary,
+                    text = "下一线路",
+                    enabled = canSelectNextRoute,
+                    onClick = onNextRoute,
+                )
+            }
+        }
         item {
             PlayerTextAction(
                 icon = Icons.Filled.ClosedCaption,
@@ -3806,6 +3900,7 @@ private fun PlayerOptionPanel(
     playbackSpeed: Float,
     episodeLoadingId: String?,
     routeNotice: String?,
+    failedStreamIds: Set<String>,
     onDismiss: () -> Unit,
     onRouteSelected: (RouteCandidate) -> Unit,
     onEpisodeSelected: (Episode) -> Unit,
@@ -3867,6 +3962,7 @@ private fun PlayerOptionPanel(
                             routes = routeOptions,
                             selectedStreamId = selectedStreamId,
                             routeNotice = routeNotice,
+                            failedStreamIds = failedStreamIds,
                             onRouteSelected = onRouteSelected,
                         )
                         PlayerPanel.Episode -> PlayerEpisodePanel(
@@ -4003,6 +4099,7 @@ private fun PlayerRoutePanel(
     routes: List<RouteCandidate>,
     selectedStreamId: String,
     routeNotice: String?,
+    failedStreamIds: Set<String>,
     onRouteSelected: (RouteCandidate) -> Unit,
 ) {
     if (routeNotice != null) {
@@ -4014,11 +4111,13 @@ private fun PlayerRoutePanel(
     }
     LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         items(routes, key = { it.stream.id }) { route ->
+            val failed = route.stream.id in failedStreamIds
             PlayerSelectableRow(
                 title = "${route.sourceName} · ${route.routeName.orEmpty().ifBlank { route.protocol.displayName() }}",
                 subtitle = listOfNotNull(route.quality, route.subgroup, route.protocol.displayName()).joinToString(" · "),
                 selected = route.stream.id == selectedStreamId,
                 icon = Icons.Filled.VideoLibrary,
+                trailing = if (failed) "已失败" else null,
                 onClick = { onRouteSelected(route) },
             )
         }
