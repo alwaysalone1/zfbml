@@ -1466,7 +1466,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.27")
+                setRequestProperty("User-Agent", "ZFBML/0.2.28")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -3743,6 +3743,15 @@ private fun PlayerBottomControls(
                 danmakuEnabled = danmakuEnabled,
                 modifier = Modifier.fillMaxWidth(),
             )
+        } else {
+            PlayerCompactInteractionRow(
+                positionText = formatPlaybackTime(displayPositionMs),
+                durationText = if (durationMs > 0L) formatPlaybackTime(durationMs) else "--:--",
+                danmakuEnabled = danmakuEnabled,
+                onToggleDanmaku = onToggleDanmaku,
+                onOpenDanmakuSettings = { onShowPanel(PlayerPanel.Danmaku) },
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
 
         PlayerActionBar(
@@ -3763,6 +3772,87 @@ private fun PlayerBottomControls(
             onNextRoute = onNextRoute,
             modifier = Modifier.fillMaxWidth(),
         )
+    }
+}
+
+@Composable
+private fun PlayerCompactInteractionRow(
+    positionText: String,
+    durationText: String,
+    danmakuEnabled: Boolean,
+    onToggleDanmaku: () -> Unit,
+    onOpenDanmakuSettings: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.height(34.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            text = "$positionText / $durationText",
+            style = MaterialTheme.typography.labelSmall,
+            color = Color.White.copy(alpha = 0.82f),
+            maxLines = 1,
+            modifier = Modifier.width(86.dp),
+        )
+        Row(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight()
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color.Black.copy(alpha = 0.38f))
+                .clickable(onClick = onOpenDanmakuSettings)
+                .padding(horizontal = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(7.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                Icons.Filled.ClosedCaption,
+                contentDescription = null,
+                tint = if (danmakuEnabled) AnimeAccentPink else Color.White.copy(alpha = 0.42f),
+                modifier = Modifier.size(16.dp),
+            )
+            Text(
+                text = if (danmakuEnabled) "发个友善的弹幕" else "弹幕已关闭",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.White.copy(alpha = 0.72f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                text = "设置",
+                style = MaterialTheme.typography.labelSmall,
+                color = AnimeAccentCyan,
+                maxLines = 1,
+            )
+        }
+        PlayerTinyToggle(
+            text = if (danmakuEnabled) "开" else "关",
+            selected = danmakuEnabled,
+            onClick = onToggleDanmaku,
+        )
+    }
+}
+
+@Composable
+private fun PlayerTinyToggle(
+    text: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    TextButton(
+        onClick = onClick,
+        modifier = Modifier.width(44.dp).height(34.dp).focusable(),
+        shape = RoundedCornerShape(8.dp),
+        colors = ButtonDefaults.textButtonColors(
+            containerColor = if (selected) AnimeAccentPink.copy(alpha = 0.18f) else Color.White.copy(alpha = 0.08f),
+            contentColor = if (selected) AnimeAccentPink else Color.White.copy(alpha = 0.68f),
+        ),
+        contentPadding = PaddingValues(0.dp),
+    ) {
+        Text(text, style = MaterialTheme.typography.labelMedium, maxLines = 1, fontWeight = FontWeight.Bold)
     }
 }
 

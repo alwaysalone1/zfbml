@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.28
+
+中文：
+
+- 竖屏点击播放器后新增紧凑交互行：左侧显示当前时间/总时长，中间是类似 B 站移动端的弹幕输入胶囊，右侧提供弹幕开关。
+- 弹幕输入胶囊可直接打开弹幕设置面板，让竖屏用户不用先去底部横向按钮里找“弹幕设置”。
+- 保留现有线路摘要和功能条，竖屏控制层更像视频播放器，同时不把画面完全遮住。
+
+English:
+
+- Added a compact portrait interaction row after tapping the player: current/total time on the left, a Bilibili-like danmaku input pill in the center, and a danmaku toggle on the right.
+- The danmaku input pill opens the danmaku settings panel directly, reducing the need to hunt through the horizontal action bar.
+- Kept the existing route summary and action bar so the portrait overlay feels more like a video player without covering the picture.
+
 ### v0.2.27
 
 中文：
