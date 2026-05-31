@@ -25,6 +25,19 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.24
+
+中文：
+- 播放页新增竖屏观看布局：上方固定 16:9 视频舞台，下方保留番剧标题、当前集、线路状态、清晰度/倍速入口和快速选集，避免竖屏播放时整页只剩黑色视频层。
+- 横屏继续保持沉浸式全屏叠层，线路、清晰度、倍速、选集、弹幕设置仍使用右侧抽屉或底部面板，不打断正在播放的画面。
+- 竖屏视频舞台采用更轻的 compact 控制层，减少底部信息、弹幕输入条对画面的遮挡；详细线路信息移动到视频下方，接近成熟移动端长视频播放体验。
+
+English:
+
+- Added a portrait watch layout with a fixed 16:9 video stage on top and episode, route status, quality/speed shortcuts, and quick episode switching below it.
+- Kept landscape playback as an immersive full-screen overlay with route, quality, speed, episode, and danmaku panels available as drawers/sheets.
+- Made the portrait video controls more compact so playback controls no longer crowd the picture; detailed route context now lives below the video like a mature mobile video app.
+
 ### v0.2.23
 
 中文：
