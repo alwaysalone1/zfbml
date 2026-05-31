@@ -75,6 +75,27 @@ class PlaybackUiModelsTest {
         assertEquals("fallback", next?.stream?.id)
     }
 
+    @Test
+    fun routePanelUiStateSummarizesRecommendationAndFailures() {
+        val failed = route("failed", StreamProtocol.HLS, 900, quality = "1080p")
+        val bt = route("bt", StreamProtocol.BITTORRENT, 800, quality = "1080p")
+        val fallback = route("fallback", StreamProtocol.HLS, 200, quality = "720p")
+
+        val state = buildRoutePanelUiState(
+            routes = listOf(failed, bt, fallback),
+            selectedStreamId = "failed",
+            failedStreamIds = setOf("failed"),
+        )
+
+        assertEquals("fallback", state.recommendedRoute?.stream?.id)
+        assertEquals("failed", state.selectedRoute?.stream?.id)
+        assertEquals(3, state.totalCount)
+        assertEquals(2, state.availableCount)
+        assertEquals(1, state.onlineCount)
+        assertEquals(1, state.btCount)
+        assertEquals(1, state.failedCount)
+    }
+
     private fun episode(): Episode {
         return Episode(
             providerId = "bangumi-catalog",

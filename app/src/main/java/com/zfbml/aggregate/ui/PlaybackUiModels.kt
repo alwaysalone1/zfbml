@@ -38,6 +38,16 @@ internal data class PlayerOverlayState(
     val error: String?,
 )
 
+internal data class RoutePanelUiState(
+    val recommendedRoute: RouteCandidate?,
+    val selectedRoute: RouteCandidate?,
+    val totalCount: Int,
+    val availableCount: Int,
+    val onlineCount: Int,
+    val btCount: Int,
+    val failedCount: Int,
+)
+
 internal fun buildRouteUiState(
     selectedEpisode: Episode?,
     routes: List<RouteCandidate>,
@@ -120,6 +130,30 @@ internal fun nextPlayableRoute(
             route.stream.id !in excludedIds &&
                 route.stream.protocol != StreamProtocol.WEBVIEW_ONLY
         }
+}
+
+internal fun buildRoutePanelUiState(
+    routes: List<RouteCandidate>,
+    selectedStreamId: String,
+    failedStreamIds: Set<String> = emptySet(),
+): RoutePanelUiState {
+    val sortedRoutes = sortRoutesForUi(routes, failedStreamIds).distinctBy { it.stream.id }
+    val availableRoutes = routes.filter { route ->
+        route.stream.id !in failedStreamIds &&
+            route.stream.protocol != StreamProtocol.WEBVIEW_ONLY
+    }
+    return RoutePanelUiState(
+        recommendedRoute = sortedRoutes.firstOrNull { route ->
+            route.stream.id !in failedStreamIds &&
+                route.stream.protocol != StreamProtocol.WEBVIEW_ONLY
+        },
+        selectedRoute = routes.firstOrNull { it.stream.id == selectedStreamId },
+        totalCount = routes.size,
+        availableCount = availableRoutes.size,
+        onlineCount = availableRoutes.count { it.protocol != StreamProtocol.BITTORRENT },
+        btCount = availableRoutes.count { it.protocol == StreamProtocol.BITTORRENT },
+        failedCount = failedStreamIds.count { failedId -> routes.any { it.stream.id == failedId } },
+    )
 }
 
 internal fun buildPlayerOverlayState(

@@ -1464,7 +1464,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.25")
+                setRequestProperty("User-Agent", "ZFBML/0.2.26")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -4102,25 +4102,144 @@ private fun PlayerRoutePanel(
     failedStreamIds: Set<String>,
     onRouteSelected: (RouteCandidate) -> Unit,
 ) {
-    if (routeNotice != null) {
-        Text(routeNotice, style = MaterialTheme.typography.bodySmall, color = AnimeAccentAmber)
-    }
     if (routes.isEmpty()) {
         Text("暂时没有可用播放线路", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         return
     }
+    val panelState = remember(routes, selectedStreamId, failedStreamIds) {
+        buildRoutePanelUiState(routes, selectedStreamId, failedStreamIds)
+    }
     LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        item {
+            RoutePanelSummaryCard(
+                state = panelState,
+                notice = routeNotice,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
         items(routes, key = { it.stream.id }) { route ->
             val failed = route.stream.id in failedStreamIds
+            val recommended = route.stream.id == panelState.recommendedRoute?.stream?.id
             PlayerSelectableRow(
                 title = "${route.sourceName} · ${route.routeName.orEmpty().ifBlank { route.protocol.displayName() }}",
                 subtitle = listOfNotNull(route.quality, route.subgroup, route.protocol.displayName()).joinToString(" · "),
                 selected = route.stream.id == selectedStreamId,
                 icon = Icons.Filled.VideoLibrary,
-                trailing = if (failed) "已失败" else null,
+                trailing = when {
+                    failed -> "已失败"
+                    route.stream.id == selectedStreamId -> "当前"
+                    recommended -> "推荐"
+                    else -> null
+                },
                 onClick = { onRouteSelected(route) },
             )
         }
+    }
+}
+
+@Composable
+private fun RoutePanelSummaryCard(
+    state: RoutePanelUiState,
+    notice: String?,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(8.dp),
+        color = Color.White.copy(alpha = 0.06f),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f)),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    Icons.Filled.VideoLibrary,
+                    contentDescription = null,
+                    tint = AnimeAccentCyan,
+                    modifier = Modifier.size(20.dp),
+                )
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        "线路诊断 · 共 ${state.totalCount} 条",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        state.recommendedRoute?.let { route ->
+                            "推荐 ${route.sourceName} · ${route.routeName.orEmpty().ifBlank { route.protocol.displayName() }}"
+                        } ?: "暂无可自动播放线路",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = AnimeMuted,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    state.selectedRoute?.let { route ->
+                        Text(
+                            "当前 ${route.sourceName} · ${route.routeName.orEmpty().ifBlank { route.protocol.displayName() }}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.White.copy(alpha = 0.62f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                RoutePanelMetricChip("可用", state.availableCount.toString(), AnimeAccentGreen)
+                RoutePanelMetricChip("在线", state.onlineCount.toString(), AnimeAccentCyan)
+                RoutePanelMetricChip("BT", state.btCount.toString(), AnimeAccentAmber)
+                if (state.failedCount > 0) {
+                    RoutePanelMetricChip("失败", state.failedCount.toString(), MaterialTheme.colorScheme.error)
+                }
+            }
+            notice?.let {
+                Text(
+                    it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = AnimeAccentAmber,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RoutePanelMetricChip(
+    label: String,
+    value: String,
+    color: Color,
+) {
+    Row(
+        modifier = Modifier
+            .height(30.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color.Black.copy(alpha = 0.28f))
+            .padding(horizontal = 9.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            color = Color.White.copy(alpha = 0.7f),
+            maxLines = 1,
+        )
+        Text(
+            value,
+            style = MaterialTheme.typography.labelMedium,
+            color = color,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+        )
     }
 }
 

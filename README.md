@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.26
+
+中文：
+
+- 播放页“线路”面板新增诊断头，集中显示推荐线路、可用线路数、在线源数、BT 数和失败数，用户打开面板时能直接判断当前源是否健康。
+- 线路列表现在会明确标记“当前”“推荐”“已失败”，失败线路继续降级排序，手动切源时不再像单纯的测试列表。
+- 新增线路面板 UI 状态测试，覆盖推荐线路选择、失败统计、在线/BT 分类统计，为后续源加载优化保留稳定判断。
+
+English:
+
+- Added a diagnostic header to the player route panel showing the recommended route plus available, online, BT, and failed route counts.
+- Route rows now label the current, recommended, and failed entries explicitly, making manual source switching feel closer to a real video app instead of a raw route tester.
+- Added UI-state coverage for route-panel recommendation and route-count summaries so future source-loading work has a stable baseline.
+
 ### v0.2.25
 
 中文：
