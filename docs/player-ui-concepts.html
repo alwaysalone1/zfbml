@@ -1,0 +1,1268 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ZFBML 手机播放器 UI 原型</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b0d10;
+      --panel: #15191f;
+      --panel-2: #1b2027;
+      --line: rgba(255, 255, 255, 0.1);
+      --text: #f5f7fb;
+      --muted: #9aa4b2;
+      --soft: rgba(255, 255, 255, 0.08);
+      --cyan: #62d9ff;
+      --mint: #72e6a1;
+      --coral: #ff7b7b;
+      --amber: #ffc85a;
+      --pink: #ff78c7;
+      --violet: #9e8cff;
+      --shadow: 0 24px 70px rgba(0, 0, 0, 0.42);
+      --radius: 8px;
+      font-family: Inter, "SF Pro Display", "Segoe UI", "Microsoft YaHei", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 20% 8%, rgba(98, 217, 255, 0.13), transparent 28rem),
+        radial-gradient(circle at 80% 18%, rgba(255, 120, 199, 0.11), transparent 30rem),
+        var(--bg);
+      color: var(--text);
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      color: inherit;
+    }
+
+    .shell {
+      display: grid;
+      grid-template-columns: minmax(420px, 1fr) 380px;
+      gap: 20px;
+      width: min(1280px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 20px 0 28px;
+    }
+
+    .topbar {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(21, 25, 31, 0.86);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 220px;
+    }
+
+    .logo {
+      width: 38px;
+      height: 38px;
+      border-radius: 8px;
+      background:
+        linear-gradient(135deg, rgba(98, 217, 255, 0.95), rgba(255, 120, 199, 0.9)),
+        #11161d;
+      display: grid;
+      place-items: center;
+      color: #071017;
+      font-weight: 900;
+      letter-spacing: 0;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.1;
+      letter-spacing: 0;
+    }
+
+    .brand p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .seg {
+      display: flex;
+      gap: 4px;
+      padding: 4px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    .seg button,
+    .chip {
+      border: 0;
+      border-radius: 7px;
+      background: transparent;
+      min-height: 32px;
+      padding: 0 11px;
+      cursor: pointer;
+      color: var(--muted);
+      transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+      white-space: nowrap;
+    }
+
+    .seg button:hover,
+    .chip:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+    }
+
+    .seg button.active,
+    .chip.active {
+      background: var(--text);
+      color: #0b0d10;
+    }
+
+    .stage {
+      min-height: 720px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(15, 18, 23, 0.7);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .device {
+      position: relative;
+      background: #050608;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      box-shadow: 0 30px 90px rgba(0, 0, 0, 0.48);
+      overflow: hidden;
+      transition: width 240ms ease, height 240ms ease;
+    }
+
+    .device.portrait {
+      width: 390px;
+      height: 844px;
+      border-radius: 32px;
+      padding: 12px;
+    }
+
+    .device.landscape {
+      width: min(780px, calc(100vw - 500px));
+      height: 390px;
+      border-radius: 24px;
+      padding: 10px;
+    }
+
+    .screen {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      border-radius: 22px;
+      background: #080a0d;
+    }
+
+    .device.landscape .screen {
+      border-radius: 16px;
+    }
+
+    .phone-status {
+      position: absolute;
+      z-index: 30;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 18px;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.82);
+      pointer-events: none;
+    }
+
+    .device.landscape .phone-status {
+      display: none;
+    }
+
+    .app-page {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      background: #101318;
+    }
+
+    .video-zone {
+      position: relative;
+      background: #020304;
+      overflow: hidden;
+      isolation: isolate;
+    }
+
+    .device.portrait .video-zone {
+      margin-top: 26px;
+      height: 220px;
+    }
+
+    .device.landscape .video-zone {
+      position: absolute;
+      inset: 0;
+      height: auto;
+      margin: 0;
+    }
+
+    .video-art {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(120deg, rgba(6, 9, 14, 0.28), rgba(6, 9, 14, 0.86)),
+        linear-gradient(160deg, rgba(98, 217, 255, 0.32), transparent 34%),
+        linear-gradient(30deg, rgba(255, 120, 199, 0.28), transparent 36%),
+        linear-gradient(135deg, #233441, #111827 42%, #3b2432 68%, #18241d);
+    }
+
+    .video-art::before {
+      content: "";
+      position: absolute;
+      left: 13%;
+      top: 16%;
+      width: 44%;
+      height: 68%;
+      border-radius: 50% 50% 12% 12%;
+      background:
+        radial-gradient(circle at 48% 24%, #f6d4c0 0 8%, transparent 9%),
+        radial-gradient(circle at 43% 31%, #10131b 0 2.4%, transparent 2.8%),
+        radial-gradient(circle at 55% 31%, #10131b 0 2.4%, transparent 2.8%),
+        linear-gradient(#263044 0 38%, #eac5b5 39% 57%, #3c4c65 58%);
+      filter: saturate(0.95);
+      opacity: 0.92;
+      transform: rotate(-4deg);
+    }
+
+    .video-art::after {
+      content: "";
+      position: absolute;
+      right: 8%;
+      bottom: 10%;
+      width: 42%;
+      height: 34%;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 8px;
+      background:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.12) 0 1px, transparent 1px 18px),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0 1px, transparent 1px 18px),
+        rgba(255, 255, 255, 0.05);
+      transform: perspective(200px) rotateY(-16deg);
+    }
+
+    .danmaku {
+      position: absolute;
+      left: 10px;
+      right: 10px;
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 12px;
+      text-shadow: 0 1px 2px #000;
+      display: flex;
+      gap: 18px;
+      white-space: nowrap;
+      opacity: 0.86;
+    }
+
+    .danmaku.one {
+      top: 30px;
+      transform: translateX(18px);
+    }
+
+    .danmaku.two {
+      top: 78px;
+      transform: translateX(-34px);
+    }
+
+    .danmaku.three {
+      top: 126px;
+      transform: translateX(66px);
+    }
+
+    .device.landscape .danmaku.one {
+      top: 42px;
+    }
+
+    .device.landscape .danmaku.two {
+      top: 96px;
+    }
+
+    .device.landscape .danmaku.three {
+      top: 152px;
+    }
+
+    .buffer-pill {
+      position: absolute;
+      left: 12px;
+      bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      height: 26px;
+      padding: 0 9px;
+      border-radius: 7px;
+      background: rgba(0, 0, 0, 0.42);
+      color: rgba(255, 255, 255, 0.82);
+      font-size: 11px;
+      backdrop-filter: blur(8px);
+    }
+
+    .buffer-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--mint);
+      box-shadow: 0 0 10px var(--mint);
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 180ms ease;
+      z-index: 15;
+    }
+
+    .screen.controls-on .overlay {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .shade {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(180deg, rgba(0, 0, 0, 0.74), transparent 26%, transparent 55%, rgba(0, 0, 0, 0.78)),
+        rgba(0, 0, 0, 0.12);
+    }
+
+    .top-controls,
+    .bottom-controls,
+    .center-controls {
+      position: absolute;
+      left: 0;
+      right: 0;
+      display: flex;
+      align-items: center;
+      z-index: 18;
+    }
+
+    .top-controls {
+      top: 0;
+      min-height: 52px;
+      padding: 10px 12px 8px;
+      gap: 8px;
+    }
+
+    .device.portrait .top-controls {
+      top: 26px;
+      min-height: 48px;
+    }
+
+    .center-controls {
+      top: 50%;
+      justify-content: center;
+      gap: 34px;
+      transform: translateY(-50%);
+    }
+
+    .bottom-controls {
+      bottom: 0;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
+      padding: 0 12px 12px;
+    }
+
+    .device.landscape .bottom-controls {
+      padding: 0 18px 14px;
+    }
+
+    .title-block {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .title-block strong {
+      display: block;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      font-size: 14px;
+    }
+
+    .title-block span {
+      display: block;
+      margin-top: 2px;
+      color: rgba(255, 255, 255, 0.62);
+      font-size: 11px;
+    }
+
+    .icon-btn {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border: 0;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.32);
+      color: #fff;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      transition: background 160ms ease, transform 160ms ease;
+    }
+
+    .icon-btn:hover {
+      background: rgba(255, 255, 255, 0.16);
+      transform: translateY(-1px);
+    }
+
+    .play-big {
+      width: 58px;
+      height: 58px;
+      font-size: 26px;
+      background: rgba(255, 255, 255, 0.16);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+    }
+
+    .skip {
+      font-size: 13px;
+    }
+
+    .progress {
+      height: 4px;
+      border-radius: 99px;
+      background: rgba(255, 255, 255, 0.26);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 42%;
+      background: var(--coral);
+    }
+
+    .progress::after {
+      content: "";
+      position: absolute;
+      left: 42%;
+      top: 50%;
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #fff;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+    }
+
+    .control-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 34px;
+    }
+
+    .control-row .spacer {
+      flex: 1;
+    }
+
+    .time {
+      color: rgba(255, 255, 255, 0.8);
+      font-size: 11px;
+      min-width: 72px;
+    }
+
+    .pill-btn {
+      min-height: 30px;
+      border: 0;
+      border-radius: 8px;
+      padding: 0 9px;
+      background: rgba(0, 0, 0, 0.38);
+      color: rgba(255, 255, 255, 0.9);
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+      white-space: nowrap;
+    }
+
+    .pill-btn.primary {
+      color: #071017;
+      background: var(--cyan);
+      font-weight: 800;
+    }
+
+    .danmaku-input {
+      flex: 1;
+      min-width: 0;
+      height: 30px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.12);
+      color: rgba(255, 255, 255, 0.72);
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      font-size: 12px;
+    }
+
+    .below-video {
+      overflow: hidden;
+      background: #11151b;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .device.landscape .below-video {
+      display: none;
+    }
+
+    .watch-head {
+      padding: 13px 14px 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .watch-head h2 {
+      margin: 0;
+      font-size: 16px;
+      letter-spacing: 0;
+    }
+
+    .watch-meta {
+      display: flex;
+      gap: 7px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .watch-meta span {
+      padding: 4px 7px;
+      border-radius: 7px;
+      background: rgba(255, 255, 255, 0.07);
+    }
+
+    .route-card {
+      margin: 12px 14px 0;
+      padding: 11px;
+      border-radius: 8px;
+      background: #171c23;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .route-line {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 12px;
+    }
+
+    .route-line strong {
+      color: var(--mint);
+    }
+
+    .episode-strip {
+      display: flex;
+      gap: 8px;
+      padding: 12px 14px;
+      overflow: hidden;
+    }
+
+    .ep {
+      min-width: 52px;
+      height: 38px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.06);
+      display: grid;
+      place-items: center;
+      color: rgba(255, 255, 255, 0.76);
+      font-size: 12px;
+    }
+
+    .ep.active {
+      background: rgba(98, 217, 255, 0.16);
+      border-color: rgba(98, 217, 255, 0.55);
+      color: #fff;
+    }
+
+    .feed-list {
+      padding: 0 14px 16px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .feed-card {
+      display: grid;
+      grid-template-columns: 70px 1fr;
+      gap: 10px;
+      min-height: 74px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.05);
+      overflow: hidden;
+    }
+
+    .thumb {
+      background:
+        linear-gradient(135deg, rgba(114, 230, 161, 0.32), transparent),
+        linear-gradient(45deg, #273845, #171f2a);
+    }
+
+    .feed-copy {
+      padding: 10px 8px 10px 0;
+      min-width: 0;
+    }
+
+    .feed-copy strong {
+      display: block;
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .feed-copy span {
+      display: block;
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
+    .side-panel,
+    .bottom-sheet {
+      position: absolute;
+      z-index: 24;
+      background: rgba(17, 21, 27, 0.96);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+      display: none;
+    }
+
+    .screen.panel-on .side-panel,
+    .screen.panel-on .bottom-sheet {
+      display: block;
+    }
+
+    .device.landscape .side-panel {
+      top: 0;
+      right: 0;
+      width: 292px;
+      height: 100%;
+      padding: 16px;
+    }
+
+    .device.portrait .side-panel {
+      display: none;
+    }
+
+    .device.portrait .bottom-sheet {
+      left: 0;
+      right: 0;
+      bottom: 0;
+      max-height: 46%;
+      padding: 15px;
+      border-radius: 16px 16px 0 0;
+    }
+
+    .device.landscape .bottom-sheet {
+      display: none;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .panel-head strong {
+      font-size: 15px;
+    }
+
+    .panel-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .panel-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+      min-height: 48px;
+      padding: 9px 10px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .panel-item.active {
+      border-color: rgba(98, 217, 255, 0.48);
+      background: rgba(98, 217, 255, 0.12);
+    }
+
+    .panel-item span {
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .badge {
+      height: 24px;
+      display: grid;
+      place-items: center;
+      padding: 0 7px;
+      border-radius: 7px;
+      background: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.78);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .badge.ok {
+      color: #071017;
+      background: var(--mint);
+      font-weight: 800;
+    }
+
+    .badge.warn {
+      color: #1b1200;
+      background: var(--amber);
+      font-weight: 800;
+    }
+
+    .float-dock {
+      position: absolute;
+      z-index: 19;
+      right: 14px;
+      top: 80px;
+      display: none;
+      gap: 8px;
+      flex-direction: column;
+    }
+
+    .device.landscape .float-dock {
+      display: flex;
+    }
+
+    .concept-b .bottom-controls {
+      padding-bottom: 18px;
+    }
+
+    .concept-b .play-big {
+      background: rgba(114, 230, 161, 0.18);
+      border-color: rgba(114, 230, 161, 0.35);
+    }
+
+    .concept-b .progress::before {
+      background: var(--mint);
+    }
+
+    .concept-b .route-card {
+      background:
+        linear-gradient(135deg, rgba(114, 230, 161, 0.12), transparent),
+        #171c23;
+    }
+
+    .concept-b .top-controls {
+      align-items: flex-start;
+    }
+
+    .concept-b .center-controls {
+      gap: 22px;
+    }
+
+    .concept-c .top-controls {
+      min-height: 62px;
+      background: linear-gradient(180deg, rgba(0, 0, 0, 0.7), transparent);
+    }
+
+    .concept-c .bottom-controls {
+      gap: 6px;
+      padding-bottom: 10px;
+    }
+
+    .concept-c .progress::before {
+      background: var(--amber);
+    }
+
+    .concept-c .route-card {
+      border-color: rgba(255, 200, 90, 0.35);
+      background:
+        linear-gradient(135deg, rgba(255, 200, 90, 0.12), transparent),
+        #171c23;
+    }
+
+    .notes {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(21, 25, 31, 0.86);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      align-self: start;
+      position: sticky;
+      top: 16px;
+    }
+
+    .notes h2 {
+      margin: 0 0 10px;
+      font-size: 17px;
+    }
+
+    .notes p {
+      margin: 0 0 12px;
+      color: var(--muted);
+      line-height: 1.62;
+      font-size: 13px;
+    }
+
+    .note-grid {
+      display: grid;
+      gap: 10px;
+      margin: 12px 0 16px;
+    }
+
+    .note-card {
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.05);
+      padding: 11px;
+    }
+
+    .note-card strong {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 6px;
+    }
+
+    .note-card span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .panel-tabs {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .panel-tabs .chip {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      min-height: 38px;
+      text-align: center;
+    }
+
+    .hint {
+      margin-top: 12px;
+      padding: 10px;
+      border-radius: 8px;
+      color: rgba(255, 255, 255, 0.74);
+      background: rgba(98, 217, 255, 0.1);
+      border: 1px solid rgba(98, 217, 255, 0.22);
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    @media (max-width: 980px) {
+      .shell {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .toolbar {
+        justify-content: flex-start;
+      }
+
+      .notes {
+        position: static;
+      }
+
+      .device.landscape {
+        width: calc(100vw - 64px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo">追</div>
+        <div>
+          <h1>ZFBML 播放器框架原型</h1>
+          <p>竖屏/横屏、未交互/点击后、线路/选集/弹幕面板可切换</p>
+        </div>
+      </div>
+      <div class="toolbar">
+        <div class="seg" aria-label="方案选择">
+          <button class="active" data-concept="a">A 轻叠层</button>
+          <button data-concept="b">B 番剧影院</button>
+          <button data-concept="c">C 快速换源</button>
+        </div>
+        <div class="seg" aria-label="屏幕方向">
+          <button class="active" data-orientation="portrait">竖屏</button>
+          <button data-orientation="landscape">横屏</button>
+        </div>
+        <div class="seg" aria-label="交互状态">
+          <button class="active" data-state="idle">未交互</button>
+          <button data-state="controls">点击后</button>
+        </div>
+      </div>
+    </header>
+
+    <section class="stage" aria-label="播放器预览">
+      <div id="device" class="device portrait concept-a">
+        <div id="screen" class="screen">
+          <div class="phone-status">
+            <span>21:58</span>
+            <span>5G 86%</span>
+          </div>
+          <div class="app-page">
+            <section class="video-zone" aria-label="视频画面区域">
+              <div class="video-art"></div>
+              <div class="danmaku one"><span>这段演出很稳</span><span>前方高能</span><span>作画在线</span></div>
+              <div class="danmaku two"><span>自动线路切换成功</span><span>OP 太好听了</span></div>
+              <div class="danmaku three"><span>这一集节奏不错</span><span>弹幕密度刚好</span></div>
+              <div class="buffer-pill"><span class="buffer-dot"></span><span>1080P · 在线源稳定</span></div>
+
+              <div class="overlay">
+                <div class="shade"></div>
+                <div class="top-controls">
+                  <button class="icon-btn" title="返回">‹</button>
+                  <div class="title-block">
+                    <strong>葬送的芙莉莲 第 12 集</strong>
+                    <span>当前源：ZFBML 推荐线路 · 1080P</span>
+                  </div>
+                  <button class="icon-btn" title="投屏">TV</button>
+                  <button class="icon-btn" title="更多">···</button>
+                </div>
+                <div class="center-controls">
+                  <button class="icon-btn skip" title="快退 10 秒">-10</button>
+                  <button class="icon-btn play-big" title="播放/暂停">▶</button>
+                  <button class="icon-btn skip" title="快进 10 秒">+10</button>
+                </div>
+                <div class="float-dock">
+                  <button class="icon-btn" data-panel-button="route" title="线路">源</button>
+                  <button class="icon-btn" data-panel-button="episode" title="选集">集</button>
+                  <button class="icon-btn" data-panel-button="danmaku" title="弹幕">弹</button>
+                </div>
+                <div class="bottom-controls">
+                  <div class="progress" aria-label="播放进度"></div>
+                  <div class="control-row">
+                    <span class="time">12:18 / 24:03</span>
+                    <div class="danmaku-input">发条友善弹幕</div>
+                    <button class="pill-btn" data-panel-button="danmaku">弹幕</button>
+                    <button class="pill-btn" data-panel-button="quality">1080P</button>
+                    <button class="pill-btn">1.0x</button>
+                    <button class="pill-btn" data-panel-button="route">线路</button>
+                    <button class="pill-btn primary" data-panel-button="episode">选集</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="below-video">
+              <div class="watch-head">
+                <h2>葬送的芙莉莲</h2>
+                <div class="watch-meta">
+                  <span>第 12 集</span>
+                  <span>9.2 分</span>
+                  <span>日本</span>
+                  <span>奇幻</span>
+                </div>
+              </div>
+              <div class="route-card">
+                <div class="route-line">
+                  <span>自动最佳线路</span>
+                  <strong>ZFBML 推荐 · 1080P</strong>
+                </div>
+                <div class="route-line" style="margin-top: 8px;">
+                  <span>可用 8 · 在线 6 · BT 2 · 失败 0</span>
+                  <button class="pill-btn" data-panel-button="route">切换</button>
+                </div>
+              </div>
+              <div class="episode-strip">
+                <div class="ep">01</div>
+                <div class="ep">02</div>
+                <div class="ep active">12</div>
+                <div class="ep">13</div>
+                <div class="ep">14</div>
+                <div class="ep">15</div>
+              </div>
+              <div class="feed-list">
+                <div class="feed-card">
+                  <div class="thumb"></div>
+                  <div class="feed-copy">
+                    <strong>下一集预告：旅途继续</strong>
+                    <span>详情页保留追番感，播放页保留视频沉浸感，信息不要压到画面上。</span>
+                  </div>
+                </div>
+                <div class="feed-card">
+                  <div class="thumb"></div>
+                  <div class="feed-copy">
+                    <strong>同类推荐：治愈奇幻新番</strong>
+                    <span>播放后下方区域可以承载推荐、评论、线路诊断和缓存入口。</span>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <aside class="side-panel" aria-label="横屏功能面板"></aside>
+          <aside class="bottom-sheet" aria-label="竖屏功能面板"></aside>
+        </div>
+      </div>
+    </section>
+
+    <aside class="notes">
+      <h2 id="conceptTitle">方案 A：轻叠层</h2>
+      <p id="conceptSummary">
+        接近 B 站移动端的可理解结构：未交互时尽量只保留画面、弹幕和轻状态；点击后出现顶部标题、中间播放控制、底部进度与功能入口。
+      </p>
+
+      <div class="note-grid">
+        <div class="note-card">
+          <strong>竖屏重点</strong>
+          <span id="portraitNote">上方固定 16:9 视频舞台，下方承载标题、线路状态、选集和推荐。适合追番场景。</span>
+        </div>
+        <div class="note-card">
+          <strong>横屏重点</strong>
+          <span id="landscapeNote">画面全屏，点击后只叠加必要控件；复杂选择用右侧抽屉，不让底部按钮挤在一起。</span>
+        </div>
+      </div>
+
+      <strong style="font-size: 13px;">功能面板预览</strong>
+      <div class="panel-tabs">
+        <button class="chip active" data-panel="none">关闭面板</button>
+        <button class="chip" data-panel="route">线路</button>
+        <button class="chip" data-panel="episode">选集</button>
+        <button class="chip" data-panel="danmaku">弹幕</button>
+        <button class="chip" data-panel="quality">清晰度</button>
+        <button class="chip" data-panel="cache">缓存</button>
+      </div>
+
+      <div class="hint">
+        操作建议：先切换 A/B/C 方案，再分别看“竖屏未交互、竖屏点击后、横屏未交互、横屏点击后”。如果你选定一套，我下一步会把对应布局迁移到 Android Compose 播放器。
+      </div>
+    </aside>
+  </main>
+
+  <script>
+    const device = document.getElementById("device");
+    const screen = document.getElementById("screen");
+    const sidePanel = document.querySelector(".side-panel");
+    const bottomSheet = document.querySelector(".bottom-sheet");
+    const conceptTitle = document.getElementById("conceptTitle");
+    const conceptSummary = document.getElementById("conceptSummary");
+    const portraitNote = document.getElementById("portraitNote");
+    const landscapeNote = document.getElementById("landscapeNote");
+
+    const concepts = {
+      a: {
+        title: "方案 A：轻叠层",
+        summary: "接近 B 站移动端的可理解结构：未交互时尽量只保留画面、弹幕和轻状态；点击后出现顶部标题、中间播放控制、底部进度与功能入口。",
+        portrait: "上方固定 16:9 视频舞台，下方承载标题、线路状态、选集和推荐。适合追番场景。",
+        landscape: "画面全屏，点击后只叠加必要控件；复杂选择用右侧抽屉，不让底部按钮挤在一起。"
+      },
+      b: {
+        title: "方案 B：番剧影院",
+        summary: "更偏长视频沉浸感：按钮更克制，突出画面、标题和下一集；点击后的控制面积更少，适合强调观感。",
+        portrait: "竖屏下把视频和剧集信息联系得更紧，用户看完一集后自然滑到下一集、相关推荐和弹幕讨论。",
+        landscape: "横屏下保留大播放按钮和少量快捷项，更多操作进入抽屉，避免满屏控件影响画面。"
+      },
+      c: {
+        title: "方案 C：快速换源",
+        summary: "更适合我们现阶段多源聚合：线路状态、清晰度、失败切换入口更明显，用户遇到坏源时能快速处理。",
+        portrait: "竖屏详情区强化线路诊断，直接展示可用、在线、BT、失败数量，适合调试到正式体验的过渡。",
+        landscape: "横屏右侧常驻快捷源入口，点击线路后直接出现可用源列表，减少切源路径。"
+      }
+    };
+
+    const panelData = {
+      none: {
+        title: "",
+        items: []
+      },
+      route: {
+        title: "播放线路",
+        items: [
+          ["ZFBML 推荐", "1080P · HLS · 320ms", "当前", "ok"],
+          ["在线源 A", "1080P · MP4 · 540ms", "推荐", "ok"],
+          ["在线源 B", "720P · HLS · 680ms", "备用", ""],
+          ["BT 边下边播", "等待元数据 · 实验", "BT", "warn"]
+        ]
+      },
+      episode: {
+        title: "选集",
+        items: [
+          ["第 12 集", "正在播放 · 自动续播", "当前", "ok"],
+          ["第 13 集", "下一集 · 已匹配线路", "下一集", ""],
+          ["第 14 集", "未解析 · 点击后后台匹配", "待解析", ""],
+          ["OVA", "特别篇 · 1080P", "番外", ""]
+        ]
+      },
+      danmaku: {
+        title: "弹幕设置",
+        items: [
+          ["弹幕开关", "当前开启 · 顶部/底部/滚动", "ON", "ok"],
+          ["密度", "70% · 过载自动降密度", "70", ""],
+          ["透明度", "82% · 不压画面", "82", ""],
+          ["显示区域", "上方 60% · 避开字幕", "60%", ""]
+        ]
+      },
+      quality: {
+        title: "清晰度",
+        items: [
+          ["1080P 高码率", "推荐 · 当前网络稳定", "当前", "ok"],
+          ["1080P", "备用线路更快", "推荐", ""],
+          ["720P", "弱网自动切换", "流畅", ""],
+          ["原画", "仅部分线路可用", "实验", "warn"]
+        ]
+      },
+      cache: {
+        title: "缓存",
+        items: [
+          ["缓存本集", "在线 HLS/MP4 使用 Media3 离线缓存", "可用", "ok"],
+          ["缓存本季", "后台排队，不影响播放", "队列", ""],
+          ["高级下载", "yt-dlp/aria2 后续入口", "预留", "warn"],
+          ["DRM/WebView", "仅授权播放，不进入高级下载", "受限", ""]
+        ]
+      }
+    };
+
+    let state = {
+      concept: "a",
+      orientation: "portrait",
+      interaction: "idle",
+      panel: "none"
+    };
+
+    function setActive(selector, attr, value) {
+      document.querySelectorAll(selector).forEach((button) => {
+        button.classList.toggle("active", button.dataset[attr] === value);
+      });
+    }
+
+    function renderPanel() {
+      const panel = panelData[state.panel] || panelData.none;
+      const html = state.panel === "none" ? "" : `
+        <div class="panel-head">
+          <strong>${panel.title}</strong>
+          <button class="icon-btn" data-panel-button="none" title="关闭">×</button>
+        </div>
+        <div class="panel-list">
+          ${panel.items.map((item, index) => `
+            <div class="panel-item ${index === 0 ? "active" : ""}">
+              <div>
+                <strong>${item[0]}</strong>
+                <br>
+                <span>${item[1]}</span>
+              </div>
+              <div class="badge ${item[3]}">${item[2]}</div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+      sidePanel.innerHTML = html;
+      bottomSheet.innerHTML = html;
+      screen.classList.toggle("panel-on", state.panel !== "none");
+    }
+
+    function render() {
+      device.className = `device ${state.orientation} concept-${state.concept}`;
+      screen.classList.toggle("controls-on", state.interaction === "controls" || state.panel !== "none");
+      const data = concepts[state.concept];
+      conceptTitle.textContent = data.title;
+      conceptSummary.textContent = data.summary;
+      portraitNote.textContent = data.portrait;
+      landscapeNote.textContent = data.landscape;
+      setActive("[data-concept]", "concept", state.concept);
+      setActive("[data-orientation]", "orientation", state.orientation);
+      setActive("[data-state]", "state", state.interaction);
+      setActive("[data-panel]", "panel", state.panel);
+      renderPanel();
+    }
+
+    document.addEventListener("click", (event) => {
+      const target = event.target.closest("button");
+      if (!target) return;
+      if (target.dataset.concept) {
+        state.concept = target.dataset.concept;
+      }
+      if (target.dataset.orientation) {
+        state.orientation = target.dataset.orientation;
+      }
+      if (target.dataset.state) {
+        state.interaction = target.dataset.state;
+        if (state.interaction === "idle") state.panel = "none";
+      }
+      if (target.dataset.panel) {
+        state.panel = target.dataset.panel;
+        if (state.panel !== "none") state.interaction = "controls";
+      }
+      if (target.dataset.panelButton) {
+        state.panel = target.dataset.panelButton;
+        if (state.panel !== "none") state.interaction = "controls";
+      }
+      render();
+    });
+
+    document.querySelector(".video-zone").addEventListener("click", () => {
+      state.interaction = state.interaction === "idle" ? "controls" : "idle";
+      if (state.interaction === "idle") state.panel = "none";
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>
