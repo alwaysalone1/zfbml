@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.30
+
+中文：
+
+- 详情页展开“查看线路”后，来源筛选从普通文字芯片升级为横向源卡片，优先显示推荐源、在线源和可播放源，并展示可播/BT 数量。
+- 线路列表行改为更接近视频 App 的播放选择项：左侧状态色条，中间展示来源、推荐/在线可播/BT 兜底标签，右侧给出“播放/推荐播放/边下边播”动作。
+- 保留自动最佳线路策略，同时让手动换源的信息层级更清楚，减少“线路测试列表”的观感。
+
+English:
+
+- The expanded detail-page route picker now uses horizontal source cards instead of plain text chips, prioritizing the recommended source, online sources, and playable sources while showing playable/BT counts.
+- Route rows now feel more like video-app playback choices: a status accent strip, source and recommendation/playable/BT labels, and an explicit play action on the right.
+- Kept the automatic-best-route strategy while making manual source switching easier to scan and less like a raw route-testing list.
+
 ### v0.2.29
 
 中文：
