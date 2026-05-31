@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.31
+
+中文：
+
+- 播放页“播放线路”面板升级为卡片式线路选择，和详情页换源语言保持一致，直接标出当前、推荐、已失败、在线可播、BT 兜底等状态。
+- 每条播放线路右侧新增动作标签：播放中、切到推荐、切换、重试、边下边播或暂不可选，让用户在播放时更容易判断下一步。
+- WebView-only 线路在播放器换源面板中显示为暂不可选，避免误点到当前播放器无法直接承接的线路。
+
+English:
+
+- Upgraded the in-player route panel to card-style route choices that match the detail-page source-switching language, clearly marking current, recommended, failed, online-playable, and BT fallback states.
+- Added explicit action labels on each route row: playing, switch to recommended, switch, retry, stream while downloading, or unavailable.
+- WebView-only routes are shown as unavailable in the player route panel so users do not switch into routes the current player cannot directly handle.
+
 ### v0.2.30
 
 中文：

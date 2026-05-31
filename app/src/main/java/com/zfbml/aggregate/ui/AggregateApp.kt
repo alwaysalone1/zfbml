@@ -1466,7 +1466,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.30")
+                setRequestProperty("User-Agent", "ZFBML/0.2.31")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -4546,23 +4546,142 @@ private fun PlayerRoutePanel(
                 modifier = Modifier.fillMaxWidth(),
             )
         }
+        item {
+            Text(
+                "手动选择线路",
+                style = MaterialTheme.typography.labelMedium,
+                color = Color.White.copy(alpha = 0.72f),
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+            )
+        }
         items(routes, key = { it.stream.id }) { route ->
             val failed = route.stream.id in failedStreamIds
             val recommended = route.stream.id == panelState.recommendedRoute?.stream?.id
-            PlayerSelectableRow(
-                title = "${route.sourceName} · ${route.routeName.orEmpty().ifBlank { route.protocol.displayName() }}",
-                subtitle = listOfNotNull(route.quality, route.subgroup, route.protocol.displayName()).joinToString(" · "),
-                selected = route.stream.id == selectedStreamId,
-                icon = Icons.Filled.VideoLibrary,
-                trailing = when {
-                    failed -> "已失败"
-                    route.stream.id == selectedStreamId -> "当前"
-                    recommended -> "推荐"
-                    else -> null
-                },
+            val selected = route.stream.id == selectedStreamId
+            PlayerRouteOptionRow(
+                route = route,
+                selected = selected,
+                recommended = recommended,
+                failed = failed,
                 onClick = { onRouteSelected(route) },
             )
         }
+    }
+}
+
+@Composable
+private fun PlayerRouteOptionRow(
+    route: RouteCandidate,
+    selected: Boolean,
+    recommended: Boolean,
+    failed: Boolean,
+    onClick: () -> Unit,
+) {
+    val webOnly = route.protocol == StreamProtocol.WEBVIEW_ONLY
+    val accent = when {
+        failed -> MaterialTheme.colorScheme.error
+        selected -> AnimeAccentCyan
+        recommended -> AnimeAccentPink
+        route.protocol == StreamProtocol.BITTORRENT -> AnimeAccentAmber
+        webOnly -> AnimeMuted
+        else -> AnimeAccentGreen
+    }
+    val (statusLabel, statusColor) = when {
+        failed -> "已失败" to MaterialTheme.colorScheme.error
+        selected -> "当前" to AnimeAccentCyan
+        else -> route.routeStatusLabel()
+    }
+    Card(
+        onClick = onClick,
+        enabled = !webOnly,
+        modifier = Modifier.fillMaxWidth().focusable(),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (selected || recommended) Color.White.copy(alpha = 0.08f) else Color.White.copy(alpha = 0.045f),
+            disabledContainerColor = Color.White.copy(alpha = 0.035f),
+        ),
+        border = BorderStroke(1.dp, if (selected || recommended || failed) accent.copy(alpha = 0.85f) else Color.White.copy(alpha = 0.08f)),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier.width(4.dp).height(58.dp).clip(RoundedCornerShape(8.dp)).background(accent),
+            )
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        route.sourceName,
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    if (recommended) RouteStatusBadge("推荐", AnimeAccentPink)
+                    RouteStatusBadge(statusLabel, statusColor)
+                }
+                Text(
+                    route.primaryRouteLabel(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = AnimeAccentCyan,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    listOfNotNull(route.title, route.protocol.displayName()).joinToString(" · "),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = AnimeMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Text(route.protocol.displayName(), style = MaterialTheme.typography.labelMedium, color = accent, maxLines = 1)
+                route.sizeBytes?.let { Text(formatBytes(it), style = MaterialTheme.typography.labelSmall, color = AnimeMuted, maxLines = 1) }
+                PlayerRouteActionLabel(
+                    selected = selected,
+                    recommended = recommended,
+                    failed = failed,
+                    webOnly = webOnly,
+                    bt = route.protocol == StreamProtocol.BITTORRENT,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PlayerRouteActionLabel(
+    selected: Boolean,
+    recommended: Boolean,
+    failed: Boolean,
+    webOnly: Boolean,
+    bt: Boolean,
+) {
+    val (label, color) = when {
+        failed -> "重试" to MaterialTheme.colorScheme.error
+        selected -> "播放中" to AnimeAccentCyan
+        webOnly -> "暂不可选" to AnimeMuted
+        bt -> "边下边播" to AnimeAccentAmber
+        recommended -> "切到推荐" to AnimeAccentPink
+        else -> "切换" to AnimeAccentGreen
+    }
+    Row(
+        modifier = Modifier
+            .height(30.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(color.copy(alpha = 0.13f))
+            .padding(horizontal = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = color, modifier = Modifier.size(13.dp))
+        Text(label, style = MaterialTheme.typography.labelSmall, color = color, maxLines = 1)
     }
 }
 
