@@ -1466,7 +1466,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.28")
+                setRequestProperty("User-Agent", "ZFBML/0.2.29")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2356,6 +2356,7 @@ private fun DetailHero(
     onToggleRoutes: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val playLabel = selectedEpisode?.index?.let { "播放第 $it 集" } ?: "立即观看"
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -2435,7 +2436,7 @@ private fun DetailHero(
                 ) {
                     Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text(if (routeUiState.canPlay) "立即观看" else "自动找源")
+                    Text(if (routeUiState.canPlay) playLabel else "自动找源")
                 }
                 TextButton(
                     onClick = onToggleRoutes,
@@ -2497,6 +2498,16 @@ private fun DetailRouteStatusCard(
         RouteLoadStatus.Empty -> AnimeAccentAmber
         RouteLoadStatus.Idle -> AnimeMuted
     }
+    val onlineValue = when {
+        state.onlineCount > 0 -> "${state.onlineCount} 条"
+        state.status == RouteLoadStatus.Loading -> "匹配中"
+        else -> "待补充"
+    }
+    val btValue = when {
+        state.btCount > 0 -> "${state.btCount} 条"
+        state.status == RouteLoadStatus.Loading -> "兜底中"
+        else -> "备用"
+    }
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
@@ -2505,7 +2516,7 @@ private fun DetailRouteStatusCard(
     ) {
         Column(
             modifier = Modifier.fillMaxWidth().padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -2524,46 +2535,127 @@ private fun DetailRouteStatusCard(
                 }
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text(state.message, style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold)
-                    Text(state.detail, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text(state.selectedEpisodeTitle, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
                 TextButton(onClick = onToggleExpanded, modifier = Modifier.height(38.dp).focusable()) {
-                    Text(if (expanded) "收起" else "换源", color = AnimeAccentCyan, style = MaterialTheme.typography.labelLarge)
+                    Text(if (expanded) "收起线路" else "查看线路", color = AnimeAccentCyan, style = MaterialTheme.typography.labelLarge)
                 }
+            }
+            if (state.status == RouteLoadStatus.Loading) {
+                LinearProgressIndicator(
+                    modifier = Modifier.fillMaxWidth().height(3.dp).clip(RoundedCornerShape(8.dp)),
+                    color = accent,
+                    trackColor = Color.White.copy(alpha = 0.08f),
+                )
+            }
+            RouteRecommendationBand(
+                state = state,
+                accent = accent,
+                onPlayBest = onPlayBest,
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                RouteDiagnosticStep("选集", state.selectedEpisodeTitle, true, accent, Modifier.weight(1f))
+                RouteDiagnosticStep("在线优先", onlineValue, state.onlineCount > 0 || state.status == RouteLoadStatus.Loading, AnimeAccentCyan, Modifier.weight(1f))
+                RouteDiagnosticStep("BT 兜底", btValue, state.btCount > 0, AnimeAccentAmber, Modifier.weight(1f))
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                SourceModePill("自动推荐", state.bestRoute?.sourceName ?: "等待匹配", selected = true, modifier = Modifier.weight(1f))
-                Button(
-                    onClick = onPlayBest,
-                    enabled = state.canPlay,
-                    shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = AnimeAccentPink, contentColor = Color.White),
-                    modifier = Modifier.height(42.dp).focusable(),
-                    contentPadding = PaddingValues(horizontal = 12.dp),
-                ) {
-                    Text("播放", maxLines = 1)
-                }
+                RouteMetricChip("线路", state.routeCount.toString(), AnimeAccentCyan, Modifier.weight(1f))
+                RouteMetricChip("来源", state.sourceCount.toString(), AnimeAccentViolet, Modifier.weight(1f))
+                RouteMetricChip("失败", state.failedCount.toString(), if (state.failedCount > 0) MaterialTheme.colorScheme.error else AnimeMuted, Modifier.weight(1f))
             }
         }
     }
 }
 
 @Composable
-private fun SourceModePill(title: String, value: String, selected: Boolean, modifier: Modifier = Modifier) {
+private fun RouteRecommendationBand(
+    state: RouteUiState,
+    accent: Color,
+    onPlayBest: () -> Unit,
+) {
+    val route = state.bestRoute
+    val actionLabel = if (route?.protocol == StreamProtocol.BITTORRENT) "边下边播" else "播放推荐"
     Row(
-        modifier = modifier
-            .height(42.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 72.dp)
             .clip(RoundedCornerShape(8.dp))
-            .background(if (selected) AnimeAccentCyan.copy(alpha = 0.14f) else Color.White.copy(alpha = 0.06f))
-            .padding(horizontal = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+            .background(accent.copy(alpha = 0.12f))
+            .padding(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(title, style = MaterialTheme.typography.labelMedium, color = AnimeAccentCyan, maxLines = 1)
-        Text(value, style = MaterialTheme.typography.bodyMedium, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Box(
+            modifier = Modifier.width(4.dp).height(48.dp).clip(RoundedCornerShape(8.dp)).background(accent),
+        )
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(if (route == null) "匹配策略" else "自动最佳线路", style = MaterialTheme.typography.labelMedium, color = accent, maxLines = 1)
+            Text(state.recommendationTitle, style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(state.recommendationDetail, style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.72f), maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+        if (state.canPlay) {
+            Button(
+                onClick = onPlayBest,
+                shape = RoundedCornerShape(8.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = AnimeAccentPink, contentColor = Color.White),
+                modifier = Modifier.height(40.dp).focusable(),
+                contentPadding = PaddingValues(horizontal = 12.dp),
+            ) {
+                Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(4.dp))
+                Text(actionLabel, maxLines = 1)
+            }
+        }
+    }
+}
+
+@Composable
+private fun RouteDiagnosticStep(
+    title: String,
+    value: String,
+    active: Boolean,
+    accent: Color,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .heightIn(min = 58.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(if (active) accent.copy(alpha = 0.13f) else Color.White.copy(alpha = 0.05f))
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(title, style = MaterialTheme.typography.labelSmall, color = if (active) accent else AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(value, style = MaterialTheme.typography.bodySmall, color = Color.White, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+@Composable
+private fun RouteMetricChip(
+    title: String,
+    value: String,
+    accent: Color,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .height(34.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color.White.copy(alpha = 0.06f))
+            .padding(horizontal = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(title, style = MaterialTheme.typography.labelSmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(value, style = MaterialTheme.typography.labelLarge, color = accent, fontWeight = FontWeight.Bold, maxLines = 1)
     }
 }
 

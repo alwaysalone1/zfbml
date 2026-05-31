@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.29
+
+中文：
+
+- 详情页线路卡升级为更清晰的“自动最佳线路”诊断区，直接展示当前推荐源、推荐清晰度/协议、选集、在线优先和 BT 兜底状态。
+- 自动推荐逻辑不再把 WebView-only 线路当作可直接播放线路，避免详情页误导用户点进不可播入口。
+- 补充线路 UI 状态测试，覆盖推荐线路摘要和 WebView-only 降级状态。
+
+English:
+
+- Upgraded the detail-page route card into a clearer automatic-best-route diagnostic area showing the recommended source, quality/protocol, selected episode, online-first status, and BT fallback status.
+- The automatic recommendation model no longer treats WebView-only entries as directly playable routes, avoiding misleading play actions on the detail page.
+- Added UI-state coverage for recommendation summaries and WebView-only fallback behavior.
+
 ### v0.2.28
 
 中文：

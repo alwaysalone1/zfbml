@@ -26,6 +26,8 @@ class PlaybackUiModelsTest {
         assertEquals("hls", state.bestRoute?.stream?.id)
         assertEquals(1, state.onlineCount)
         assertEquals(1, state.btCount)
+        assertEquals("Provider", state.recommendationTitle)
+        assertTrue(state.recommendationDetail.contains("720p"))
         assertTrue(state.canPlay)
     }
 
@@ -58,6 +60,23 @@ class PlaybackUiModelsTest {
         assertEquals(RouteLoadStatus.Empty, empty.status)
         assertEquals(RouteLoadStatus.Failed, failed.status)
         assertEquals("HTTP 500", failed.detail)
+    }
+
+    @Test
+    fun routeUiStateDoesNotAutoplayWebViewOnlyRoute() {
+        val webView = route("webview", StreamProtocol.WEBVIEW_ONLY, 1_000, quality = "1080p")
+
+        val state = buildRouteUiState(
+            selectedEpisode = episode(),
+            routes = listOf(webView),
+            loading = false,
+            error = null,
+        )
+
+        assertEquals(RouteLoadStatus.Empty, state.status)
+        assertEquals(null, state.bestRoute)
+        assertFalse(state.canPlay)
+        assertEquals("暂无可播线路", state.recommendationTitle)
     }
 
     @Test

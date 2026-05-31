@@ -25,6 +25,8 @@ internal data class RouteUiState(
     val failedCount: Int,
     val message: String,
     val detail: String,
+    val recommendationTitle: String,
+    val recommendationDetail: String,
 ) {
     val canPlay: Boolean = bestRoute != null
 }
@@ -58,12 +60,15 @@ internal fun buildRouteUiState(
 ): RouteUiState {
     val sortedRoutes = sortRoutesForUi(routes, failedStreamIds)
     val visibleRoutes = sortedRoutes.filter { selectedSourceId == null || it.sourceId == selectedSourceId }
-    val bestRoute = sortedRoutes.firstOrNull { it.stream.id !in failedStreamIds }
+    val bestRoute = sortedRoutes.firstOrNull { route ->
+        route.stream.id !in failedStreamIds &&
+            route.stream.protocol != StreamProtocol.WEBVIEW_ONLY
+    }
     val onlineCount = routes.count { it.protocol != StreamProtocol.BITTORRENT && it.protocol != StreamProtocol.WEBVIEW_ONLY }
     val btCount = routes.count { it.protocol == StreamProtocol.BITTORRENT }
     val status = when {
         loading -> RouteLoadStatus.Loading
-        routes.isNotEmpty() -> RouteLoadStatus.Ready
+        bestRoute != null -> RouteLoadStatus.Ready
         error != null -> RouteLoadStatus.Failed
         selectedEpisode != null -> RouteLoadStatus.Empty
         else -> RouteLoadStatus.Idle
@@ -72,7 +77,7 @@ internal fun buildRouteUiState(
     val message = when (status) {
         RouteLoadStatus.Idle -> "等待选择剧集"
         RouteLoadStatus.Loading -> "正在自动匹配最佳线路"
-        RouteLoadStatus.Ready -> "已匹配 ${routes.size} 条可播线路"
+        RouteLoadStatus.Ready -> "已匹配 ${routes.size} 条线路"
         RouteLoadStatus.Empty -> "暂时没有可用播放线路"
         RouteLoadStatus.Failed -> "线路加载失败"
     }
@@ -90,6 +95,21 @@ internal fun buildRouteUiState(
         RouteLoadStatus.Empty -> "可以切换剧集，或稍后再试其他来源"
         RouteLoadStatus.Idle -> "选择剧集后会自动开始匹配"
     }
+    val recommendationTitle = when {
+        bestRoute != null -> bestRoute.sourceName
+        status == RouteLoadStatus.Loading -> "正在匹配在线源"
+        status == RouteLoadStatus.Failed -> "线路匹配失败"
+        status == RouteLoadStatus.Empty -> "暂无可播线路"
+        else -> "等待自动匹配"
+    }
+    val recommendationDetail = bestRoute?.let { route ->
+        listOfNotNull(
+            route.routeName?.takeIf { it.isNotBlank() },
+            route.quality?.takeIf { it.isNotBlank() },
+            route.subgroup?.takeIf { it.isNotBlank() },
+            route.protocol.uiProtocolName(),
+        ).distinct().joinToString(" · ")
+    } ?: detail
 
     return RouteUiState(
         status = status,
@@ -103,6 +123,8 @@ internal fun buildRouteUiState(
         failedCount = failedStreamIds.size,
         message = message,
         detail = detail,
+        recommendationTitle = recommendationTitle,
+        recommendationDetail = recommendationDetail,
     )
 }
 
