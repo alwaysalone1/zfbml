@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.27
+
+中文：
+
+- 将 HTML 原型里的“快速换源”思路先落到 Android 横屏播放器：点击画面后，右侧新增快捷功能 dock，可直接进入线路、选集、弹幕、弹幕设置和清晰度。
+- 横屏仍保留底部完整控制条，但高频操作不再都挤在底部，线路/选集入口更接近成熟移动播放器的右侧抽屉体验。
+- 竖屏播放器不受影响，继续采用 16:9 视频舞台 + 下方追番信息区的结构。
+
+English:
+
+- Ported the quick-source-switch idea from the HTML prototype into the Android landscape player: tapping the video now reveals a right-side quick dock for routes, episodes, danmaku, danmaku settings, and quality.
+- The landscape player keeps the full bottom control bar, but frequent actions no longer compete for space at the bottom and now feed naturally into the side drawer.
+- Portrait playback remains on the fixed 16:9 video stage plus watch-info layout.
+
 ### v0.2.26
 
 中文：

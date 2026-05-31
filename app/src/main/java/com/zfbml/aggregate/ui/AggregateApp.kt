@@ -134,7 +134,9 @@ import kotlinx.coroutines.withContext
 
 @Composable
 fun AggregateApp(graph: AppGraph, initialQuery: String? = null) {
-    var selectedTab by remember { mutableStateOf(AppTab.Discover) }
+    var selectedTab by remember(initialQuery) {
+        mutableStateOf(if (initialQuery.isNullOrBlank()) AppTab.Discover else AppTab.Search)
+    }
     var screen by remember { mutableStateOf<AppScreen>(AppScreen.Main) }
     var showSplash by remember { mutableStateOf(true) }
     LaunchedEffect(Unit) {
@@ -1464,7 +1466,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.26")
+                setRequestProperty("User-Agent", "ZFBML/0.2.27")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -3134,6 +3136,26 @@ private fun PlayerScreen(
                 )
             }
             AnimatedVisibility(
+                visible = controlsVisible && activePanel == null && !compact,
+                enter = fadeIn(),
+                exit = fadeOut(),
+                modifier = Modifier.align(Alignment.CenterEnd).padding(end = 16.dp).zIndex(4f),
+            ) {
+                PlayerLandscapeQuickDock(
+                    routeCount = routeOptions.size,
+                    episodeCount = detail.episodes.size,
+                    danmakuEnabled = danmakuEnabled,
+                    onToggleDanmaku = {
+                        revealControls()
+                        danmakuEnabled = !danmakuEnabled
+                    },
+                    onShowPanel = { panel ->
+                        revealControls()
+                        activePanel = panel
+                    },
+                )
+            }
+            AnimatedVisibility(
                 visible = controlsVisible && activePanel == null,
                 enter = fadeIn(),
                 exit = fadeOut(),
@@ -3741,6 +3763,95 @@ private fun PlayerBottomControls(
             onNextRoute = onNextRoute,
             modifier = Modifier.fillMaxWidth(),
         )
+    }
+}
+
+@Composable
+private fun PlayerLandscapeQuickDock(
+    routeCount: Int,
+    episodeCount: Int,
+    danmakuEnabled: Boolean,
+    onToggleDanmaku: () -> Unit,
+    onShowPanel: (PlayerPanel) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(8.dp),
+        color = Color.Black.copy(alpha = 0.38f),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f)),
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 7.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            PlayerDockAction(
+                icon = Icons.Filled.VideoLibrary,
+                label = "线路",
+                selected = routeCount > 1,
+                enabled = routeCount > 1,
+                onClick = { onShowPanel(PlayerPanel.Route) },
+            )
+            PlayerDockAction(
+                icon = Icons.AutoMirrored.Filled.PlaylistPlay,
+                label = "选集",
+                selected = episodeCount > 1,
+                enabled = episodeCount > 1,
+                onClick = { onShowPanel(PlayerPanel.Episode) },
+            )
+            PlayerDockAction(
+                icon = Icons.Filled.ClosedCaption,
+                label = "弹幕",
+                selected = danmakuEnabled,
+                onClick = onToggleDanmaku,
+            )
+            PlayerDockAction(
+                icon = Icons.Filled.Settings,
+                label = "设置",
+                onClick = { onShowPanel(PlayerPanel.Danmaku) },
+            )
+            PlayerDockAction(
+                icon = Icons.Filled.HighQuality,
+                label = "清晰",
+                onClick = { onShowPanel(PlayerPanel.Quality) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun PlayerDockAction(
+    icon: ImageVector,
+    label: String,
+    selected: Boolean = false,
+    enabled: Boolean = true,
+    onClick: () -> Unit,
+) {
+    val contentColor = when {
+        !enabled -> Color.White.copy(alpha = 0.32f)
+        selected -> AnimeAccentCyan
+        else -> Color.White.copy(alpha = 0.86f)
+    }
+    TextButton(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = Modifier.width(54.dp).height(48.dp).focusable(),
+        shape = RoundedCornerShape(8.dp),
+        colors = ButtonDefaults.textButtonColors(
+            containerColor = if (selected) AnimeAccentCyan.copy(alpha = 0.14f) else Color.White.copy(alpha = 0.06f),
+            contentColor = contentColor,
+            disabledContentColor = Color.White.copy(alpha = 0.32f),
+        ),
+        contentPadding = PaddingValues(0.dp),
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Icon(icon, contentDescription = label, modifier = Modifier.size(17.dp))
+            Text(label, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+        }
     }
 }
 
