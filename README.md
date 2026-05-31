@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.32
+
+中文：
+
+- 播放页“选集”面板升级为视频式选集列表：顶部展示当前播放条目和总集数，列表中每集都有编号、标题、当前/加载中状态和播放动作。
+- 选集行改为和线路面板一致的卡片视觉，使用状态色条、编号块和动作胶囊，减少普通设置列表的感觉。
+- 加载下一集时会在目标集数上显示加载状态，用户能更明确地知道正在切到哪一集。
+
+English:
+
+- Upgraded the in-player episode panel into a video-style episode list with a current-item summary, total episode count, numbered rows, status, and play actions.
+- Episode rows now match the route panel's card language with status accents, number blocks, and action pills instead of generic settings rows.
+- When switching episodes, the target row shows a loading state so users can see exactly which episode is being prepared.
+
 ### v0.2.31
 
 中文：

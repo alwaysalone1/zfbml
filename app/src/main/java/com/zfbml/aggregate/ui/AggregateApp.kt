@@ -1466,7 +1466,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.31")
+                setRequestProperty("User-Agent", "ZFBML/0.2.32")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -4802,19 +4802,179 @@ private fun PlayerEpisodePanel(
         Text("当前条目没有可切换选集", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         return
     }
-    LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    LazyColumn(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+        item {
+            PlayerEpisodeSummaryCard(
+                title = detail.title,
+                currentEpisode = currentEpisode,
+                episodeCount = detail.episodes.size,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        item {
+            Text(
+                "全部选集",
+                style = MaterialTheme.typography.labelMedium,
+                color = Color.White.copy(alpha = 0.72f),
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+            )
+        }
         items(detail.episodes, key = { it.id }) { item ->
             val loading = episodeLoadingId == item.id
-            PlayerSelectableRow(
-                title = item.title,
-                subtitle = item.index?.let { "第 $it 集" },
+            PlayerEpisodeOptionRow(
+                episode = item,
                 selected = item.id == currentEpisode.id,
+                loading = loading,
                 enabled = episodeLoadingId == null || loading,
-                icon = Icons.AutoMirrored.Filled.PlaylistPlay,
-                trailing = if (loading) "加载中" else null,
                 onClick = { onEpisodeSelected(item) },
             )
         }
+    }
+}
+
+@Composable
+private fun PlayerEpisodeSummaryCard(
+    title: String,
+    currentEpisode: Episode,
+    episodeCount: Int,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(8.dp),
+        color = Color.White.copy(alpha = 0.06f),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f)),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier.size(40.dp).clip(RoundedCornerShape(8.dp)).background(AnimeAccentPink.copy(alpha = 0.18f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.AutoMirrored.Filled.PlaylistPlay, contentDescription = null, tint = AnimeAccentPink, modifier = Modifier.size(22.dp))
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(
+                    title,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    "当前 ${currentEpisode.index?.let { "第 $it 集" } ?: currentEpisode.title} · 共 $episodeCount 集",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = AnimeMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PlayerEpisodeOptionRow(
+    episode: Episode,
+    selected: Boolean,
+    loading: Boolean,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    val accent = when {
+        loading -> AnimeAccentAmber
+        selected -> AnimeAccentPink
+        else -> AnimeAccentCyan
+    }
+    Card(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = Modifier.fillMaxWidth().focusable(),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (selected) Color.White.copy(alpha = 0.08f) else Color.White.copy(alpha = 0.045f),
+            disabledContainerColor = Color.White.copy(alpha = 0.032f),
+        ),
+        border = BorderStroke(1.dp, if (selected || loading) accent.copy(alpha = 0.85f) else Color.White.copy(alpha = 0.08f)),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier.width(4.dp).height(52.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = if (enabled) 1f else 0.38f)),
+            )
+            Box(
+                modifier = Modifier.size(42.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.16f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (loading) {
+                    CircularProgressIndicator(color = accent, modifier = Modifier.size(20.dp))
+                } else {
+                    Text(
+                        episode.index?.let { "%02d".format(it) } ?: "SP",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = accent,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                    )
+                }
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        episode.title,
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White.copy(alpha = if (enabled) 0.94f else 0.42f),
+                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    if (selected) RouteStatusBadge("当前", AnimeAccentPink)
+                }
+                Text(
+                    episode.index?.let { "第 $it 集" } ?: "特别篇",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = AnimeMuted.copy(alpha = if (enabled) 0.86f else 0.38f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            EpisodeActionLabel(selected = selected, loading = loading, enabled = enabled)
+        }
+    }
+}
+
+@Composable
+private fun EpisodeActionLabel(
+    selected: Boolean,
+    loading: Boolean,
+    enabled: Boolean,
+) {
+    val (label, color) = when {
+        loading -> "加载中" to AnimeAccentAmber
+        selected -> "播放中" to AnimeAccentPink
+        enabled -> "播放" to AnimeAccentCyan
+        else -> "等待" to AnimeMuted
+    }
+    Row(
+        modifier = Modifier
+            .height(30.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(color.copy(alpha = if (enabled || loading || selected) 0.13f else 0.06f))
+            .padding(horizontal = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = color, modifier = Modifier.size(13.dp))
+        Text(label, style = MaterialTheme.typography.labelSmall, color = color, maxLines = 1)
     }
 }
 
