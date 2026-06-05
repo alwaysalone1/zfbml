@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.47
+
+中文：
+
+- 横屏全屏顶部的当前线路状态胶囊现在可直接点击打开播放线路面板。
+- 状态胶囊新增“换源”尾标，把线路状态从纯展示升级为全屏高频换源入口。
+- 竖屏未全屏仍不增加额外线路按钮，保持轻量观看；完整换源能力继续集中在全屏和面板中。
+
+English:
+
+- The landscape fullscreen current-route status capsule can now open the route panel directly.
+- Added a “Switch Source” tail label to the status capsule, turning route status from passive information into a high-frequency fullscreen route entry.
+- The portrait non-fullscreen layout remains lightweight without extra route buttons, while full route switching stays in fullscreen and panels.
+
 ### v0.2.46
 
 中文：

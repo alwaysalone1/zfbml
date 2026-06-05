@@ -1512,7 +1512,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.46")
+                setRequestProperty("User-Agent", "ZFBML/0.2.47")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -3589,6 +3589,10 @@ private fun PlayerScreen(
                 PlayerTopOverlay(
                     overlayState = overlayState,
                     onBack = onBack,
+                    onOpenRoutePanel = {
+                        revealControls()
+                        activePanel = PlayerPanel.Route
+                    },
                     onExitFullscreen = ::exitFullscreen,
                     compact = compact,
                     modifier = Modifier.fillMaxWidth(),
@@ -4108,6 +4112,7 @@ private fun PortraitRouteInsightChip(label: String, value: String, color: Color)
 private fun PlayerTopOverlay(
     overlayState: PlayerOverlayState,
     onBack: () -> Unit,
+    onOpenRoutePanel: () -> Unit,
     onExitFullscreen: () -> Unit,
     compact: Boolean,
     modifier: Modifier = Modifier,
@@ -4162,6 +4167,7 @@ private fun PlayerTopOverlay(
                         overlayState.notice != null -> AnimeAccentAmber
                         else -> AnimeAccentCyan
                     },
+                    onClick = onOpenRoutePanel,
                     modifier = Modifier.width(232.dp),
                 )
                 PlayerCircleButton(
@@ -4180,10 +4186,11 @@ private fun PlayerTopRouteStatus(
     statusLabel: String,
     detail: String,
     accent: Color,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(
-        modifier = modifier.height(46.dp),
+        modifier = modifier.height(46.dp).clickable(onClick = onClick).focusable(),
         shape = RoundedCornerShape(8.dp),
         color = Color.Black.copy(alpha = 0.46f),
         border = BorderStroke(1.dp, accent.copy(alpha = 0.32f)),
@@ -4224,6 +4231,16 @@ private fun PlayerTopRouteStatus(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f),
+                )
+                Text(
+                    text = "换源",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = accent,
+                    maxLines = 1,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(accent.copy(alpha = 0.12f))
+                        .padding(horizontal = 6.dp, vertical = 2.dp),
                 )
             }
         }
