@@ -5,6 +5,10 @@ import android.content.Context
 import android.content.ContextWrapper
 import android.content.pm.ActivityInfo
 import android.graphics.BitmapFactory
+import android.os.Build
+import android.view.View
+import android.view.WindowInsets
+import android.view.WindowInsetsController
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -261,6 +265,31 @@ private tailrec fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this
     is ContextWrapper -> baseContext.findActivity()
     else -> null
+}
+
+private fun Activity.setPlayerImmersive(immersive: Boolean) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        window.insetsController?.let { controller ->
+            if (immersive) {
+                controller.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                controller.hide(WindowInsets.Type.systemBars())
+            } else {
+                controller.show(WindowInsets.Type.systemBars())
+            }
+        }
+    } else {
+        @Suppress("DEPRECATION")
+        window.decorView.systemUiVisibility = if (immersive) {
+            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY or
+                View.SYSTEM_UI_FLAG_FULLSCREEN or
+                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
+                View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+        } else {
+            View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+        }
+    }
 }
 
 private val AnimeBackground = Color(0xFF0D0D10)
@@ -1478,7 +1507,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.34")
+                setRequestProperty("User-Agent", "ZFBML/0.2.35")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -3106,11 +3135,13 @@ private fun PlayerScreen(
 
     fun enterFullscreen() {
         revealControls()
+        activity?.setPlayerImmersive(true)
         activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
     }
 
     fun exitFullscreen() {
         revealControls()
+        activity?.setPlayerImmersive(false)
         activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
     }
 
@@ -3186,6 +3217,7 @@ private fun PlayerScreen(
     }
     DisposableEffect(Unit) {
         onDispose {
+            activity?.setPlayerImmersive(false)
             activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
             engine.release()
             graph.torrentEngine.release()
@@ -3466,6 +3498,9 @@ private fun PlayerScreen(
 
     BoxWithConstraints(Modifier.fillMaxSize().background(AnimeBackground)) {
         val portrait = maxHeight > maxWidth
+        LaunchedEffect(activity, portrait) {
+            activity?.setPlayerImmersive(!portrait)
+        }
         if (portrait) {
             Column(Modifier.fillMaxSize()) {
                 VideoStage(

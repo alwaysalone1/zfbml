@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.35
+
+中文：
+
+- 横屏播放器进入真正沉浸式全屏：播放器处于横屏布局时会隐藏状态栏和导航栏，减少系统 UI 对画面的干扰。
+- 竖屏布局会自动恢复系统栏，退出全屏和离开播放器时也会清理沉浸式状态，避免影响首页、详情页等普通页面。
+- 全屏按钮、手动旋转横屏和退出全屏现在共用同一套系统栏同步逻辑，让横屏承担完整播放器体验，竖屏保持轻量观看。
+
+English:
+
+- Landscape playback now enters a real immersive fullscreen mode by hiding status and navigation bars while the player is in landscape layout.
+- Portrait playback restores system bars automatically, and leaving or exiting the player clears the immersive state so normal pages are not affected.
+- The fullscreen button, manual landscape rotation, and fullscreen exit now share the same system-bar sync behavior, keeping landscape as the full-control playback mode while portrait stays lightweight.
+
 ### v0.2.34
 
 中文：
