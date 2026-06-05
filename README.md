@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.45
+
+中文：
+
+- 播放页线路面板新增“来源概览”，按来源展示当前源、推荐源、可播数量、在线/BT 分布和失败降级数量。
+- 手动换源更接近 Animeko 式聚合体验：用户先判断来源质量，再进入具体线路列表。
+- 不改变自动线路排序和播放选择逻辑，只增强手动切源时的信息层级与可读性。
+
+English:
+
+- Added a Source Overview strip to the player route panel, showing the current source, recommended source, playable counts, online/BT distribution, and failed-route downgrade counts.
+- Manual source switching now feels closer to Animeko-style aggregation: users can evaluate sources before choosing a specific route.
+- Kept the existing automatic route sorting and playback selection unchanged while improving manual route-selection hierarchy and readability.
+
 ### v0.2.44
 
 中文：

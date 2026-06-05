@@ -1512,7 +1512,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.44")
+                setRequestProperty("User-Agent", "ZFBML/0.2.45")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -5181,6 +5181,15 @@ private fun PlayerRoutePanel(
             )
         }
         item {
+            PlayerRouteSourceStrip(
+                routes = routes,
+                selectedStreamId = selectedStreamId,
+                recommendedStreamId = panelState.recommendedRoute?.stream?.id,
+                failedStreamIds = failedStreamIds,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        item {
             Text(
                 "手动选择线路",
                 style = MaterialTheme.typography.labelMedium,
@@ -5200,6 +5209,137 @@ private fun PlayerRoutePanel(
                 failed = failed,
                 onClick = { onRouteSelected(route) },
             )
+        }
+    }
+}
+
+@Composable
+private fun PlayerRouteSourceStrip(
+    routes: List<RouteCandidate>,
+    selectedStreamId: String,
+    recommendedStreamId: String?,
+    failedStreamIds: Set<String>,
+    modifier: Modifier = Modifier,
+) {
+    val groups = remember(routes, selectedStreamId, recommendedStreamId, failedStreamIds) {
+        routes
+            .groupBy { it.sourceId }
+            .map { (sourceId, sourceRoutes) ->
+                PlayerRouteSourceGroup(
+                    id = sourceId,
+                    name = sourceRoutes.firstOrNull()?.sourceName ?: sourceId,
+                    totalCount = sourceRoutes.size,
+                    playableCount = sourceRoutes.count { route ->
+                        route.stream.id !in failedStreamIds && route.protocol != StreamProtocol.WEBVIEW_ONLY
+                    },
+                    onlineCount = sourceRoutes.count { route ->
+                        route.stream.id !in failedStreamIds &&
+                            route.protocol != StreamProtocol.BITTORRENT &&
+                            route.protocol != StreamProtocol.WEBVIEW_ONLY
+                    },
+                    btCount = sourceRoutes.count { route ->
+                        route.stream.id !in failedStreamIds && route.protocol == StreamProtocol.BITTORRENT
+                    },
+                    failedCount = sourceRoutes.count { it.stream.id in failedStreamIds },
+                    hasSelected = sourceRoutes.any { it.stream.id == selectedStreamId },
+                    hasRecommended = sourceRoutes.any { it.stream.id == recommendedStreamId },
+                )
+            }
+            .sortedWith(
+                compareByDescending<PlayerRouteSourceGroup> { it.hasSelected }
+                    .thenByDescending { it.hasRecommended }
+                    .thenByDescending { it.onlineCount > 0 }
+                    .thenByDescending { it.playableCount }
+                    .thenBy { it.name },
+            )
+    }
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(7.dp)) {
+        Text(
+            "来源概览",
+            style = MaterialTheme.typography.labelMedium,
+            color = Color.White.copy(alpha = 0.72f),
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+        )
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(groups, key = { it.id }) { group ->
+                PlayerRouteSourceChip(group)
+            }
+        }
+    }
+}
+
+private data class PlayerRouteSourceGroup(
+    val id: String,
+    val name: String,
+    val totalCount: Int,
+    val playableCount: Int,
+    val onlineCount: Int,
+    val btCount: Int,
+    val failedCount: Int,
+    val hasSelected: Boolean,
+    val hasRecommended: Boolean,
+)
+
+@Composable
+private fun PlayerRouteSourceChip(group: PlayerRouteSourceGroup) {
+    val accent = when {
+        group.hasSelected -> AnimeAccentCyan
+        group.hasRecommended -> AnimeAccentPink
+        group.onlineCount > 0 -> AnimeAccentGreen
+        group.btCount > 0 -> AnimeAccentAmber
+        else -> AnimeMuted
+    }
+    Card(
+        modifier = Modifier.width(152.dp).height(74.dp),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (group.hasSelected || group.hasRecommended) Color.White.copy(alpha = 0.08f) else Color.White.copy(alpha = 0.045f),
+        ),
+        border = BorderStroke(1.dp, accent.copy(alpha = if (group.hasSelected || group.hasRecommended) 0.85f else 0.34f)),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(10.dp),
+            verticalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    group.name,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                when {
+                    group.hasSelected -> RouteStatusBadge("当前", AnimeAccentCyan)
+                    group.hasRecommended -> RouteStatusBadge("推荐", AnimeAccentPink)
+                }
+            }
+            Text(
+                "${group.playableCount}/${group.totalCount} 可播 · ${group.onlineCount} 在线 · ${group.btCount} BT",
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.White.copy(alpha = 0.66f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (group.failedCount > 0) {
+                Text(
+                    "${group.failedCount} 条失败已降级",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.error,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            } else {
+                Text(
+                    if (group.onlineCount > 0) "在线优先" else "兜底来源",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = accent,
+                    maxLines = 1,
+                )
+            }
         }
     }
 }
