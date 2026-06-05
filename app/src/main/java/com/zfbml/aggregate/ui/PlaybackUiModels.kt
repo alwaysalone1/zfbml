@@ -155,6 +155,27 @@ internal fun nextPlayableRoute(
         }
 }
 
+internal fun preferredRouteForNextEpisode(
+    routes: List<RouteCandidate>,
+    currentSourceId: String?,
+    currentProviderId: String?,
+    failedStreamIds: Set<String> = emptySet(),
+): RouteCandidate? {
+    val playableRoutes = sortRoutesForUi(routes, failedStreamIds)
+        .distinctBy { it.stream.id }
+        .filter { route ->
+            route.stream.id !in failedStreamIds &&
+                route.stream.protocol != StreamProtocol.WEBVIEW_ONLY
+        }
+    if (playableRoutes.isEmpty()) return null
+
+    return playableRoutes.firstOrNull { route ->
+        currentSourceId != null && route.sourceId == currentSourceId
+    } ?: playableRoutes.firstOrNull { route ->
+        currentProviderId != null && route.stream.providerId == currentProviderId
+    } ?: playableRoutes.first()
+}
+
 internal fun buildRoutePanelUiState(
     routes: List<RouteCandidate>,
     selectedStreamId: String,

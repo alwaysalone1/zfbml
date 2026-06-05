@@ -95,6 +95,62 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun preferredRouteForNextEpisodeKeepsCurrentSourceWhenPlayable() {
+        val globalBest = route(
+            id = "global-best",
+            protocol = StreamProtocol.HLS,
+            score = 1_000,
+            quality = "1080p",
+            sourceId = "source-a",
+            sourceName = "Source A",
+        )
+        val sameSource = route(
+            id = "same-source",
+            protocol = StreamProtocol.HLS,
+            score = 100,
+            quality = "720p",
+            sourceId = "source-b",
+            sourceName = "Source B",
+        )
+
+        val preferred = preferredRouteForNextEpisode(
+            routes = listOf(globalBest, sameSource),
+            currentSourceId = "source-b",
+            currentProviderId = "provider-b",
+        )
+
+        assertEquals("same-source", preferred?.stream?.id)
+    }
+
+    @Test
+    fun preferredRouteForNextEpisodeFallsBackWhenCurrentSourceIsNotPlayable() {
+        val webViewOnly = route(
+            id = "same-source-webview",
+            protocol = StreamProtocol.WEBVIEW_ONLY,
+            score = 2_000,
+            quality = "1080p",
+            sourceId = "source-b",
+            sourceName = "Source B",
+        )
+        val fallback = route(
+            id = "fallback",
+            protocol = StreamProtocol.HLS,
+            score = 300,
+            quality = "720p",
+            sourceId = "source-a",
+            sourceName = "Source A",
+        )
+
+        val preferred = preferredRouteForNextEpisode(
+            routes = listOf(webViewOnly, fallback),
+            currentSourceId = "source-b",
+            currentProviderId = "provider-b",
+        )
+
+        assertEquals("fallback", preferred?.stream?.id)
+    }
+
+    @Test
     fun routePanelUiStateSummarizesRecommendationAndFailures() {
         val failed = route("failed", StreamProtocol.HLS, 900, quality = "1080p")
         val bt = route("bt", StreamProtocol.BITTORRENT, 800, quality = "1080p")
@@ -167,18 +223,21 @@ class PlaybackUiModelsTest {
         protocol: StreamProtocol,
         score: Int,
         quality: String,
+        sourceId: String = "provider",
+        sourceName: String = "Provider",
+        providerId: String = sourceId,
     ): RouteCandidate {
         return RouteCandidate(
             stream = MediaStream(
                 id = id,
-                providerId = "provider",
+                providerId = providerId,
                 url = "https://example.invalid/$id",
                 protocol = protocol,
                 quality = quality,
                 sourceScore = score,
             ),
-            sourceId = "provider",
-            sourceName = "Provider",
+            sourceId = sourceId,
+            sourceName = sourceName,
             title = "Title",
             routeName = quality,
             episodeTitle = "第 1 集",

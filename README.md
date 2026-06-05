@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.50
+
+中文：
+
+- 播放页切换剧集时会优先沿用当前播放来源，减少每集都跳回默认线路的割裂感。
+- 若当前来源在下一集不可播，会自动回退到排序后的最佳可播线路，继续保持在线源优先和 WebView-only 过滤。
+- 新增线路优选单元测试，覆盖同来源延续和不可播来源回退。
+
+English:
+
+- Episode switching in the player now prefers the currently used source, reducing jarring route jumps between episodes.
+- If the current source is not playable for the next episode, playback falls back to the best sorted playable route while keeping online-first and WebView-only filtering.
+- Added route preference unit tests covering same-source continuity and fallback from unplayable sources.
+
 ### v0.2.49
 
 中文：

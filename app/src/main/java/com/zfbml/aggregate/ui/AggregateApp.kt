@@ -1512,7 +1512,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.49")
+                setRequestProperty("User-Agent", "ZFBML/0.2.50")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -3483,15 +3483,19 @@ private fun PlayerScreen(
             result
                 .onSuccess { candidates ->
                     val sortedCandidates = sortRoutesForUi(candidates)
-                    val firstRoute = sortedCandidates.firstOrNull()
-                    if (firstRoute != null) {
+                    val preferredRoute = preferredRouteForNextEpisode(
+                        routes = sortedCandidates,
+                        currentSourceId = currentRoute?.sourceId,
+                        currentProviderId = currentStream.providerId,
+                    )
+                    if (preferredRoute != null) {
                         currentEpisode = target
                         playerRoutes = sortedCandidates
                         failedStreamIds = emptySet()
                         routeNotice = null
                         activePanel = null
                         revealControls()
-                        currentStream = firstRoute.stream
+                        currentStream = preferredRoute.stream
                     } else {
                         routeNotice = "${target.title} 暂时没有可用播放线路"
                     }
