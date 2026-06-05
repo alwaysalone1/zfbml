@@ -1512,7 +1512,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.43")
+                setRequestProperty("User-Agent", "ZFBML/0.2.44")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -3863,6 +3863,11 @@ private fun PortraitWatchInfoPanel(
                             Text("换源", color = if (routes.size > 1) AnimeAccentCyan else AnimeMuted)
                         }
                     }
+                    PortraitRouteInsightRow(
+                        routes = routes,
+                        stream = stream,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                     Text(
                         text = message ?: "自动优先在线源；播放失败时会尝试切到下一条可播线路",
                         style = MaterialTheme.typography.bodySmall,
@@ -3957,6 +3962,63 @@ private fun PortraitWatchInfoPanel(
                 overflow = TextOverflow.Ellipsis,
             )
         }
+    }
+}
+
+@Composable
+private fun PortraitRouteInsightRow(
+    routes: List<RouteCandidate>,
+    stream: MediaStream,
+    modifier: Modifier = Modifier,
+) {
+    val routeCount = routes.size.takeIf { it > 0 } ?: 1
+    val sourceCount = routes.map { it.sourceId }.distinct().size.takeIf { it > 0 } ?: 1
+    val onlineCount = routes.count { it.protocol != StreamProtocol.BITTORRENT && it.protocol != StreamProtocol.WEBVIEW_ONLY }
+    val btCount = routes.count { it.protocol == StreamProtocol.BITTORRENT }
+    val distribution = when {
+        onlineCount > 0 && btCount > 0 -> "$onlineCount 在线 · $btCount BT"
+        onlineCount > 0 -> "$onlineCount 在线"
+        btCount > 0 -> "$btCount BT"
+        else -> stream.protocol.displayName()
+    }
+    val chips = listOf(
+        Triple("线路", "${routeCount}条", AnimeAccentCyan),
+        Triple("来源", "${sourceCount}个", AnimeAccentPink),
+        Triple("分布", distribution, AnimeAccentAmber),
+        Triple("当前", stream.protocol.displayName(), AnimeAccentGreen),
+    )
+
+    LazyRow(
+        modifier = modifier.height(31.dp),
+        horizontalArrangement = Arrangement.spacedBy(7.dp),
+        contentPadding = PaddingValues(end = 2.dp),
+    ) {
+        items(chips.size) { index ->
+            val (label, value, color) = chips[index]
+            PortraitRouteInsightChip(label = label, value = value, color = color)
+        }
+    }
+}
+
+@Composable
+private fun PortraitRouteInsightChip(label: String, value: String, color: Color) {
+    Row(
+        modifier = Modifier
+            .height(30.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(color.copy(alpha = 0.12f))
+            .padding(horizontal = 9.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, style = MaterialTheme.typography.labelSmall, color = color, maxLines = 1)
+        Text(
+            text = value,
+            style = MaterialTheme.typography.labelSmall,
+            color = Color.White.copy(alpha = 0.86f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 

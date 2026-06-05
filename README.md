@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.44
+
+中文：
+
+- 竖屏未全屏播放页的“当前线路”卡新增聚合状态条，展示线路数量、来源数量、在线/BT 分布和当前协议。
+- 保持视频画面上的竖屏控制层精简，把线路透明度放在视频下方信息区，避免遮挡观看。
+- 竖屏播放页更接近 Animeko 式聚合体验：用户不用展开线路面板，也能知道自动匹配到了哪些资源类型。
+
+English:
+
+- Added an aggregation status strip to the portrait non-fullscreen Current Route card, showing route count, source count, online/BT distribution, and the active protocol.
+- Kept the portrait video overlay lightweight by placing route transparency below the video instead of covering playback.
+- The portrait watch page now feels closer to Animeko-style aggregation: users can understand what the auto matcher found without opening the route panel.
+
 ### v0.2.43
 
 中文：
