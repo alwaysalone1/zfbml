@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.49
+
+中文：
+
+- 竖屏未全屏播放器的轻量控制条新增细进度线，保留国内视频 App 常见的播放进度感。
+- 进度线只展示当前播放进度，不增加额外按钮，继续保持竖屏观看态精简。
+- 全屏播放器仍保留完整进度拖动、清晰度、倍速、线路、选集和弹幕设置入口。
+
+English:
+
+- Added a thin progress line to the portrait non-fullscreen lightweight controls for a familiar Chinese video-app playback feel.
+- The progress line is informational only and does not add extra buttons, keeping portrait viewing compact.
+- Fullscreen playback continues to provide full seeking, quality, speed, route, episode, and danmaku controls.
+
 ### v0.2.48
 
 中文：

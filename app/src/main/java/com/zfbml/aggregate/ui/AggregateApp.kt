@@ -1512,7 +1512,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.48")
+                setRequestProperty("User-Agent", "ZFBML/0.2.49")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -4425,6 +4425,7 @@ private fun PlayerBottomControls(
             PlayerCompactInteractionRow(
                 positionText = formatPlaybackTime(displayPositionMs),
                 durationText = if (durationMs > 0L) formatPlaybackTime(durationMs) else "--:--",
+                progressFraction = if (durationMs > 0L) displayPositionMs.toFloat() / durationMs.toFloat() else null,
                 danmakuEnabled = danmakuEnabled,
                 onToggleDanmaku = onToggleDanmaku,
                 onOpenDanmakuSettings = { onShowPanel(PlayerPanel.Danmaku) },
@@ -4470,6 +4471,7 @@ private fun PlayerBottomControls(
 private fun PlayerCompactInteractionRow(
     positionText: String,
     durationText: String,
+    progressFraction: Float?,
     danmakuEnabled: Boolean,
     onToggleDanmaku: () -> Unit,
     onOpenDanmakuSettings: () -> Unit,
@@ -4477,65 +4479,78 @@ private fun PlayerCompactInteractionRow(
     onEnterFullscreen: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier = modifier.height(34.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Text(
-            text = "$positionText / $durationText",
-            style = MaterialTheme.typography.labelSmall,
-            color = Color.White.copy(alpha = 0.82f),
-            maxLines = 1,
-            modifier = Modifier.width(86.dp),
-        )
         Row(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight()
-                .clip(RoundedCornerShape(8.dp))
-                .background(Color.Black.copy(alpha = 0.38f))
-                .clickable(onClick = onOpenDanmakuSettings)
-                .padding(horizontal = 10.dp),
-            horizontalArrangement = Arrangement.spacedBy(7.dp),
+            modifier = Modifier.fillMaxWidth().height(34.dp),
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Icon(
-                Icons.Filled.ClosedCaption,
-                contentDescription = null,
-                tint = if (danmakuEnabled) AnimeAccentPink else Color.White.copy(alpha = 0.42f),
-                modifier = Modifier.size(16.dp),
-            )
             Text(
-                text = if (danmakuEnabled) "发个友善的弹幕" else "弹幕已关闭",
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.White.copy(alpha = 0.72f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
-            )
-            Text(
-                text = "弹幕",
+                text = "$positionText / $durationText",
                 style = MaterialTheme.typography.labelSmall,
-                color = AnimeAccentCyan,
+                color = Color.White.copy(alpha = 0.82f),
                 maxLines = 1,
+                modifier = Modifier.width(86.dp),
+            )
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color.Black.copy(alpha = 0.38f))
+                    .clickable(onClick = onOpenDanmakuSettings)
+                    .padding(horizontal = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(7.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    Icons.Filled.ClosedCaption,
+                    contentDescription = null,
+                    tint = if (danmakuEnabled) AnimeAccentPink else Color.White.copy(alpha = 0.42f),
+                    modifier = Modifier.size(16.dp),
+                )
+                Text(
+                    text = if (danmakuEnabled) "发个友善的弹幕" else "弹幕已关闭",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.72f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+                Text(
+                    text = "弹幕",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = AnimeAccentCyan,
+                    maxLines = 1,
+                )
+            }
+            PlayerTinyToggle(
+                text = if (danmakuEnabled) "开" else "关",
+                selected = danmakuEnabled,
+                onClick = onToggleDanmaku,
+            )
+            PlayerTinyIconAction(
+                icon = Icons.Filled.MoreVert,
+                contentDescription = "更多播放设置",
+                onClick = onOpenMore,
+            )
+            PlayerTinyIconAction(
+                icon = Icons.Filled.Fullscreen,
+                contentDescription = "全屏播放",
+                onClick = onEnterFullscreen,
             )
         }
-        PlayerTinyToggle(
-            text = if (danmakuEnabled) "开" else "关",
-            selected = danmakuEnabled,
-            onClick = onToggleDanmaku,
-        )
-        PlayerTinyIconAction(
-            icon = Icons.Filled.MoreVert,
-            contentDescription = "更多播放设置",
-            onClick = onOpenMore,
-        )
-        PlayerTinyIconAction(
-            icon = Icons.Filled.Fullscreen,
-            contentDescription = "全屏播放",
-            onClick = onEnterFullscreen,
-        )
+        if (progressFraction != null) {
+            LinearProgressIndicator(
+                progress = { progressFraction.coerceIn(0f, 1f) },
+                modifier = Modifier.fillMaxWidth().height(2.dp).clip(RoundedCornerShape(999.dp)),
+                color = AnimeAccentPink,
+                trackColor = Color.White.copy(alpha = 0.16f),
+            )
+        }
     }
 }
 
