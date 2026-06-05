@@ -1512,7 +1512,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.45")
+                setRequestProperty("User-Agent", "ZFBML/0.2.46")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2470,6 +2470,10 @@ private fun DetailHero(
                 }
             }
             RouteStatsRow(routeUiState)
+            DetailFirstPlayStrip(
+                state = routeUiState,
+                selectedEpisode = selectedEpisode,
+            )
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -2495,6 +2499,84 @@ private fun DetailHero(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun DetailFirstPlayStrip(
+    state: RouteUiState,
+    selectedEpisode: Episode?,
+) {
+    val accent = when (state.status) {
+        RouteLoadStatus.Ready -> AnimeAccentGreen
+        RouteLoadStatus.Loading -> AnimeAccentCyan
+        RouteLoadStatus.Failed -> MaterialTheme.colorScheme.error
+        RouteLoadStatus.Empty -> AnimeAccentAmber
+        RouteLoadStatus.Idle -> AnimeMuted
+    }
+    val title = when (state.status) {
+        RouteLoadStatus.Ready -> "即将播放"
+        RouteLoadStatus.Loading -> "正在找源"
+        RouteLoadStatus.Failed -> "线路异常"
+        RouteLoadStatus.Empty -> "等待可播线路"
+        RouteLoadStatus.Idle -> "等待选集"
+    }
+    val episodeLabel = selectedEpisode?.index?.let { "第 $it 集" } ?: state.selectedEpisodeTitle
+    val decision = when (state.status) {
+        RouteLoadStatus.Ready -> "$episodeLabel · ${state.recommendationTitle} · ${state.recommendationDetail}"
+        RouteLoadStatus.Loading -> "$episodeLabel · 在线优先，BT 兜底"
+        else -> state.detail
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color.Black.copy(alpha = 0.32f))
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier = Modifier.size(34.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.18f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (state.status == RouteLoadStatus.Loading) {
+                CircularProgressIndicator(color = accent, modifier = Modifier.size(18.dp))
+            } else {
+                Icon(
+                    imageVector = if (state.status == RouteLoadStatus.Ready) Icons.Filled.Check else Icons.Filled.VideoLibrary,
+                    contentDescription = null,
+                    tint = accent,
+                    modifier = Modifier.size(18.dp),
+                )
+            }
+        }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                title,
+                style = MaterialTheme.typography.labelMedium,
+                color = accent,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+            )
+            Text(
+                decision,
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.White.copy(alpha = 0.78f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        Text(
+            if (state.canPlay) "自动最佳" else "自动匹配",
+            style = MaterialTheme.typography.labelSmall,
+            color = accent,
+            maxLines = 1,
+            modifier = Modifier
+                .clip(RoundedCornerShape(8.dp))
+                .background(accent.copy(alpha = 0.12f))
+                .padding(horizontal = 8.dp, vertical = 5.dp),
+        )
     }
 }
 

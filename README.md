@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.46
+
+中文：
+
+- 详情页海报首屏新增“即将播放”决策条，直接显示当前集、自动推荐来源和推荐线路详情。
+- 自动找源、线路异常、暂无线路等状态会在首屏用不同颜色和文案提示，用户点播放前就能判断下一步会发生什么。
+- 保持详情页原有线路排序和播放逻辑不变，只把 Animeko 式自动推荐结果前置到首屏。
+
+English:
+
+- Added an Up Next decision strip to the detail hero, showing the selected episode, auto-recommended source, and recommended route details.
+- Auto-matching, route errors, and empty-route states now surface directly in the first viewport with distinct labels and colors before the user taps play.
+- Kept the existing route sorting and playback behavior unchanged while moving the Animeko-style recommendation result into the hero.
+
 ### v0.2.45
 
 中文：
