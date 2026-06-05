@@ -9,6 +9,7 @@ import android.os.Build
 import android.view.View
 import android.view.WindowInsets
 import android.view.WindowInsetsController
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -1507,7 +1508,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.35")
+                setRequestProperty("User-Agent", "ZFBML/0.2.36")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -3500,6 +3501,16 @@ private fun PlayerScreen(
         val portrait = maxHeight > maxWidth
         LaunchedEffect(activity, portrait) {
             activity?.setPlayerImmersive(!portrait)
+        }
+        BackHandler {
+            when {
+                activePanel != null -> {
+                    activePanel = null
+                    revealControls()
+                }
+                !portrait -> exitFullscreen()
+                else -> onBack()
+            }
         }
         if (portrait) {
             Column(Modifier.fillMaxSize()) {

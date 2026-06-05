@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.36
+
+中文：
+
+- 播放页接管系统返回键：如果线路、选集、清晰度、弹幕等面板已打开，返回键会先关闭当前面板，不会直接退出播放。
+- 横屏全屏时按返回键会优先退出全屏并恢复竖屏/系统栏，符合国内移动端播放器的常见操作习惯。
+- 只有在竖屏且没有弹出面板时，返回键才会离开播放页回到详情页，减少误退出。
+
+English:
+
+- The player now handles system Back in layers: route, episode, quality, danmaku, and other panels close first instead of leaving playback immediately.
+- Pressing Back in landscape fullscreen exits fullscreen and restores portrait/system bars first, matching common mobile video-player behavior.
+- Back only leaves the player when already in portrait with no player panel open, reducing accidental exits.
+
 ### v0.2.35
 
 中文：
