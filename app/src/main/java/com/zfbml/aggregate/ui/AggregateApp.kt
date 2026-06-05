@@ -1510,7 +1510,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.39")
+                setRequestProperty("User-Agent", "ZFBML/0.2.40")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2897,27 +2897,87 @@ private fun RouteSourceSelector(
                 .thenByDescending { it.hasPlayable }
                 .thenBy { it.name },
         )
-    LazyRow(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        item {
-            RouteSourceFilterCard(
-                title = "全部线路",
-                subtitle = "${routes.count { it.protocol != StreamProtocol.WEBVIEW_ONLY }} 可播 · ${routes.count { it.protocol == StreamProtocol.BITTORRENT }} BT",
-                badge = "${routes.size}",
-                selected = selectedSourceId == null,
-                recommended = false,
-                onClick = { onSelected(null) },
+    val recommendedGroup = groups.firstOrNull { it.isRecommended }
+    val selectedGroup = groups.firstOrNull { it.id == selectedSourceId }
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(9.dp)) {
+        RouteSourceSelectorHeader(
+            recommendedName = recommendedGroup?.name ?: "自动推荐",
+            selectedName = selectedGroup?.name ?: "全部线路",
+            routeCount = routes.size,
+            sourceCount = groups.size,
+        )
+        LazyRow(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            item {
+                RouteSourceFilterCard(
+                    title = "全部线路",
+                    subtitle = "${routes.count { it.protocol != StreamProtocol.WEBVIEW_ONLY }} 可播 · ${routes.count { it.protocol == StreamProtocol.BITTORRENT }} BT",
+                    badge = "${routes.size}",
+                    selected = selectedSourceId == null,
+                    recommended = false,
+                    onClick = { onSelected(null) },
+                )
+            }
+            items(groups) { group ->
+                RouteSourceFilterCard(
+                    title = group.name,
+                    subtitle = group.sourceSummary,
+                    badge = group.count.toString(),
+                    selected = selectedSourceId == group.id,
+                    recommended = group.isRecommended,
+                    onClick = { onSelected(group.id) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RouteSourceSelectorHeader(
+    recommendedName: String,
+    selectedName: String,
+    routeCount: Int,
+    sourceCount: Int,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                text = "线路来源",
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = "$sourceCount 个来源 · $routeCount 条线路",
+                style = MaterialTheme.typography.bodySmall,
+                color = AnimeMuted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
-        items(groups) { group ->
-            RouteSourceFilterCard(
-                title = group.name,
-                subtitle = group.sourceSummary,
-                badge = group.count.toString(),
-                selected = selectedSourceId == group.id,
-                recommended = group.isRecommended,
-                onClick = { onSelected(group.id) },
-            )
-        }
+        RouteSourceStatusPill("推荐", recommendedName, AnimeAccentPink)
+        RouteSourceStatusPill("当前", selectedName, AnimeAccentCyan)
+    }
+}
+
+@Composable
+private fun RouteSourceStatusPill(label: String, value: String, color: Color) {
+    Row(
+        modifier = Modifier
+            .height(30.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(color.copy(alpha = 0.13f))
+            .padding(horizontal = 9.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, style = MaterialTheme.typography.labelSmall, color = color, maxLines = 1)
+        Text(value, style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.86f), maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -2971,7 +3031,7 @@ private fun RouteSourceFilterCard(
                 overflow = TextOverflow.Ellipsis,
             )
             if (recommended) {
-                Text("推荐源", style = MaterialTheme.typography.labelSmall, color = AnimeAccentPink, maxLines = 1)
+                Text(if (selected) "推荐 · 当前" else "推荐源", style = MaterialTheme.typography.labelSmall, color = AnimeAccentPink, maxLines = 1)
             } else {
                 Text(if (selected) "正在查看" else "点击筛选", style = MaterialTheme.typography.labelSmall, color = if (selected) AnimeAccentCyan else AnimeMuted, maxLines = 1)
             }

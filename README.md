@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.40
+
+中文：
+
+- 详情页展开线路时新增“线路来源”标题区，直接显示来源数量、线路数量、推荐来源和当前筛选。
+- 来源筛选卡在推荐源被选中时会标记为“推荐 · 当前”，用户切源时能更清楚当前看到的是哪一组线路。
+- 保持自动推荐和线路排序逻辑不变，只增强详情页手动选源时的上下文和可读性。
+
+English:
+
+- Added a Route Sources header when the detail route list is expanded, showing source count, route count, the recommended source, and the current filter.
+- Source filter cards now show “recommended + current” when the recommended source is selected, making manual source switching easier to understand.
+- Kept the existing auto-recommendation and route sorting behavior unchanged while improving the context around manual source selection.
+
 ### v0.2.39
 
 中文：
