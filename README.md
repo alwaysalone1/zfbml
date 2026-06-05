@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.43
+
+中文：
+
+- 横屏全屏右侧快捷 Dock 调整为国内播放器常见的常用控制层：弹幕、清晰、倍速、线路、选集、更多。
+- 缓存入口保留在底部横向控制栏和“更多”面板中，避免右侧固定 Dock 显得像下载工具。
+- 全屏底部横向控制栏新增“更多”入口，复杂播放设置统一收拢，竖屏未全屏状态继续保持精简。
+
+English:
+
+- Reworked the landscape fullscreen quick dock into a familiar Chinese video-player control stack: danmaku, quality, speed, routes, episodes, and More.
+- Kept caching available from the bottom action row and More panel while removing it from the fixed right dock so the player feels less like a downloader.
+- Added a More entry to the fullscreen bottom action row, keeping advanced playback settings grouped while the portrait non-fullscreen layout stays lightweight.
+
 ### v0.2.42
 
 中文：

@@ -1512,7 +1512,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.42")
+                setRequestProperty("User-Agent", "ZFBML/0.2.43")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -3552,7 +3552,6 @@ private fun PlayerScreen(
                     playbackSpeed = playbackSpeed,
                     routeCount = routeOptions.size,
                     episodeCount = detail.episodes.size,
-                    offlineEnabled = currentStream.protocol != StreamProtocol.BITTORRENT,
                     danmakuEnabled = danmakuEnabled,
                     onToggleDanmaku = {
                         revealControls()
@@ -3561,12 +3560,6 @@ private fun PlayerScreen(
                     onShowPanel = { panel ->
                         revealControls()
                         activePanel = panel
-                    },
-                    onOffline = {
-                        revealControls()
-                        if (currentStream.protocol != StreamProtocol.BITTORRENT) {
-                            graph.media3DownloadCoordinator.enqueue(currentStream, "${detail.title} ${currentEpisode.title}")
-                        }
                     },
                 )
             }
@@ -4467,11 +4460,9 @@ private fun PlayerLandscapeQuickDock(
     playbackSpeed: Float,
     routeCount: Int,
     episodeCount: Int,
-    offlineEnabled: Boolean,
     danmakuEnabled: Boolean,
     onToggleDanmaku: () -> Unit,
     onShowPanel: (PlayerPanel) -> Unit,
-    onOffline: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -4485,22 +4476,6 @@ private fun PlayerLandscapeQuickDock(
             verticalArrangement = Arrangement.spacedBy(6.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            PlayerDockAction(
-                icon = Icons.Filled.VideoLibrary,
-                label = "线路",
-                value = "${routeCount.coerceAtLeast(1)}条",
-                selected = routeCount > 1,
-                enabled = routeCount > 1,
-                onClick = { onShowPanel(PlayerPanel.Route) },
-            )
-            PlayerDockAction(
-                icon = Icons.AutoMirrored.Filled.PlaylistPlay,
-                label = "选集",
-                value = if (episodeCount > 1) "${episodeCount}集" else "单集",
-                selected = episodeCount > 1,
-                enabled = episodeCount > 1,
-                onClick = { onShowPanel(PlayerPanel.Episode) },
-            )
             PlayerDockAction(
                 icon = Icons.Filled.ClosedCaption,
                 label = "弹幕",
@@ -4521,11 +4496,26 @@ private fun PlayerLandscapeQuickDock(
                 onClick = { onShowPanel(PlayerPanel.Speed) },
             )
             PlayerDockAction(
-                icon = Icons.Filled.CloudDownload,
-                label = "缓存",
-                value = if (offlineEnabled) "离线" else "不可用",
-                enabled = offlineEnabled,
-                onClick = onOffline,
+                icon = Icons.Filled.VideoLibrary,
+                label = "线路",
+                value = "${routeCount.coerceAtLeast(1)}条",
+                selected = routeCount > 1,
+                enabled = routeCount > 1,
+                onClick = { onShowPanel(PlayerPanel.Route) },
+            )
+            PlayerDockAction(
+                icon = Icons.AutoMirrored.Filled.PlaylistPlay,
+                label = "选集",
+                value = if (episodeCount > 1) "${episodeCount}集" else "单集",
+                selected = episodeCount > 1,
+                enabled = episodeCount > 1,
+                onClick = { onShowPanel(PlayerPanel.Episode) },
+            )
+            PlayerDockAction(
+                icon = Icons.Filled.MoreVert,
+                label = "更多",
+                value = "设置",
+                onClick = { onShowPanel(PlayerPanel.More) },
             )
         }
     }
@@ -4710,6 +4700,14 @@ private fun PlayerActionBar(
                 text = "缓存",
                 enabled = offlineEnabled,
                 onClick = onOffline,
+            )
+        }
+        item {
+            PlayerTextAction(
+                icon = Icons.Filled.MoreVert,
+                text = "更多",
+                selected = activePanel == PlayerPanel.More,
+                onClick = { onShowPanel(PlayerPanel.More) },
             )
         }
     }
