@@ -25,6 +25,22 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.33
+
+中文：
+
+- 播放器竖屏控制层改为更精简的国内移动端视频布局：点击画面后只保留时间、弹幕输入、弹幕开关和“更多”入口，不再把清晰度、倍速、线路、选集、缓存全部铺在视频底部。
+- 新增“播放设置”面板，竖屏通过“更多”进入清晰度、倍速、选集、线路、弹幕开关和缓存，避免未全屏观看时像调试工具栏。
+- 横屏全屏补齐右侧快捷 dock，增加倍速和缓存入口，保留线路、选集、弹幕、清晰度等完整功能，更符合全屏观看时的高频操作密度。
+- 竖屏视频下方信息区改为“标题信息 + 合集入口 + 当前线路小条 + 快速选集”，线路状态更像视频 App 的播放信息，不再像独立下载/换源工具。
+
+English:
+
+- Simplified the portrait player overlay into a more China-market mobile video layout: after tapping the video it now keeps only time, danmaku input, danmaku toggle, and a More entry instead of spreading quality, speed, routes, episodes, and cache across the video bottom.
+- Added a Playback Settings panel so portrait users can reach quality, speed, episodes, routes, danmaku toggle, and cache through More without making the non-fullscreen player feel like a debug toolbar.
+- Expanded the landscape fullscreen quick dock with speed and cache while keeping routes, episodes, danmaku, and quality, matching the denser control set expected in fullscreen playback.
+- Reworked the portrait below-video area into title info, collection entry, current-route strip, and quick episodes so route state feels like normal video playback information rather than a standalone source-switching tool.
+
 ### v0.2.32
 
 中文：

@@ -244,6 +244,7 @@ private enum class AppTab(val label: String, val icon: ImageVector) {
 }
 
 private enum class PlayerPanel {
+    More,
     Danmaku,
     Quality,
     Speed,
@@ -1466,7 +1467,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.32")
+                setRequestProperty("User-Agent", "ZFBML/0.2.33")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -3372,6 +3373,7 @@ private fun PlayerScreen(
                 PlayerLandscapeQuickDock(
                     routeCount = routeOptions.size,
                     episodeCount = detail.episodes.size,
+                    offlineEnabled = currentStream.protocol != StreamProtocol.BITTORRENT,
                     danmakuEnabled = danmakuEnabled,
                     onToggleDanmaku = {
                         revealControls()
@@ -3380,6 +3382,12 @@ private fun PlayerScreen(
                     onShowPanel = { panel ->
                         revealControls()
                         activePanel = panel
+                    },
+                    onOffline = {
+                        revealControls()
+                        if (currentStream.protocol != StreamProtocol.BITTORRENT) {
+                            graph.media3DownloadCoordinator.enqueue(currentStream, "${detail.title} ${currentEpisode.title}")
+                        }
                     },
                 )
             }
@@ -3516,6 +3524,16 @@ private fun PlayerScreen(
                         playbackSpeed = it
                         activePanel = null
                     },
+                    onShowPanel = { nextPanel ->
+                        revealControls()
+                        activePanel = nextPanel
+                    },
+                    onOffline = {
+                        revealControls()
+                        if (currentStream.protocol != StreamProtocol.BITTORRENT) {
+                            graph.media3DownloadCoordinator.enqueue(currentStream, "${detail.title} ${currentEpisode.title}")
+                        }
+                    },
                     modifier = Modifier.fillMaxSize(),
                 )
             }
@@ -3546,10 +3564,11 @@ private fun PortraitWatchInfoPanel(
     val routeName = route?.routeName.orEmpty().ifBlank { stream.protocol.displayName() }
     val quality = stream.quality.orEmpty().ifBlank { "自动" }
     val message = routeNotice ?: errorMessage
+    val currentEpisodeText = episode.index?.let { "第 $it 集" } ?: "当前集"
     LazyColumn(
         modifier = modifier.fillMaxWidth().background(AnimeBackground),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 28.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 15.dp, bottom = 28.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -3562,7 +3581,7 @@ private fun PortraitWatchInfoPanel(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    VideoMetaChip(episode.index?.let { "第 $it 集" } ?: "当前集")
+                    VideoMetaChip(currentEpisodeText)
                     VideoMetaChip(quality)
                     VideoMetaChip(playbackState)
                 }
@@ -3577,14 +3596,61 @@ private fun PortraitWatchInfoPanel(
         }
         item {
             Surface(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(enabled = detail.episodes.size > 1) { onShowPanel(PlayerPanel.Episode) }
+                    .focusable(),
                 shape = RoundedCornerShape(8.dp),
                 color = AnimePanel,
                 border = BorderStroke(1.dp, AnimeBorder),
             ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 13.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.PlaylistPlay,
+                        contentDescription = null,
+                        tint = AnimeAccentPink,
+                        modifier = Modifier.size(23.dp),
+                    )
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                        Text(
+                            text = "合集 · ${detail.title}",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            text = "正在看 $currentEpisodeText · ${episode.title}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = AnimeMuted,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    Text(
+                        text = if (detail.episodes.size > 1) "${detail.episodes.size} 集 >" else "单集",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = if (detail.episodes.size > 1) AnimeAccentCyan else AnimeMuted,
+                        maxLines = 1,
+                    )
+                }
+            }
+        }
+        item {
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(8.dp),
+                color = AnimePanelSoft.copy(alpha = 0.72f),
+                border = BorderStroke(1.dp, AnimeBorder),
+            ) {
                 Column(
-                    modifier = Modifier.fillMaxWidth().padding(14.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 13.dp, vertical = 11.dp),
+                    verticalArrangement = Arrangement.spacedBy(9.dp),
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -3592,15 +3658,15 @@ private fun PortraitWatchInfoPanel(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Box(
-                            modifier = Modifier.size(42.dp).clip(RoundedCornerShape(8.dp)).background(providerAccent(route?.sourceId ?: stream.providerId)),
+                            modifier = Modifier.size(34.dp).clip(RoundedCornerShape(8.dp)).background(providerAccent(route?.sourceId ?: stream.providerId)),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text(sourceName.take(1), style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold)
+                            Text(sourceName.take(1), style = MaterialTheme.typography.labelLarge, color = Color.White, fontWeight = FontWeight.Bold)
                         }
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                             Text("当前线路", style = MaterialTheme.typography.labelMedium, color = AnimeAccentCyan)
                             Text(
-                                text = "$sourceName · $routeName · ${stream.protocol.displayName()}",
+                                text = "$sourceName · $quality · ${stream.protocol.displayName()}",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = Color.White,
                                 maxLines = 1,
@@ -3611,20 +3677,22 @@ private fun PortraitWatchInfoPanel(
                             Text("换源", color = if (routes.size > 1) AnimeAccentCyan else AnimeMuted)
                         }
                     }
-                    message?.let {
-                        Text(
-                            text = it,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = if (routeNotice != null) AnimeAccentAmber else MaterialTheme.colorScheme.error,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
+                    Text(
+                        text = message ?: "自动优先在线源；播放失败时会尝试切到下一条可播线路",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = when {
+                            errorMessage != null -> MaterialTheme.colorScheme.error
+                            routeNotice != null -> AnimeAccentAmber
+                            else -> AnimeMuted
+                        },
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                     if (hasPlaybackIssue) {
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
                             TextButton(
                                 onClick = onRetryRoute,
-                                modifier = Modifier.weight(1f).height(40.dp).background(Color.White.copy(alpha = 0.06f), RoundedCornerShape(8.dp)),
+                                modifier = Modifier.weight(1f).height(38.dp).background(Color.White.copy(alpha = 0.06f), RoundedCornerShape(8.dp)),
                             ) {
                                 Icon(Icons.Filled.Refresh, contentDescription = null, tint = AnimeAccentPink, modifier = Modifier.size(17.dp))
                                 Spacer(Modifier.width(6.dp))
@@ -3633,7 +3701,7 @@ private fun PortraitWatchInfoPanel(
                             TextButton(
                                 onClick = onNextRoute,
                                 enabled = canSelectNextRoute,
-                                modifier = Modifier.weight(1f).height(40.dp).background(Color.White.copy(alpha = 0.06f), RoundedCornerShape(8.dp)),
+                                modifier = Modifier.weight(1f).height(38.dp).background(Color.White.copy(alpha = 0.06f), RoundedCornerShape(8.dp)),
                             ) {
                                 Icon(Icons.Filled.VideoLibrary, contentDescription = null, tint = if (canSelectNextRoute) AnimeAccentCyan else AnimeMuted, modifier = Modifier.size(17.dp))
                                 Spacer(Modifier.width(6.dp))
@@ -3641,68 +3709,54 @@ private fun PortraitWatchInfoPanel(
                             }
                         }
                     }
-                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-                        PortraitPanelAction(
-                            icon = Icons.Filled.HighQuality,
-                            title = "清晰度",
-                            subtitle = quality,
-                            onClick = { onShowPanel(PlayerPanel.Quality) },
-                            modifier = Modifier.weight(1f),
-                        )
-                        PortraitPanelAction(
-                            icon = Icons.Filled.Speed,
-                            title = "倍速",
-                            subtitle = "播放设置",
-                            onClick = { onShowPanel(PlayerPanel.Speed) },
-                            modifier = Modifier.weight(1f),
-                        )
+                }
+            }
+        }
+        if (detail.episodes.size > 1) {
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("快速选集", style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold)
+                    TextButton(onClick = { onShowPanel(PlayerPanel.Episode) }) {
+                        Text("全部 ${detail.episodes.size}", color = AnimeAccentCyan)
                     }
                 }
             }
-        }
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text("选集", style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold)
-                TextButton(onClick = { onShowPanel(PlayerPanel.Episode) }, enabled = detail.episodes.size > 1) {
-                    Text("全部 ${detail.episodes.size}", color = if (detail.episodes.size > 1) AnimeAccentCyan else AnimeMuted)
-                }
-            }
-        }
-        item {
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                items(detail.episodes.take(18), key = { it.id }) { item ->
-                    val selected = item.id == episode.id
-                    val loading = episodeLoadingId == item.id
-                    Card(
-                        onClick = { onEpisodeSelected(item) },
-                        enabled = episodeLoadingId == null || loading,
-                        modifier = Modifier.width(104.dp).height(62.dp).focusable(),
-                        shape = RoundedCornerShape(8.dp),
-                        colors = CardDefaults.cardColors(containerColor = if (selected) AnimePanelSoft else AnimePanel),
-                        border = BorderStroke(1.dp, if (selected) AnimeAccentCyan else AnimeBorder),
-                    ) {
-                        Column(
-                            modifier = Modifier.fillMaxSize().padding(10.dp),
-                            verticalArrangement = Arrangement.SpaceBetween,
+            item {
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(detail.episodes.take(18), key = { it.id }) { item ->
+                        val selected = item.id == episode.id
+                        val loading = episodeLoadingId == item.id
+                        Card(
+                            onClick = { onEpisodeSelected(item) },
+                            enabled = episodeLoadingId == null || loading,
+                            modifier = Modifier.width(82.dp).height(48.dp).focusable(),
+                            shape = RoundedCornerShape(8.dp),
+                            colors = CardDefaults.cardColors(containerColor = if (selected) AnimePanelSoft else AnimePanel),
+                            border = BorderStroke(1.dp, if (selected) AnimeAccentCyan else AnimeBorder),
                         ) {
-                            Text(
-                                text = item.index?.let { "%02d".format(it) } ?: "SP",
-                                style = MaterialTheme.typography.labelLarge,
-                                color = if (selected) AnimeAccentCyan else Color.White,
-                                fontWeight = FontWeight.Bold,
-                                maxLines = 1,
-                            )
-                            Text(
-                                text = if (loading) "加载中" else item.title,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = if (selected) Color.White else AnimeMuted,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
+                            Column(
+                                modifier = Modifier.fillMaxSize().padding(horizontal = 9.dp, vertical = 7.dp),
+                                verticalArrangement = Arrangement.SpaceBetween,
+                            ) {
+                                Text(
+                                    text = item.index?.let { "%02d".format(it) } ?: "SP",
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = if (selected) AnimeAccentCyan else Color.White,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                )
+                                Text(
+                                    text = if (loading) "加载中" else item.title,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = if (selected) Color.White else AnimeMuted,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
                         }
                     }
                 }
@@ -3716,34 +3770,6 @@ private fun PortraitWatchInfoPanel(
                 maxLines = 4,
                 overflow = TextOverflow.Ellipsis,
             )
-        }
-    }
-}
-
-@Composable
-private fun PortraitPanelAction(
-    icon: ImageVector,
-    title: String,
-    subtitle: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Surface(
-        modifier = modifier.height(58.dp).clickable(onClick = onClick).focusable(),
-        shape = RoundedCornerShape(8.dp),
-        color = Color.White.copy(alpha = 0.06f),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f)),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(9.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(icon, contentDescription = null, tint = AnimeAccentPink, modifier = Modifier.size(19.dp))
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(title, style = MaterialTheme.typography.labelMedium, color = Color.White)
-                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            }
         }
     }
 }
@@ -3893,80 +3919,80 @@ private fun PlayerBottomControls(
             .padding(horizontal = 10.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(if (compact) 5.dp else 7.dp),
     ) {
-        if (!compact) Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(
-                text = formatPlaybackTime(displayPositionMs),
-                style = MaterialTheme.typography.labelMedium,
-                color = Color.White,
-                modifier = Modifier.width(48.dp),
-            )
-            if (durationMs > 0L) {
-                Slider(
-                    value = displayPositionMs.toFloat(),
-                    onValueChange = { pendingSeekMs = it.toLong() },
-                    onValueChangeFinished = {
-                        pendingSeekMs?.let(onSeek)
-                        pendingSeekMs = null
-                    },
-                    valueRange = 0f..durationMs.toFloat(),
-                    colors = SliderDefaults.colors(
-                        thumbColor = AnimeAccentPink,
-                        activeTrackColor = AnimeAccentPink,
-                        inactiveTrackColor = Color.White.copy(alpha = 0.24f),
-                    ),
-                    modifier = Modifier.weight(1f).height(30.dp).focusable(),
+        if (!compact) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(
+                    text = formatPlaybackTime(displayPositionMs),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = Color.White,
+                    modifier = Modifier.width(48.dp),
                 )
-            } else {
-                LinearProgressIndicator(
-                    modifier = Modifier.weight(1f).height(3.dp),
-                    color = AnimeAccentCyan,
-                    trackColor = Color.White.copy(alpha = 0.18f),
+                if (durationMs > 0L) {
+                    Slider(
+                        value = displayPositionMs.toFloat(),
+                        onValueChange = { pendingSeekMs = it.toLong() },
+                        onValueChangeFinished = {
+                            pendingSeekMs?.let(onSeek)
+                            pendingSeekMs = null
+                        },
+                        valueRange = 0f..durationMs.toFloat(),
+                        colors = SliderDefaults.colors(
+                            thumbColor = AnimeAccentPink,
+                            activeTrackColor = AnimeAccentPink,
+                            inactiveTrackColor = Color.White.copy(alpha = 0.24f),
+                        ),
+                        modifier = Modifier.weight(1f).height(30.dp).focusable(),
+                    )
+                } else {
+                    LinearProgressIndicator(
+                        modifier = Modifier.weight(1f).height(3.dp),
+                        color = AnimeAccentCyan,
+                        trackColor = Color.White.copy(alpha = 0.18f),
+                    )
+                }
+                Text(
+                    text = if (durationMs > 0L) formatPlaybackTime(durationMs) else "--:--",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = Color.White.copy(alpha = 0.78f),
+                    modifier = Modifier.width(48.dp),
                 )
             }
-            Text(
-                text = if (durationMs > 0L) formatPlaybackTime(durationMs) else "--:--",
-                style = MaterialTheme.typography.labelMedium,
-                color = Color.White.copy(alpha = 0.78f),
-                modifier = Modifier.width(48.dp),
-            )
-        }
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(
-                    text = routeSummary,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                (routeNotice ?: errorMessage)?.let { message ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text(
-                        text = message,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (routeNotice != null) AnimeAccentAmber else MaterialTheme.colorScheme.error,
+                        text = routeSummary,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-                } ?: Text(
-                    text = "${currentStream.protocol.displayName()} · ${currentStream.codec.orEmpty().ifBlank { "自适应解码" }}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.White.copy(alpha = 0.64f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                    (routeNotice ?: errorMessage)?.let { message ->
+                        Text(
+                            text = message,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (routeNotice != null) AnimeAccentAmber else MaterialTheme.colorScheme.error,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    } ?: Text(
+                        text = "${currentStream.protocol.displayName()} · ${currentStream.codec.orEmpty().ifBlank { "自适应解码" }}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.64f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
-        }
 
-        if (!compact) {
             PlayerDanmakuInputBar(
                 danmakuEnabled = danmakuEnabled,
                 modifier = Modifier.fillMaxWidth(),
@@ -3978,28 +4004,40 @@ private fun PlayerBottomControls(
                 danmakuEnabled = danmakuEnabled,
                 onToggleDanmaku = onToggleDanmaku,
                 onOpenDanmakuSettings = { onShowPanel(PlayerPanel.Danmaku) },
+                onOpenMore = { onShowPanel(PlayerPanel.More) },
                 modifier = Modifier.fillMaxWidth(),
             )
         }
 
-        PlayerActionBar(
-            quality = quality,
-            routeCount = routeOptions.size,
-            episodeCount = episodeCount,
-            danmakuEnabled = danmakuEnabled,
-            density = density,
-            playbackSpeed = playbackSpeed,
-            activePanel = activePanel,
-            offlineEnabled = currentStream.protocol != StreamProtocol.BITTORRENT,
-            hasPlaybackIssue = hasPlaybackIssue,
-            canSelectNextRoute = canSelectNextRoute,
-            onToggleDanmaku = onToggleDanmaku,
-            onShowPanel = onShowPanel,
-            onOffline = onOffline,
-            onRetryRoute = onRetryRoute,
-            onNextRoute = onNextRoute,
-            modifier = Modifier.fillMaxWidth(),
-        )
+        if (compact && hasPlaybackIssue) {
+            PlayerCompactRecoveryRow(
+                canSelectNextRoute = canSelectNextRoute,
+                onRetryRoute = onRetryRoute,
+                onNextRoute = onNextRoute,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+
+        if (!compact) {
+            PlayerActionBar(
+                quality = quality,
+                routeCount = routeOptions.size,
+                episodeCount = episodeCount,
+                danmakuEnabled = danmakuEnabled,
+                density = density,
+                playbackSpeed = playbackSpeed,
+                activePanel = activePanel,
+                offlineEnabled = currentStream.protocol != StreamProtocol.BITTORRENT,
+                hasPlaybackIssue = hasPlaybackIssue,
+                canSelectNextRoute = canSelectNextRoute,
+                onToggleDanmaku = onToggleDanmaku,
+                onShowPanel = onShowPanel,
+                onOffline = onOffline,
+                onRetryRoute = onRetryRoute,
+                onNextRoute = onNextRoute,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
     }
 }
 
@@ -4010,6 +4048,7 @@ private fun PlayerCompactInteractionRow(
     danmakuEnabled: Boolean,
     onToggleDanmaku: () -> Unit,
     onOpenDanmakuSettings: () -> Unit,
+    onOpenMore: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -4050,7 +4089,7 @@ private fun PlayerCompactInteractionRow(
                 modifier = Modifier.weight(1f),
             )
             Text(
-                text = "设置",
+                text = "弹幕",
                 style = MaterialTheme.typography.labelSmall,
                 color = AnimeAccentCyan,
                 maxLines = 1,
@@ -4061,6 +4100,12 @@ private fun PlayerCompactInteractionRow(
             selected = danmakuEnabled,
             onClick = onToggleDanmaku,
         )
+        PlayerTinyToggle(
+            text = "更多",
+            selected = false,
+            onClick = onOpenMore,
+            modifier = Modifier.width(50.dp),
+        )
     }
 }
 
@@ -4069,14 +4114,19 @@ private fun PlayerTinyToggle(
     text: String,
     selected: Boolean,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier.width(44.dp),
+    enabled: Boolean = true,
 ) {
     TextButton(
         onClick = onClick,
-        modifier = Modifier.width(44.dp).height(34.dp).focusable(),
+        enabled = enabled,
+        modifier = modifier.height(34.dp).focusable(),
         shape = RoundedCornerShape(8.dp),
         colors = ButtonDefaults.textButtonColors(
             containerColor = if (selected) AnimeAccentPink.copy(alpha = 0.18f) else Color.White.copy(alpha = 0.08f),
             contentColor = if (selected) AnimeAccentPink else Color.White.copy(alpha = 0.68f),
+            disabledContainerColor = Color.White.copy(alpha = 0.05f),
+            disabledContentColor = Color.White.copy(alpha = 0.34f),
         ),
         contentPadding = PaddingValues(0.dp),
     ) {
@@ -4085,12 +4135,42 @@ private fun PlayerTinyToggle(
 }
 
 @Composable
+private fun PlayerCompactRecoveryRow(
+    canSelectNextRoute: Boolean,
+    onRetryRoute: () -> Unit,
+    onNextRoute: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.height(34.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        PlayerTinyToggle(
+            text = "重试",
+            selected = true,
+            onClick = onRetryRoute,
+            modifier = Modifier.weight(1f),
+        )
+        PlayerTinyToggle(
+            text = "下一线路",
+            selected = false,
+            onClick = onNextRoute,
+            modifier = Modifier.weight(1f),
+            enabled = canSelectNextRoute,
+        )
+    }
+}
+
+@Composable
 private fun PlayerLandscapeQuickDock(
     routeCount: Int,
     episodeCount: Int,
+    offlineEnabled: Boolean,
     danmakuEnabled: Boolean,
     onToggleDanmaku: () -> Unit,
     onShowPanel: (PlayerPanel) -> Unit,
+    onOffline: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -4100,8 +4180,8 @@ private fun PlayerLandscapeQuickDock(
         border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f)),
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 7.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 7.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             PlayerDockAction(
@@ -4125,14 +4205,20 @@ private fun PlayerLandscapeQuickDock(
                 onClick = onToggleDanmaku,
             )
             PlayerDockAction(
-                icon = Icons.Filled.Settings,
-                label = "设置",
-                onClick = { onShowPanel(PlayerPanel.Danmaku) },
-            )
-            PlayerDockAction(
                 icon = Icons.Filled.HighQuality,
                 label = "清晰",
                 onClick = { onShowPanel(PlayerPanel.Quality) },
+            )
+            PlayerDockAction(
+                icon = Icons.Filled.Speed,
+                label = "倍速",
+                onClick = { onShowPanel(PlayerPanel.Speed) },
+            )
+            PlayerDockAction(
+                icon = Icons.Filled.CloudDownload,
+                label = "缓存",
+                enabled = offlineEnabled,
+                onClick = onOffline,
             )
         }
     }
@@ -4154,7 +4240,7 @@ private fun PlayerDockAction(
     TextButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = Modifier.width(54.dp).height(48.dp).focusable(),
+        modifier = Modifier.width(52.dp).height(42.dp).focusable(),
         shape = RoundedCornerShape(8.dp),
         colors = ButtonDefaults.textButtonColors(
             containerColor = if (selected) AnimeAccentCyan.copy(alpha = 0.14f) else Color.White.copy(alpha = 0.06f),
@@ -4338,6 +4424,8 @@ private fun PlayerOptionPanel(
     onDanmakuAlphaChange: (Float) -> Unit,
     onDanmakuFontScaleChange: (Float) -> Unit,
     onSpeedSelected: (Float) -> Unit,
+    onShowPanel: (PlayerPanel) -> Unit,
+    onOffline: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     BoxWithConstraints(modifier = modifier) {
@@ -4368,6 +4456,17 @@ private fun PlayerOptionPanel(
                 PlayerPanelHeader(title = playerPanelTitle(panel), onDismiss = onDismiss)
                 Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
                     when (panel) {
+                        PlayerPanel.More -> PlayerMorePanel(
+                            routeCount = routeOptions.size,
+                            episodeCount = detail.episodes.size,
+                            quality = currentStream.quality.orEmpty().ifBlank { "自动" },
+                            playbackSpeed = playbackSpeed,
+                            danmakuEnabled = danmakuEnabled,
+                            offlineEnabled = currentStream.protocol != StreamProtocol.BITTORRENT,
+                            onToggleDanmaku = onToggleDanmaku,
+                            onShowPanel = onShowPanel,
+                            onOffline = onOffline,
+                        )
                         PlayerPanel.Danmaku -> PlayerDanmakuSettingsPanel(
                             danmakuEnabled = danmakuEnabled,
                             density = density,
@@ -4424,6 +4523,67 @@ private fun PlayerPanelHeader(title: String, onDismiss: () -> Unit) {
         TextButton(onClick = onDismiss, modifier = Modifier.height(34.dp)) {
             Text("关闭", color = Color.White.copy(alpha = 0.82f), style = MaterialTheme.typography.labelMedium)
         }
+    }
+}
+
+@Composable
+private fun PlayerMorePanel(
+    routeCount: Int,
+    episodeCount: Int,
+    quality: String,
+    playbackSpeed: Float,
+    danmakuEnabled: Boolean,
+    offlineEnabled: Boolean,
+    onToggleDanmaku: () -> Unit,
+    onShowPanel: (PlayerPanel) -> Unit,
+    onOffline: () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+        PlayerSelectableRow(
+            title = "清晰度",
+            subtitle = quality,
+            selected = false,
+            icon = Icons.Filled.HighQuality,
+            onClick = { onShowPanel(PlayerPanel.Quality) },
+        )
+        PlayerSelectableRow(
+            title = "倍速",
+            subtitle = formatPlaybackSpeed(playbackSpeed),
+            selected = false,
+            icon = Icons.Filled.Speed,
+            onClick = { onShowPanel(PlayerPanel.Speed) },
+        )
+        PlayerSelectableRow(
+            title = "选集",
+            subtitle = "共 $episodeCount 集",
+            selected = false,
+            enabled = episodeCount > 1,
+            icon = Icons.AutoMirrored.Filled.PlaylistPlay,
+            onClick = { onShowPanel(PlayerPanel.Episode) },
+        )
+        PlayerSelectableRow(
+            title = "播放线路",
+            subtitle = if (routeCount > 1) "$routeCount 条可切换" else "当前仅 1 条线路",
+            selected = false,
+            enabled = routeCount > 1,
+            icon = Icons.Filled.VideoLibrary,
+            onClick = { onShowPanel(PlayerPanel.Route) },
+        )
+        PlayerSelectableRow(
+            title = if (danmakuEnabled) "弹幕已开启" else "弹幕已关闭",
+            subtitle = "点击开关；详细样式在弹幕设置",
+            selected = danmakuEnabled,
+            icon = Icons.Filled.ClosedCaption,
+            onClick = onToggleDanmaku,
+        )
+        PlayerSelectableRow(
+            title = "缓存本集",
+            subtitle = if (offlineEnabled) "加入离线缓存" else "BT 线路暂不支持普通缓存",
+            selected = false,
+            enabled = offlineEnabled,
+            icon = Icons.Filled.CloudDownload,
+            onClick = onOffline,
+        )
     }
 }
 
@@ -5201,6 +5361,7 @@ private fun playerRouteLabel(stream: MediaStream, route: RouteCandidate?): Strin
 
 private fun playerPanelTitle(panel: PlayerPanel): String {
     return when (panel) {
+        PlayerPanel.More -> "播放设置"
         PlayerPanel.Danmaku -> "弹幕设置"
         PlayerPanel.Quality -> "清晰度"
         PlayerPanel.Speed -> "播放速度"
