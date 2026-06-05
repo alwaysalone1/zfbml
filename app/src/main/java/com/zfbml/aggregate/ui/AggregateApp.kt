@@ -1512,7 +1512,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.50")
+                setRequestProperty("User-Agent", "ZFBML/0.2.51")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -3413,9 +3413,13 @@ private fun PlayerScreen(
             routeNotice = "当前线路失败：$errorMessage"
         }
     }
-    LaunchedEffect(state.hasRenderedFirstFrame, state.isPlaying, currentStream.id) {
-        if ((state.hasRenderedFirstFrame || state.isPlaying) && routeNotice != null) {
-            routeNotice = null
+    LaunchedEffect(state.hasRenderedFirstFrame, state.isPlaying, currentStream.id, routeNotice) {
+        val notice = routeNotice ?: return@LaunchedEffect
+        if (state.hasRenderedFirstFrame || state.isPlaying) {
+            delay(1_800)
+            if (routeNotice == notice && (state.hasRenderedFirstFrame || state.isPlaying)) {
+                routeNotice = null
+            }
         }
     }
     DisposableEffect(Unit) {
@@ -3478,6 +3482,8 @@ private fun PlayerScreen(
         revealControls()
         routeNotice = "正在加载 ${target.title} 的播放线路..."
         episodeLoadingId = target.id
+        val previousSourceId = currentRoute?.sourceId
+        val previousProviderId = currentStream.providerId
         scope.launch {
             val result = runCatching { graph.sourceRegistry.resolveRouteCandidates(target) }
             result
@@ -3485,14 +3491,24 @@ private fun PlayerScreen(
                     val sortedCandidates = sortRoutesForUi(candidates)
                     val preferredRoute = preferredRouteForNextEpisode(
                         routes = sortedCandidates,
-                        currentSourceId = currentRoute?.sourceId,
-                        currentProviderId = currentStream.providerId,
+                        currentSourceId = previousSourceId,
+                        currentProviderId = previousProviderId,
                     )
                     if (preferredRoute != null) {
                         currentEpisode = target
                         playerRoutes = sortedCandidates
                         failedStreamIds = emptySet()
-                        routeNotice = null
+                        val episodeLabel = target.index?.let { "第 $it 集" } ?: target.title
+                        val routeLabel = preferredRoute.routeName.orEmpty()
+                            .ifBlank { preferredRoute.quality.orEmpty() }
+                            .ifBlank { preferredRoute.protocol.displayName() }
+                        val keptSource = preferredRoute.sourceId == previousSourceId ||
+                            preferredRoute.stream.providerId == previousProviderId
+                        routeNotice = if (keptSource) {
+                            "已切到 $episodeLabel · 沿用 ${preferredRoute.sourceName} $routeLabel"
+                        } else {
+                            "已切到 $episodeLabel · 当前源不可用，改用 ${preferredRoute.sourceName} $routeLabel"
+                        }
                         activePanel = null
                         revealControls()
                         currentStream = preferredRoute.stream

@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.51
+
+中文：
+
+- 播放页切换剧集成功后会显示短提示，明确告知本集是沿用当前来源还是回退到其他来源。
+- 线路提示会在播放稳定后短暂保留再自动收起，避免一闪而过，也避免长期遮挡画面。
+- 切集时会先缓存原始来源信息，异步解析完成后仍能准确判断是否真正沿用了原来源。
+
+English:
+
+- Episode switching now shows a short confirmation telling whether the new episode reused the current source or fell back to another source.
+- Route notices remain visible briefly after playback stabilizes, avoiding both flicker and long-lived obstruction.
+- The previous source is captured before async route resolution so the reuse/fallback message stays accurate.
+
 ### v0.2.50
 
 中文：
