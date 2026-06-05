@@ -1,5 +1,9 @@
 package com.zfbml.aggregate.ui
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import android.content.pm.ActivityInfo
 import android.graphics.BitmapFactory
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -46,6 +50,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ClosedCaption
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Forward10
+import androidx.compose.material.icons.filled.FullscreenExit
 import androidx.compose.material.icons.filled.HighQuality
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Movie
@@ -250,6 +255,12 @@ private enum class PlayerPanel {
     Speed,
     Route,
     Episode,
+}
+
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
 }
 
 private val AnimeBackground = Color(0xFF0D0D10)
@@ -1467,7 +1478,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.33")
+                setRequestProperty("User-Agent", "ZFBML/0.2.34")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -3042,6 +3053,7 @@ private fun PlayerScreen(
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
+    val activity = remember(context) { context.findActivity() }
     val scope = rememberCoroutineScope()
     val engine = remember { ExoPlayerEngine(context) }
     val state by engine.state.collectAsState()
@@ -3090,6 +3102,16 @@ private fun PlayerScreen(
         } else {
             revealControls()
         }
+    }
+
+    fun enterFullscreen() {
+        revealControls()
+        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+    }
+
+    fun exitFullscreen() {
+        revealControls()
+        activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
     }
 
     LaunchedEffect(playbackSpeed) {
@@ -3164,6 +3186,7 @@ private fun PlayerScreen(
     }
     DisposableEffect(Unit) {
         onDispose {
+            activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
             engine.release()
             graph.torrentEngine.release()
         }
@@ -3331,6 +3354,7 @@ private fun PlayerScreen(
                 PlayerTopOverlay(
                     overlayState = overlayState,
                     onBack = onBack,
+                    onExitFullscreen = ::exitFullscreen,
                     compact = compact,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -3421,6 +3445,7 @@ private fun PlayerScreen(
                         revealControls()
                         activePanel = panel
                     },
+                    onEnterFullscreen = ::enterFullscreen,
                     onToggleDanmaku = {
                         revealControls()
                         danmakuEnabled = !danmakuEnabled
@@ -3778,10 +3803,11 @@ private fun PortraitWatchInfoPanel(
 private fun PlayerTopOverlay(
     overlayState: PlayerOverlayState,
     onBack: () -> Unit,
+    onExitFullscreen: () -> Unit,
     compact: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    val routePillWidth = if (compact) 112.dp else 168.dp
+    val routePillWidth = 168.dp
     Box(
         modifier = modifier
             .background(
@@ -3822,7 +3848,14 @@ private fun PlayerTopOverlay(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            PlayerPill(text = overlayState.routeLabel, color = AnimeAccentCyan, modifier = Modifier.width(routePillWidth))
+            if (!compact) {
+                PlayerPill(text = overlayState.routeLabel, color = AnimeAccentCyan, modifier = Modifier.width(routePillWidth))
+                PlayerCircleButton(
+                    icon = Icons.Filled.FullscreenExit,
+                    contentDescription = "退出全屏",
+                    onClick = onExitFullscreen,
+                )
+            }
         }
     }
 }
@@ -3884,6 +3917,7 @@ private fun PlayerBottomControls(
     canSelectNextRoute: Boolean,
     onSeek: (Long) -> Unit,
     onShowPanel: (PlayerPanel) -> Unit,
+    onEnterFullscreen: () -> Unit,
     onToggleDanmaku: () -> Unit,
     onOffline: () -> Unit,
     onRetryRoute: () -> Unit,
@@ -4005,6 +4039,7 @@ private fun PlayerBottomControls(
                 onToggleDanmaku = onToggleDanmaku,
                 onOpenDanmakuSettings = { onShowPanel(PlayerPanel.Danmaku) },
                 onOpenMore = { onShowPanel(PlayerPanel.More) },
+                onEnterFullscreen = onEnterFullscreen,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
@@ -4049,6 +4084,7 @@ private fun PlayerCompactInteractionRow(
     onToggleDanmaku: () -> Unit,
     onOpenDanmakuSettings: () -> Unit,
     onOpenMore: () -> Unit,
+    onEnterFullscreen: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -4104,6 +4140,12 @@ private fun PlayerCompactInteractionRow(
             text = "更多",
             selected = false,
             onClick = onOpenMore,
+            modifier = Modifier.width(50.dp),
+        )
+        PlayerTinyToggle(
+            text = "全屏",
+            selected = false,
+            onClick = onEnterFullscreen,
             modifier = Modifier.width(50.dp),
         )
     }

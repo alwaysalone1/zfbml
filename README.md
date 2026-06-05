@@ -25,6 +25,22 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.34
+
+中文：
+
+- 竖屏播放器底部精简控制行新增“全屏”入口，点击后直接请求横屏全屏播放，不再依赖用户自己旋转手机。
+- 横屏播放器顶部新增退出全屏按钮，点击后恢复系统默认方向；退出播放页时也会清理方向请求，避免离开播放器后继续横屏锁定。
+- 竖屏顶部叠层移除线路胶囊，线路信息统一放到视频下方的“当前线路”区域，竖屏播放器本体更接近国内移动端视频 App 的轻叠层。
+- 横屏继续保留线路标签和完整功能入口，让全屏观看承担高级操作，竖屏观看保持轻量。
+
+English:
+
+- Added a fullscreen entry to the compact portrait player row; tapping it requests landscape fullscreen playback directly instead of relying on the user to rotate the phone manually.
+- Added an exit-fullscreen button to the landscape player top overlay. Leaving the player also clears the orientation request so the rest of the app does not stay locked in landscape.
+- Removed the route pill from the portrait top overlay and kept route details in the below-video current-route area, making the portrait player surface closer to lightweight China-market mobile video apps.
+- Kept route status and full action density in landscape so fullscreen playback remains the place for advanced controls while portrait stays focused.
+
 ### v0.2.33
 
 中文：
