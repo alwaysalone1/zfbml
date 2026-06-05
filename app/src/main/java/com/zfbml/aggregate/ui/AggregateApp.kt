@@ -1510,7 +1510,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.38")
+                setRequestProperty("User-Agent", "ZFBML/0.2.39")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2598,6 +2598,7 @@ private fun DetailRouteStatusCard(
                 accent = accent,
                 onPlayBest = onPlayBest,
             )
+            RouteSourceFocusRow(state = state, accent = accent)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -2659,6 +2660,61 @@ private fun RouteRecommendationBand(
                 Text(actionLabel, maxLines = 1)
             }
         }
+    }
+}
+
+@Composable
+private fun RouteSourceFocusRow(state: RouteUiState, accent: Color) {
+    val route = state.bestRoute
+    val sourceValue = route?.sourceName ?: when (state.status) {
+        RouteLoadStatus.Loading -> "匹配中"
+        RouteLoadStatus.Failed -> "失败"
+        RouteLoadStatus.Empty -> "暂无"
+        RouteLoadStatus.Idle -> "待选择"
+        RouteLoadStatus.Ready -> "自动"
+    }
+    val qualityValue = route?.let { playerQualityLabel(it) } ?: when (state.status) {
+        RouteLoadStatus.Loading -> "在线优先"
+        RouteLoadStatus.Failed -> "重试"
+        RouteLoadStatus.Empty -> "换集"
+        RouteLoadStatus.Idle -> "自动"
+        RouteLoadStatus.Ready -> "自动"
+    }
+    val protocolValue = route?.protocol?.displayName() ?: when (state.status) {
+        RouteLoadStatus.Loading -> "HLS/MP4"
+        RouteLoadStatus.Failed -> "诊断"
+        RouteLoadStatus.Empty -> "BT 兜底"
+        RouteLoadStatus.Idle -> "多源"
+        RouteLoadStatus.Ready -> "可播"
+    }
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        RouteSourceFocusChip("推荐源", sourceValue, accent, Modifier.weight(1f))
+        RouteSourceFocusChip("画质/线路", qualityValue, AnimeAccentCyan, Modifier.weight(1f))
+        RouteSourceFocusChip("播放方式", protocolValue, AnimeAccentAmber, Modifier.weight(1f))
+    }
+}
+
+@Composable
+private fun RouteSourceFocusChip(
+    label: String,
+    value: String,
+    accent: Color,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .heightIn(min = 54.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(accent.copy(alpha = 0.11f))
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(label, style = MaterialTheme.typography.labelSmall, color = accent, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(value, style = MaterialTheme.typography.bodySmall, color = Color.White, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 

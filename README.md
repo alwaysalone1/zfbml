@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.39
+
+中文：
+
+- 详情页线路诊断卡新增“推荐源摘要”：不展开线路列表也能看到当前自动推荐来源、画质/线路名和播放方式。
+- 线路体验更接近 Animeko 式聚合逻辑：App 自动选择最佳线路，但把来源和播放方式明确展示给用户。
+- 保持现有自动匹配和播放逻辑不变，只增强详情页对“正在用哪个源播放”的可读性。
+
+English:
+
+- Added a recommended-source summary to the detail route diagnostics card, showing the selected source, quality/route label, and playback protocol before the route list is expanded.
+- The route experience is closer to Animeko-style aggregation: the app still chooses the best route automatically while making the source and playback mode explicit.
+- Kept the existing matching and playback logic unchanged, focusing this update on detail-page route transparency.
+
 ### v0.2.38
 
 中文：
