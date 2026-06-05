@@ -1512,7 +1512,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.51")
+                setRequestProperty("User-Agent", "ZFBML/0.2.52")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -4944,6 +4944,9 @@ private fun PlayerOptionPanel(
         val landscape = maxWidth > maxHeight
         val panelWidth = if (maxWidth < 420.dp) maxWidth else 380.dp
         val panelHeight = if (maxHeight < 420.dp) maxHeight else 390.dp
+        val currentRoute = routeOptions.firstOrNull { route ->
+            route.stream.id == currentStream.id || route.stream.url == currentStream.url
+        }
         val scrimAlpha = if (landscape) 0.18f else 0.36f
         val panelInteractionSource = remember { MutableInteractionSource() }
         val panelModifier = if (landscape) {
@@ -5027,6 +5030,9 @@ private fun PlayerOptionPanel(
                         PlayerPanel.Episode -> PlayerEpisodePanel(
                             detail = detail,
                             currentEpisode = currentEpisode,
+                            currentStream = currentStream,
+                            currentRoute = currentRoute,
+                            routeCount = routeOptions.size,
                             episodeLoadingId = episodeLoadingId,
                             onEpisodeSelected = onEpisodeSelected,
                         )
@@ -5706,6 +5712,9 @@ private fun RoutePanelMetricChip(
 private fun PlayerEpisodePanel(
     detail: MediaDetail,
     currentEpisode: Episode,
+    currentStream: MediaStream,
+    currentRoute: RouteCandidate?,
+    routeCount: Int,
     episodeLoadingId: String?,
     onEpisodeSelected: (Episode) -> Unit,
 ) {
@@ -5719,6 +5728,9 @@ private fun PlayerEpisodePanel(
                 title = detail.title,
                 currentEpisode = currentEpisode,
                 episodeCount = detail.episodes.size,
+                currentStream = currentStream,
+                currentRoute = currentRoute,
+                routeCount = routeCount,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
@@ -5749,8 +5761,23 @@ private fun PlayerEpisodeSummaryCard(
     title: String,
     currentEpisode: Episode,
     episodeCount: Int,
+    currentStream: MediaStream,
+    currentRoute: RouteCandidate?,
+    routeCount: Int,
     modifier: Modifier = Modifier,
 ) {
+    val sourceName = currentRoute?.sourceName
+        ?: currentStream.metadata["sourceName"]
+        ?: currentStream.metadata["routeProviderName"]
+        ?: currentStream.providerId
+    val protocolName = currentStream.protocol.displayName()
+    val routeLabel = currentRoute?.primaryRouteLabel()
+        ?: currentStream.quality.orEmpty().ifBlank { currentStream.protocol.displayName() }
+    val routeCountLabel = if (routeCount > 0) "$routeCount 条线路" else "线路解析中"
+    val playbackRouteText = listOf(sourceName, routeLabel, protocolName, routeCountLabel)
+        .filter { it.isNotBlank() }
+        .distinct()
+        .joinToString(" · ")
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(8.dp),
@@ -5784,6 +5811,17 @@ private fun PlayerEpisodeSummaryCard(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
+                Row(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) {
+                    RouteStatusBadge("当前源", AnimeAccentPink)
+                    Text(
+                        playbackRouteText,
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White.copy(alpha = 0.64f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
         }
     }

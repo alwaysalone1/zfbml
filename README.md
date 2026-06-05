@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.52
+
+中文：
+
+- 全屏播放器的选集面板顶部新增当前播放状态头，集中展示番名、当前集、总集数、当前源、画质/协议和线路数量。
+- 换集前就能在同一个面板里确认当前使用的来源，减少在“选集”和“线路”面板之间来回切换。
+- 本轮不做 HTML 原型，继续直接改原生 Compose 播放器 UI，方向更贴近 B站/腾讯/爱奇艺等国内视频 App 的使用习惯。
+
+English:
+
+- Added a current playback summary header to the fullscreen episode panel, showing title, current episode, total episodes, source, quality/protocol, and route count.
+- Users can confirm the active source before switching episodes without bouncing between the episode and route panels.
+- This update continues in native Compose UI instead of HTML prototypes, moving the player closer to familiar Chinese video-app interaction patterns.
+
 ### v0.2.51
 
 中文：
