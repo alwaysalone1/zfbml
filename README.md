@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.41
+
+中文：
+
+- 竖屏未全屏播放器底部控制行继续做轻量化：将“更多”和“全屏”文字按钮改成三点和全屏图标入口。
+- 保留弹幕输入条、时间和弹幕开关的精简结构，未全屏状态不增加清晰度、线路、选集等重控件。
+- 故障恢复场景的“重试/下一线路”文字按钮继续保留，确保异常状态下操作语义明确。
+
+English:
+
+- Refined the portrait non-fullscreen bottom control row by replacing the More and Fullscreen text buttons with compact icon actions.
+- Kept the lightweight portrait structure around time, danmaku input, and danmaku toggle without adding heavy quality, route, or episode controls.
+- Left the Retry and Next Route text actions in recovery states so error handling remains explicit.
+
 ### v0.2.40
 
 中文：

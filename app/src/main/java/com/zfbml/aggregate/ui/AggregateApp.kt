@@ -57,10 +57,12 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ClosedCaption
 import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Forward10
+import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.FullscreenExit
 import androidx.compose.material.icons.filled.HighQuality
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Movie
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
@@ -1510,7 +1512,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.40")
+                setRequestProperty("User-Agent", "ZFBML/0.2.41")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -4302,18 +4304,42 @@ private fun PlayerCompactInteractionRow(
             selected = danmakuEnabled,
             onClick = onToggleDanmaku,
         )
-        PlayerTinyToggle(
-            text = "更多",
-            selected = false,
+        PlayerTinyIconAction(
+            icon = Icons.Filled.MoreVert,
+            contentDescription = "更多播放设置",
             onClick = onOpenMore,
-            modifier = Modifier.width(50.dp),
         )
-        PlayerTinyToggle(
-            text = "全屏",
-            selected = false,
+        PlayerTinyIconAction(
+            icon = Icons.Filled.Fullscreen,
+            contentDescription = "全屏播放",
             onClick = onEnterFullscreen,
-            modifier = Modifier.width(50.dp),
         )
+    }
+}
+
+@Composable
+private fun PlayerTinyIconAction(
+    icon: ImageVector,
+    contentDescription: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier.width(38.dp),
+    selected: Boolean = false,
+    enabled: Boolean = true,
+) {
+    TextButton(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier.height(34.dp).focusable(),
+        shape = RoundedCornerShape(8.dp),
+        colors = ButtonDefaults.textButtonColors(
+            containerColor = if (selected) AnimeAccentPink.copy(alpha = 0.18f) else Color.White.copy(alpha = 0.08f),
+            contentColor = if (selected) AnimeAccentPink else Color.White.copy(alpha = 0.72f),
+            disabledContainerColor = Color.White.copy(alpha = 0.05f),
+            disabledContentColor = Color.White.copy(alpha = 0.34f),
+        ),
+        contentPadding = PaddingValues(0.dp),
+    ) {
+        Icon(icon, contentDescription = contentDescription, modifier = Modifier.size(19.dp))
     }
 }
 
