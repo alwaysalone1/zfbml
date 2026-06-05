@@ -1510,7 +1510,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.37")
+                setRequestProperty("User-Agent", "ZFBML/0.2.38")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -3430,6 +3430,8 @@ private fun PlayerScreen(
                 modifier = Modifier.align(Alignment.CenterEnd).padding(end = 16.dp).zIndex(4f),
             ) {
                 PlayerLandscapeQuickDock(
+                    quality = currentStream.quality.orEmpty().ifBlank { "自动" },
+                    playbackSpeed = playbackSpeed,
                     routeCount = routeOptions.size,
                     episodeCount = detail.episodes.size,
                     offlineEnabled = currentStream.protocol != StreamProtocol.BITTORRENT,
@@ -4254,6 +4256,8 @@ private fun PlayerCompactRecoveryRow(
 
 @Composable
 private fun PlayerLandscapeQuickDock(
+    quality: String,
+    playbackSpeed: Float,
     routeCount: Int,
     episodeCount: Int,
     offlineEnabled: Boolean,
@@ -4277,6 +4281,7 @@ private fun PlayerLandscapeQuickDock(
             PlayerDockAction(
                 icon = Icons.Filled.VideoLibrary,
                 label = "线路",
+                value = "${routeCount.coerceAtLeast(1)}条",
                 selected = routeCount > 1,
                 enabled = routeCount > 1,
                 onClick = { onShowPanel(PlayerPanel.Route) },
@@ -4284,6 +4289,7 @@ private fun PlayerLandscapeQuickDock(
             PlayerDockAction(
                 icon = Icons.AutoMirrored.Filled.PlaylistPlay,
                 label = "选集",
+                value = if (episodeCount > 1) "${episodeCount}集" else "单集",
                 selected = episodeCount > 1,
                 enabled = episodeCount > 1,
                 onClick = { onShowPanel(PlayerPanel.Episode) },
@@ -4291,22 +4297,26 @@ private fun PlayerLandscapeQuickDock(
             PlayerDockAction(
                 icon = Icons.Filled.ClosedCaption,
                 label = "弹幕",
+                value = if (danmakuEnabled) "开" else "关",
                 selected = danmakuEnabled,
                 onClick = onToggleDanmaku,
             )
             PlayerDockAction(
                 icon = Icons.Filled.HighQuality,
                 label = "清晰",
+                value = quality,
                 onClick = { onShowPanel(PlayerPanel.Quality) },
             )
             PlayerDockAction(
                 icon = Icons.Filled.Speed,
                 label = "倍速",
+                value = formatPlaybackSpeed(playbackSpeed),
                 onClick = { onShowPanel(PlayerPanel.Speed) },
             )
             PlayerDockAction(
                 icon = Icons.Filled.CloudDownload,
                 label = "缓存",
+                value = if (offlineEnabled) "离线" else "不可用",
                 enabled = offlineEnabled,
                 onClick = onOffline,
             )
@@ -4318,6 +4328,7 @@ private fun PlayerLandscapeQuickDock(
 private fun PlayerDockAction(
     icon: ImageVector,
     label: String,
+    value: String,
     selected: Boolean = false,
     enabled: Boolean = true,
     onClick: () -> Unit,
@@ -4330,7 +4341,7 @@ private fun PlayerDockAction(
     TextButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = Modifier.width(52.dp).height(42.dp).focusable(),
+        modifier = Modifier.width(58.dp).height(50.dp).focusable(),
         shape = RoundedCornerShape(8.dp),
         colors = ButtonDefaults.textButtonColors(
             containerColor = if (selected) AnimeAccentCyan.copy(alpha = 0.14f) else Color.White.copy(alpha = 0.06f),
@@ -4341,10 +4352,17 @@ private fun PlayerDockAction(
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(2.dp),
+            verticalArrangement = Arrangement.spacedBy(1.dp),
         ) {
-            Icon(icon, contentDescription = label, modifier = Modifier.size(17.dp))
+            Icon(icon, contentDescription = label, modifier = Modifier.size(16.dp))
             Text(label, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+            Text(
+                text = value,
+                style = MaterialTheme.typography.labelSmall,
+                color = contentColor.copy(alpha = if (enabled) 0.72f else 0.5f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }

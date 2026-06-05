@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.38
+
+中文：
+
+- 横屏全屏右侧快捷 dock 增加实时状态：线路数、选集数量、弹幕开关、当前清晰度、倍速、缓存可用性会直接显示在入口上。
+- 全屏入口继续保持完整功能密度，但每个按钮改成“图标 + 功能名 + 当前值”的结构，减少用户打开面板前的猜测。
+- 竖屏未全屏播放层不增加额外按钮，继续保持精简观看，只把完整操作留给横屏全屏和播放器面板。
+
+English:
+
+- Added live state labels to the landscape fullscreen quick dock: route count, episode count, danmaku state, current quality, playback speed, and cache availability are now visible on the shortcuts.
+- Kept fullscreen as the dense-control mode, but each shortcut now uses an icon, action name, and current value so users can understand state before opening a panel.
+- Portrait non-fullscreen playback stays lightweight with no extra controls; full operations remain in landscape fullscreen and player drawers.
+
 ### v0.2.37
 
 中文：
