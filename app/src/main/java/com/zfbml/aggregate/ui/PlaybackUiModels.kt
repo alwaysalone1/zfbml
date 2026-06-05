@@ -36,6 +36,7 @@ internal data class PlayerOverlayState(
     val episodeTitle: String,
     val routeLabel: String,
     val playbackState: String,
+    val statusLabel: String,
     val notice: String?,
     val error: String?,
 )
@@ -192,6 +193,7 @@ internal fun buildPlayerOverlayState(
         episodeTitle = episodeTitle,
         routeLabel = playerRouteLabelForUi(stream, route),
         playbackState = playbackState,
+        statusLabel = playerStatusLabelForUi(playbackState, notice, error),
         notice = notice,
         error = error,
     )
@@ -227,6 +229,18 @@ private fun playerRouteLabelForUi(stream: MediaStream, route: RouteCandidate?): 
         stream.quality?.takeIf { it.isNotBlank() },
         stream.protocol.uiProtocolName(),
     ).joinToString(" · ").ifBlank { stream.protocol.uiProtocolName() }
+}
+
+private fun playerStatusLabelForUi(playbackState: String, notice: String?, error: String?): String {
+    return when {
+        !error.isNullOrBlank() -> "异常"
+        !notice.isNullOrBlank() -> "切源中"
+        playbackState.contains("播放", ignoreCase = true) -> "播放中"
+        playbackState.contains("缓冲", ignoreCase = true) -> "缓冲中"
+        playbackState.contains("就绪", ignoreCase = true) -> "已就绪"
+        playbackState.isNotBlank() -> playbackState
+        else -> "自动"
+    }
 }
 
 internal fun StreamProtocol.uiProtocolName(): String {

@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.42
+
+中文：
+
+- 横屏全屏播放器顶部从单一线路标签升级为“当前线路 + 播放状态”的紧凑状态胶囊，更贴近国内长视频播放器的信息层级。
+- 顶部状态会区分播放中、切源中和异常状态，让用户进入全屏后能快速判断当前线路是否稳定。
+- 新增播放器状态模型测试，覆盖正常播放、切源提示和播放异常三类短状态标签。
+
+English:
+
+- Upgraded the landscape fullscreen player top bar from a single route pill to a compact current-route plus playback-status capsule, closer to Chinese long-form video player hierarchy.
+- The top status now distinguishes playing, route switching, and error states so fullscreen playback communicates route stability faster.
+- Added player overlay model coverage for normal playback, route-switch notices, and playback error status labels.
+
 ### v0.2.41
 
 中文：

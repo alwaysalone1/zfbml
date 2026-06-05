@@ -1512,7 +1512,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.41")
+                setRequestProperty("User-Agent", "ZFBML/0.2.42")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -3975,7 +3975,6 @@ private fun PlayerTopOverlay(
     compact: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    val routePillWidth = 168.dp
     Box(
         modifier = modifier
             .background(
@@ -4017,11 +4016,77 @@ private fun PlayerTopOverlay(
                 )
             }
             if (!compact) {
-                PlayerPill(text = overlayState.routeLabel, color = AnimeAccentCyan, modifier = Modifier.width(routePillWidth))
+                PlayerTopRouteStatus(
+                    routeLabel = overlayState.routeLabel,
+                    statusLabel = overlayState.statusLabel,
+                    detail = overlayState.error ?: overlayState.notice ?: overlayState.playbackState,
+                    accent = when {
+                        overlayState.error != null -> MaterialTheme.colorScheme.error
+                        overlayState.notice != null -> AnimeAccentAmber
+                        else -> AnimeAccentCyan
+                    },
+                    modifier = Modifier.width(232.dp),
+                )
                 PlayerCircleButton(
                     icon = Icons.Filled.FullscreenExit,
                     contentDescription = "退出全屏",
                     onClick = onExitFullscreen,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun PlayerTopRouteStatus(
+    routeLabel: String,
+    statusLabel: String,
+    detail: String,
+    accent: Color,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier.height(46.dp),
+        shape = RoundedCornerShape(8.dp),
+        color = Color.Black.copy(alpha = 0.46f),
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.32f)),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 10.dp, vertical = 6.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Text(
+                text = routeLabel,
+                style = MaterialTheme.typography.labelMedium,
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(6.dp)
+                        .clip(CircleShape)
+                        .background(accent),
+                )
+                Text(
+                    text = statusLabel,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = accent,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                )
+                Text(
+                    text = detail,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White.copy(alpha = 0.62f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
                 )
             }
         }

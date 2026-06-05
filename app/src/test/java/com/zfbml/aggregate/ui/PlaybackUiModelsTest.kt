@@ -115,6 +115,43 @@ class PlaybackUiModelsTest {
         assertEquals(1, state.failedCount)
     }
 
+    @Test
+    fun playerOverlayStateUsesShortStatusLabels() {
+        val candidate = route("hls", StreamProtocol.HLS, 900, quality = "1080p")
+        val playing = buildPlayerOverlayState(
+            title = "Title",
+            episodeTitle = "第 1 集",
+            stream = candidate.stream,
+            route = candidate,
+            playbackState = "播放中",
+            notice = null,
+            error = null,
+        )
+        val switching = buildPlayerOverlayState(
+            title = "Title",
+            episodeTitle = "第 1 集",
+            stream = candidate.stream,
+            route = candidate,
+            playbackState = "缓冲中",
+            notice = "已切换到 Provider 1080p",
+            error = null,
+        )
+        val failed = buildPlayerOverlayState(
+            title = "Title",
+            episodeTitle = "第 1 集",
+            stream = candidate.stream,
+            route = candidate,
+            playbackState = "错误",
+            notice = null,
+            error = "Source failed",
+        )
+
+        assertEquals("Provider · 1080p · HLS", playing.routeLabel)
+        assertEquals("播放中", playing.statusLabel)
+        assertEquals("切源中", switching.statusLabel)
+        assertEquals("异常", failed.statusLabel)
+    }
+
     private fun episode(): Episode {
         return Episode(
             providerId = "bangumi-catalog",
