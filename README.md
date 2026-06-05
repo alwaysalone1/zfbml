@@ -25,6 +25,22 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.37
+
+中文：
+
+- 播放器设置面板改为视频内抽屉体验：打开清晰度、倍速、线路、选集、弹幕等面板时，画面会出现轻量暗色遮罩，点击空白区域可直接收起。
+- 横屏仍使用右侧抽屉，竖屏使用底部半屏面板；面板本身会消耗点击，不会误触关闭，交互更接近国内移动端视频 App。
+- “更多”面板从纵向设置列表改成 3 列播放器快捷宫格，清晰度、倍速、选集、线路、弹幕、缓存都以图标入口呈现。
+- 面板标题增加简短状态说明，把“播放设置”从普通系统弹窗改成播放器内控制层，减少工具感和调试感。
+
+English:
+
+- Reworked player option panels into in-video drawers: opening quality, speed, route, episode, danmaku, or other panels now adds a lightweight scrim, and tapping the empty area dismisses the panel.
+- Landscape still uses a right-side drawer while portrait uses a bottom half panel. Panel taps are consumed so users do not accidentally close it while operating controls.
+- Replaced the vertical More settings list with a 3-column player shortcut grid for quality, speed, episodes, routes, danmaku, and cache.
+- Added short state subtitles to panel headers so playback settings feel like part of the player control layer instead of generic system dialogs.
+
 ### v0.2.36
 
 中文：

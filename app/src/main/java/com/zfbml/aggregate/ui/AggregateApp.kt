@@ -38,6 +38,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -1508,7 +1510,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.36")
+                setRequestProperty("User-Agent", "ZFBML/0.2.37")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -4520,6 +4522,8 @@ private fun PlayerOptionPanel(
         val landscape = maxWidth > maxHeight
         val panelWidth = if (maxWidth < 420.dp) maxWidth else 380.dp
         val panelHeight = if (maxHeight < 420.dp) maxHeight else 390.dp
+        val scrimAlpha = if (landscape) 0.18f else 0.36f
+        val panelInteractionSource = remember { MutableInteractionSource() }
         val panelModifier = if (landscape) {
             Modifier.align(Alignment.CenterEnd).fillMaxHeight().width(panelWidth)
         } else {
@@ -4531,17 +4535,35 @@ private fun PlayerOptionPanel(
             RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)
         }
 
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = scrimAlpha))
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = onDismiss,
+                ),
+        )
         Surface(
-            modifier = panelModifier,
+            modifier = panelModifier.clickable(
+                interactionSource = panelInteractionSource,
+                indication = null,
+                onClick = {},
+            ),
             shape = panelShape,
-            color = Color.Black.copy(alpha = 0.9f),
+            color = Color(0xF217171C),
             border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f)),
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth().padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                PlayerPanelHeader(title = playerPanelTitle(panel), onDismiss = onDismiss)
+                PlayerPanelHeader(
+                    title = playerPanelTitle(panel),
+                    subtitle = playerPanelSubtitle(panel),
+                    onDismiss = onDismiss,
+                )
                 Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
                     when (panel) {
                         PlayerPanel.More -> PlayerMorePanel(
@@ -4551,7 +4573,6 @@ private fun PlayerOptionPanel(
                             playbackSpeed = playbackSpeed,
                             danmakuEnabled = danmakuEnabled,
                             offlineEnabled = currentStream.protocol != StreamProtocol.BITTORRENT,
-                            onToggleDanmaku = onToggleDanmaku,
                             onShowPanel = onShowPanel,
                             onOffline = onOffline,
                         )
@@ -4595,21 +4616,34 @@ private fun PlayerOptionPanel(
 }
 
 @Composable
-private fun PlayerPanelHeader(title: String, onDismiss: () -> Unit) {
+private fun PlayerPanelHeader(title: String, subtitle: String, onDismiss: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-            color = Color.White,
-            fontWeight = FontWeight.Bold,
+        Column(
             modifier = Modifier.weight(1f),
-        )
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.labelMedium,
+                color = Color.White.copy(alpha = 0.56f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
         TextButton(onClick = onDismiss, modifier = Modifier.height(34.dp)) {
-            Text("关闭", color = Color.White.copy(alpha = 0.82f), style = MaterialTheme.typography.labelMedium)
+            Text("收起", color = Color.White.copy(alpha = 0.82f), style = MaterialTheme.typography.labelMedium)
         }
     }
 }
@@ -4622,56 +4656,123 @@ private fun PlayerMorePanel(
     playbackSpeed: Float,
     danmakuEnabled: Boolean,
     offlineEnabled: Boolean,
-    onToggleDanmaku: () -> Unit,
     onShowPanel: (PlayerPanel) -> Unit,
     onOffline: () -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
-        PlayerSelectableRow(
+    val actions = listOf(
+        PlayerMoreAction(
             title = "清晰度",
             subtitle = quality,
-            selected = false,
             icon = Icons.Filled.HighQuality,
             onClick = { onShowPanel(PlayerPanel.Quality) },
-        )
-        PlayerSelectableRow(
+        ),
+        PlayerMoreAction(
             title = "倍速",
             subtitle = formatPlaybackSpeed(playbackSpeed),
-            selected = false,
             icon = Icons.Filled.Speed,
             onClick = { onShowPanel(PlayerPanel.Speed) },
-        )
-        PlayerSelectableRow(
+        ),
+        PlayerMoreAction(
             title = "选集",
             subtitle = "共 $episodeCount 集",
-            selected = false,
-            enabled = episodeCount > 1,
             icon = Icons.AutoMirrored.Filled.PlaylistPlay,
+            enabled = episodeCount > 1,
             onClick = { onShowPanel(PlayerPanel.Episode) },
-        )
-        PlayerSelectableRow(
-            title = "播放线路",
-            subtitle = if (routeCount > 1) "$routeCount 条可切换" else "当前仅 1 条线路",
-            selected = false,
-            enabled = routeCount > 1,
+        ),
+        PlayerMoreAction(
+            title = "线路",
+            subtitle = if (routeCount > 1) "$routeCount 条可切换" else "仅 1 条",
             icon = Icons.Filled.VideoLibrary,
+            enabled = routeCount > 1,
             onClick = { onShowPanel(PlayerPanel.Route) },
-        )
-        PlayerSelectableRow(
-            title = if (danmakuEnabled) "弹幕已开启" else "弹幕已关闭",
-            subtitle = "点击开关；详细样式在弹幕设置",
-            selected = danmakuEnabled,
+        ),
+        PlayerMoreAction(
+            title = "弹幕",
+            subtitle = if (danmakuEnabled) "已开启" else "已关闭",
             icon = Icons.Filled.ClosedCaption,
-            onClick = onToggleDanmaku,
-        )
-        PlayerSelectableRow(
-            title = "缓存本集",
-            subtitle = if (offlineEnabled) "加入离线缓存" else "BT 线路暂不支持普通缓存",
-            selected = false,
-            enabled = offlineEnabled,
+            selected = danmakuEnabled,
+            onClick = { onShowPanel(PlayerPanel.Danmaku) },
+        ),
+        PlayerMoreAction(
+            title = "缓存",
+            subtitle = if (offlineEnabled) "本集离线" else "暂不支持",
             icon = Icons.Filled.CloudDownload,
+            enabled = offlineEnabled,
             onClick = onOffline,
-        )
+        ),
+    )
+
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(3),
+        modifier = Modifier.fillMaxSize(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+        contentPadding = PaddingValues(top = 2.dp, bottom = 6.dp),
+    ) {
+        items(actions.size) { index ->
+            PlayerMoreActionTile(actions[index])
+        }
+    }
+}
+
+private data class PlayerMoreAction(
+    val title: String,
+    val subtitle: String,
+    val icon: ImageVector,
+    val enabled: Boolean = true,
+    val selected: Boolean = false,
+    val onClick: () -> Unit,
+)
+
+@Composable
+private fun PlayerMoreActionTile(action: PlayerMoreAction) {
+    val border = if (action.selected) {
+        BorderStroke(1.dp, AnimeAccentCyan.copy(alpha = 0.62f))
+    } else {
+        BorderStroke(1.dp, Color.White.copy(alpha = 0.06f))
+    }
+    val container = if (action.selected) {
+        AnimeAccentCyan.copy(alpha = 0.16f)
+    } else {
+        Color.White.copy(alpha = 0.08f)
+    }
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(86.dp)
+            .alpha(if (action.enabled) 1f else 0.42f)
+            .clickable(enabled = action.enabled, onClick = action.onClick),
+        shape = RoundedCornerShape(8.dp),
+        color = container,
+        border = border,
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 9.dp),
+            verticalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Icon(
+                imageVector = action.icon,
+                contentDescription = action.title,
+                tint = if (action.selected) AnimeAccentCyan else Color.White.copy(alpha = 0.9f),
+                modifier = Modifier.size(21.dp),
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = action.title,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = Color.White,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = action.subtitle,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White.copy(alpha = 0.56f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
     }
 }
 
@@ -5455,6 +5556,17 @@ private fun playerPanelTitle(panel: PlayerPanel): String {
         PlayerPanel.Speed -> "播放速度"
         PlayerPanel.Route -> "播放线路"
         PlayerPanel.Episode -> "选集"
+    }
+}
+
+private fun playerPanelSubtitle(panel: PlayerPanel): String {
+    return when (panel) {
+        PlayerPanel.More -> "清晰度 · 倍速 · 选集 · 线路"
+        PlayerPanel.Danmaku -> "密度 · 透明度 · 字号"
+        PlayerPanel.Quality -> "当前可用质量"
+        PlayerPanel.Speed -> "0.5x 至 2.0x"
+        PlayerPanel.Route -> "推荐线路优先展示"
+        PlayerPanel.Episode -> "当前合集剧集"
     }
 }
 
