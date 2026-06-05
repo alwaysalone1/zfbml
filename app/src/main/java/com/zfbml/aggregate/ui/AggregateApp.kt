@@ -1512,7 +1512,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.47")
+                setRequestProperty("User-Agent", "ZFBML/0.2.48")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -3837,6 +3837,7 @@ private fun PortraitWatchInfoPanel(
     val quality = stream.quality.orEmpty().ifBlank { "自动" }
     val message = routeNotice ?: errorMessage
     val currentEpisodeText = episode.index?.let { "第 $it 集" } ?: "当前集"
+    val showRouteDiagnostics = message != null || hasPlaybackIssue
     LazyColumn(
         modifier = modifier.fillMaxWidth().background(AnimeBackground),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 15.dp, bottom = 28.dp),
@@ -3917,12 +3918,12 @@ private fun PortraitWatchInfoPanel(
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(8.dp),
-                color = AnimePanelSoft.copy(alpha = 0.72f),
+                color = AnimePanelSoft.copy(alpha = 0.56f),
                 border = BorderStroke(1.dp, AnimeBorder),
             ) {
                 Column(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 13.dp, vertical = 11.dp),
-                    verticalArrangement = Arrangement.spacedBy(9.dp),
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -3936,7 +3937,7 @@ private fun PortraitWatchInfoPanel(
                             Text(sourceName.take(1), style = MaterialTheme.typography.labelLarge, color = Color.White, fontWeight = FontWeight.Bold)
                         }
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                            Text("当前线路", style = MaterialTheme.typography.labelMedium, color = AnimeAccentCyan)
+                            Text("当前播放", style = MaterialTheme.typography.labelMedium, color = AnimeAccentCyan)
                             Text(
                                 text = "$sourceName · $quality · ${stream.protocol.displayName()}",
                                 style = MaterialTheme.typography.bodyMedium,
@@ -3949,22 +3950,24 @@ private fun PortraitWatchInfoPanel(
                             Text("换源", color = if (routes.size > 1) AnimeAccentCyan else AnimeMuted)
                         }
                     }
-                    PortraitRouteInsightRow(
-                        routes = routes,
-                        stream = stream,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    Text(
-                        text = message ?: "自动优先在线源；播放失败时会尝试切到下一条可播线路",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = when {
-                            errorMessage != null -> MaterialTheme.colorScheme.error
-                            routeNotice != null -> AnimeAccentAmber
-                            else -> AnimeMuted
-                        },
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+                    if (showRouteDiagnostics) {
+                        PortraitRouteInsightRow(
+                            routes = routes,
+                            stream = stream,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        Text(
+                            text = message ?: "当前线路需要处理",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = when {
+                                errorMessage != null -> MaterialTheme.colorScheme.error
+                                routeNotice != null -> AnimeAccentAmber
+                                else -> AnimeMuted
+                            },
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                     if (hasPlaybackIssue) {
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
                             TextButton(
@@ -4041,7 +4044,7 @@ private fun PortraitWatchInfoPanel(
         }
         item {
             Text(
-                text = detail.summary.orEmpty().ifBlank { "继续观看时会优先使用在线 HLS/MP4 线路；当前线路不可用时，播放器会自动尝试下一条可播来源。" },
+                text = detail.summary.orEmpty().ifBlank { "暂无简介" },
                 style = MaterialTheme.typography.bodyMedium,
                 color = AnimeMuted,
                 maxLines = 4,

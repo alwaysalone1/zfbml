@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.48
+
+中文：
+
+- 竖屏未全屏观看页默认收起线路统计和分布信息，让页面更像正常追番观看页。
+- 当前播放卡片改为轻量状态条，只保留播放源、画质和必要的换源入口。
+- 线路分布、失败提示和恢复按钮只在切源提示或播放异常时显示，完整线路能力继续放在全屏和面板里。
+
+English:
+
+- The portrait non-fullscreen watch page now hides route statistics and distribution details during normal playback.
+- The current playback card is simplified into a lightweight status strip with source, quality, and the necessary switch-source entry.
+- Route distribution, failure notices, and recovery actions only appear when route switching or playback issues need attention, while full route controls remain in fullscreen and panels.
+
 ### v0.2.47
 
 中文：
