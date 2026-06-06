@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.85
+
+中文：
+
+- 横屏全屏播放器底部功能区从横向滑动列表改为等宽铺开的固定入口，清晰度、倍速、线路、选集、缓存、更多可以一眼看到。
+- 横屏弹幕输入条给右侧功能入口让出更多空间，窄屏时按钮自动隐藏副值，保持功能完整且不挤压文字。
+- 自动切线路、手动下一线路和选集沿用提示不再直接暴露来源名，改为展示线路名/清晰度，让普通播放提示更像正式视频 App。
+
+English:
+
+- The landscape fullscreen action area now uses fixed equal-width actions instead of a horizontally scrolling list, keeping quality, speed, routes, episodes, cache, and more visible at once.
+- The fullscreen danmaku input now gives more space to the action area; on narrow screens action buttons hide secondary values to keep the full control set readable.
+- Auto route fallback, manual next-route, and next-episode notices now use route/quality labels instead of source names, making normal playback messages feel less diagnostic.
+
 ### v0.2.84
 
 中文：

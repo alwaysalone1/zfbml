@@ -1512,7 +1512,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.84")
+                setRequestProperty("User-Agent", "ZFBML/0.2.85")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -1889,7 +1889,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             Text("\u8BBE\u7F6E", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
-            Text("\u7248\u672C 0.2.84", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+            Text("\u7248\u672C 0.2.85", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         }
         item {
             StatusPanel(
@@ -3450,7 +3450,7 @@ private fun PlayerScreen(
         failedStreamIds = failedIds
         val nextRoute = nextPlayableRoute(playerRoutes, currentStream.id, failedIds)
         if (nextRoute != null) {
-            routeNotice = "线路失败，已自动切换到 ${nextRoute.sourceName} ${nextRoute.routeName.orEmpty().ifBlank { nextRoute.protocol.displayName() }}"
+            routeNotice = "线路失败，已自动切换到 ${nextRoute.primaryRouteLabel()}"
             currentStream = nextRoute.stream
         } else {
             routeNotice = "当前线路失败：$errorMessage"
@@ -3513,7 +3513,7 @@ private fun PlayerScreen(
         failedStreamIds = failedIds
         val route = nextPlayableRoute(playerRoutes, currentStream.id, failedIds)
         if (route != null) {
-            routeNotice = "已切换到 ${route.sourceName} ${route.routeName.orEmpty().ifBlank { route.protocol.displayName() }}"
+            routeNotice = "已切换到 ${route.primaryRouteLabel()}"
             currentStream = route.stream
         } else {
             routeNotice = "没有更多可用线路，可重试当前线路或手动切换"
@@ -3548,9 +3548,9 @@ private fun PlayerScreen(
                         val keptSource = preferredRoute.sourceId == previousSourceId ||
                             preferredRoute.stream.providerId == previousProviderId
                         routeNotice = if (keptSource) {
-                            "已切到 $episodeLabel · 沿用 ${preferredRoute.sourceName} $routeLabel"
+                            "已切到 $episodeLabel · 沿用 $routeLabel"
                         } else {
-                            "已切到 $episodeLabel · 当前源不可用，改用 ${preferredRoute.sourceName} $routeLabel"
+                            "已切到 $episodeLabel · 原线路不可用，改用 $routeLabel"
                         }
                         activePanel = null
                         revealControls()
@@ -4897,7 +4897,7 @@ private fun PlayerFullscreenControlRow(
             danmakuEnabled = danmakuEnabled,
             onToggleDanmaku = onToggleDanmaku,
             onOpenDanmakuSettings = { onShowPanel(PlayerPanel.Danmaku) },
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(0.82f),
         )
         PlayerActionBar(
             quality = quality,
@@ -4912,7 +4912,7 @@ private fun PlayerFullscreenControlRow(
             onOffline = onOffline,
             onRetryRoute = onRetryRoute,
             onNextRoute = onNextRoute,
-            modifier = Modifier.weight(1.75f),
+            modifier = Modifier.weight(2.25f),
         )
     }
 }
@@ -4989,90 +4989,115 @@ private fun PlayerActionBar(
     onNextRoute: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    LazyRow(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        contentPadding = PaddingValues(horizontal = 2.dp),
-    ) {
+    val actions = buildList {
         if (hasPlaybackIssue) {
-            item {
-                PlayerTextAction(
+            add(
+                PlayerActionSpec(
                     icon = Icons.Filled.Refresh,
                     title = "重试",
                     value = "当前",
                     selected = true,
                     onClick = onRetryRoute,
-                )
-            }
-            item {
-                PlayerTextAction(
+                ),
+            )
+            add(
+                PlayerActionSpec(
                     icon = Icons.Filled.VideoLibrary,
                     title = "下一线路",
                     value = if (canSelectNextRoute) "可切" else "无",
                     enabled = canSelectNextRoute,
                     onClick = onNextRoute,
-                )
-            }
+                ),
+            )
         }
-        item {
-            PlayerTextAction(
+        add(
+            PlayerActionSpec(
                 icon = Icons.Filled.HighQuality,
                 title = "清晰度",
                 value = quality,
                 selected = activePanel == PlayerPanel.Quality,
                 enabled = routeCount > 0,
                 onClick = { onShowPanel(PlayerPanel.Quality) },
-            )
-        }
-        item {
-            PlayerTextAction(
+            ),
+        )
+        add(
+            PlayerActionSpec(
                 icon = Icons.Filled.Speed,
                 title = "倍速",
                 value = formatPlaybackSpeed(playbackSpeed),
                 selected = activePanel == PlayerPanel.Speed,
                 onClick = { onShowPanel(PlayerPanel.Speed) },
-            )
-        }
-        item {
-            PlayerTextAction(
+            ),
+        )
+        add(
+            PlayerActionSpec(
                 icon = Icons.Filled.VideoLibrary,
                 title = "线路",
                 value = "${routeCount.coerceAtLeast(1)}条",
                 selected = activePanel == PlayerPanel.Route,
                 enabled = routeCount > 1,
                 onClick = { onShowPanel(PlayerPanel.Route) },
-            )
-        }
-        item {
-            PlayerTextAction(
+            ),
+        )
+        add(
+            PlayerActionSpec(
                 icon = Icons.AutoMirrored.Filled.PlaylistPlay,
                 title = "选集",
                 value = if (episodeCount > 1) "${episodeCount}集" else "单集",
                 selected = activePanel == PlayerPanel.Episode,
                 enabled = episodeCount > 1,
                 onClick = { onShowPanel(PlayerPanel.Episode) },
-            )
-        }
-        item {
-            PlayerTextAction(
+            ),
+        )
+        add(
+            PlayerActionSpec(
                 icon = Icons.Filled.CloudDownload,
                 title = "缓存",
                 value = if (offlineEnabled) "离线" else "不可用",
                 enabled = offlineEnabled,
                 onClick = onOffline,
-            )
-        }
-        item {
-            PlayerTextAction(
+            ),
+        )
+        add(
+            PlayerActionSpec(
                 icon = Icons.Filled.MoreVert,
                 title = "更多",
                 value = "设置",
                 selected = activePanel == PlayerPanel.More,
                 onClick = { onShowPanel(PlayerPanel.More) },
-            )
+            ),
+        )
+    }
+    BoxWithConstraints(modifier = modifier) {
+        val compactValues = maxWidth < if (actions.size > 6) 560.dp else 460.dp
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(if (compactValues) 4.dp else 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            actions.forEach { action ->
+                PlayerTextAction(
+                    icon = action.icon,
+                    title = action.title,
+                    value = if (compactValues) null else action.value,
+                    selected = action.selected,
+                    enabled = action.enabled,
+                    onClick = action.onClick,
+                    modifier = Modifier.weight(1f),
+                )
+            }
         }
     }
 }
+
+private data class PlayerActionSpec(
+    val icon: ImageVector?,
+    val title: String,
+    val value: String? = null,
+    val selected: Boolean = false,
+    val enabled: Boolean = true,
+    val onClick: () -> Unit,
+)
 
 @Composable
 private fun PlayerOptionPanel(
@@ -6387,6 +6412,7 @@ private fun PlayerTextAction(
     selected: Boolean = false,
     enabled: Boolean = true,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier.widthIn(min = 58.dp, max = 112.dp),
 ) {
     val contentColor = when {
         !enabled -> Color.White.copy(alpha = 0.34f)
@@ -6396,8 +6422,7 @@ private fun PlayerTextAction(
     TextButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = Modifier
-            .widthIn(min = 58.dp, max = 112.dp)
+        modifier = modifier
             .height(34.dp)
             .focusable(),
         shape = RoundedCornerShape(999.dp),
