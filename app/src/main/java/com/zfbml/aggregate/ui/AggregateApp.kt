@@ -1512,7 +1512,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.77")
+                setRequestProperty("User-Agent", "ZFBML/0.2.78")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -1889,7 +1889,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             Text("\u8BBE\u7F6E", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
-            Text("\u7248\u672C 0.2.77", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+            Text("\u7248\u672C 0.2.78", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         }
         item {
             StatusPanel(
@@ -5242,9 +5242,6 @@ private fun PlayerOptionPanel(
                         PlayerPanel.Episode -> PlayerEpisodePanel(
                             detail = detail,
                             currentEpisode = currentEpisode,
-                            currentStream = currentStream,
-                            currentRoute = currentRoute,
-                            routeCount = routeOptions.size,
                             episodeLoadingId = episodeLoadingId,
                             onEpisodeSelected = onEpisodeSelected,
                         )
@@ -6115,9 +6112,6 @@ private fun RoutePanelMetricChip(
 private fun PlayerEpisodePanel(
     detail: MediaDetail,
     currentEpisode: Episode,
-    currentStream: MediaStream,
-    currentRoute: RouteCandidate?,
-    routeCount: Int,
     episodeLoadingId: String?,
     onEpisodeSelected: (Episode) -> Unit,
 ) {
@@ -6131,9 +6125,6 @@ private fun PlayerEpisodePanel(
                 title = detail.title,
                 currentEpisode = currentEpisode,
                 episodeCount = detail.episodes.size,
-                currentStream = currentStream,
-                currentRoute = currentRoute,
-                routeCount = routeCount,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
@@ -6164,23 +6155,9 @@ private fun PlayerEpisodeSummaryCard(
     title: String,
     currentEpisode: Episode,
     episodeCount: Int,
-    currentStream: MediaStream,
-    currentRoute: RouteCandidate?,
-    routeCount: Int,
     modifier: Modifier = Modifier,
 ) {
-    val sourceName = currentRoute?.sourceName
-        ?: currentStream.metadata["sourceName"]
-        ?: currentStream.metadata["routeProviderName"]
-        ?: currentStream.providerId
-    val protocolName = currentStream.protocol.displayName()
-    val routeLabel = currentRoute?.primaryRouteLabel()
-        ?: currentStream.quality.orEmpty().ifBlank { currentStream.protocol.displayName() }
-    val routeCountLabel = if (routeCount > 0) "$routeCount 个播放源" else "播放源解析中"
-    val playbackRouteText = listOf(sourceName, routeLabel, protocolName, routeCountLabel)
-        .filter { it.isNotBlank() }
-        .distinct()
-        .joinToString(" · ")
+    val currentEpisodeLabel = currentEpisode.index?.let { "第 $it 集" } ?: currentEpisode.title
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(8.dp),
@@ -6208,16 +6185,17 @@ private fun PlayerEpisodeSummaryCard(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    "当前 ${currentEpisode.index?.let { "第 $it 集" } ?: currentEpisode.title} · 共 $episodeCount 集",
+                    "当前 $currentEpisodeLabel · 共 $episodeCount 集",
                     style = MaterialTheme.typography.bodySmall,
                     color = AnimeMuted,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) {
-                    RouteStatusBadge("当前源", AnimeAccentPink)
+                    RouteStatusBadge("正在看", AnimeAccentPink)
+                    RouteStatusBadge("自动匹配", AnimeAccentCyan)
                     Text(
-                        playbackRouteText,
+                        "切换选集后自动选择最佳播放线路",
                         modifier = Modifier.weight(1f),
                         style = MaterialTheme.typography.labelSmall,
                         color = Color.White.copy(alpha = 0.64f),
@@ -6604,7 +6582,7 @@ private fun playerPanelSubtitle(panel: PlayerPanel): String {
         PlayerPanel.Quality -> "当前可用质量"
         PlayerPanel.Speed -> "0.5x 至 2.0x"
         PlayerPanel.Route -> "简单模式 · 详细诊断"
-        PlayerPanel.Episode -> "当前合集剧集"
+        PlayerPanel.Episode -> "合集进度 · 自动匹配"
     }
 }
 

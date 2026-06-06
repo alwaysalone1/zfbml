@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.78
+
+中文：
+
+- 选集面板摘要去掉当前源、协议和播放源数量等工程信息，改为“当前第几集 / 共几集”的合集进度。
+- 选集面板新增“正在看”“自动匹配”提示，表达切换选集后会自动选择最佳播放线路。
+- 播放器弹层职责进一步分离：选集只负责追番进度，换源面板才展示播放源细节。
+
+English:
+
+- The episode panel summary no longer exposes current source, protocol, or route-count diagnostics, focusing on current episode progress instead.
+- The episode panel now shows Watching and Auto Match hints to explain that episode changes will pick the best playable route automatically.
+- Player panels are more clearly separated: Episodes focus on watch progress, while source details stay in the source-switching panel.
+
 ### v0.2.77
 
 中文：
