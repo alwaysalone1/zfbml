@@ -1514,7 +1514,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.69")
+                setRequestProperty("User-Agent", "ZFBML/0.2.70")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -1891,7 +1891,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             Text("\u8BBE\u7F6E", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
-            Text("\u7248\u672C 0.2.69", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+            Text("\u7248\u672C 0.2.70", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         }
         item {
             StatusPanel(
@@ -5143,20 +5143,39 @@ private fun PlayerOptionPanel(
 ) {
     BoxWithConstraints(modifier = modifier) {
         val landscape = maxWidth > maxHeight
-        val panelWidth = if (maxWidth < 420.dp) maxWidth else 380.dp
-        val panelHeight = if (maxHeight < 420.dp) maxHeight else 390.dp
+        val panelWidth = when {
+            !landscape -> maxWidth
+            maxWidth < 680.dp -> maxWidth * 0.54f
+            else -> 392.dp
+        }
+        val portraitPanelHeight = when {
+            maxHeight < 620.dp -> maxHeight * 0.72f
+            else -> maxHeight * 0.58f
+        }
+        val portraitPanelMinHeight = when {
+            maxHeight < 420.dp -> maxHeight * 0.66f
+            maxHeight < 520.dp -> 260.dp
+            else -> 320.dp
+        }
         val currentRoute = routeOptions.firstOrNull { route ->
             route.stream.id == currentStream.id || route.stream.url == currentStream.url
         }
-        val scrimAlpha = if (landscape) 0.18f else 0.36f
+        val scrimAlpha = if (landscape) 0.14f else 0.32f
         val panelInteractionSource = remember { MutableInteractionSource() }
         val panelModifier = if (landscape) {
-            Modifier.align(Alignment.CenterEnd).fillMaxHeight().width(panelWidth)
+            Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = 10.dp, top = 14.dp, bottom = 14.dp)
+                .fillMaxHeight()
+                .width(panelWidth)
         } else {
-            Modifier.align(Alignment.BottomCenter).fillMaxWidth().heightIn(max = panelHeight)
+            Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .heightIn(min = portraitPanelMinHeight, max = portraitPanelHeight)
         }
         val panelShape = if (landscape) {
-            RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp)
+            RoundedCornerShape(8.dp)
         } else {
             RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)
         }

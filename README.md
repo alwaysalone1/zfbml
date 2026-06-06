@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.70
+
+中文：
+
+- 播放器弹出的设置/线路/选集面板改为更贴近视频播放器的浮层：竖屏使用更稳定的半屏底部面板，横屏使用右侧内缩抽屉。
+- 横屏面板不再贴满整条右边，保留上下和右侧留白，减少对画面的压迫感。
+- 竖屏面板高度改为随屏幕比例自适应，小屏设备会自动降低最小高度，避免控件约束冲突。
+
+English:
+
+- Player option panels for settings, routes, and episodes now behave more like video-player overlays: a stable half-height bottom sheet in portrait and an inset right drawer in landscape.
+- The landscape panel no longer fills the full right edge, leaving top, bottom, and side breathing room to reduce visual pressure on the video.
+- Portrait panel height now adapts to screen size, with a smaller minimum height on compact devices to avoid layout constraint conflicts.
+
 ### v0.2.69
 
 中文：
