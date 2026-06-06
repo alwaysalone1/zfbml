@@ -1514,7 +1514,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.60")
+                setRequestProperty("User-Agent", "ZFBML/0.2.61")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -1891,7 +1891,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             Text("\u8BBE\u7F6E", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
-            Text("\u7248\u672C 0.2.11", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+            Text("\u7248\u672C 0.2.61", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         }
         item {
             StatusPanel(
@@ -3895,12 +3895,12 @@ private fun PortraitWatchInfoPanel(
     modifier: Modifier = Modifier,
 ) {
     val sourceName = route?.sourceName ?: stream.metadata["routeProviderName"] ?: stream.providerId
-    val routeName = route?.routeName.orEmpty().ifBlank { stream.protocol.displayName() }
     val quality = stream.quality.orEmpty().ifBlank { "自动" }
     val message = routeNotice ?: errorMessage
     val currentEpisodeText = episode.index?.let { "第 $it 集" } ?: "当前集"
-    val routeCountText = if (routes.isNotEmpty()) "${routes.size} 条线路" else "线路解析中"
-    val routeLine = listOf(sourceName, routeName, quality, stream.protocol.displayName(), routeCountText)
+    val routeCountText = if (routes.size > 1) "${routes.size} 条线路可切换" else "自动线路"
+    val sourceBrief = listOf("当前源 $sourceName", quality.takeIf { it != "自动" }, routeCountText)
+        .filterNotNull()
         .filter { it.isNotBlank() }
         .distinct()
         .joinToString(" · ")
@@ -3974,7 +3974,7 @@ private fun PortraitWatchInfoPanel(
                                 overflow = TextOverflow.Ellipsis,
                             )
                             Text(
-                                text = routeLine,
+                                text = sourceBrief,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = AnimeMuted,
                                 maxLines = 1,
@@ -4001,8 +4001,8 @@ private fun PortraitWatchInfoPanel(
                             if (routes.size > 1) {
                                 PortraitPlaybackAction(
                                     icon = Icons.Filled.VideoLibrary,
-                                    title = "换源",
-                                    subtitle = routeCountText,
+                                    title = "换线路",
+                                    subtitle = sourceName,
                                     accent = AnimeAccentCyan,
                                     onClick = { onShowPanel(PlayerPanel.Route) },
                                     modifier = Modifier.weight(1f),
@@ -4059,9 +4059,9 @@ private fun PortraitWatchInfoPanel(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text("快速选集", style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold)
+                    Text("选集", style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold)
                     TextButton(onClick = { onShowPanel(PlayerPanel.Episode) }) {
-                        Text("全部 ${detail.episodes.size}", color = AnimeAccentCyan)
+                        Text("全部 ${detail.episodes.size} 集", color = AnimeAccentCyan)
                     }
                 }
             }
@@ -4103,13 +4103,16 @@ private fun PortraitWatchInfoPanel(
             }
         }
         item {
-            Text(
-                text = detail.summary.orEmpty().ifBlank { "暂无简介" },
-                style = MaterialTheme.typography.bodyMedium,
-                color = AnimeMuted,
-                maxLines = 4,
-                overflow = TextOverflow.Ellipsis,
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                Text("简介", style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold)
+                Text(
+                    text = detail.summary.orEmpty().ifBlank { "暂无简介" },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = AnimeMuted,
+                    maxLines = 4,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
     }
 }

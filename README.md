@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.61
+
+中文：
+
+- 竖屏观看页默认信息层级改为“番名、当前集、当前源、选集/换线路入口”优先，弱化协议、线路条数等工程化信息。
+- 竖屏播放信息卡里的“换源”改为更明确的“换线路”，副标题显示当前来源，符合国内长视频 App 的理解习惯。
+- 设置页展示版本号同步到 0.2.61，避免应用内版本信息继续停留在旧原型阶段。
+
+English:
+
+- The portrait watch page now prioritizes title, current episode, current source, and episode/source actions instead of exposing protocol and route details first.
+- The portrait source action now says Switch Route with the current source as context, matching Chinese long-form video app wording more closely.
+- The in-app settings version label now matches 0.2.61 instead of the old prototype version.
+
 ### v0.2.60
 
 中文：
