@@ -77,10 +77,10 @@ internal fun buildRouteUiState(
     val episodeTitle = selectedEpisode?.title.orEmpty().ifBlank { "未选择剧集" }
     val message = when (status) {
         RouteLoadStatus.Idle -> "等待选择剧集"
-        RouteLoadStatus.Loading -> "正在自动匹配最佳线路"
-        RouteLoadStatus.Ready -> "已匹配 ${routes.size} 条线路"
-        RouteLoadStatus.Empty -> "暂时没有可用播放线路"
-        RouteLoadStatus.Failed -> "线路加载失败"
+        RouteLoadStatus.Loading -> "正在匹配播放源"
+        RouteLoadStatus.Ready -> "已找到推荐播放源"
+        RouteLoadStatus.Empty -> "暂时没有可用播放源"
+        RouteLoadStatus.Failed -> "播放源加载失败"
     }
     val detail = when (status) {
         RouteLoadStatus.Ready -> {
@@ -88,19 +88,19 @@ internal fun buildRouteUiState(
             if (route != null) {
                 "${route.sourceName} · ${route.quality ?: route.protocol.uiProtocolName()} · 自动推荐"
             } else {
-                "当前线路均不可用，可手动刷新或切换剧集"
+                "当前播放源均不可用，可手动刷新或切换剧集"
             }
         }
-        RouteLoadStatus.Loading -> "$episodeTitle · 在线源优先，BT 兜底"
+        RouteLoadStatus.Loading -> "$episodeTitle · 优先匹配在线播放"
         RouteLoadStatus.Failed -> error.orEmpty().ifBlank { "请稍后重试或换一个剧集" }
         RouteLoadStatus.Empty -> "可以切换剧集，或稍后再试其他来源"
         RouteLoadStatus.Idle -> "选择剧集后会自动开始匹配"
     }
     val recommendationTitle = when {
         bestRoute != null -> bestRoute.sourceName
-        status == RouteLoadStatus.Loading -> "正在匹配在线源"
-        status == RouteLoadStatus.Failed -> "线路匹配失败"
-        status == RouteLoadStatus.Empty -> "暂无可播线路"
+        status == RouteLoadStatus.Loading -> "正在匹配播放源"
+        status == RouteLoadStatus.Failed -> "播放源匹配失败"
+        status == RouteLoadStatus.Empty -> "暂无可播放源"
         else -> "等待自动匹配"
     }
     val recommendationDetail = bestRoute?.let { route ->

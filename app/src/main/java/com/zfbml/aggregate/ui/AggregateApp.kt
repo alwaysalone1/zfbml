@@ -1514,7 +1514,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.71")
+                setRequestProperty("User-Agent", "ZFBML/0.2.72")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -1891,7 +1891,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             Text("\u8BBE\u7F6E", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
-            Text("\u7248\u672C 0.2.71", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+            Text("\u7248\u672C 0.2.72", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         }
         item {
             StatusPanel(
@@ -2461,10 +2461,10 @@ private fun DetailHero(
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         VideoMetaChip(selectedEpisode?.index?.let { "第 $it 集" } ?: "自动选集")
                         VideoMetaChip("${media.episodes.size.coerceAtLeast(1)} 集")
-                        VideoMetaChip("多源")
+                        VideoMetaChip("自动匹配")
                     }
                     Text(
-                        media.summary.orEmpty().ifBlank { "已为你自动匹配在线视频源，优先选择稳定 HLS/MP4，BT 作为兜底。" },
+                        media.summary.orEmpty().ifBlank { "已为你自动匹配播放源，优先选择稳定的在线播放体验。" },
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.White.copy(alpha = 0.82f),
                         maxLines = 3,
@@ -2472,7 +2472,6 @@ private fun DetailHero(
                     )
                 }
             }
-            RouteStatsRow(routeUiState)
             DetailFirstPlayStrip(
                 state = routeUiState,
                 selectedEpisode = selectedEpisode,
@@ -2490,7 +2489,7 @@ private fun DetailHero(
                 ) {
                     Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text(if (routeUiState.canPlay) playLabel else "自动找源")
+                    Text(if (routeUiState.canPlay) playLabel else "匹配播放源")
                 }
                 TextButton(
                     onClick = onToggleRoutes,
@@ -2498,7 +2497,7 @@ private fun DetailHero(
                 ) {
                     Icon(Icons.Filled.VideoLibrary, contentDescription = null, tint = AnimeAccentCyan, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(4.dp))
-                    Text("线路", color = AnimeAccentCyan)
+                    Text("换源", color = AnimeAccentCyan)
                 }
             }
         }
@@ -2519,15 +2518,15 @@ private fun DetailFirstPlayStrip(
     }
     val title = when (state.status) {
         RouteLoadStatus.Ready -> "即将播放"
-        RouteLoadStatus.Loading -> "正在找源"
-        RouteLoadStatus.Failed -> "线路异常"
-        RouteLoadStatus.Empty -> "等待可播线路"
+        RouteLoadStatus.Loading -> "匹配播放源"
+        RouteLoadStatus.Failed -> "播放源异常"
+        RouteLoadStatus.Empty -> "等待可播放源"
         RouteLoadStatus.Idle -> "等待选集"
     }
     val episodeLabel = selectedEpisode?.index?.let { "第 $it 集" } ?: state.selectedEpisodeTitle
     val decision = when (state.status) {
-        RouteLoadStatus.Ready -> "$episodeLabel · ${state.recommendationTitle} · ${state.recommendationDetail}"
-        RouteLoadStatus.Loading -> "$episodeLabel · 在线优先，BT 兜底"
+        RouteLoadStatus.Ready -> "$episodeLabel · 推荐 ${state.recommendationTitle} · ${state.recommendationDetail}"
+        RouteLoadStatus.Loading -> "$episodeLabel · 正在优先匹配在线播放"
         else -> state.detail
     }
     Row(
@@ -2580,38 +2579,6 @@ private fun DetailFirstPlayStrip(
                 .background(accent.copy(alpha = 0.12f))
                 .padding(horizontal = 8.dp, vertical = 5.dp),
         )
-    }
-}
-
-@Composable
-private fun RouteStatsRow(state: RouteUiState) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        RouteStatPill("在线", state.onlineCount.toString(), AnimeAccentCyan)
-        RouteStatPill("BT", state.btCount.toString(), AnimeAccentAmber)
-        RouteStatPill("来源", state.sourceCount.toString(), AnimeAccentViolet)
-        if (state.failedCount > 0) {
-            RouteStatPill("失败", state.failedCount.toString(), MaterialTheme.colorScheme.error)
-        }
-    }
-}
-
-@Composable
-private fun RouteStatPill(label: String, value: String, color: Color) {
-    Row(
-        modifier = Modifier
-            .height(32.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color.Black.copy(alpha = 0.38f))
-            .padding(horizontal = 10.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(label, style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.7f), maxLines = 1)
-        Text(value, style = MaterialTheme.typography.labelLarge, color = color, fontWeight = FontWeight.Bold, maxLines = 1)
     }
 }
 
@@ -2671,7 +2638,7 @@ private fun DetailRouteStatusCard(
                     Text(state.selectedEpisodeTitle, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
                 TextButton(onClick = onToggleExpanded, modifier = Modifier.height(38.dp).focusable()) {
-                    Text(if (expanded) "收起线路" else "查看线路", color = AnimeAccentCyan, style = MaterialTheme.typography.labelLarge)
+                    Text(if (expanded) "收起来源" else "换源", color = AnimeAccentCyan, style = MaterialTheme.typography.labelLarge)
                 }
             }
             if (state.status == RouteLoadStatus.Loading) {
@@ -2694,17 +2661,17 @@ private fun DetailRouteStatusCard(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     RouteDiagnosticStep("选集", state.selectedEpisodeTitle, true, accent, Modifier.weight(1f))
-                    RouteDiagnosticStep("在线优先", onlineValue, state.onlineCount > 0 || state.status == RouteLoadStatus.Loading, AnimeAccentCyan, Modifier.weight(1f))
-                    RouteDiagnosticStep("BT 兜底", btValue, state.btCount > 0, AnimeAccentAmber, Modifier.weight(1f))
+                    RouteDiagnosticStep("在线播放", onlineValue, state.onlineCount > 0 || state.status == RouteLoadStatus.Loading, AnimeAccentCyan, Modifier.weight(1f))
+                    RouteDiagnosticStep("备用源", btValue, state.btCount > 0, AnimeAccentAmber, Modifier.weight(1f))
                 }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    RouteMetricChip("线路", state.routeCount.toString(), AnimeAccentCyan, Modifier.weight(1f))
+                    RouteMetricChip("可播", state.routeCount.toString(), AnimeAccentCyan, Modifier.weight(1f))
                     RouteMetricChip("来源", state.sourceCount.toString(), AnimeAccentViolet, Modifier.weight(1f))
-                    RouteMetricChip("失败", state.failedCount.toString(), if (state.failedCount > 0) MaterialTheme.colorScheme.error else AnimeMuted, Modifier.weight(1f))
+                    RouteMetricChip("异常", state.failedCount.toString(), if (state.failedCount > 0) MaterialTheme.colorScheme.error else AnimeMuted, Modifier.weight(1f))
                 }
             }
         }
@@ -2733,7 +2700,7 @@ private fun RouteRecommendationBand(
             modifier = Modifier.width(4.dp).height(48.dp).clip(RoundedCornerShape(8.dp)).background(accent),
         )
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(if (route == null) "匹配策略" else "自动最佳线路", style = MaterialTheme.typography.labelMedium, color = accent, maxLines = 1)
+            Text(if (route == null) "播放源" else "推荐播放源", style = MaterialTheme.typography.labelMedium, color = accent, maxLines = 1)
             Text(state.recommendationTitle, style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(state.recommendationDetail, style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.72f), maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
@@ -2764,7 +2731,7 @@ private fun RouteSourceFocusRow(state: RouteUiState, accent: Color) {
         RouteLoadStatus.Ready -> "自动"
     }
     val qualityValue = route?.let { playerQualityLabel(it) } ?: when (state.status) {
-        RouteLoadStatus.Loading -> "在线优先"
+        RouteLoadStatus.Loading -> "在线播放"
         RouteLoadStatus.Failed -> "重试"
         RouteLoadStatus.Empty -> "换集"
         RouteLoadStatus.Idle -> "自动"
@@ -2773,7 +2740,7 @@ private fun RouteSourceFocusRow(state: RouteUiState, accent: Color) {
     val protocolValue = route?.protocol?.displayName() ?: when (state.status) {
         RouteLoadStatus.Loading -> "HLS/MP4"
         RouteLoadStatus.Failed -> "诊断"
-        RouteLoadStatus.Empty -> "BT 兜底"
+        RouteLoadStatus.Empty -> "备用"
         RouteLoadStatus.Idle -> "多源"
         RouteLoadStatus.Ready -> "可播"
     }
@@ -2783,7 +2750,7 @@ private fun RouteSourceFocusRow(state: RouteUiState, accent: Color) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         RouteSourceFocusChip("推荐源", sourceValue, accent, Modifier.weight(1f))
-        RouteSourceFocusChip("画质/线路", qualityValue, AnimeAccentCyan, Modifier.weight(1f))
+        RouteSourceFocusChip("清晰度", qualityValue, AnimeAccentCyan, Modifier.weight(1f))
         RouteSourceFocusChip("播放方式", protocolValue, AnimeAccentAmber, Modifier.weight(1f))
     }
 }
@@ -3043,7 +3010,7 @@ private fun RouteSourceSelectorHeader(
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text = "$sourceCount 个来源 · $routeCount 条线路",
+                text = "$sourceCount 个来源 · $routeCount 个播放源",
                 style = MaterialTheme.typography.bodySmall,
                 color = AnimeMuted,
                 maxLines = 1,
@@ -3200,7 +3167,7 @@ private fun RouteCandidate.primaryRouteLabel(): String {
 
 private fun RouteCandidate.routeStatusLabel(): Pair<String, Color> {
     return when (protocol) {
-        StreamProtocol.BITTORRENT -> "BT 兜底" to AnimeAccentAmber
+        StreamProtocol.BITTORRENT -> "备用源" to AnimeAccentAmber
         StreamProtocol.WEBVIEW_ONLY -> "仅网页" to AnimeMuted
         StreamProtocol.HLS, StreamProtocol.DASH, StreamProtocol.PROGRESSIVE, StreamProtocol.SMOOTH_STREAMING -> "在线可播" to AnimeAccentGreen
         else -> protocol.displayName() to AnimeAccentCyan
@@ -3212,7 +3179,7 @@ private val RouteSourceGroup.sourceSummary: String
         onlineCount > 0 && btCount > 0 -> "$onlineCount 在线 · $btCount BT"
         onlineCount > 0 -> "$onlineCount 在线"
         btCount > 0 -> "$btCount BT"
-        hasPlayable -> "$count 条线路"
+        hasPlayable -> "$count 个可播"
         else -> "仅网页兜底"
     }
 
@@ -3457,10 +3424,10 @@ private fun PlayerScreen(
         failedStreamIds = failedIds
         val nextRoute = nextPlayableRoute(playerRoutes, currentStream.id, failedIds)
         if (nextRoute != null) {
-            routeNotice = "线路失败，已自动切换到 ${nextRoute.sourceName} ${nextRoute.routeName.orEmpty().ifBlank { nextRoute.protocol.displayName() }}"
+            routeNotice = "播放源失败，已自动切换到 ${nextRoute.sourceName} ${nextRoute.routeName.orEmpty().ifBlank { nextRoute.protocol.displayName() }}"
             currentStream = nextRoute.stream
         } else {
-            routeNotice = "当前线路失败：$errorMessage"
+            routeNotice = "当前播放源失败：$errorMessage"
         }
     }
     LaunchedEffect(state.hasRenderedFirstFrame, state.isPlaying, currentStream.id, routeNotice) {
@@ -3502,7 +3469,7 @@ private fun PlayerScreen(
         revealControls()
         activePanel = null
         failedStreamIds = failedStreamIds - currentStream.id
-        routeNotice = "正在重试当前线路..."
+        routeNotice = "正在重试当前播放源..."
         if (currentStream.protocol == StreamProtocol.BITTORRENT) {
             scope.launch {
                 graph.torrentEngine.prepare(currentStream)
@@ -3523,14 +3490,14 @@ private fun PlayerScreen(
             routeNotice = "已切换到 ${route.sourceName} ${route.routeName.orEmpty().ifBlank { route.protocol.displayName() }}"
             currentStream = route.stream
         } else {
-            routeNotice = "没有更多可自动播放线路，可重试当前线路或手动换源"
+            routeNotice = "没有更多可自动播放源，可重试当前播放源或手动换源"
         }
     }
 
     fun selectEpisode(target: Episode) {
         if (target.id == currentEpisode.id || episodeLoadingId != null) return
         revealControls()
-        routeNotice = "正在加载 ${target.title} 的播放线路..."
+        routeNotice = "正在加载 ${target.title} 的播放源..."
         episodeLoadingId = target.id
         val previousSourceId = currentRoute?.sourceId
         val previousProviderId = currentStream.providerId
@@ -3563,7 +3530,7 @@ private fun PlayerScreen(
                         revealControls()
                         currentStream = preferredRoute.stream
                     } else {
-                        routeNotice = "${target.title} 暂时没有可用播放线路"
+                        routeNotice = "${target.title} 暂时没有可用播放源"
                     }
                 }
                 .onFailure { failure ->
@@ -3906,7 +3873,7 @@ private fun PortraitWatchInfoPanel(
     val quality = stream.quality.orEmpty().ifBlank { "自动" }
     val message = routeNotice ?: errorMessage
     val currentEpisodeText = episode.index?.let { "第 $it 集" } ?: "当前集"
-    val routeCountText = if (routes.size > 1) "${routes.size} 条线路可切换" else "自动线路"
+    val routeCountText = if (routes.size > 1) "${routes.size} 个播放源可切换" else "自动播放源"
     val sourceBrief = listOf("当前源 $sourceName", quality.takeIf { it != "自动" }, routeCountText)
         .filterNotNull()
         .filter { it.isNotBlank() }
@@ -4009,7 +3976,7 @@ private fun PortraitWatchInfoPanel(
                             if (routes.size > 1) {
                                 PortraitPlaybackAction(
                                     icon = Icons.Filled.VideoLibrary,
-                                    title = "换线路",
+                                    title = "换源",
                                     subtitle = sourceName,
                                     accent = AnimeAccentCyan,
                                     onClick = { onShowPanel(PlayerPanel.Route) },
@@ -4025,7 +3992,7 @@ private fun PortraitWatchInfoPanel(
                             modifier = Modifier.fillMaxWidth(),
                         )
                         Text(
-                            text = message ?: "当前线路需要处理",
+                            text = message ?: "当前播放源需要处理",
                             style = MaterialTheme.typography.bodySmall,
                             color = when {
                                 errorMessage != null -> MaterialTheme.colorScheme.error
@@ -4053,7 +4020,7 @@ private fun PortraitWatchInfoPanel(
                             ) {
                                 Icon(Icons.Filled.VideoLibrary, contentDescription = null, tint = if (canSelectNextRoute) AnimeAccentCyan else AnimeMuted, modifier = Modifier.size(17.dp))
                                 Spacer(Modifier.width(6.dp))
-                                Text("下一线路", color = if (canSelectNextRoute) AnimeAccentCyan else AnimeMuted)
+                                Text("下一播放源", color = if (canSelectNextRoute) AnimeAccentCyan else AnimeMuted)
                             }
                         }
                     }
@@ -4187,7 +4154,7 @@ private fun PortraitRouteInsightRow(
         else -> stream.protocol.displayName()
     }
     val chips = listOf(
-        Triple("线路", "${routeCount}条", AnimeAccentCyan),
+        Triple("播放源", "${routeCount}个", AnimeAccentCyan),
         Triple("来源", "${sourceCount}个", AnimeAccentPink),
         Triple("分布", distribution, AnimeAccentAmber),
         Triple("当前", stream.protocol.displayName(), AnimeAccentGreen),
@@ -4659,7 +4626,7 @@ private fun PlayerCompactInteractionRow(
 ) {
     val compactActionLabel = when {
         episodeCount > 1 -> "选集"
-        routeCount > 1 -> "线路"
+        routeCount > 1 -> "换源"
         else -> null
     }
     val compactActionClick = when {
@@ -4868,7 +4835,7 @@ private fun PlayerCompactRecoveryRow(
             modifier = Modifier.weight(1f),
         )
         PlayerTinyToggle(
-            text = "下一线路",
+            text = "下一播放源",
             selected = false,
             onClick = onNextRoute,
             modifier = Modifier.weight(1f),
@@ -5024,7 +4991,7 @@ private fun PlayerActionBar(
             item {
                 PlayerTextAction(
                     icon = Icons.Filled.VideoLibrary,
-                    title = "下一线路",
+                    title = "下一播放源",
                     value = if (canSelectNextRoute) "可切" else "无",
                     enabled = canSelectNextRoute,
                     onClick = onNextRoute,
@@ -5071,7 +5038,7 @@ private fun PlayerActionBar(
         item {
             PlayerTextAction(
                 icon = Icons.Filled.VideoLibrary,
-                title = "线路",
+                title = "换源",
                 value = "${routeCount.coerceAtLeast(1)}条",
                 selected = activePanel == PlayerPanel.Route,
                 enabled = routeCount > 1,
@@ -5328,7 +5295,7 @@ private fun PlayerMorePanel(
             onClick = { onShowPanel(PlayerPanel.Episode) },
         ),
         PlayerMoreAction(
-            title = "线路",
+            title = "换源",
             subtitle = if (routeCount > 1) "$routeCount 条可切换" else "仅 1 条",
             icon = Icons.Filled.VideoLibrary,
             enabled = routeCount > 1,
@@ -5420,7 +5387,7 @@ private fun PlayerMoreSummaryCard(
                     )
                 }
                 Text(
-                    text = "$quality · ${formatPlaybackSpeed(playbackSpeed)} · ${routeCount.coerceAtLeast(1)} 条线路 · ${episodeCount.coerceAtLeast(1)} 集",
+                    text = "$quality · ${formatPlaybackSpeed(playbackSpeed)} · ${routeCount.coerceAtLeast(1)} 个播放源 · ${episodeCount.coerceAtLeast(1)} 集",
                     style = MaterialTheme.typography.bodySmall,
                     color = AnimeMuted,
                     maxLines = 1,
@@ -5551,7 +5518,7 @@ private fun PlayerQualityPanel(
             .sortedByDescending { it.score }
     }
     if (qualityRoutes.isEmpty()) {
-        Text("当前线路没有提供可切换清晰度", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+        Text("当前播放源没有提供可切换清晰度", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         return
     }
     val currentQuality = currentStream.quality.orEmpty().ifBlank { "自动" }
@@ -5597,7 +5564,7 @@ private fun PlayerRoutePanel(
     onRouteSelected: (RouteCandidate) -> Unit,
 ) {
     if (routes.isEmpty()) {
-        Text("暂时没有可用播放线路", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+        Text("暂时没有可用播放源", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         return
     }
     val currentSourceId = remember(routes, selectedStreamId) {
@@ -5619,7 +5586,7 @@ private fun PlayerRoutePanel(
     val selectedSourceName = selectedSourceId?.let { sourceId ->
         routes.firstOrNull { it.sourceId == sourceId }?.sourceName ?: sourceId
     } ?: "全部来源"
-    val sourceListTitle = if (selectedSourceId == null) "全部来源线路" else "当前来源线路"
+    val sourceListTitle = if (selectedSourceId == null) "全部播放源" else "当前播放源"
     LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         item {
             RoutePanelSummaryCard(
@@ -5824,7 +5791,7 @@ private fun PlayerRouteSourceChip(group: PlayerRouteSourceGroup, onClick: () -> 
                 )
             } else {
                 Text(
-                    if (group.onlineCount > 0) "在线优先" else "兜底来源",
+                    if (group.onlineCount > 0) "在线播放" else "备用来源",
                     style = MaterialTheme.typography.labelSmall,
                     color = accent,
                     maxLines = 1,
@@ -5986,7 +5953,7 @@ private fun RoutePanelSummaryCard(
                     Text(
                         state.recommendedRoute?.let { route ->
                             "推荐 ${route.sourceName} · ${route.routeName.orEmpty().ifBlank { route.protocol.displayName() }}"
-                        } ?: "暂无可自动播放线路",
+                        } ?: "暂无推荐播放源",
                         style = MaterialTheme.typography.bodySmall,
                         color = AnimeMuted,
                         maxLines = 1,
@@ -6120,7 +6087,7 @@ private fun PlayerEpisodeSummaryCard(
     val protocolName = currentStream.protocol.displayName()
     val routeLabel = currentRoute?.primaryRouteLabel()
         ?: currentStream.quality.orEmpty().ifBlank { currentStream.protocol.displayName() }
-    val routeCountLabel = if (routeCount > 0) "$routeCount 条线路" else "线路解析中"
+    val routeCountLabel = if (routeCount > 0) "$routeCount 个播放源" else "播放源解析中"
     val playbackRouteText = listOf(sourceName, routeLabel, protocolName, routeCountLabel)
         .filter { it.isNotBlank() }
         .distinct()
@@ -6536,18 +6503,18 @@ private fun playerPanelTitle(panel: PlayerPanel): String {
         PlayerPanel.Danmaku -> "弹幕设置"
         PlayerPanel.Quality -> "清晰度"
         PlayerPanel.Speed -> "播放速度"
-        PlayerPanel.Route -> "播放线路"
+        PlayerPanel.Route -> "播放源"
         PlayerPanel.Episode -> "选集"
     }
 }
 
 private fun playerPanelSubtitle(panel: PlayerPanel): String {
     return when (panel) {
-        PlayerPanel.More -> "清晰度 · 倍速 · 选集 · 线路"
+        PlayerPanel.More -> "清晰度 · 倍速 · 选集 · 换源"
         PlayerPanel.Danmaku -> "密度 · 透明度 · 字号"
         PlayerPanel.Quality -> "当前可用质量"
         PlayerPanel.Speed -> "0.5x 至 2.0x"
-        PlayerPanel.Route -> "推荐线路优先展示"
+        PlayerPanel.Route -> "推荐播放源优先展示"
         PlayerPanel.Episode -> "当前合集剧集"
     }
 }

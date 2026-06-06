@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.72
+
+中文：
+
+- 详情页首屏去掉在线/BT/来源数量统计条，降低“线路测试工具”的观感。
+- 详情页主操作统一为“播放/匹配播放源”，副操作改为“换源”，展开后才显示更细的来源与诊断信息。
+- 播放器和来源面板里的旧“线路/BT 兜底”文案进一步收敛为“播放源/备用源/换源”，让术语更接近普通用户习惯。
+
+English:
+
+- Removed online/BT/source-count diagnostics from the detail hero to reduce the route-testing-tool feel.
+- The detail primary action now reads as Play or Match Playback Source, while the secondary action becomes Change Source; detailed source diagnostics stay behind expansion.
+- Legacy Route/BT Fallback wording in player and source panels was softened to Playback Source, Backup Source, and Change Source for a more user-facing vocabulary.
+
 ### v0.2.71
 
 中文：
