@@ -76,7 +76,7 @@ class PlaybackUiModelsTest {
         assertEquals(RouteLoadStatus.Empty, state.status)
         assertEquals(null, state.bestRoute)
         assertFalse(state.canPlay)
-        assertEquals("暂无可播放源", state.recommendationTitle)
+        assertEquals("暂无可用线路", state.recommendationTitle)
     }
 
     @Test

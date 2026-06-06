@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.82
+
+中文：
+
+- 详情页、竖屏观看信息、全屏设置和线路弹层统一使用“线路”语言，去掉普通观看路径里的“播放源/换源/诊断”工具感文案。
+- 播放设置摘要不再直接暴露来源名，改为展示当前清晰度、倍速、当前线路、线路数量和选集数量。
+- 线路状态模型同步改为“推荐线路/匹配线路/可用线路”，让 Animeko 式多线路体验更像正式视频 App。
+
+English:
+
+- Detail, portrait watch info, fullscreen settings, and route panels now consistently use viewer-facing route language, removing tool-like source/switch/diagnostic wording from normal playback paths.
+- The playback settings summary no longer exposes source names directly, showing quality, speed, current route, route count, and episode count instead.
+- Route UI state labels now use recommended, matching, and available route wording to make the Animeko-style multi-route flow feel more like a polished video app.
+
 ### v0.2.81
 
 中文：
