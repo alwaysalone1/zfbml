@@ -1512,7 +1512,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.85")
+                setRequestProperty("User-Agent", "ZFBML/0.2.86")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -1889,7 +1889,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             Text("\u8BBE\u7F6E", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
-            Text("\u7248\u672C 0.2.85", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+            Text("\u7248\u672C 0.2.86", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         }
         item {
             StatusPanel(
@@ -3906,13 +3906,16 @@ private fun PortraitWatchInfoPanel(
         .filter { it.isNotBlank() }
         .distinct()
         .joinToString(" · ")
-    val episodeActionSubtitle = if (detail.episodes.size > 1) {
-        episode.index?.let { "正在看第 $it 集 / 共 ${detail.episodes.size} 集" } ?: "共 ${detail.episodes.size} 集"
+    val episodeActionValue = if (detail.episodes.size > 1) {
+        episode.index?.let { "$it/${detail.episodes.size}" } ?: "${detail.episodes.size}集"
     } else {
-        "当前播放"
+        "当前"
     }
-    val routeActionSubtitle = if (routes.size > 1) "自动最佳 · ${routes.size} 条" else "自动最佳"
+    val routeActionValue = if (routes.size > 1) "${routes.size}条" else "自动"
     val showRouteDiagnostics = message != null || hasPlaybackIssue
+    val visibleEpisodes = remember(detail.episodes, episode.id) {
+        portraitEpisodeWindow(detail.episodes, episode, maxCount = 18)
+    }
     LazyColumn(
         modifier = modifier.fillMaxWidth().background(AnimeBackground),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 15.dp, bottom = 28.dp),
@@ -4000,7 +4003,7 @@ private fun PortraitWatchInfoPanel(
                                 PortraitPlaybackAction(
                                     icon = Icons.AutoMirrored.Filled.PlaylistPlay,
                                     title = "选集",
-                                    subtitle = episodeActionSubtitle,
+                                    subtitle = episodeActionValue,
                                     accent = AnimeAccentPink,
                                     onClick = { onShowPanel(PlayerPanel.Episode) },
                                     modifier = Modifier.weight(1f),
@@ -4010,7 +4013,7 @@ private fun PortraitWatchInfoPanel(
                                 PortraitPlaybackAction(
                                     icon = Icons.Filled.VideoLibrary,
                                     title = "线路",
-                                    subtitle = routeActionSubtitle,
+                                    subtitle = routeActionValue,
                                     accent = AnimeAccentCyan,
                                     onClick = { onShowPanel(PlayerPanel.Route) },
                                     modifier = Modifier.weight(1f),
@@ -4075,7 +4078,7 @@ private fun PortraitWatchInfoPanel(
             }
             item {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(detail.episodes.take(18), key = { it.id }) { item ->
+                    items(visibleEpisodes, key = { it.id }) { item ->
                         val selected = item.id == episode.id
                         val loading = episodeLoadingId == item.id
                         Card(
@@ -4107,6 +4110,14 @@ private fun PortraitWatchInfoPanel(
                             }
                         }
                     }
+                    if (detail.episodes.size > visibleEpisodes.size) {
+                        item {
+                            PortraitEpisodeMoreCard(
+                                count = detail.episodes.size,
+                                onClick = { onShowPanel(PlayerPanel.Episode) },
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -4125,6 +4136,18 @@ private fun PortraitWatchInfoPanel(
     }
 }
 
+private fun portraitEpisodeWindow(
+    episodes: List<Episode>,
+    currentEpisode: Episode,
+    maxCount: Int,
+): List<Episode> {
+    if (episodes.size <= maxCount) return episodes
+    val currentIndex = episodes.indexOfFirst { it.id == currentEpisode.id }
+    if (currentIndex < 0) return episodes.take(maxCount)
+    val start = (currentIndex - 4).coerceIn(0, episodes.size - maxCount)
+    return episodes.subList(start, start + maxCount).toList()
+}
+
 @Composable
 private fun PortraitPlaybackAction(
     icon: ImageVector,
@@ -4136,36 +4159,55 @@ private fun PortraitPlaybackAction(
 ) {
     TextButton(
         onClick = onClick,
-        modifier = modifier.height(38.dp).focusable(),
-        shape = RoundedCornerShape(8.dp),
+        modifier = modifier.height(34.dp).focusable(),
+        shape = RoundedCornerShape(999.dp),
         colors = ButtonDefaults.textButtonColors(
             containerColor = accent.copy(alpha = 0.12f),
             contentColor = accent,
         ),
-        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
+        contentPadding = PaddingValues(horizontal = 11.dp, vertical = 0.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(7.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(17.dp))
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                )
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = accent,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
+            Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp))
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelMedium,
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+            )
+            Text(
+                text = subtitle,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.labelSmall,
+                color = accent,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+@Composable
+private fun PortraitEpisodeMoreCard(count: Int, onClick: () -> Unit) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.width(72.dp).height(48.dp).focusable(),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(containerColor = AnimePanelSoft),
+        border = BorderStroke(1.dp, AnimeAccentCyan.copy(alpha = 0.42f)),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 9.dp, vertical = 7.dp),
+            verticalArrangement = Arrangement.SpaceBetween,
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text("全部", style = MaterialTheme.typography.labelLarge, color = AnimeAccentCyan, fontWeight = FontWeight.Bold, maxLines = 1)
+            Text("${count}集", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.78f), maxLines = 1)
         }
     }
 }

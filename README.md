@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.86
+
+中文：
+
+- 竖屏播放页的“选集/线路”快捷入口改为单行胶囊按钮，降低设置面板感，让非全屏观看区更轻。
+- 竖屏选集横排不再固定展示前 18 集，会围绕当前播放集显示，并在末尾保留“全部”入口。
+- 继续弱化竖屏普通观看路径里的诊断信息，只在线路异常或提示存在时展示线路状态细节。
+
+English:
+
+- The portrait watch page now uses lighter single-line pill actions for Episodes and Routes, reducing the settings-panel feel in non-fullscreen viewing.
+- The portrait episode rail now follows the current episode instead of always showing the first 18 episodes, with an All entry kept at the end.
+- Normal portrait viewing continues to hide route diagnostics unless a route notice or playback issue needs attention.
+
 ### v0.2.85
 
 中文：
