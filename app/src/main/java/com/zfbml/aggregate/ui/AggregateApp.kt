@@ -1514,7 +1514,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.61")
+                setRequestProperty("User-Agent", "ZFBML/0.2.62")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -1891,7 +1891,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             Text("\u8BBE\u7F6E", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
-            Text("\u7248\u672C 0.2.61", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+            Text("\u7248\u672C 0.2.62", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         }
         item {
             StatusPanel(
@@ -3672,28 +3672,6 @@ private fun PlayerScreen(
                 )
             }
             AnimatedVisibility(
-                visible = controlsVisible && activePanel == null && !compact && !controlsLocked,
-                enter = fadeIn(),
-                exit = fadeOut(),
-                modifier = Modifier.align(Alignment.CenterEnd).padding(end = 16.dp).zIndex(4f),
-            ) {
-                PlayerLandscapeQuickDock(
-                    quality = currentStream.quality.orEmpty().ifBlank { "自动" },
-                    playbackSpeed = playbackSpeed,
-                    routeCount = routeOptions.size,
-                    episodeCount = detail.episodes.size,
-                    danmakuEnabled = danmakuEnabled,
-                    onToggleDanmaku = {
-                        revealControls()
-                        danmakuEnabled = !danmakuEnabled
-                    },
-                    onShowPanel = { panel ->
-                        revealControls()
-                        activePanel = panel
-                    },
-                )
-            }
-            AnimatedVisibility(
                 visible = controlsVisible && activePanel == null && !controlsLocked,
                 enter = fadeIn(),
                 exit = fadeOut(),
@@ -4743,116 +4721,6 @@ private fun PlayerCompactRecoveryRow(
 }
 
 @Composable
-private fun PlayerLandscapeQuickDock(
-    quality: String,
-    playbackSpeed: Float,
-    routeCount: Int,
-    episodeCount: Int,
-    danmakuEnabled: Boolean,
-    onToggleDanmaku: () -> Unit,
-    onShowPanel: (PlayerPanel) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(8.dp),
-        color = Color.Black.copy(alpha = 0.38f),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f)),
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 7.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            PlayerDockAction(
-                icon = Icons.Filled.ClosedCaption,
-                label = "弹幕",
-                value = if (danmakuEnabled) "开" else "关",
-                selected = danmakuEnabled,
-                onClick = onToggleDanmaku,
-            )
-            PlayerDockAction(
-                icon = Icons.Filled.HighQuality,
-                label = "清晰",
-                value = quality,
-                onClick = { onShowPanel(PlayerPanel.Quality) },
-            )
-            PlayerDockAction(
-                icon = Icons.Filled.Speed,
-                label = "倍速",
-                value = formatPlaybackSpeed(playbackSpeed),
-                onClick = { onShowPanel(PlayerPanel.Speed) },
-            )
-            PlayerDockAction(
-                icon = Icons.Filled.VideoLibrary,
-                label = "线路",
-                value = "${routeCount.coerceAtLeast(1)}条",
-                selected = routeCount > 1,
-                enabled = routeCount > 1,
-                onClick = { onShowPanel(PlayerPanel.Route) },
-            )
-            PlayerDockAction(
-                icon = Icons.AutoMirrored.Filled.PlaylistPlay,
-                label = "选集",
-                value = if (episodeCount > 1) "${episodeCount}集" else "单集",
-                selected = episodeCount > 1,
-                enabled = episodeCount > 1,
-                onClick = { onShowPanel(PlayerPanel.Episode) },
-            )
-            PlayerDockAction(
-                icon = Icons.Filled.MoreVert,
-                label = "更多",
-                value = "设置",
-                onClick = { onShowPanel(PlayerPanel.More) },
-            )
-        }
-    }
-}
-
-@Composable
-private fun PlayerDockAction(
-    icon: ImageVector,
-    label: String,
-    value: String,
-    selected: Boolean = false,
-    enabled: Boolean = true,
-    onClick: () -> Unit,
-) {
-    val contentColor = when {
-        !enabled -> Color.White.copy(alpha = 0.32f)
-        selected -> AnimeAccentCyan
-        else -> Color.White.copy(alpha = 0.86f)
-    }
-    TextButton(
-        onClick = onClick,
-        enabled = enabled,
-        modifier = Modifier.width(58.dp).height(50.dp).focusable(),
-        shape = RoundedCornerShape(8.dp),
-        colors = ButtonDefaults.textButtonColors(
-            containerColor = if (selected) AnimeAccentCyan.copy(alpha = 0.14f) else Color.White.copy(alpha = 0.06f),
-            contentColor = contentColor,
-            disabledContentColor = Color.White.copy(alpha = 0.32f),
-        ),
-        contentPadding = PaddingValues(0.dp),
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(1.dp),
-        ) {
-            Icon(icon, contentDescription = label, modifier = Modifier.size(16.dp))
-            Text(label, style = MaterialTheme.typography.labelSmall, maxLines = 1)
-            Text(
-                text = value,
-                style = MaterialTheme.typography.labelSmall,
-                color = contentColor.copy(alpha = if (enabled) 0.72f else 0.5f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-    }
-}
-
-@Composable
 private fun PlayerFullscreenLockButton(
     locked: Boolean,
     onClick: () -> Unit,
@@ -4983,14 +4851,15 @@ private fun PlayerActionBar(
 ) {
     LazyRow(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        horizontalArrangement = Arrangement.spacedBy(9.dp),
         contentPadding = PaddingValues(horizontal = 2.dp),
     ) {
         if (hasPlaybackIssue) {
             item {
                 PlayerTextAction(
                     icon = Icons.Filled.Refresh,
-                    text = "重试",
+                    title = "重试",
+                    value = "当前",
                     selected = true,
                     onClick = onRetryRoute,
                 )
@@ -4998,7 +4867,8 @@ private fun PlayerActionBar(
             item {
                 PlayerTextAction(
                     icon = Icons.Filled.VideoLibrary,
-                    text = "下一线路",
+                    title = "下一线路",
+                    value = if (canSelectNextRoute) "可切" else "无",
                     enabled = canSelectNextRoute,
                     onClick = onNextRoute,
                 )
@@ -5007,7 +4877,8 @@ private fun PlayerActionBar(
         item {
             PlayerTextAction(
                 icon = Icons.Filled.ClosedCaption,
-                text = if (danmakuEnabled) "弹幕 开" else "弹幕 关",
+                title = "弹幕",
+                value = if (danmakuEnabled) "开" else "关",
                 selected = danmakuEnabled,
                 onClick = onToggleDanmaku,
             )
@@ -5015,7 +4886,8 @@ private fun PlayerActionBar(
         item {
             PlayerTextAction(
                 icon = Icons.Filled.Settings,
-                text = "弹幕 ${formatDanmakuDensity(density)}",
+                title = "弹幕设置",
+                value = formatDanmakuDensity(density),
                 selected = activePanel == PlayerPanel.Danmaku,
                 onClick = { onShowPanel(PlayerPanel.Danmaku) },
             )
@@ -5023,7 +4895,8 @@ private fun PlayerActionBar(
         item {
             PlayerTextAction(
                 icon = Icons.Filled.HighQuality,
-                text = "清晰度 $quality",
+                title = "清晰度",
+                value = quality,
                 selected = activePanel == PlayerPanel.Quality,
                 enabled = routeCount > 0,
                 onClick = { onShowPanel(PlayerPanel.Quality) },
@@ -5032,7 +4905,8 @@ private fun PlayerActionBar(
         item {
             PlayerTextAction(
                 icon = Icons.Filled.Speed,
-                text = "倍速 ${formatPlaybackSpeed(playbackSpeed)}",
+                title = "倍速",
+                value = formatPlaybackSpeed(playbackSpeed),
                 selected = activePanel == PlayerPanel.Speed,
                 onClick = { onShowPanel(PlayerPanel.Speed) },
             )
@@ -5040,7 +4914,8 @@ private fun PlayerActionBar(
         item {
             PlayerTextAction(
                 icon = Icons.Filled.VideoLibrary,
-                text = "线路 ${routeCount.coerceAtLeast(1)}",
+                title = "线路",
+                value = "${routeCount.coerceAtLeast(1)}条",
                 selected = activePanel == PlayerPanel.Route,
                 enabled = routeCount > 1,
                 onClick = { onShowPanel(PlayerPanel.Route) },
@@ -5049,7 +4924,8 @@ private fun PlayerActionBar(
         item {
             PlayerTextAction(
                 icon = Icons.AutoMirrored.Filled.PlaylistPlay,
-                text = "选集",
+                title = "选集",
+                value = if (episodeCount > 1) "${episodeCount}集" else "单集",
                 selected = activePanel == PlayerPanel.Episode,
                 enabled = episodeCount > 1,
                 onClick = { onShowPanel(PlayerPanel.Episode) },
@@ -5058,7 +4934,8 @@ private fun PlayerActionBar(
         item {
             PlayerTextAction(
                 icon = Icons.Filled.CloudDownload,
-                text = "缓存",
+                title = "缓存",
+                value = if (offlineEnabled) "离线" else "不可用",
                 enabled = offlineEnabled,
                 onClick = onOffline,
             )
@@ -5066,7 +4943,8 @@ private fun PlayerActionBar(
         item {
             PlayerTextAction(
                 icon = Icons.Filled.MoreVert,
-                text = "更多",
+                title = "更多",
+                value = "设置",
                 selected = activePanel == PlayerPanel.More,
                 onClick = { onShowPanel(PlayerPanel.More) },
             )
@@ -6309,26 +6187,55 @@ private fun PlayerSelectableRow(
 @Composable
 private fun PlayerTextAction(
     icon: ImageVector?,
-    text: String,
+    title: String,
+    value: String? = null,
     selected: Boolean = false,
     enabled: Boolean = true,
     onClick: () -> Unit,
 ) {
+    val contentColor = when {
+        !enabled -> Color.White.copy(alpha = 0.34f)
+        selected -> AnimeAccentPink
+        else -> Color.White.copy(alpha = 0.9f)
+    }
     TextButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = Modifier.height(34.dp).focusable(),
+        modifier = Modifier.width(72.dp).height(52.dp).focusable(),
+        shape = RoundedCornerShape(8.dp),
         colors = ButtonDefaults.textButtonColors(
-            contentColor = if (selected) AnimeAccentPink else Color.White.copy(alpha = 0.9f),
+            containerColor = if (selected) AnimeAccentPink.copy(alpha = 0.16f) else Color.White.copy(alpha = 0.06f),
+            contentColor = contentColor,
+            disabledContainerColor = Color.White.copy(alpha = 0.04f),
             disabledContentColor = Color.White.copy(alpha = 0.36f),
         ),
-        contentPadding = PaddingValues(horizontal = 0.dp),
+        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp),
     ) {
-        if (icon != null) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(17.dp))
-            Spacer(Modifier.width(5.dp))
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            if (icon != null) {
+                Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
+            }
+            Text(
+                title,
+                style = MaterialTheme.typography.labelSmall,
+                color = contentColor,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            value?.takeIf { it.isNotBlank() }?.let {
+                Text(
+                    it,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = contentColor.copy(alpha = if (enabled) 0.68f else 0.5f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
-        Text(text, style = MaterialTheme.typography.labelMedium, maxLines = 1)
     }
 }
 

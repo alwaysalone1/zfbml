@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.62
+
+中文：
+
+- 横屏全屏播放器移除右侧常驻快捷 Dock，避免和底部功能条重复，减少画面右侧遮挡。
+- 横屏底部功能区改成图标、名称、当前值三段式按钮，集中展示弹幕、弹幕设置、清晰度、倍速、线路、选集、缓存和更多设置。
+- 全屏状态继续保留完整功能入口，但视觉重心更接近 B 站式底部控制条，观看时更干净。
+
+English:
+
+- The landscape fullscreen player no longer shows the always-on right quick dock, avoiding duplicate controls and reducing video obstruction.
+- The fullscreen bottom action area now uses icon, label, and current value buttons for danmaku, danmaku settings, quality, speed, routes, episodes, cache, and more.
+- Fullscreen mode still keeps the complete control set, but the visual weight is now closer to a Bilibili-style bottom control strip.
+
 ### v0.2.61
 
 中文：
