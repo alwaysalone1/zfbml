@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.77
+
+中文：
+
+- 播放源面板新增默认“简单模式”，普通用户打开换源时只看到推荐线路、来源筛选和可切换项。
+- “详细”模式才展示来源可播数、在线/BT 分布、失败降级数、当前源和推荐源等诊断信息。
+- 线路行在简单模式下隐藏协议和文件大小，降低工具感；失败和不可选状态仍保留明确提示。
+
+English:
+
+- The playback source panel now defaults to a Simple mode, showing recommended routes, source filters, and switchable options for regular viewing.
+- Detailed mode exposes diagnostics such as playable counts, online/BT distribution, failed routes, current source, and recommended source.
+- Route rows hide protocol and file-size details in Simple mode to reduce the tool-like feel while preserving failure and unavailable states.
+
 ### v0.2.76
 
 中文：
