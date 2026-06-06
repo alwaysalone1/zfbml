@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.59
+
+中文：
+
+- 播放线路面板新增“按来源筛选”，可直接点击“全部来源”或某个来源卡，只查看对应来源下的线路。
+- 线路面板顶部文案从“线路诊断”收敛为“自动推荐”，保留推荐/当前/失败信息，但减少调试工具感。
+- 换源路径更接近 Animeko 式多源体验：先选来源，再选具体线路，长列表不再混在一起。
+
+English:
+
+- The playback source panel now supports source filtering. Users can tap All Sources or a specific source card to view only routes from that source.
+- The panel headline now says Auto Recommendation instead of Route Diagnostics, keeping recommendation/current/failure context with less tester-like wording.
+- Source switching is closer to Animeko-style multi-source browsing: choose a source first, then pick a concrete route instead of scanning one mixed list.
+
 ### v0.2.58
 
 中文：

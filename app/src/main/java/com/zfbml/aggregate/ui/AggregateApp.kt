@@ -1514,7 +1514,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.58")
+                setRequestProperty("User-Agent", "ZFBML/0.2.59")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -5543,9 +5543,22 @@ private fun PlayerRoutePanel(
         Text("暂时没有可用播放线路", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         return
     }
+    var selectedSourceId by remember(routes) { mutableStateOf<String?>(null) }
+    val availableSourceIds = remember(routes) { routes.map { it.sourceId }.toSet() }
+    LaunchedEffect(availableSourceIds, selectedSourceId) {
+        if (selectedSourceId != null && selectedSourceId !in availableSourceIds) {
+            selectedSourceId = null
+        }
+    }
     val panelState = remember(routes, selectedStreamId, failedStreamIds) {
         buildRoutePanelUiState(routes, selectedStreamId, failedStreamIds)
     }
+    val visibleRoutes = remember(routes, selectedSourceId) {
+        selectedSourceId?.let { sourceId -> routes.filter { it.sourceId == sourceId } } ?: routes
+    }
+    val selectedSourceName = selectedSourceId?.let { sourceId ->
+        routes.firstOrNull { it.sourceId == sourceId }?.sourceName ?: sourceId
+    } ?: "全部来源"
     LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         item {
             RoutePanelSummaryCard(
@@ -5558,21 +5571,24 @@ private fun PlayerRoutePanel(
             PlayerRouteSourceStrip(
                 routes = routes,
                 selectedStreamId = selectedStreamId,
+                selectedSourceId = selectedSourceId,
                 recommendedStreamId = panelState.recommendedRoute?.stream?.id,
                 failedStreamIds = failedStreamIds,
+                onSourceSelected = { selectedSourceId = it },
                 modifier = Modifier.fillMaxWidth(),
             )
         }
         item {
             Text(
-                "手动选择线路",
+                "手动选择线路 · $selectedSourceName (${visibleRoutes.size})",
                 style = MaterialTheme.typography.labelMedium,
                 color = Color.White.copy(alpha = 0.72f),
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
-        items(routes, key = { it.stream.id }) { route ->
+        items(visibleRoutes, key = { it.stream.id }) { route ->
             val failed = route.stream.id in failedStreamIds
             val recommended = route.stream.id == panelState.recommendedRoute?.stream?.id
             val selected = route.stream.id == selectedStreamId
@@ -5591,12 +5607,14 @@ private fun PlayerRoutePanel(
 private fun PlayerRouteSourceStrip(
     routes: List<RouteCandidate>,
     selectedStreamId: String,
+    selectedSourceId: String?,
     recommendedStreamId: String?,
     failedStreamIds: Set<String>,
+    onSourceSelected: (String?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val groups = remember(routes, selectedStreamId, recommendedStreamId, failedStreamIds) {
-        routes
+    val groups = remember(routes, selectedStreamId, selectedSourceId, recommendedStreamId, failedStreamIds) {
+        val sourceGroups = routes
             .groupBy { it.sourceId }
             .map { (sourceId, sourceRoutes) ->
                 PlayerRouteSourceGroup(
@@ -5617,19 +5635,39 @@ private fun PlayerRouteSourceStrip(
                     failedCount = sourceRoutes.count { it.stream.id in failedStreamIds },
                     hasSelected = sourceRoutes.any { it.stream.id == selectedStreamId },
                     hasRecommended = sourceRoutes.any { it.stream.id == recommendedStreamId },
+                    isFilterSelected = sourceId == selectedSourceId,
                 )
             }
             .sortedWith(
-                compareByDescending<PlayerRouteSourceGroup> { it.hasSelected }
+                compareByDescending<PlayerRouteSourceGroup> { it.isFilterSelected }
+                    .thenByDescending { it.hasSelected }
                     .thenByDescending { it.hasRecommended }
                     .thenByDescending { it.onlineCount > 0 }
                     .thenByDescending { it.playableCount }
                     .thenBy { it.name },
             )
+        val allGroup = PlayerRouteSourceGroup(
+            id = PlayerRouteAllSourceId,
+            name = "全部来源",
+            totalCount = routes.size,
+            playableCount = routes.count { it.stream.id !in failedStreamIds && it.protocol != StreamProtocol.WEBVIEW_ONLY },
+            onlineCount = routes.count {
+                it.stream.id !in failedStreamIds &&
+                    it.protocol != StreamProtocol.BITTORRENT &&
+                    it.protocol != StreamProtocol.WEBVIEW_ONLY
+            },
+            btCount = routes.count { it.stream.id !in failedStreamIds && it.protocol == StreamProtocol.BITTORRENT },
+            failedCount = routes.count { it.stream.id in failedStreamIds },
+            hasSelected = routes.any { it.stream.id == selectedStreamId },
+            hasRecommended = recommendedStreamId != null && routes.any { it.stream.id == recommendedStreamId },
+            isAll = true,
+            isFilterSelected = selectedSourceId == null,
+        )
+        listOf(allGroup) + sourceGroups
     }
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(7.dp)) {
         Text(
-            "来源概览",
+            "按来源筛选",
             style = MaterialTheme.typography.labelMedium,
             color = Color.White.copy(alpha = 0.72f),
             fontWeight = FontWeight.SemiBold,
@@ -5637,11 +5675,18 @@ private fun PlayerRouteSourceStrip(
         )
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             items(groups, key = { it.id }) { group ->
-                PlayerRouteSourceChip(group)
+                PlayerRouteSourceChip(
+                    group = group,
+                    onClick = {
+                        onSourceSelected(if (group.isAll) null else group.id)
+                    },
+                )
             }
         }
     }
 }
+
+private const val PlayerRouteAllSourceId = "__all_sources__"
 
 private data class PlayerRouteSourceGroup(
     val id: String,
@@ -5653,11 +5698,14 @@ private data class PlayerRouteSourceGroup(
     val failedCount: Int,
     val hasSelected: Boolean,
     val hasRecommended: Boolean,
+    val isAll: Boolean = false,
+    val isFilterSelected: Boolean = false,
 )
 
 @Composable
-private fun PlayerRouteSourceChip(group: PlayerRouteSourceGroup) {
+private fun PlayerRouteSourceChip(group: PlayerRouteSourceGroup, onClick: () -> Unit) {
     val accent = when {
+        group.isFilterSelected -> AnimeAccentCyan
         group.hasSelected -> AnimeAccentCyan
         group.hasRecommended -> AnimeAccentPink
         group.onlineCount > 0 -> AnimeAccentGreen
@@ -5665,12 +5713,17 @@ private fun PlayerRouteSourceChip(group: PlayerRouteSourceGroup) {
         else -> AnimeMuted
     }
     Card(
+        onClick = onClick,
         modifier = Modifier.width(152.dp).height(74.dp),
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (group.hasSelected || group.hasRecommended) Color.White.copy(alpha = 0.08f) else Color.White.copy(alpha = 0.045f),
+            containerColor = if (group.isFilterSelected || group.hasSelected || group.hasRecommended) {
+                Color.White.copy(alpha = 0.08f)
+            } else {
+                Color.White.copy(alpha = 0.045f)
+            },
         ),
-        border = BorderStroke(1.dp, accent.copy(alpha = if (group.hasSelected || group.hasRecommended) 0.85f else 0.34f)),
+        border = BorderStroke(1.dp, accent.copy(alpha = if (group.isFilterSelected || group.hasSelected || group.hasRecommended) 0.85f else 0.34f)),
     ) {
         Column(
             modifier = Modifier.fillMaxSize().padding(10.dp),
@@ -5687,6 +5740,8 @@ private fun PlayerRouteSourceChip(group: PlayerRouteSourceGroup) {
                     overflow = TextOverflow.Ellipsis,
                 )
                 when {
+                    group.isFilterSelected && group.isAll -> RouteStatusBadge("全部", AnimeAccentCyan)
+                    group.isFilterSelected -> RouteStatusBadge("已选", AnimeAccentCyan)
                     group.hasSelected -> RouteStatusBadge("当前", AnimeAccentCyan)
                     group.hasRecommended -> RouteStatusBadge("推荐", AnimeAccentPink)
                 }
@@ -5862,7 +5917,7 @@ private fun RoutePanelSummaryCard(
                 )
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
-                        "线路诊断 · 共 ${state.totalCount} 条",
+                        "自动推荐 · 共 ${state.totalCount} 条",
                         style = MaterialTheme.typography.titleSmall,
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
