@@ -1512,7 +1512,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.79")
+                setRequestProperty("User-Agent", "ZFBML/0.2.80")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -1889,7 +1889,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             Text("\u8BBE\u7F6E", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
-            Text("\u7248\u672C 0.2.79", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+            Text("\u7248\u672C 0.2.80", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         }
         item {
             StatusPanel(
@@ -3585,7 +3585,7 @@ private fun PlayerScreen(
         val danmakuBottomPadding = when {
             !controlsVisible -> 6.dp
             activePanel != null -> if (compact) 18.dp else 210.dp
-            compact -> 92.dp
+            compact -> 76.dp
             else -> 118.dp
         }
         Box(modifier.background(Color.Black)) {
@@ -4235,9 +4235,7 @@ private fun PlayerTopOverlay(
     compact: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    val compactStatus = overlayState.error
-        ?: overlayState.notice
-        ?: overlayState.playbackState.takeIf { it.isNotBlank() }
+    val compactStatus = overlayState.error ?: overlayState.notice
     Box(
         modifier = modifier
             .background(
@@ -4551,8 +4549,6 @@ private fun PlayerBottomControls(
 
         } else {
             PlayerCompactInteractionRow(
-                positionText = formatPlaybackTime(displayPositionMs),
-                durationText = if (durationMs > 0L) formatPlaybackTime(durationMs) else "--:--",
                 progressFraction = if (durationMs > 0L) displayPositionMs.toFloat() / durationMs.toFloat() else null,
                 danmakuEnabled = danmakuEnabled,
                 routeCount = routeOptions.size,
@@ -4642,8 +4638,6 @@ private fun PlayerFullscreenNoticeStrip(
 
 @Composable
 private fun PlayerCompactInteractionRow(
-    positionText: String,
-    durationText: String,
     progressFraction: Float?,
     danmakuEnabled: Boolean,
     routeCount: Int,
@@ -4669,44 +4663,9 @@ private fun PlayerCompactInteractionRow(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
+        PlayerCompactProgressLine(progressFraction = progressFraction, modifier = Modifier.fillMaxWidth())
         Row(
-            modifier = Modifier.fillMaxWidth().height(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(7.dp),
-        ) {
-            Text(
-                text = positionText,
-                style = MaterialTheme.typography.labelSmall,
-                color = Color.White.copy(alpha = 0.82f),
-                maxLines = 1,
-                modifier = Modifier.width(40.dp),
-            )
-            if (progressFraction != null) {
-                LinearProgressIndicator(
-                    progress = { progressFraction.coerceIn(0f, 1f) },
-                    modifier = Modifier.weight(1f).height(2.dp).clip(RoundedCornerShape(999.dp)),
-                    color = AnimeAccentPink,
-                    trackColor = Color.White.copy(alpha = 0.18f),
-                )
-            } else {
-                Box(
-                    Modifier
-                        .weight(1f)
-                        .height(2.dp)
-                        .clip(RoundedCornerShape(999.dp))
-                        .background(Color.White.copy(alpha = 0.18f)),
-                )
-            }
-            Text(
-                text = durationText,
-                style = MaterialTheme.typography.labelSmall,
-                color = Color.White.copy(alpha = 0.68f),
-                maxLines = 1,
-                modifier = Modifier.width(40.dp),
-            )
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth().height(34.dp),
+            modifier = Modifier.fillMaxWidth().height(32.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
@@ -4714,10 +4673,10 @@ private fun PlayerCompactInteractionRow(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color.Black.copy(alpha = 0.38f))
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(Color.Black.copy(alpha = 0.32f))
                     .clickable(onClick = onOpenDanmakuSettings)
-                    .padding(horizontal = 10.dp),
+                    .padding(horizontal = 11.dp),
                 horizontalArrangement = Arrangement.spacedBy(7.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -4728,24 +4687,19 @@ private fun PlayerCompactInteractionRow(
                     modifier = Modifier.size(16.dp),
                 )
                 Text(
-                    text = if (danmakuEnabled) "发个友善的弹幕" else "弹幕已关闭",
+                    text = if (danmakuEnabled) "点我发弹幕" else "弹幕已关闭",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.White.copy(alpha = 0.72f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f),
                 )
-                Text(
-                    text = "弹幕",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = AnimeAccentCyan,
-                    maxLines = 1,
-                )
             }
-            PlayerTinyToggle(
-                text = "弹",
-                selected = danmakuEnabled,
+            PlayerTinyIconAction(
+                icon = Icons.Filled.ClosedCaption,
+                contentDescription = if (danmakuEnabled) "关闭弹幕" else "开启弹幕",
                 onClick = onToggleDanmaku,
+                selected = danmakuEnabled,
                 modifier = Modifier.width(36.dp),
             )
             if (compactActionLabel != null && compactActionClick != null) {
@@ -4762,6 +4716,28 @@ private fun PlayerCompactInteractionRow(
                 modifier = Modifier.width(36.dp),
             )
         }
+    }
+}
+
+@Composable
+private fun PlayerCompactProgressLine(
+    progressFraction: Float?,
+    modifier: Modifier = Modifier,
+) {
+    if (progressFraction != null) {
+        LinearProgressIndicator(
+            progress = { progressFraction.coerceIn(0f, 1f) },
+            modifier = modifier.height(3.dp).clip(RoundedCornerShape(999.dp)),
+            color = AnimeAccentPink,
+            trackColor = Color.White.copy(alpha = 0.18f),
+        )
+    } else {
+        Box(
+            modifier
+                .height(3.dp)
+                .clip(RoundedCornerShape(999.dp))
+                .background(Color.White.copy(alpha = 0.18f)),
+        )
     }
 }
 

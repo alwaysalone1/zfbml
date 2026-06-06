@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.80
+
+中文：
+
+- 竖屏播放器顶部不再展示普通播放状态胶囊，只保留异常和切源提示，减少对画面的干扰。
+- 竖屏底部控制改为细进度线 + 弹幕输入胶囊 + 精简操作，更接近国内移动端视频播放器的轻交互层级。
+- 弹幕入口文案改为“点我发弹幕”，弹幕开关改为图标按钮，降低工具按钮感。
+
+English:
+
+- The portrait player top overlay no longer shows normal playback-state pills, keeping only error and route-switching notices to reduce visual noise.
+- The portrait bottom controls now use a slim progress line, a danmaku input pill, and compact actions, closer to Chinese mobile video player interaction patterns.
+- The danmaku entry now says "Tap to send danmaku", and the danmaku toggle is an icon button to reduce the tool-like feel.
+
 ### v0.2.79
 
 中文：
