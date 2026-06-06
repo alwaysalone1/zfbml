@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.71
+
+中文：
+
+- 竖屏非全屏播放器底部控件进一步精简，只常驻进度、弹幕输入、弹幕开关、一个主入口和全屏按钮。
+- 竖屏主入口优先显示“选集”；没有多集但存在多线路时才显示“线路”，避免把线路调试感暴露给普通观看流程。
+- 倍速和完整线路管理保留在全屏控制层与播放器弹层中，形成“竖屏轻观看、横屏全功能”的层级。
+
+English:
+
+- The portrait non-fullscreen player controls are now more compact, keeping only progress, danmaku input, danmaku toggle, one primary action, and fullscreen.
+- The portrait primary action prefers Episodes; Routes only appears when there are multiple routes but no multi-episode entry, reducing route-debug noise in normal viewing.
+- Speed and full route management remain available in fullscreen controls and player panels, creating a clearer portrait-light, landscape-complete hierarchy.
+
 ### v0.2.70
 
 中文：

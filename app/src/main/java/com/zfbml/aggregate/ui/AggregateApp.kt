@@ -1514,7 +1514,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.70")
+                setRequestProperty("User-Agent", "ZFBML/0.2.71")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -1891,7 +1891,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             Text("\u8BBE\u7F6E", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
-            Text("\u7248\u672C 0.2.70", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+            Text("\u7248\u672C 0.2.71", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         }
         item {
             StatusPanel(
@@ -4558,12 +4558,10 @@ private fun PlayerBottomControls(
                 danmakuEnabled = danmakuEnabled,
                 routeCount = routeOptions.size,
                 episodeCount = episodeCount,
-                playbackSpeed = playbackSpeed,
                 onToggleDanmaku = onToggleDanmaku,
                 onOpenDanmakuSettings = { onShowPanel(PlayerPanel.Danmaku) },
                 onOpenRoute = { onShowPanel(PlayerPanel.Route) },
                 onOpenEpisode = { onShowPanel(PlayerPanel.Episode) },
-                onOpenSpeed = { onShowPanel(PlayerPanel.Speed) },
                 onEnterFullscreen = onEnterFullscreen,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -4652,15 +4650,23 @@ private fun PlayerCompactInteractionRow(
     danmakuEnabled: Boolean,
     routeCount: Int,
     episodeCount: Int,
-    playbackSpeed: Float,
     onToggleDanmaku: () -> Unit,
     onOpenDanmakuSettings: () -> Unit,
     onOpenRoute: () -> Unit,
     onOpenEpisode: () -> Unit,
-    onOpenSpeed: () -> Unit,
     onEnterFullscreen: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val compactActionLabel = when {
+        episodeCount > 1 -> "选集"
+        routeCount > 1 -> "线路"
+        else -> null
+    }
+    val compactActionClick = when {
+        episodeCount > 1 -> onOpenEpisode
+        routeCount > 1 -> onOpenRoute
+        else -> null
+    }
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -4744,23 +4750,13 @@ private fun PlayerCompactInteractionRow(
                 onClick = onToggleDanmaku,
                 modifier = Modifier.width(36.dp),
             )
-            PlayerCompactTextAction(
-                text = "线路",
-                selected = routeCount > 1,
-                enabled = routeCount > 1,
-                onClick = onOpenRoute,
-            )
-            PlayerCompactTextAction(
-                text = "选集",
-                selected = episodeCount > 1,
-                enabled = episodeCount > 1,
-                onClick = onOpenEpisode,
-            )
-            PlayerCompactTextAction(
-                text = formatPlaybackSpeed(playbackSpeed).takeIf { playbackSpeed != 1f } ?: "倍速",
-                selected = playbackSpeed != 1f,
-                onClick = onOpenSpeed,
-            )
+            if (compactActionLabel != null && compactActionClick != null) {
+                PlayerCompactTextAction(
+                    text = compactActionLabel,
+                    selected = true,
+                    onClick = compactActionClick,
+                )
+            }
             PlayerTinyIconAction(
                 icon = Icons.Filled.Fullscreen,
                 contentDescription = "全屏播放",
