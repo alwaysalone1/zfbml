@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.66
+
+中文：
+
+- 竖屏未全屏播放器底栏改成更接近国内长视频/弹幕 App 的布局：上方独立显示时间与细进度条，下方集中放弹幕输入、弹幕开关、线路、选集、倍速和全屏。
+- “更多”入口不再占据竖屏主底栏，常用追番操作直接露出，用户不用先进入工具面板才能找线路或选集。
+- 弹幕底部避让空间同步调整，减少控制栏出现时压住弹幕的观感问题。
+
+English:
+
+- The portrait non-fullscreen player bottom bar now follows a more China-market long-video/danmaku layout: time and slim progress on top, with danmaku input, danmaku toggle, routes, episodes, speed, and fullscreen below.
+- The More entry no longer occupies the main portrait bar, so core anime-watching actions like route switching and episode selection are exposed directly.
+- Danmaku bottom padding was adjusted to avoid comments colliding with the expanded portrait controls.
+
 ### v0.2.65
 
 中文：

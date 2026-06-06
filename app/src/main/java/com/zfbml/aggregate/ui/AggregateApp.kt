@@ -1514,7 +1514,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.65")
+                setRequestProperty("User-Agent", "ZFBML/0.2.66")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -1891,7 +1891,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             Text("\u8BBE\u7F6E", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
-            Text("\u7248\u672C 0.2.65", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+            Text("\u7248\u672C 0.2.66", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         }
         item {
             StatusPanel(
@@ -3567,7 +3567,7 @@ private fun PlayerScreen(
         val danmakuBottomPadding = when {
             !controlsVisible -> 6.dp
             activePanel != null -> if (compact) 18.dp else 210.dp
-            compact -> 82.dp
+            compact -> 92.dp
             else -> 118.dp
         }
         Box(modifier.background(Color.Black)) {
@@ -4530,9 +4530,14 @@ private fun PlayerBottomControls(
                 durationText = if (durationMs > 0L) formatPlaybackTime(durationMs) else "--:--",
                 progressFraction = if (durationMs > 0L) displayPositionMs.toFloat() / durationMs.toFloat() else null,
                 danmakuEnabled = danmakuEnabled,
+                routeCount = routeOptions.size,
+                episodeCount = episodeCount,
+                playbackSpeed = playbackSpeed,
                 onToggleDanmaku = onToggleDanmaku,
                 onOpenDanmakuSettings = { onShowPanel(PlayerPanel.Danmaku) },
-                onOpenMore = { onShowPanel(PlayerPanel.More) },
+                onOpenRoute = { onShowPanel(PlayerPanel.Route) },
+                onOpenEpisode = { onShowPanel(PlayerPanel.Episode) },
+                onOpenSpeed = { onShowPanel(PlayerPanel.Speed) },
                 onEnterFullscreen = onEnterFullscreen,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -4619,28 +4624,62 @@ private fun PlayerCompactInteractionRow(
     durationText: String,
     progressFraction: Float?,
     danmakuEnabled: Boolean,
+    routeCount: Int,
+    episodeCount: Int,
+    playbackSpeed: Float,
     onToggleDanmaku: () -> Unit,
     onOpenDanmakuSettings: () -> Unit,
-    onOpenMore: () -> Unit,
+    onOpenRoute: () -> Unit,
+    onOpenEpisode: () -> Unit,
+    onOpenSpeed: () -> Unit,
     onEnterFullscreen: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(34.dp),
+            modifier = Modifier.fillMaxWidth().height(16.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(7.dp),
         ) {
             Text(
-                text = "$positionText / $durationText",
+                text = positionText,
                 style = MaterialTheme.typography.labelSmall,
                 color = Color.White.copy(alpha = 0.82f),
                 maxLines = 1,
-                modifier = Modifier.width(86.dp),
+                modifier = Modifier.width(40.dp),
             )
+            if (progressFraction != null) {
+                LinearProgressIndicator(
+                    progress = { progressFraction.coerceIn(0f, 1f) },
+                    modifier = Modifier.weight(1f).height(2.dp).clip(RoundedCornerShape(999.dp)),
+                    color = AnimeAccentPink,
+                    trackColor = Color.White.copy(alpha = 0.18f),
+                )
+            } else {
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .height(2.dp)
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(Color.White.copy(alpha = 0.18f)),
+                )
+            }
+            Text(
+                text = durationText,
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.White.copy(alpha = 0.68f),
+                maxLines = 1,
+                modifier = Modifier.width(40.dp),
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth().height(34.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
             Row(
                 modifier = Modifier
                     .weight(1f)
@@ -4674,29 +4713,66 @@ private fun PlayerCompactInteractionRow(
                 )
             }
             PlayerTinyToggle(
-                text = if (danmakuEnabled) "开" else "关",
+                text = "弹",
                 selected = danmakuEnabled,
                 onClick = onToggleDanmaku,
+                modifier = Modifier.width(36.dp),
             )
-            PlayerTinyIconAction(
-                icon = Icons.Filled.MoreVert,
-                contentDescription = "更多播放设置",
-                onClick = onOpenMore,
+            PlayerCompactTextAction(
+                text = "线路",
+                selected = routeCount > 1,
+                enabled = routeCount > 1,
+                onClick = onOpenRoute,
+            )
+            PlayerCompactTextAction(
+                text = "选集",
+                selected = episodeCount > 1,
+                enabled = episodeCount > 1,
+                onClick = onOpenEpisode,
+            )
+            PlayerCompactTextAction(
+                text = formatPlaybackSpeed(playbackSpeed).takeIf { playbackSpeed != 1f } ?: "倍速",
+                selected = playbackSpeed != 1f,
+                onClick = onOpenSpeed,
             )
             PlayerTinyIconAction(
                 icon = Icons.Filled.Fullscreen,
                 contentDescription = "全屏播放",
                 onClick = onEnterFullscreen,
+                modifier = Modifier.width(36.dp),
             )
         }
-        if (progressFraction != null) {
-            LinearProgressIndicator(
-                progress = { progressFraction.coerceIn(0f, 1f) },
-                modifier = Modifier.fillMaxWidth().height(2.dp).clip(RoundedCornerShape(999.dp)),
-                color = AnimeAccentPink,
-                trackColor = Color.White.copy(alpha = 0.16f),
-            )
-        }
+    }
+}
+
+@Composable
+private fun PlayerCompactTextAction(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier.width(46.dp),
+    selected: Boolean = false,
+    enabled: Boolean = true,
+) {
+    TextButton(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier.height(34.dp).focusable(),
+        shape = RoundedCornerShape(8.dp),
+        colors = ButtonDefaults.textButtonColors(
+            containerColor = if (selected) AnimeAccentPink.copy(alpha = 0.18f) else Color.White.copy(alpha = 0.08f),
+            contentColor = if (selected) AnimeAccentPink else Color.White.copy(alpha = 0.72f),
+            disabledContainerColor = Color.White.copy(alpha = 0.04f),
+            disabledContentColor = Color.White.copy(alpha = 0.3f),
+        ),
+        contentPadding = PaddingValues(horizontal = 0.dp),
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelSmall,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            fontWeight = FontWeight.Bold,
+        )
     }
 }
 
