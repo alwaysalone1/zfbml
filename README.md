@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.87
+
+中文：
+
+- 播放器弹层标题下新增快捷标签，可在清晰度、倍速、线路、选集、弹幕、设置之间直接切换。
+- 横屏右侧抽屉和竖屏底部弹层复用同一套标签，减少反复关闭面板再从底部按钮进入的操作。
+- 标签会根据线路数、选集数和弹幕状态显示可用性与当前状态，让全屏播放器的功能入口更完整、更清楚。
+
+English:
+
+- Player option panels now include quick tabs for Quality, Speed, Routes, Episodes, Danmaku, and Settings directly under the header.
+- The same tab row is shared by the landscape side drawer and portrait bottom sheet, reducing repeated close-and-reopen panel navigation.
+- Tabs reflect route count, episode count, and danmaku state so fullscreen controls feel more complete and easier to scan.
+
 ### v0.2.86
 
 中文：

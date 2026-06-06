@@ -1512,7 +1512,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.86")
+                setRequestProperty("User-Agent", "ZFBML/0.2.87")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -1889,7 +1889,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             Text("\u8BBE\u7F6E", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
-            Text("\u7248\u672C 0.2.86", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+            Text("\u7248\u672C 0.2.87", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         }
         item {
             StatusPanel(
@@ -5237,6 +5237,14 @@ private fun PlayerOptionPanel(
                     subtitle = playerPanelSubtitle(panel),
                     onDismiss = onDismiss,
                 )
+                PlayerPanelQuickTabs(
+                    selectedPanel = panel,
+                    routeCount = routeOptions.size,
+                    episodeCount = detail.episodes.size,
+                    danmakuEnabled = danmakuEnabled,
+                    onSelected = onShowPanel,
+                    modifier = Modifier.fillMaxWidth(),
+                )
                 Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
                     when (panel) {
                         PlayerPanel.More -> PlayerMorePanel(
@@ -5289,6 +5297,15 @@ private fun PlayerOptionPanel(
     }
 }
 
+private data class PlayerPanelTabSpec(
+    val panel: PlayerPanel,
+    val label: String,
+    val icon: ImageVector,
+    val value: String?,
+    val enabled: Boolean = true,
+    val selected: Boolean = false,
+)
+
 @Composable
 private fun PlayerPanelHeader(title: String, subtitle: String, onDismiss: () -> Unit) {
     Row(
@@ -5318,6 +5335,124 @@ private fun PlayerPanelHeader(title: String, subtitle: String, onDismiss: () -> 
         }
         TextButton(onClick = onDismiss, modifier = Modifier.height(34.dp)) {
             Text("收起", color = Color.White.copy(alpha = 0.82f), style = MaterialTheme.typography.labelMedium)
+        }
+    }
+}
+
+@Composable
+private fun PlayerPanelQuickTabs(
+    selectedPanel: PlayerPanel,
+    routeCount: Int,
+    episodeCount: Int,
+    danmakuEnabled: Boolean,
+    onSelected: (PlayerPanel) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val tabs = listOf(
+        PlayerPanelTabSpec(
+            panel = PlayerPanel.Quality,
+            label = "清晰度",
+            icon = Icons.Filled.HighQuality,
+            value = null,
+            enabled = routeCount > 0,
+        ),
+        PlayerPanelTabSpec(
+            panel = PlayerPanel.Speed,
+            label = "倍速",
+            icon = Icons.Filled.Speed,
+            value = null,
+        ),
+        PlayerPanelTabSpec(
+            panel = PlayerPanel.Route,
+            label = "线路",
+            icon = Icons.Filled.VideoLibrary,
+            value = "${routeCount.coerceAtLeast(1)}条",
+            enabled = routeCount > 1,
+        ),
+        PlayerPanelTabSpec(
+            panel = PlayerPanel.Episode,
+            label = "选集",
+            icon = Icons.AutoMirrored.Filled.PlaylistPlay,
+            value = if (episodeCount > 1) "${episodeCount}集" else "单集",
+            enabled = episodeCount > 1,
+        ),
+        PlayerPanelTabSpec(
+            panel = PlayerPanel.Danmaku,
+            label = "弹幕",
+            icon = Icons.Filled.ClosedCaption,
+            value = if (danmakuEnabled) "开" else "关",
+            selected = danmakuEnabled,
+        ),
+        PlayerPanelTabSpec(
+            panel = PlayerPanel.More,
+            label = "设置",
+            icon = Icons.Filled.MoreVert,
+            value = null,
+        ),
+    )
+    LazyRow(
+        modifier = modifier.height(38.dp),
+        horizontalArrangement = Arrangement.spacedBy(7.dp),
+        contentPadding = PaddingValues(horizontal = 1.dp),
+    ) {
+        items(tabs, key = { it.panel }) { tab ->
+            val selected = tab.panel == selectedPanel
+            PlayerPanelQuickTab(
+                tab = tab,
+                selected = selected,
+                onClick = { onSelected(tab.panel) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun PlayerPanelQuickTab(
+    tab: PlayerPanelTabSpec,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val accent = when {
+        selected -> AnimeAccentPink
+        tab.selected -> AnimeAccentCyan
+        else -> Color.White.copy(alpha = 0.72f)
+    }
+    TextButton(
+        onClick = onClick,
+        enabled = tab.enabled || selected,
+        modifier = Modifier.width(86.dp).height(36.dp).focusable(),
+        shape = RoundedCornerShape(999.dp),
+        colors = ButtonDefaults.textButtonColors(
+            containerColor = if (selected) AnimeAccentPink.copy(alpha = 0.18f) else Color.White.copy(alpha = 0.06f),
+            contentColor = accent,
+            disabledContainerColor = Color.White.copy(alpha = 0.035f),
+            disabledContentColor = Color.White.copy(alpha = 0.32f),
+        ),
+        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Icon(tab.icon, contentDescription = null, modifier = Modifier.size(15.dp))
+            Text(
+                text = tab.label,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            tab.value?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = accent.copy(alpha = if (tab.enabled || selected) 0.76f else 0.48f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
     }
 }
