@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.76
+
+中文：
+
+- 竖屏播放页下方“正在观看”卡片弱化播放源技术信息，默认展示自动清晰度、播放状态和自动最佳线路。
+- “选集”入口改为显示当前观看进度与合集总集数，“换源”入口改为显示自动最佳和可切换线路数量。
+- 竖屏播放状态从 `READY/BUFFERING` 等英文标签转为中文展示，源细节只在需要换源或出现异常时展开。
+
+English:
+
+- The portrait watch card now hides technical source details by default, showing automatic quality, playback state, and best-route status instead.
+- The episode entry now summarizes current progress and total episode count, while source switching shows best-route status and switchable route count.
+- Portrait playback states now display localized Chinese labels instead of raw `READY/BUFFERING` text, with source details exposed only for switching or recovery.
+
 ### v0.2.75
 
 中文：

@@ -1512,7 +1512,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.75")
+                setRequestProperty("User-Agent", "ZFBML/0.2.76")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -1889,7 +1889,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             Text("\u8BBE\u7F6E", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
-            Text("\u7248\u672C 0.2.75", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+            Text("\u7248\u672C 0.2.76", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         }
         item {
             StatusPanel(
@@ -3787,7 +3787,6 @@ private fun PlayerScreen(
                     detail = detail,
                     episode = currentEpisode,
                     stream = currentStream,
-                    route = currentRoute,
                     routes = routeOptions,
                     playbackState = state.playbackStateLabel,
                     routeNotice = routeNotice,
@@ -3880,7 +3879,6 @@ private fun PortraitWatchInfoPanel(
     detail: MediaDetail,
     episode: Episode,
     stream: MediaStream,
-    route: RouteCandidate?,
     routes: List<RouteCandidate>,
     playbackState: String,
     routeNotice: String?,
@@ -3894,16 +3892,25 @@ private fun PortraitWatchInfoPanel(
     onEpisodeSelected: (Episode) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val sourceName = route?.sourceName ?: stream.metadata["routeProviderName"] ?: stream.providerId
     val quality = stream.quality.orEmpty().ifBlank { "自动" }
     val message = routeNotice ?: errorMessage
     val currentEpisodeText = episode.index?.let { "第 $it 集" } ?: "当前集"
-    val routeCountText = if (routes.size > 1) "${routes.size} 个播放源可切换" else "自动播放源"
-    val sourceBrief = listOf("当前源 $sourceName", quality.takeIf { it != "自动" }, routeCountText)
+    val playbackStateText = formatPlaybackStateLabel(playbackState)
+    val playbackBrief = listOf(
+        quality.takeIf { it != "自动" } ?: "自动清晰度",
+        playbackStateText.takeIf { it.isNotBlank() },
+        if (routes.size > 1) "自动最佳 · 可切换" else "自动最佳",
+    )
         .filterNotNull()
         .filter { it.isNotBlank() }
         .distinct()
         .joinToString(" · ")
+    val episodeActionSubtitle = if (detail.episodes.size > 1) {
+        episode.index?.let { "正在看第 $it 集 / 共 ${detail.episodes.size} 集" } ?: "共 ${detail.episodes.size} 集"
+    } else {
+        "当前播放"
+    }
+    val routeActionSubtitle = if (routes.size > 1) "自动最佳 · ${routes.size} 条" else "自动最佳"
     val showRouteDiagnostics = message != null || hasPlaybackIssue
     LazyColumn(
         modifier = modifier.fillMaxWidth().background(AnimeBackground),
@@ -3923,7 +3930,7 @@ private fun PortraitWatchInfoPanel(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     VideoMetaChip(currentEpisodeText)
                     VideoMetaChip(quality)
-                    VideoMetaChip(playbackState)
+                    VideoMetaChip(playbackStateText)
                 }
                 Text(
                     text = episode.title,
@@ -3951,7 +3958,7 @@ private fun PortraitWatchInfoPanel(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Box(
-                            modifier = Modifier.size(34.dp).clip(RoundedCornerShape(8.dp)).background(providerAccent(route?.sourceId ?: stream.providerId)),
+                            modifier = Modifier.size(34.dp).clip(RoundedCornerShape(8.dp)).background(AnimeAccentPink),
                             contentAlignment = Alignment.Center,
                         ) {
                             Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(19.dp))
@@ -3974,7 +3981,7 @@ private fun PortraitWatchInfoPanel(
                                 overflow = TextOverflow.Ellipsis,
                             )
                             Text(
-                                text = sourceBrief,
+                                text = playbackBrief,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = AnimeMuted,
                                 maxLines = 1,
@@ -3992,7 +3999,7 @@ private fun PortraitWatchInfoPanel(
                                 PortraitPlaybackAction(
                                     icon = Icons.AutoMirrored.Filled.PlaylistPlay,
                                     title = "选集",
-                                    subtitle = "共 ${detail.episodes.size} 集",
+                                    subtitle = episodeActionSubtitle,
                                     accent = AnimeAccentPink,
                                     onClick = { onShowPanel(PlayerPanel.Episode) },
                                     modifier = Modifier.weight(1f),
@@ -4002,7 +4009,7 @@ private fun PortraitWatchInfoPanel(
                                 PortraitPlaybackAction(
                                     icon = Icons.Filled.VideoLibrary,
                                     title = "换源",
-                                    subtitle = sourceName,
+                                    subtitle = routeActionSubtitle,
                                     accent = AnimeAccentCyan,
                                     onClick = { onShowPanel(PlayerPanel.Route) },
                                     modifier = Modifier.weight(1f),
@@ -6692,6 +6699,16 @@ private fun formatPercent(percent: Float): String {
 private fun normalizePlaybackDurationMs(durationMs: Long): Long {
     val maxReasonableDurationMs = 24L * 60L * 60L * 1000L
     return durationMs.takeIf { it in 1L..maxReasonableDurationMs } ?: 0L
+}
+
+private fun formatPlaybackStateLabel(label: String): String {
+    return when (label.uppercase()) {
+        "IDLE" -> "等待播放"
+        "BUFFERING" -> "缓冲中"
+        "READY" -> "播放就绪"
+        "ENDED" -> "已播完"
+        else -> label.ifBlank { "播放中" }
+    }
 }
 
 private fun formatPlaybackTime(ms: Long): String {
