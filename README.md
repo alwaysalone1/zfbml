@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.89
+
+中文：
+
+- 横屏全屏播放器底部改为“播放状态摘要 + 功能按钮”两层结构，先显示当前线路、清晰度、倍速、线路数和集数，再提供操作入口。
+- 全屏状态继续保留清晰度、倍速、线路、选集、缓存、更多和弹幕设置，让完整功能集中在横屏场景。
+- 竖屏非全屏的轻量控制逻辑不变，继续只放即时观看所需入口，避免普通观看时像调试工具。
+
+English:
+
+- The landscape fullscreen player bottom area now uses a two-layer structure: playback status first, then action controls.
+- Fullscreen mode keeps the complete control set for quality, speed, routes, episodes, cache, more options, and danmaku settings.
+- Portrait non-fullscreen controls stay lightweight, keeping everyday watching focused instead of feeling like a route/debug tool.
+
 ### v0.2.88
 
 中文：

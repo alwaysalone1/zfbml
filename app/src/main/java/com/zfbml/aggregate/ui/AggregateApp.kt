@@ -1512,7 +1512,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.88")
+                setRequestProperty("User-Agent", "ZFBML/0.2.89")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -1889,7 +1889,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             Text("\u8BBE\u7F6E", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
-            Text("\u7248\u672C 0.2.88", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+            Text("\u7248\u672C 0.2.89", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         }
         item {
             StatusPanel(
@@ -4610,6 +4610,7 @@ private fun PlayerBottomControls(
 
         if (!compact) {
             PlayerFullscreenControlRow(
+                routeSummary = routeSummary,
                 quality = quality,
                 routeCount = routeOptions.size,
                 episodeCount = episodeCount,
@@ -4913,6 +4914,7 @@ private fun PlayerFullscreenLockButton(
 
 @Composable
 private fun PlayerFullscreenControlRow(
+    routeSummary: String,
     quality: String,
     routeCount: Int,
     episodeCount: Int,
@@ -4929,33 +4931,102 @@ private fun PlayerFullscreenControlRow(
     onNextRoute: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
+    Column(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        PlayerDanmakuInputBar(
-            danmakuEnabled = danmakuEnabled,
-            onToggleDanmaku = onToggleDanmaku,
-            onOpenDanmakuSettings = { onShowPanel(PlayerPanel.Danmaku) },
-            modifier = Modifier.weight(0.82f),
-        )
-        PlayerActionBar(
+        PlayerFullscreenStatusStrip(
+            routeSummary = routeSummary,
             quality = quality,
             routeCount = routeCount,
             episodeCount = episodeCount,
             playbackSpeed = playbackSpeed,
-            activePanel = activePanel,
-            offlineEnabled = offlineEnabled,
             hasPlaybackIssue = hasPlaybackIssue,
-            canSelectNextRoute = canSelectNextRoute,
-            onShowPanel = onShowPanel,
-            onOffline = onOffline,
-            onRetryRoute = onRetryRoute,
-            onNextRoute = onNextRoute,
-            modifier = Modifier.weight(2.25f),
+            modifier = Modifier.fillMaxWidth(),
         )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            PlayerDanmakuInputBar(
+                danmakuEnabled = danmakuEnabled,
+                onToggleDanmaku = onToggleDanmaku,
+                onOpenDanmakuSettings = { onShowPanel(PlayerPanel.Danmaku) },
+                modifier = Modifier.weight(0.92f),
+            )
+            PlayerActionBar(
+                quality = quality,
+                routeCount = routeCount,
+                episodeCount = episodeCount,
+                playbackSpeed = playbackSpeed,
+                activePanel = activePanel,
+                offlineEnabled = offlineEnabled,
+                hasPlaybackIssue = hasPlaybackIssue,
+                canSelectNextRoute = canSelectNextRoute,
+                onShowPanel = onShowPanel,
+                onOffline = onOffline,
+                onRetryRoute = onRetryRoute,
+                onNextRoute = onNextRoute,
+                modifier = Modifier.weight(2.2f),
+            )
+        }
     }
+}
+
+@Composable
+private fun PlayerFullscreenStatusStrip(
+    routeSummary: String,
+    quality: String,
+    routeCount: Int,
+    episodeCount: Int,
+    playbackSpeed: Float,
+    hasPlaybackIssue: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .height(32.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color.Black.copy(alpha = 0.26f))
+            .border(
+                1.dp,
+                if (hasPlaybackIssue) MaterialTheme.colorScheme.error.copy(alpha = 0.28f) else Color.White.copy(alpha = 0.08f),
+                RoundedCornerShape(8.dp),
+            )
+            .padding(horizontal = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        RouteStatusBadge(if (hasPlaybackIssue) "播放异常" else "正在播放", if (hasPlaybackIssue) MaterialTheme.colorScheme.error else AnimeAccentGreen)
+        Text(
+            text = routeSummary,
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.labelMedium,
+            color = Color.White.copy(alpha = 0.86f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        PlayerStatusTinyText(quality)
+        PlayerStatusTinyText(formatPlaybackSpeed(playbackSpeed))
+        if (routeCount > 1) {
+            PlayerStatusTinyText("${routeCount}线路")
+        }
+        if (episodeCount > 1) {
+            PlayerStatusTinyText("${episodeCount}集")
+        }
+    }
+}
+
+@Composable
+private fun PlayerStatusTinyText(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelSmall,
+        color = Color.White.copy(alpha = 0.62f),
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+    )
 }
 
 @Composable
