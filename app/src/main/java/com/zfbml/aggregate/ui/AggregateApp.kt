@@ -1512,7 +1512,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.83")
+                setRequestProperty("User-Agent", "ZFBML/0.2.84")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -1889,7 +1889,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             Text("\u8BBE\u7F6E", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
-            Text("\u7248\u672C 0.2.83", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+            Text("\u7248\u672C 0.2.84", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         }
         item {
             StatusPanel(
@@ -2985,14 +2985,14 @@ private fun RouteSourceSelector(
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(9.dp)) {
         RouteSourceSelectorHeader(
             recommendedName = recommendedGroup?.name ?: "自动推荐",
-            selectedName = selectedGroup?.name ?: "全部来源",
+            selectedName = selectedGroup?.name ?: "全部线路",
             routeCount = routes.size,
             sourceCount = groups.size,
         )
         LazyRow(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             item {
                 RouteSourceFilterPill(
-                    title = "全部来源",
+                    title = "全部线路",
                     subtitle = "${routes.count { it.protocol != StreamProtocol.WEBVIEW_ONLY }} 可播 · ${routes.count { it.protocol == StreamProtocol.BITTORRENT }} BT",
                     badge = "${routes.size}",
                     selected = selectedSourceId == null,
@@ -3028,7 +3028,7 @@ private fun RouteSourceSelectorHeader(
     ) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
-                text = "来源选择",
+                text = "线路分组",
                 style = MaterialTheme.typography.titleMedium,
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
@@ -3036,7 +3036,7 @@ private fun RouteSourceSelectorHeader(
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text = "$sourceCount 个来源 · $routeCount 条线路",
+                text = "$sourceCount 组线路 · $routeCount 条线路",
                 style = MaterialTheme.typography.bodySmall,
                 color = AnimeMuted,
                 maxLines = 1,
@@ -4177,20 +4177,14 @@ private fun PortraitRouteInsightRow(
     modifier: Modifier = Modifier,
 ) {
     val routeCount = routes.size.takeIf { it > 0 } ?: 1
-    val sourceCount = routes.map { it.sourceId }.distinct().size.takeIf { it > 0 } ?: 1
     val onlineCount = routes.count { it.protocol != StreamProtocol.BITTORRENT && it.protocol != StreamProtocol.WEBVIEW_ONLY }
     val btCount = routes.count { it.protocol == StreamProtocol.BITTORRENT }
-    val distribution = when {
-        onlineCount > 0 && btCount > 0 -> "$onlineCount 在线 · $btCount BT"
-        onlineCount > 0 -> "$onlineCount 在线"
-        btCount > 0 -> "$btCount BT"
-        else -> stream.protocol.displayName()
-    }
+    val currentLabel = stream.quality?.takeIf { it.isNotBlank() } ?: stream.protocol.displayName()
     val chips = listOf(
         Triple("线路", "${routeCount}条", AnimeAccentCyan),
-        Triple("来源", "${sourceCount}个", AnimeAccentPink),
-        Triple("分布", distribution, AnimeAccentAmber),
-        Triple("当前", stream.protocol.displayName(), AnimeAccentGreen),
+        Triple("可播", if (onlineCount > 0) "${onlineCount}条" else "待匹配", AnimeAccentPink),
+        Triple("备用", if (btCount > 0) "${btCount}条" else "自动", AnimeAccentAmber),
+        Triple("当前", currentLabel, AnimeAccentGreen),
     )
 
     LazyRow(
@@ -5013,7 +5007,7 @@ private fun PlayerActionBar(
             item {
                 PlayerTextAction(
                     icon = Icons.Filled.VideoLibrary,
-                    title = "下一源",
+                    title = "下一线路",
                     value = if (canSelectNextRoute) "可切" else "无",
                     enabled = canSelectNextRoute,
                     onClick = onNextRoute,
@@ -5599,17 +5593,23 @@ private fun PlayerRoutePanel(
     val panelState = remember(routes, selectedStreamId, failedStreamIds) {
         buildRoutePanelUiState(routes, selectedStreamId, failedStreamIds)
     }
+    val sourceCount = remember(routes) { routes.map { it.sourceId }.distinct().size }
+    val showSourceStrip = detailedMode || sourceCount > 1
     val visibleRoutes = remember(routes, selectedSourceId) {
         selectedSourceId?.let { sourceId -> routes.filter { it.sourceId == sourceId } } ?: routes
     }
     val selectedSourceName = selectedSourceId?.let { sourceId ->
         routes.firstOrNull { it.sourceId == sourceId }?.sourceName ?: sourceId
-    } ?: "全部来源"
+    } ?: "全部线路"
     val sourceListTitle = when {
         detailedMode && selectedSourceId == null -> "全部线路"
-        detailedMode -> "当前线路"
+        detailedMode -> "已筛选来源"
         selectedSourceId == null -> "推荐线路"
-        else -> selectedSourceName
+        else -> "筛选线路"
+    }
+    val routeListTitle = when {
+        selectedSourceId != null -> "$sourceListTitle · $selectedSourceName (${visibleRoutes.size})"
+        else -> "$sourceListTitle (${visibleRoutes.size})"
     }
     LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         item {
@@ -5621,21 +5621,23 @@ private fun PlayerRoutePanel(
                 modifier = Modifier.fillMaxWidth(),
             )
         }
-        item {
-            PlayerRouteSourceStrip(
-                routes = routes,
-                selectedStreamId = selectedStreamId,
-                selectedSourceId = selectedSourceId,
-                recommendedStreamId = panelState.recommendedRoute?.stream?.id,
-                failedStreamIds = failedStreamIds,
-                detailedMode = detailedMode,
-                onSourceSelected = { selectedSourceId = it },
-                modifier = Modifier.fillMaxWidth(),
-            )
+        if (showSourceStrip) {
+            item {
+                PlayerRouteSourceStrip(
+                    routes = routes,
+                    selectedStreamId = selectedStreamId,
+                    selectedSourceId = selectedSourceId,
+                    recommendedStreamId = panelState.recommendedRoute?.stream?.id,
+                    failedStreamIds = failedStreamIds,
+                    detailedMode = detailedMode,
+                    onSourceSelected = { selectedSourceId = it },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
         }
         item {
             Text(
-                if (detailedMode) "$sourceListTitle · $selectedSourceName (${visibleRoutes.size})" else "$sourceListTitle (${visibleRoutes.size})",
+                routeListTitle,
                 style = MaterialTheme.typography.labelMedium,
                 color = Color.White.copy(alpha = 0.72f),
                 fontWeight = FontWeight.SemiBold,
@@ -5705,7 +5707,7 @@ private fun PlayerRouteSourceStrip(
             )
         val allGroup = PlayerRouteSourceGroup(
             id = PlayerRouteAllSourceId,
-            name = "全部来源",
+            name = "全部线路",
             totalCount = routes.size,
             playableCount = routes.count { it.stream.id !in failedStreamIds && it.protocol != StreamProtocol.WEBVIEW_ONLY },
             onlineCount = routes.count {
@@ -5724,7 +5726,7 @@ private fun PlayerRouteSourceStrip(
     }
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(7.dp)) {
         Text(
-            if (detailedMode) "按来源筛选" else "来源",
+            if (detailedMode) "按来源筛选" else "线路分组",
             style = MaterialTheme.typography.labelMedium,
             color = Color.White.copy(alpha = 0.72f),
             fontWeight = FontWeight.SemiBold,
@@ -5860,6 +5862,8 @@ private fun PlayerRouteOptionRow(
         selected -> "当前" to AnimeAccentCyan
         else -> route.routeStatusLabel()
     }
+    val primaryTitle = if (detailedMode) route.sourceName else route.primaryRouteLabel()
+    val secondaryTitle = if (detailedMode) route.primaryRouteLabel() else route.sourceName
     Card(
         onClick = onClick,
         enabled = !webOnly,
@@ -5882,7 +5886,7 @@ private fun PlayerRouteOptionRow(
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        route.sourceName,
+                        primaryTitle,
                         modifier = Modifier.weight(1f),
                         style = MaterialTheme.typography.titleSmall,
                         color = Color.White,
@@ -5894,9 +5898,9 @@ private fun PlayerRouteOptionRow(
                     RouteStatusBadge(statusLabel, statusColor)
                 }
                 Text(
-                    route.primaryRouteLabel(),
+                    secondaryTitle,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = AnimeAccentCyan,
+                    color = if (detailedMode) AnimeAccentCyan else AnimeMuted,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -5940,7 +5944,7 @@ private fun PlayerRouteActionLabel(
         selected -> "播放中" to AnimeAccentCyan
         webOnly -> "暂不可选" to AnimeMuted
         bt -> "边下边播" to AnimeAccentAmber
-        recommended -> "切到推荐" to AnimeAccentPink
+        recommended -> "使用推荐" to AnimeAccentPink
         else -> "切换" to AnimeAccentGreen
     }
     Row(
@@ -5999,7 +6003,7 @@ private fun RoutePanelSummaryCard(
                                 "推荐 ${route.sourceName} · ${route.routeName.orEmpty().ifBlank { route.protocol.displayName() }}"
                             } ?: "暂无推荐线路"
                         } else {
-                            state.recommendedRoute?.let { "已按稳定线路优先排序，可直接切换" } ?: "暂时没有推荐线路"
+                            state.recommendedRoute?.let { "已按清晰度和稳定性排序，可直接观看或切换" } ?: "暂时没有推荐线路"
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = AnimeMuted,

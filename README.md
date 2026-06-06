@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.84
+
+中文：
+
+- 播放器线路弹层的默认视图改为先展示清晰度/线路名、当前状态和推荐操作，来源名降为副标题，详细模式才展开来源和协议细节。
+- 单来源线路不再默认显示来源筛选条，多来源时入口改为“线路分组/全部线路”，减少工具面板感。
+- 竖屏播放器下方信息条改为线路数、可播数、备用线路和当前清晰度/协议，更接近国内视频 App 的观看状态表达。
+
+English:
+
+- The player route panel now prioritizes quality/route labels, current state, and recommended actions in the default view, moving source names to secondary text and keeping source/protocol details in Detailed mode.
+- Single-source route lists no longer show the source filter strip by default; multi-source lists now use viewer-facing route group wording.
+- The portrait player insight strip now shows route count, playable count, fallback routes, and current quality/protocol instead of source diagnostics.
+
 ### v0.2.83
 
 中文：
