@@ -1514,7 +1514,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.63")
+                setRequestProperty("User-Agent", "ZFBML/0.2.64")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -1891,7 +1891,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             Text("\u8BBE\u7F6E", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
-            Text("\u7248\u672C 0.2.63", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+            Text("\u7248\u672C 0.2.64", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         }
         item {
             StatusPanel(
@@ -4370,32 +4370,49 @@ private fun PlayerCenterControls(
     onSeekForward: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val spacing = if (compact) 14.dp else 18.dp
-    Row(
-        modifier = modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color.Black.copy(alpha = 0.34f))
-            .padding(horizontal = if (compact) 10.dp else 14.dp, vertical = if (compact) 8.dp else 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(spacing),
-    ) {
-        PlayerCircleButton(
-            icon = Icons.Filled.Replay10,
-            contentDescription = "后退 10 秒",
-            onClick = onSeekBackward,
-        )
-        PlayerCircleButton(
-            icon = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
-            contentDescription = if (isPlaying) "暂停" else "播放",
-            onClick = onTogglePlay,
-            prominent = true,
-            selected = true,
-        )
-        PlayerCircleButton(
-            icon = Icons.Filled.Forward10,
-            contentDescription = "快进 10 秒",
-            onClick = onSeekForward,
-        )
+    if (compact) {
+        Box(
+            modifier = modifier
+                .clip(CircleShape)
+                .background(Color.Black.copy(alpha = 0.22f))
+                .padding(5.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            PlayerCircleButton(
+                icon = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                contentDescription = if (isPlaying) "暂停" else "播放",
+                onClick = onTogglePlay,
+                prominent = true,
+                selected = true,
+            )
+        }
+    } else {
+        Row(
+            modifier = modifier
+                .clip(RoundedCornerShape(8.dp))
+                .background(Color.Black.copy(alpha = 0.34f))
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(18.dp),
+        ) {
+            PlayerCircleButton(
+                icon = Icons.Filled.Replay10,
+                contentDescription = "后退 10 秒",
+                onClick = onSeekBackward,
+            )
+            PlayerCircleButton(
+                icon = if (isPlaying) Icons.Filled.Pause else Icons.Filled.PlayArrow,
+                contentDescription = if (isPlaying) "暂停" else "播放",
+                onClick = onTogglePlay,
+                prominent = true,
+                selected = true,
+            )
+            PlayerCircleButton(
+                icon = Icons.Filled.Forward10,
+                contentDescription = "快进 10 秒",
+                onClick = onSeekForward,
+            )
+        }
     }
 }
 

@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.64
+
+中文：
+
+- 竖屏未全屏播放器点击画面后，中心控制现在只保留播放/暂停按钮，不再同时显示后退 10 秒和快进 10 秒。
+- 横屏全屏播放器继续保留后退、播放/暂停、快进三件套，完整操作集中在全屏状态。
+- 这一轮继续强化“竖屏轻观看、横屏全功能”的层级，减少竖屏视频画面上的按钮密度。
+
+English:
+
+- In portrait non-fullscreen playback, tapping the video now shows only the central play/pause button instead of also showing 10-second rewind and forward buttons.
+- Landscape fullscreen playback still keeps rewind, play/pause, and forward controls, with the complete operation set concentrated in fullscreen.
+- This further reinforces the lightweight portrait viewing and full-feature fullscreen control split.
+
 ### v0.2.63
 
 中文：
