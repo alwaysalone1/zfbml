@@ -17,6 +17,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -36,6 +37,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -1512,7 +1514,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.56")
+                setRequestProperty("User-Agent", "ZFBML/0.2.57")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -4267,14 +4269,13 @@ private fun PlayerTopOverlay(
                 PlayerTopRouteStatus(
                     routeLabel = overlayState.routeLabel,
                     statusLabel = overlayState.statusLabel,
-                    detail = overlayState.error ?: overlayState.notice ?: overlayState.playbackState,
                     accent = when {
                         overlayState.error != null -> MaterialTheme.colorScheme.error
                         overlayState.notice != null -> AnimeAccentAmber
                         else -> AnimeAccentCyan
                     },
                     onClick = onOpenRoutePanel,
-                    modifier = Modifier.width(232.dp),
+                    modifier = Modifier.widthIn(min = 142.dp, max = 210.dp),
                 )
                 PlayerCircleButton(
                     icon = Icons.Filled.FullscreenExit,
@@ -4290,21 +4291,34 @@ private fun PlayerTopOverlay(
 private fun PlayerTopRouteStatus(
     routeLabel: String,
     statusLabel: String,
-    detail: String,
     accent: Color,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(
-        modifier = modifier.height(46.dp).clickable(onClick = onClick).focusable(),
-        shape = RoundedCornerShape(8.dp),
-        color = Color.Black.copy(alpha = 0.46f),
-        border = BorderStroke(1.dp, accent.copy(alpha = 0.32f)),
+        modifier = modifier.height(36.dp).clickable(onClick = onClick).focusable(),
+        shape = RoundedCornerShape(999.dp),
+        color = Color.Black.copy(alpha = 0.34f),
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.26f)),
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 10.dp, vertical = 6.dp),
-            verticalArrangement = Arrangement.spacedBy(2.dp),
+        Row(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 11.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(7.dp),
         ) {
+            Box(
+                modifier = Modifier
+                    .size(6.dp)
+                    .clip(CircleShape)
+                    .background(accent),
+            )
+            Text(
+                text = statusLabel,
+                style = MaterialTheme.typography.labelSmall,
+                color = accent,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+            )
             Text(
                 text = routeLabel,
                 style = MaterialTheme.typography.labelMedium,
@@ -4312,43 +4326,14 @@ private fun PlayerTopRouteStatus(
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
             )
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(6.dp)
-                        .clip(CircleShape)
-                        .background(accent),
-                )
-                Text(
-                    text = statusLabel,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = accent,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                )
-                Text(
-                    text = detail,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color.White.copy(alpha = 0.62f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
-                )
-                Text(
-                    text = "换源",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = accent,
-                    maxLines = 1,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(accent.copy(alpha = 0.12f))
-                        .padding(horizontal = 6.dp, vertical = 2.dp),
-                )
-            }
+            Text(
+                text = "换源",
+                style = MaterialTheme.typography.labelSmall,
+                color = accent,
+                maxLines = 1,
+            )
         }
     }
 }
@@ -4489,35 +4474,14 @@ private fun PlayerBottomControls(
                 )
             }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Text(
-                        text = routeSummary,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    (routeNotice ?: errorMessage)?.let { message ->
-                        Text(
-                            text = message,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = if (routeNotice != null) AnimeAccentAmber else MaterialTheme.colorScheme.error,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    } ?: Text(
-                        text = "${currentStream.protocol.displayName()} · ${currentStream.codec.orEmpty().ifBlank { "自适应解码" }}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.64f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
+            val bottomNotice = routeNotice ?: errorMessage
+            if (bottomNotice != null) {
+                PlayerFullscreenNoticeStrip(
+                    title = routeSummary,
+                    message = bottomNotice,
+                    isError = errorMessage != null && routeNotice == null,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
 
         } else {
@@ -4563,6 +4527,49 @@ private fun PlayerBottomControls(
                 modifier = Modifier.fillMaxWidth(),
             )
         }
+    }
+}
+
+@Composable
+private fun PlayerFullscreenNoticeStrip(
+    title: String,
+    message: String,
+    isError: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val accent = if (isError) MaterialTheme.colorScheme.error else AnimeAccentAmber
+    Row(
+        modifier = modifier
+            .height(34.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color.Black.copy(alpha = 0.34f))
+            .border(1.dp, accent.copy(alpha = 0.22f), RoundedCornerShape(8.dp))
+            .padding(horizontal = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(6.dp)
+                .clip(CircleShape)
+                .background(accent),
+        )
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelMedium,
+            color = Color.White,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(0.9f),
+        )
+        Text(
+            text = message,
+            style = MaterialTheme.typography.labelSmall,
+            color = accent,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1.4f),
+        )
     }
 }
 

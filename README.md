@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.57
+
+中文：
+
+- 横屏全屏顶部的线路状态从大卡片收敛为小胶囊入口，保留“当前状态 + 当前源 + 换源”但减少遮挡。
+- 横屏底部正常播放时不再常驻展示线路详情，只在换源提示或播放错误时弹出轻量提示条。
+- 继续按国内长视频 App 的控制层习惯推进：竖屏保持精简，全屏保留完整功能，但默认观看态更干净。
+
+English:
+
+- The landscape fullscreen source status is now a compact pill instead of a large card, keeping status, current source, and source switching with less video obstruction.
+- The landscape bottom layer no longer keeps route details visible during normal playback. A lightweight notice strip appears only for source-switch notices or playback errors.
+- This continues the Chinese long-form video app direction: portrait stays lightweight, fullscreen stays feature-rich, and passive viewing is cleaner by default.
+
 ### v0.2.56
 
 中文：
