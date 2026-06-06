@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.83
+
+中文：
+
+- 详情页线路状态卡进一步收敛：普通加载和可播放状态不再自动展开来源、在线、备用、异常等诊断格子。
+- 推荐线路的折叠摘要改为“当前集 · 自动最佳 · 清晰度 · 线路数”，不直接暴露来源名。
+- 只有用户展开线路卡或线路失败时才展示详细线路信息，让详情页更像正式追番 App。
+
+English:
+
+- The detail-page route status card is further simplified: normal loading and playable states no longer auto-expand source, online, fallback, or failure diagnostics.
+- The collapsed recommendation summary now reads as current episode, Auto Best, quality, and route count instead of exposing source names directly.
+- Detailed route information is now shown only when the user expands the card or when a route fails, making the detail page feel more like a polished anime app.
+
 ### v0.2.82
 
 中文：

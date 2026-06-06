@@ -1512,7 +1512,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.82")
+                setRequestProperty("User-Agent", "ZFBML/0.2.83")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -1889,7 +1889,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             Text("\u8BBE\u7F6E", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
-            Text("\u7248\u672C 0.2.82", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+            Text("\u7248\u672C 0.2.83", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         }
         item {
             StatusPanel(
@@ -2606,13 +2606,14 @@ private fun DetailRouteStatusCard(
         else -> "备用"
     }
     val compactReady = state.status == RouteLoadStatus.Ready && !expanded
-    val showDiagnostics = expanded || state.status != RouteLoadStatus.Ready
+    val showDiagnostics = expanded || state.status == RouteLoadStatus.Failed
     val headerSubtitle = if (compactReady) {
         state.bestRoute?.let { route ->
-            listOf(
+            listOfNotNull(
                 state.selectedEpisodeTitle,
-                route.sourceName,
+                "自动最佳",
                 playerQualityLabel(route),
+                if (state.routeCount > 1) "${state.routeCount} 条线路" else null,
             ).filter { it.isNotBlank() }.distinct().joinToString(" · ")
         } ?: state.selectedEpisodeTitle
     } else {
