@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.91
+
+中文：
+
+- 番剧详情页 Hero 的“线路”入口升级为状态按钮，直接显示自动最佳、匹配中、线路异常或手动线路状态。
+- 线路入口会展示可切线路数、来源数或推荐源名称，让用户不用理解底层解析也能判断能否播放。
+- 保持详情页首屏以“立即观看”为主操作，线路切换作为清晰的辅助入口，更接近 Animeko 式多源体验。
+
+English:
+
+- The anime detail Hero route entry is now a status button showing Auto Best, Matching, Route Issue, or Manual Routes.
+- The route entry surfaces route count, source count, or the recommended source name so users can judge playability without reading resolver details.
+- The detail first screen keeps Watch Now as the primary action while making route switching a clear secondary entry, closer to an Animeko-style multi-source flow.
+
 ### v0.2.90
 
 中文：

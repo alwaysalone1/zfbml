@@ -1639,7 +1639,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.90")
+                setRequestProperty("User-Agent", "ZFBML/0.2.91")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2016,7 +2016,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             Text("\u8BBE\u7F6E", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
-            Text("\u7248\u672C 0.2.90", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+            Text("\u7248\u672C 0.2.91", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         }
         item {
             StatusPanel(
@@ -2616,14 +2616,73 @@ private fun DetailHero(
                     Spacer(Modifier.width(6.dp))
                     Text(if (routeUiState.canPlay) playLabel else "匹配线路")
                 }
-                TextButton(
+                DetailRouteEntryButton(
+                    state = routeUiState,
                     onClick = onToggleRoutes,
-                    modifier = Modifier.height(48.dp).focusable(),
-                ) {
-                    Icon(Icons.Filled.VideoLibrary, contentDescription = null, tint = AnimeAccentCyan, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text("线路", color = AnimeAccentCyan)
-                }
+                    modifier = Modifier.widthIn(min = 126.dp, max = 156.dp).height(48.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun DetailRouteEntryButton(
+    state: RouteUiState,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val accent = when (state.status) {
+        RouteLoadStatus.Ready -> AnimeAccentCyan
+        RouteLoadStatus.Loading -> AnimeAccentAmber
+        RouteLoadStatus.Failed -> MaterialTheme.colorScheme.error
+        RouteLoadStatus.Empty -> AnimeAccentAmber
+        RouteLoadStatus.Idle -> AnimeMuted
+    }
+    val title = when (state.status) {
+        RouteLoadStatus.Ready -> "自动最佳"
+        RouteLoadStatus.Loading -> "匹配中"
+        RouteLoadStatus.Failed -> "线路异常"
+        RouteLoadStatus.Empty -> "暂无线路"
+        RouteLoadStatus.Idle -> "手动线路"
+    }
+    val value = when {
+        state.routeCount > 1 -> "${state.routeCount} 线可切"
+        state.sourceCount > 1 -> "${state.sourceCount} 个来源"
+        state.canPlay -> state.recommendationTitle
+        state.status == RouteLoadStatus.Loading -> "优先在线"
+        state.status == RouteLoadStatus.Failed -> "查看原因"
+        else -> "选择剧集"
+    }
+    Card(
+        onClick = onClick,
+        modifier = modifier.focusable(),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.Black.copy(alpha = 0.28f)),
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.36f)),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Filled.VideoLibrary, contentDescription = null, tint = accent, modifier = Modifier.size(18.dp))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                Text(
+                    title,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = accent,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    value,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White.copy(alpha = 0.68f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
         }
     }
