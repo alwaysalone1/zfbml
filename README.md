@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.75
+
+中文：
+
+- 全屏播放器底部删除重复的“弹幕/弹幕设置”功能按钮，把弹幕开关收进弹幕输入条右侧小开关。
+- 点击弹幕输入条可直接打开弹幕设置，保留密度、透明度、字号和显示区域调整。
+- 横屏功能栏现在优先呈现清晰度、倍速、换源、选集、缓存、更多，更贴近国内视频 App 的观看层级。
+
+English:
+
+- Removed duplicate Danmaku and Danmaku Settings buttons from the fullscreen bottom action row, moving the danmaku toggle into the input bar.
+- Tapping the danmaku input bar now opens danmaku settings while preserving density, opacity, font scale, and display-area controls.
+- The landscape action row now prioritizes quality, speed, source switching, episodes, cache, and More for a hierarchy closer to Chinese long-video apps.
+
 ### v0.2.74
 
 中文：

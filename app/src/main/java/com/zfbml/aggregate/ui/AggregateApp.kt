@@ -1512,7 +1512,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.74")
+                setRequestProperty("User-Agent", "ZFBML/0.2.75")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -1889,7 +1889,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             Text("\u8BBE\u7F6E", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
-            Text("\u7248\u672C 0.2.74", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+            Text("\u7248\u672C 0.2.75", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         }
         item {
             StatusPanel(
@@ -4574,7 +4574,6 @@ private fun PlayerBottomControls(
                 routeCount = routeOptions.size,
                 episodeCount = episodeCount,
                 danmakuEnabled = danmakuEnabled,
-                density = density,
                 playbackSpeed = playbackSpeed,
                 activePanel = activePanel,
                 offlineEnabled = currentStream.protocol != StreamProtocol.BITTORRENT,
@@ -4899,7 +4898,6 @@ private fun PlayerFullscreenControlRow(
     routeCount: Int,
     episodeCount: Int,
     danmakuEnabled: Boolean,
-    density: Float,
     playbackSpeed: Float,
     activePanel: PlayerPanel?,
     offlineEnabled: Boolean,
@@ -4919,20 +4917,19 @@ private fun PlayerFullscreenControlRow(
     ) {
         PlayerDanmakuInputBar(
             danmakuEnabled = danmakuEnabled,
+            onToggleDanmaku = onToggleDanmaku,
+            onOpenDanmakuSettings = { onShowPanel(PlayerPanel.Danmaku) },
             modifier = Modifier.weight(0.9f),
         )
         PlayerActionBar(
             quality = quality,
             routeCount = routeCount,
             episodeCount = episodeCount,
-            danmakuEnabled = danmakuEnabled,
-            density = density,
             playbackSpeed = playbackSpeed,
             activePanel = activePanel,
             offlineEnabled = offlineEnabled,
             hasPlaybackIssue = hasPlaybackIssue,
             canSelectNextRoute = canSelectNextRoute,
-            onToggleDanmaku = onToggleDanmaku,
             onShowPanel = onShowPanel,
             onOffline = onOffline,
             onRetryRoute = onRetryRoute,
@@ -4945,14 +4942,22 @@ private fun PlayerFullscreenControlRow(
 @Composable
 private fun PlayerDanmakuInputBar(
     danmakuEnabled: Boolean,
+    onToggleDanmaku: () -> Unit,
+    onOpenDanmakuSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val interactionSource = remember { MutableInteractionSource() }
     Row(
         modifier = modifier
             .height(38.dp)
             .clip(RoundedCornerShape(8.dp))
             .background(Color.Black.copy(alpha = 0.38f))
-            .padding(horizontal = 10.dp),
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onOpenDanmakuSettings,
+            )
+            .padding(start = 10.dp, end = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -4970,12 +4975,23 @@ private fun PlayerDanmakuInputBar(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
-        Text(
-            text = "发送",
-            style = MaterialTheme.typography.labelMedium,
-            color = if (danmakuEnabled) AnimeAccentPink else Color.White.copy(alpha = 0.36f),
-            fontWeight = FontWeight.Bold,
-        )
+        TextButton(
+            onClick = onToggleDanmaku,
+            modifier = Modifier.width(44.dp).height(28.dp).focusable(),
+            shape = RoundedCornerShape(999.dp),
+            colors = ButtonDefaults.textButtonColors(
+                containerColor = if (danmakuEnabled) AnimeAccentPink.copy(alpha = 0.22f) else Color.White.copy(alpha = 0.08f),
+                contentColor = if (danmakuEnabled) AnimeAccentPink else Color.White.copy(alpha = 0.56f),
+            ),
+            contentPadding = PaddingValues(horizontal = 0.dp, vertical = 0.dp),
+        ) {
+            Text(
+                text = if (danmakuEnabled) "开" else "关",
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+            )
+        }
     }
 }
 
@@ -4984,14 +5000,11 @@ private fun PlayerActionBar(
     quality: String,
     routeCount: Int,
     episodeCount: Int,
-    danmakuEnabled: Boolean,
-    density: Float,
     playbackSpeed: Float,
     activePanel: PlayerPanel?,
     offlineEnabled: Boolean,
     hasPlaybackIssue: Boolean,
     canSelectNextRoute: Boolean,
-    onToggleDanmaku: () -> Unit,
     onShowPanel: (PlayerPanel) -> Unit,
     onOffline: () -> Unit,
     onRetryRoute: () -> Unit,
@@ -5022,24 +5035,6 @@ private fun PlayerActionBar(
                     onClick = onNextRoute,
                 )
             }
-        }
-        item {
-            PlayerTextAction(
-                icon = Icons.Filled.ClosedCaption,
-                title = "弹幕",
-                value = if (danmakuEnabled) "开" else "关",
-                selected = danmakuEnabled,
-                onClick = onToggleDanmaku,
-            )
-        }
-        item {
-            PlayerTextAction(
-                icon = Icons.Filled.Settings,
-                title = "弹幕设置",
-                value = formatDanmakuDensity(density),
-                selected = activePanel == PlayerPanel.Danmaku,
-                onClick = { onShowPanel(PlayerPanel.Danmaku) },
-            )
         }
         item {
             PlayerTextAction(
