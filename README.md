@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.58
+
+中文：
+
+- 竖屏播放器的“更多/播放设置”面板新增当前播放摘要，直接展示当前源、线路、清晰度、倍速、线路数和集数。
+- 清晰度、倍速、选集、线路、弹幕和缓存仍保留在同一面板中，竖屏主控保持精简但点开后信息更明确。
+- 这轮继续把播放器从“功能测试面板”收敛成国内用户熟悉的观看设置面板，减少切换线路和调整播放参数时的迷路感。
+
+English:
+
+- The portrait player More/settings panel now starts with a current playback summary, showing source, route, quality, speed, route count, and episode count.
+- Quality, speed, episodes, sources, danmaku, and cache remain in one panel, keeping portrait controls lightweight while making the expanded state clearer.
+- This continues moving the player away from a feature-testing panel toward a familiar Chinese video-app playback settings sheet.
+
 ### v0.2.57
 
 中文：

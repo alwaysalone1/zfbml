@@ -1514,7 +1514,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.57")
+                setRequestProperty("User-Agent", "ZFBML/0.2.58")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -5153,6 +5153,8 @@ private fun PlayerOptionPanel(
                         PlayerPanel.More -> PlayerMorePanel(
                             routeCount = routeOptions.size,
                             episodeCount = detail.episodes.size,
+                            sourceName = currentRoute?.sourceName ?: currentStream.metadata["routeProviderName"] ?: currentStream.providerId,
+                            routeLabel = currentRoute?.primaryRouteLabel() ?: currentStream.protocol.displayName(),
                             quality = currentStream.quality.orEmpty().ifBlank { "自动" },
                             playbackSpeed = playbackSpeed,
                             danmakuEnabled = danmakuEnabled,
@@ -5239,6 +5241,8 @@ private fun PlayerPanelHeader(title: String, subtitle: String, onDismiss: () -> 
 private fun PlayerMorePanel(
     routeCount: Int,
     episodeCount: Int,
+    sourceName: String,
+    routeLabel: String,
     quality: String,
     playbackSpeed: Float,
     danmakuEnabled: Boolean,
@@ -5289,15 +5293,83 @@ private fun PlayerMorePanel(
         ),
     )
 
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(3),
+    Column(
         modifier = Modifier.fillMaxSize(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-        contentPadding = PaddingValues(top = 2.dp, bottom = 6.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        items(actions.size) { index ->
-            PlayerMoreActionTile(actions[index])
+        PlayerMoreSummaryCard(
+            sourceName = sourceName,
+            routeLabel = routeLabel,
+            quality = quality,
+            playbackSpeed = playbackSpeed,
+            routeCount = routeCount,
+            episodeCount = episodeCount,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(3),
+            modifier = Modifier.fillMaxWidth().weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            contentPadding = PaddingValues(bottom = 6.dp),
+        ) {
+            items(actions.size) { index ->
+                PlayerMoreActionTile(actions[index])
+            }
+        }
+    }
+}
+
+@Composable
+private fun PlayerMoreSummaryCard(
+    sourceName: String,
+    routeLabel: String,
+    quality: String,
+    playbackSpeed: Float,
+    routeCount: Int,
+    episodeCount: Int,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(8.dp),
+        color = AnimePanelSoft.copy(alpha = 0.68f),
+        border = BorderStroke(1.dp, AnimeBorder),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(34.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(AnimeAccentPink.copy(alpha = 0.2f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = AnimeAccentPink, modifier = Modifier.size(19.dp))
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) {
+                    RouteStatusBadge("当前播放", AnimeAccentPink)
+                    Text(
+                        text = "$sourceName · $routeLabel",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.White.copy(alpha = 0.82f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                Text(
+                    text = "$quality · ${formatPlaybackSpeed(playbackSpeed)} · ${routeCount.coerceAtLeast(1)} 条线路 · ${episodeCount.coerceAtLeast(1)} 集",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = AnimeMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
     }
 }
