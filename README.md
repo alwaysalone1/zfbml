@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.88
+
+中文：
+
+- 竖屏播放器底栏不再在“选集”和“线路”之间二选一；有多集和多线路时两个入口会同时显示。
+- 保持竖屏非全屏控制层轻量，只增加必要的即时入口：弹幕、选集、线路、全屏。
+- 多线路场景下可以更快打开线路弹层，减少从播放信息区再进入的路径。
+
+English:
+
+- The portrait player bottom bar no longer chooses between Episodes and Routes; when both are available, both actions are shown.
+- The portrait non-fullscreen control layer stays lightweight while keeping the essential instant actions: danmaku, episodes, routes, and fullscreen.
+- Multi-route playback now gives quicker access to the route panel without forcing the user through the watch-info area.
+
 ### v0.2.87
 
 中文：

@@ -1512,7 +1512,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.87")
+                setRequestProperty("User-Agent", "ZFBML/0.2.88")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -1889,7 +1889,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             Text("\u8BBE\u7F6E", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
-            Text("\u7248\u672C 0.2.87", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+            Text("\u7248\u672C 0.2.88", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         }
         item {
             StatusPanel(
@@ -4686,16 +4686,6 @@ private fun PlayerCompactInteractionRow(
     onEnterFullscreen: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val compactActionLabel = when {
-        episodeCount > 1 -> "选集"
-        routeCount > 1 -> "线路"
-        else -> null
-    }
-    val compactActionClick = when {
-        episodeCount > 1 -> onOpenEpisode
-        routeCount > 1 -> onOpenRoute
-        else -> null
-    }
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -4739,11 +4729,20 @@ private fun PlayerCompactInteractionRow(
                 selected = danmakuEnabled,
                 modifier = Modifier.width(36.dp),
             )
-            if (compactActionLabel != null && compactActionClick != null) {
+            if (episodeCount > 1) {
                 PlayerCompactTextAction(
-                    text = compactActionLabel,
+                    text = "选集",
                     selected = true,
-                    onClick = compactActionClick,
+                    onClick = onOpenEpisode,
+                    modifier = Modifier.width(44.dp),
+                )
+            }
+            if (routeCount > 1) {
+                PlayerCompactTextAction(
+                    text = "线路",
+                    selected = false,
+                    onClick = onOpenRoute,
+                    modifier = Modifier.width(44.dp),
                 )
             }
             PlayerTinyIconAction(
