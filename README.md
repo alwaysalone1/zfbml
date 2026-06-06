@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.53
+
+中文：
+
+- 竖屏未全屏播放页移除独立的合集工具卡，把当前集、当前源、画质/协议和线路数量合并到一个轻量播放信息条。
+- 播放信息条新增“选集”和“换源”快捷入口，只有存在多集或多线路时展示，避免竖屏观看态堆满功能按钮。
+- 线路诊断、失败提示和重试/下一线路仍只在异常时展开，保持竖屏精简、全屏功能全面的播放器分层。
+
+English:
+
+- Removed the separate collection utility card from the portrait non-fullscreen watch page and merged episode, source, quality/protocol, and route count into one lightweight playback strip.
+- Added compact Episode and Source shortcuts to the strip, shown only when multiple episodes or routes exist to keep portrait viewing uncluttered.
+- Route diagnostics, failure messages, retry, and next-route controls still expand only on playback issues, preserving lightweight portrait mode and full-feature fullscreen mode.
+
 ### v0.2.52
 
 中文：

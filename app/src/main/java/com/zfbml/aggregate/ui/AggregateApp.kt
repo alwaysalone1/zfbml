@@ -1512,7 +1512,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.52")
+                setRequestProperty("User-Agent", "ZFBML/0.2.53")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -3857,6 +3857,11 @@ private fun PortraitWatchInfoPanel(
     val quality = stream.quality.orEmpty().ifBlank { "自动" }
     val message = routeNotice ?: errorMessage
     val currentEpisodeText = episode.index?.let { "第 $it 集" } ?: "当前集"
+    val routeCountText = if (routes.isNotEmpty()) "${routes.size} 条线路" else "线路解析中"
+    val routeLine = listOf(sourceName, routeName, quality, stream.protocol.displayName(), routeCountText)
+        .filter { it.isNotBlank() }
+        .distinct()
+        .joinToString(" · ")
     val showRouteDiagnostics = message != null || hasPlaybackIssue
     LazyColumn(
         modifier = modifier.fillMaxWidth().background(AnimeBackground),
@@ -3889,53 +3894,6 @@ private fun PortraitWatchInfoPanel(
         }
         item {
             Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(enabled = detail.episodes.size > 1) { onShowPanel(PlayerPanel.Episode) }
-                    .focusable(),
-                shape = RoundedCornerShape(8.dp),
-                color = AnimePanel,
-                border = BorderStroke(1.dp, AnimeBorder),
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 13.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.PlaylistPlay,
-                        contentDescription = null,
-                        tint = AnimeAccentPink,
-                        modifier = Modifier.size(23.dp),
-                    )
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                        Text(
-                            text = "合集 · ${detail.title}",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Text(
-                            text = "正在看 $currentEpisodeText · ${episode.title}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = AnimeMuted,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                    Text(
-                        text = if (detail.episodes.size > 1) "${detail.episodes.size} 集 >" else "单集",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = if (detail.episodes.size > 1) AnimeAccentCyan else AnimeMuted,
-                        maxLines = 1,
-                    )
-                }
-            }
-        }
-        item {
-            Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(8.dp),
                 color = AnimePanelSoft.copy(alpha = 0.56f),
@@ -3954,20 +3912,60 @@ private fun PortraitWatchInfoPanel(
                             modifier = Modifier.size(34.dp).clip(RoundedCornerShape(8.dp)).background(providerAccent(route?.sourceId ?: stream.providerId)),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text(sourceName.take(1), style = MaterialTheme.typography.labelLarge, color = Color.White, fontWeight = FontWeight.Bold)
+                            Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(19.dp))
                         }
-                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                            Text("当前播放", style = MaterialTheme.typography.labelMedium, color = AnimeAccentCyan)
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Row(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) {
+                                RouteStatusBadge("正在看", AnimeAccentPink)
+                                Text(
+                                    text = currentEpisodeText,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = Color.White.copy(alpha = 0.78f),
+                                    maxLines = 1,
+                                )
+                            }
                             Text(
-                                text = "$sourceName · $quality · ${stream.protocol.displayName()}",
+                                text = episode.title,
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = Color.White,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
+                            Text(
+                                text = routeLine,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = AnimeMuted,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
                         }
-                        TextButton(onClick = { onShowPanel(PlayerPanel.Route) }, enabled = routes.size > 1) {
-                            Text("换源", color = if (routes.size > 1) AnimeAccentCyan else AnimeMuted)
+                    }
+                    if (detail.episodes.size > 1 || routes.size > 1) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            if (detail.episodes.size > 1) {
+                                PortraitPlaybackAction(
+                                    icon = Icons.AutoMirrored.Filled.PlaylistPlay,
+                                    title = "选集",
+                                    subtitle = "共 ${detail.episodes.size} 集",
+                                    accent = AnimeAccentPink,
+                                    onClick = { onShowPanel(PlayerPanel.Episode) },
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
+                            if (routes.size > 1) {
+                                PortraitPlaybackAction(
+                                    icon = Icons.Filled.VideoLibrary,
+                                    title = "换源",
+                                    subtitle = routeCountText,
+                                    accent = AnimeAccentCyan,
+                                    onClick = { onShowPanel(PlayerPanel.Route) },
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
                         }
                     }
                     if (showRouteDiagnostics) {
@@ -4070,6 +4068,51 @@ private fun PortraitWatchInfoPanel(
                 maxLines = 4,
                 overflow = TextOverflow.Ellipsis,
             )
+        }
+    }
+}
+
+@Composable
+private fun PortraitPlaybackAction(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    accent: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    TextButton(
+        onClick = onClick,
+        modifier = modifier.height(38.dp).focusable(),
+        shape = RoundedCornerShape(8.dp),
+        colors = ButtonDefaults.textButtonColors(
+            containerColor = accent.copy(alpha = 0.12f),
+            contentColor = accent,
+        ),
+        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(7.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(17.dp))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                )
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = accent,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
     }
 }
