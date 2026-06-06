@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.92
+
+中文：
+
+- 详情页剧集区标题升级为“选集”状态头，显示当前集、总集数和线路匹配状态。
+- 选集区说明明确“切换后自动匹配最佳线路”，让用户理解选集和线路解析是一体流程。
+- 已匹配线路卡的默认入口从“线路”改为“切换”，让手动换源意图更明确，默认状态更收敛。
+
+English:
+
+- The detail episode section now uses a status header showing the current episode, total episode count, and route matching state.
+- The episode section explains that switching episodes automatically matches the best route, connecting episode selection with route resolution.
+- The matched route card now uses “Switch” instead of a generic “Routes” action, making manual source switching clearer while keeping the default state compact.
+
 ### v0.2.91
 
 中文：
