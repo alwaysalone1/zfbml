@@ -1514,7 +1514,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.72")
+                setRequestProperty("User-Agent", "ZFBML/0.2.73")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -1891,7 +1891,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             Text("\u8BBE\u7F6E", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
-            Text("\u7248\u672C 0.2.72", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+            Text("\u7248\u672C 0.2.73", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         }
         item {
             StatusPanel(
@@ -2607,7 +2607,24 @@ private fun DetailRouteStatusCard(
         state.status == RouteLoadStatus.Loading -> "兜底中"
         else -> "备用"
     }
+    val compactReady = state.status == RouteLoadStatus.Ready && !expanded
     val showDiagnostics = expanded || state.status != RouteLoadStatus.Ready
+    val headerSubtitle = if (compactReady) {
+        state.bestRoute?.let { route ->
+            listOf(
+                state.selectedEpisodeTitle,
+                route.sourceName,
+                playerQualityLabel(route),
+            ).filter { it.isNotBlank() }.distinct().joinToString(" · ")
+        } ?: state.selectedEpisodeTitle
+    } else {
+        state.selectedEpisodeTitle
+    }
+    val actionText = when {
+        expanded -> "收起"
+        state.status == RouteLoadStatus.Ready -> "换源"
+        else -> "详情"
+    }
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
@@ -2616,29 +2633,37 @@ private fun DetailRouteStatusCard(
     ) {
         Column(
             modifier = Modifier.fillMaxWidth().padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+            verticalArrangement = Arrangement.spacedBy(if (compactReady) 8.dp else 14.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(
-                    modifier = Modifier.size(44.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.18f)),
+                    modifier = Modifier
+                        .size(if (compactReady) 38.dp else 44.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(accent.copy(alpha = 0.18f)),
                     contentAlignment = Alignment.Center,
                 ) {
                     if (state.status == RouteLoadStatus.Loading) {
-                        CircularProgressIndicator(color = accent, modifier = Modifier.size(22.dp))
+                        CircularProgressIndicator(color = accent, modifier = Modifier.size(if (compactReady) 18.dp else 22.dp))
                     } else {
-                        Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = accent, modifier = Modifier.size(24.dp))
+                        Icon(
+                            imageVector = if (state.status == RouteLoadStatus.Ready) Icons.Filled.Check else Icons.Filled.PlayArrow,
+                            contentDescription = null,
+                            tint = accent,
+                            modifier = Modifier.size(if (compactReady) 21.dp else 24.dp),
+                        )
                     }
                 }
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text(state.message, style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold)
-                    Text(state.selectedEpisodeTitle, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(headerSubtitle, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
                 TextButton(onClick = onToggleExpanded, modifier = Modifier.height(38.dp).focusable()) {
-                    Text(if (expanded) "收起来源" else "换源", color = AnimeAccentCyan, style = MaterialTheme.typography.labelLarge)
+                    Text(actionText, color = AnimeAccentCyan, style = MaterialTheme.typography.labelLarge)
                 }
             }
             if (state.status == RouteLoadStatus.Loading) {
@@ -2648,11 +2673,13 @@ private fun DetailRouteStatusCard(
                     trackColor = Color.White.copy(alpha = 0.08f),
                 )
             }
-            RouteRecommendationBand(
-                state = state,
-                accent = accent,
-                onPlayBest = onPlayBest,
-            )
+            if (!compactReady) {
+                RouteRecommendationBand(
+                    state = state,
+                    accent = accent,
+                    onPlayBest = onPlayBest,
+                )
+            }
             if (showDiagnostics) {
                 RouteSourceFocusRow(state = state, accent = accent)
                 Row(

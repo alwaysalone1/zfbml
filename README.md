@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.73
+
+中文：
+
+- 详情页播放源卡片在“已找到推荐播放源”时改为紧凑摘要，只展示当前集、推荐来源和清晰度。
+- 推荐播放源详情、来源信息和诊断数据只在用户点击“换源”后展开，首屏更像追番详情页而不是线路面板。
+- Loading/异常状态仍保留进度和诊断，方便判断是否正在匹配、是否需要换源。
+
+English:
+
+- The detail-page playback-source card now collapses into a compact summary when a recommended source is ready, showing only the episode, source, and quality.
+- Recommended-source details, source information, and diagnostics now appear only after tapping Change Source, making the first screen feel more like an anime detail page than a route panel.
+- Loading and error states still keep progress and diagnostics visible so users can understand matching or source issues.
+
 ### v0.2.72
 
 中文：
