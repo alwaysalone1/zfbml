@@ -1514,7 +1514,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.62")
+                setRequestProperty("User-Agent", "ZFBML/0.2.63")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -1891,7 +1891,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             Text("\u8BBE\u7F6E", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
-            Text("\u7248\u672C 0.2.62", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+            Text("\u7248\u672C 0.2.63", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         }
         item {
             StatusPanel(
@@ -3559,7 +3559,11 @@ private fun PlayerScreen(
 
     @Composable
     fun VideoStage(modifier: Modifier, compact: Boolean) {
-        val danmakuTopPadding = if (controlsVisible) 52.dp else 6.dp
+        val danmakuTopPadding = if (controlsVisible) {
+            if (compact) 36.dp else 52.dp
+        } else {
+            6.dp
+        }
         val danmakuBottomPadding = when {
             !controlsVisible -> 6.dp
             activePanel != null -> if (compact) 18.dp else 210.dp
@@ -4206,18 +4210,25 @@ private fun PlayerTopOverlay(
     compact: Boolean,
     modifier: Modifier = Modifier,
 ) {
+    val compactStatus = overlayState.error
+        ?: overlayState.notice
+        ?: overlayState.playbackState.takeIf { it.isNotBlank() }
     Box(
         modifier = modifier
             .background(
                 Brush.verticalGradient(
-                    colors = listOf(
-                        Color.Black.copy(alpha = 0.82f),
-                        Color.Black.copy(alpha = 0.46f),
-                        Color.Transparent,
-                    ),
+                    colors = if (compact) {
+                        listOf(Color.Black.copy(alpha = 0.46f), Color.Transparent)
+                    } else {
+                        listOf(
+                            Color.Black.copy(alpha = 0.82f),
+                            Color.Black.copy(alpha = 0.46f),
+                            Color.Transparent,
+                        )
+                    },
                 ),
             )
-            .padding(horizontal = 14.dp, vertical = 12.dp),
+            .padding(horizontal = if (compact) 10.dp else 14.dp, vertical = if (compact) 8.dp else 12.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -4229,24 +4240,32 @@ private fun PlayerTopOverlay(
                 contentDescription = "返回详情",
                 onClick = onBack,
             )
-            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(
-                    text = overlayState.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    text = listOf(overlayState.episodeTitle, overlayState.playbackState).filter { it.isNotBlank() }.joinToString(" · "),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.White.copy(alpha = 0.78f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-            if (!compact) {
+            if (compact) {
+                Spacer(Modifier.weight(1f))
+                compactStatus?.let {
+                    PlayerCompactStatusPill(
+                        text = it,
+                        error = overlayState.error != null,
+                    )
+                }
+            } else {
+                Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text(
+                        text = overlayState.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        text = listOf(overlayState.episodeTitle, overlayState.playbackState).filter { it.isNotBlank() }.joinToString(" · "),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.78f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
                 PlayerTopRouteStatus(
                     routeLabel = overlayState.routeLabel,
                     statusLabel = overlayState.statusLabel,
@@ -4266,6 +4285,29 @@ private fun PlayerTopOverlay(
             }
         }
     }
+}
+
+@Composable
+private fun PlayerCompactStatusPill(
+    text: String,
+    error: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val accent = if (error) MaterialTheme.colorScheme.error else Color.White.copy(alpha = 0.82f)
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelSmall,
+        color = accent,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier = modifier
+            .widthIn(max = 132.dp)
+            .height(30.dp)
+            .clip(RoundedCornerShape(999.dp))
+            .background(Color.Black.copy(alpha = 0.32f))
+            .border(1.dp, accent.copy(alpha = 0.18f), RoundedCornerShape(999.dp))
+            .padding(horizontal = 10.dp, vertical = 7.dp),
+    )
 }
 
 @Composable

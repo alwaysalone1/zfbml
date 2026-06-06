@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.63
+
+中文：
+
+- 竖屏未全屏播放器顶部覆盖层进一步精简，现在默认只保留返回按钮和轻量播放状态，不再在视频画面上重复显示完整番名和集数。
+- 竖屏弹幕顶部预留同步降低，弹幕和画面可视区域更贴近真实观看状态。
+- 横屏全屏仍保留完整标题、当前线路状态和退出全屏入口，继续区分“竖屏精简、全屏全面”的交互层级。
+
+English:
+
+- The portrait non-fullscreen top overlay is now lighter, keeping only the back button and a small playback status instead of repeating the full title and episode over the video.
+- Portrait danmaku top padding was reduced to match the slimmer overlay, giving more usable video and danmaku space.
+- Landscape fullscreen still keeps the full title, route status, and fullscreen exit controls, preserving the compact-portrait/full-feature-fullscreen split.
+
 ### v0.2.62
 
 中文：
