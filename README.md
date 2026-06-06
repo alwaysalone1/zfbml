@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.60
+
+中文：
+
+- 详情页顶部“立即观看/播放第 X 集”现在会尊重当前来源筛选，用户选中某个来源后会优先播放该来源下的推荐线路。
+- 详情页线路筛选文案统一为“按来源筛选/全部来源”，和播放器内线路面板保持一致。
+- 进播放前和进播放后的换源逻辑进一步对齐，减少“详情页选了来源但播放又跳到其他源”的割裂感。
+
+English:
+
+- The detail-page Watch Now / Play Episode action now respects the current source filter and prefers the best route from the selected source.
+- Detail-page source filter wording now uses Source Filter / All Sources, matching the in-player source panel.
+- Source selection is more consistent before and after entering playback, reducing cases where a selected source unexpectedly switches to another source.
+
 ### v0.2.59
 
 中文：

@@ -1514,7 +1514,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.59")
+                setRequestProperty("User-Agent", "ZFBML/0.2.60")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2307,7 +2307,7 @@ private fun DetailScreen(
                     onPlay = {
                         val episode = selectedEpisode ?: media.episodes.firstOrNull()
                         if (episode != null) {
-                            val bestRoute = buildRouteUiState(episode, routes, routesLoading, routesError).bestRoute
+                            val bestRoute = routeUiState.bestRoute
                             if (bestRoute != null) {
                                 onPlay(media, episode, bestRoute.stream, sortRoutesForUi(routes))
                             } else {
@@ -2991,14 +2991,14 @@ private fun RouteSourceSelector(
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(9.dp)) {
         RouteSourceSelectorHeader(
             recommendedName = recommendedGroup?.name ?: "自动推荐",
-            selectedName = selectedGroup?.name ?: "全部线路",
+            selectedName = selectedGroup?.name ?: "全部来源",
             routeCount = routes.size,
             sourceCount = groups.size,
         )
         LazyRow(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             item {
                 RouteSourceFilterCard(
-                    title = "全部线路",
+                    title = "全部来源",
                     subtitle = "${routes.count { it.protocol != StreamProtocol.WEBVIEW_ONLY }} 可播 · ${routes.count { it.protocol == StreamProtocol.BITTORRENT }} BT",
                     badge = "${routes.size}",
                     selected = selectedSourceId == null,
@@ -3034,7 +3034,7 @@ private fun RouteSourceSelectorHeader(
     ) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
-                text = "线路来源",
+                text = "按来源筛选",
                 style = MaterialTheme.typography.titleMedium,
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
