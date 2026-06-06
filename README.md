@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.56
+
+中文：
+
+- 详情页线路状态卡默认收起深度诊断信息，可播状态下只保留推荐播放、当前选集和查看线路入口。
+- 只有在展开线路、加载中、无可播线路或失败时，才显示在线优先、BT 兜底、来源数和失败数等诊断细节。
+- 详情页从“线路测试面板”继续收敛为“番剧详情 + 立即观看”的观感，同时保留 Animeko 式多源选择能力。
+
+English:
+
+- The detail page route card now hides deep diagnostics by default. In playable state it keeps only the recommended playback, selected episode, and route entry.
+- Online-first, BT fallback, source count, and failure diagnostics appear only when routes are expanded, loading, empty, or failed.
+- The detail page moves further from a route-testing panel toward an anime detail + watch-now experience while keeping Animeko-style multi-source selection.
+
 ### v0.2.55
 
 中文：

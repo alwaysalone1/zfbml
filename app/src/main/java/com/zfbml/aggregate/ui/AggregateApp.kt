@@ -1512,7 +1512,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.55")
+                setRequestProperty("User-Agent", "ZFBML/0.2.56")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2637,6 +2637,7 @@ private fun DetailRouteStatusCard(
         state.status == RouteLoadStatus.Loading -> "兜底中"
         else -> "备用"
     }
+    val showDiagnostics = expanded || state.status != RouteLoadStatus.Ready
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
@@ -2682,24 +2683,26 @@ private fun DetailRouteStatusCard(
                 accent = accent,
                 onPlayBest = onPlayBest,
             )
-            RouteSourceFocusRow(state = state, accent = accent)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                RouteDiagnosticStep("选集", state.selectedEpisodeTitle, true, accent, Modifier.weight(1f))
-                RouteDiagnosticStep("在线优先", onlineValue, state.onlineCount > 0 || state.status == RouteLoadStatus.Loading, AnimeAccentCyan, Modifier.weight(1f))
-                RouteDiagnosticStep("BT 兜底", btValue, state.btCount > 0, AnimeAccentAmber, Modifier.weight(1f))
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                RouteMetricChip("线路", state.routeCount.toString(), AnimeAccentCyan, Modifier.weight(1f))
-                RouteMetricChip("来源", state.sourceCount.toString(), AnimeAccentViolet, Modifier.weight(1f))
-                RouteMetricChip("失败", state.failedCount.toString(), if (state.failedCount > 0) MaterialTheme.colorScheme.error else AnimeMuted, Modifier.weight(1f))
+            if (showDiagnostics) {
+                RouteSourceFocusRow(state = state, accent = accent)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    RouteDiagnosticStep("选集", state.selectedEpisodeTitle, true, accent, Modifier.weight(1f))
+                    RouteDiagnosticStep("在线优先", onlineValue, state.onlineCount > 0 || state.status == RouteLoadStatus.Loading, AnimeAccentCyan, Modifier.weight(1f))
+                    RouteDiagnosticStep("BT 兜底", btValue, state.btCount > 0, AnimeAccentAmber, Modifier.weight(1f))
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    RouteMetricChip("线路", state.routeCount.toString(), AnimeAccentCyan, Modifier.weight(1f))
+                    RouteMetricChip("来源", state.sourceCount.toString(), AnimeAccentViolet, Modifier.weight(1f))
+                    RouteMetricChip("失败", state.failedCount.toString(), if (state.failedCount > 0) MaterialTheme.colorScheme.error else AnimeMuted, Modifier.weight(1f))
+                }
             }
         }
     }
