@@ -1514,7 +1514,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.68")
+                setRequestProperty("User-Agent", "ZFBML/0.2.69")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -1891,7 +1891,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             Text("\u8BBE\u7F6E", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
-            Text("\u7248\u672C 0.2.68", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+            Text("\u7248\u672C 0.2.69", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         }
         item {
             StatusPanel(
@@ -2998,7 +2998,7 @@ private fun RouteSourceSelector(
         )
         LazyRow(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             item {
-                RouteSourceFilterCard(
+                RouteSourceFilterPill(
                     title = "全部来源",
                     subtitle = "${routes.count { it.protocol != StreamProtocol.WEBVIEW_ONLY }} 可播 · ${routes.count { it.protocol == StreamProtocol.BITTORRENT }} BT",
                     badge = "${routes.size}",
@@ -3008,7 +3008,7 @@ private fun RouteSourceSelector(
                 )
             }
             items(groups) { group ->
-                RouteSourceFilterCard(
+                RouteSourceFilterPill(
                     title = group.name,
                     subtitle = group.sourceSummary,
                     badge = group.count.toString(),
@@ -3035,7 +3035,7 @@ private fun RouteSourceSelectorHeader(
     ) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
-                text = "按来源筛选",
+                text = "来源选择",
                 style = MaterialTheme.typography.titleMedium,
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
@@ -3072,7 +3072,7 @@ private fun RouteSourceStatusPill(label: String, value: String, color: Color) {
 }
 
 @Composable
-private fun RouteSourceFilterCard(
+private fun RouteSourceFilterPill(
     title: String,
     subtitle: String,
     badge: String,
@@ -3085,46 +3085,71 @@ private fun RouteSourceFilterCard(
         selected -> AnimeAccentCyan
         else -> AnimeBorder
     }
-    Card(
+    val contentColor = when {
+        selected -> Color.White
+        recommended -> Color.White.copy(alpha = 0.94f)
+        else -> Color.White.copy(alpha = 0.78f)
+    }
+    TextButton(
         onClick = onClick,
-        modifier = Modifier.width(176.dp).height(78.dp).focusable(),
+        modifier = Modifier.width(152.dp).height(46.dp).focusable(),
         shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = if (selected || recommended) AnimePanelSoft else AnimePanel),
-        border = BorderStroke(1.dp, accent),
+        colors = ButtonDefaults.textButtonColors(
+            containerColor = when {
+                selected -> accent.copy(alpha = 0.18f)
+                recommended -> AnimeAccentPink.copy(alpha = 0.12f)
+                else -> Color.White.copy(alpha = 0.06f)
+            },
+            contentColor = contentColor,
+        ),
+        border = BorderStroke(1.dp, if (selected || recommended) accent else AnimeBorder),
+        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize().padding(10.dp),
-            verticalArrangement = Arrangement.spacedBy(5.dp),
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (recommended) {
+                Text(
+                    text = "荐",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = AnimeAccentPink,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .background(AnimeAccentPink.copy(alpha = 0.16f))
+                        .padding(horizontal = 5.dp, vertical = 2.dp),
+                )
+            }
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(1.dp),
+            ) {
                 Text(
                     text = title,
-                    modifier = Modifier.weight(1f),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = Color.White,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = contentColor,
                     fontWeight = if (selected || recommended) FontWeight.Bold else FontWeight.SemiBold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = badge,
+                    text = subtitle,
                     style = MaterialTheme.typography.labelSmall,
-                    color = if (recommended) AnimeAccentPink else AnimeAccentCyan,
+                    color = if (selected || recommended) accent else AnimeMuted,
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
             Text(
-                text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
-                color = AnimeMuted,
+                text = badge,
+                style = MaterialTheme.typography.labelSmall,
+                color = if (selected || recommended) accent else AnimeMuted,
+                fontWeight = FontWeight.Bold,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
             )
-            if (recommended) {
-                Text(if (selected) "推荐 · 当前" else "推荐源", style = MaterialTheme.typography.labelSmall, color = AnimeAccentPink, maxLines = 1)
-            } else {
-                Text(if (selected) "正在查看" else "点击筛选", style = MaterialTheme.typography.labelSmall, color = if (selected) AnimeAccentCyan else AnimeMuted, maxLines = 1)
-            }
         }
     }
 }

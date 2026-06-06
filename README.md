@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.69
+
+中文：
+
+- 详情页展开线路后的“来源选择”从大卡片改为横向紧凑标签，减少线路区的工具感。
+- 来源标签保留推荐标记、来源摘要和线路数，仍然能快速在推荐源、全部来源和其他来源之间切换。
+- 这一轮继续向 Animeko 式“先选来源、再选线路”的信息层级靠拢，同时让页面更像追番详情页。
+
+English:
+
+- The detail-page source selector shown after expanding routes was changed from large cards to compact horizontal source tabs.
+- Source tabs still show the recommended marker, source summary, and route count, while keeping quick switching between the recommended source, all sources, and other sources.
+- This continues moving the route experience toward an Animeko-style source-first, route-second hierarchy while making the page feel more like an anime detail screen.
+
 ### v0.2.68
 
 中文：
