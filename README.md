@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.74
+
+中文：
+
+- 全屏播放器“更多”面板从三列大方块改为两列紧凑设置项，减少工具面板感。
+- 清晰度、倍速、选集、换源、弹幕、缓存等入口完整保留，但在横屏右侧抽屉中更易扫读。
+- 移除不再使用的网格布局依赖，让播放器设置弹层更轻、更贴近国内视频 App 的设置列表。
+
+English:
+
+- The fullscreen player More panel now uses compact two-column setting rows instead of large three-column tiles.
+- Quality, speed, episodes, source switching, danmaku, and cache actions remain available while becoming easier to scan in the landscape drawer.
+- Removed the unused grid layout dependency from this panel, making the player settings overlay lighter and closer to a video-app settings list.
+
 ### v0.2.73
 
 中文：

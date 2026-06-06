@@ -40,8 +40,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -1514,7 +1512,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.73")
+                setRequestProperty("User-Agent", "ZFBML/0.2.74")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -1891,7 +1889,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             Text("\u8BBE\u7F6E", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
-            Text("\u7248\u672C 0.2.73", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+            Text("\u7248\u672C 0.2.74", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         }
         item {
             StatusPanel(
@@ -5357,15 +5355,24 @@ private fun PlayerMorePanel(
             episodeCount = episodeCount,
             modifier = Modifier.fillMaxWidth(),
         )
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(3),
+        LazyColumn(
             modifier = Modifier.fillMaxWidth().weight(1f),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(bottom = 6.dp),
         ) {
-            items(actions.size) { index ->
-                PlayerMoreActionTile(actions[index])
+            items(actions.chunked(2)) { rowActions ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    rowActions.forEach { action ->
+                        PlayerMoreActionTile(action, modifier = Modifier.weight(1f))
+                    }
+                    if (rowActions.size == 1) {
+                        Spacer(Modifier.weight(1f))
+                    }
+                }
             }
         }
     }
@@ -5435,7 +5442,7 @@ private data class PlayerMoreAction(
 )
 
 @Composable
-private fun PlayerMoreActionTile(action: PlayerMoreAction) {
+private fun PlayerMoreActionTile(action: PlayerMoreAction, modifier: Modifier = Modifier) {
     val border = if (action.selected) {
         BorderStroke(1.dp, AnimeAccentCyan.copy(alpha = 0.62f))
     } else {
@@ -5447,26 +5454,34 @@ private fun PlayerMoreActionTile(action: PlayerMoreAction) {
         Color.White.copy(alpha = 0.08f)
     }
     Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(86.dp)
+        modifier = modifier
+            .height(58.dp)
             .alpha(if (action.enabled) 1f else 0.42f)
             .clickable(enabled = action.enabled, onClick = action.onClick),
         shape = RoundedCornerShape(8.dp),
         color = container,
         border = border,
     ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 9.dp),
-            verticalArrangement = Arrangement.SpaceBetween,
+        Row(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(
-                imageVector = action.icon,
-                contentDescription = action.title,
-                tint = if (action.selected) AnimeAccentCyan else Color.White.copy(alpha = 0.9f),
-                modifier = Modifier.size(21.dp),
-            )
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Box(
+                modifier = Modifier
+                    .size(30.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(if (action.selected) AnimeAccentCyan.copy(alpha = 0.18f) else Color.Black.copy(alpha = 0.22f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = action.icon,
+                    contentDescription = action.title,
+                    tint = if (action.selected) AnimeAccentCyan else Color.White.copy(alpha = 0.88f),
+                    modifier = Modifier.size(18.dp),
+                )
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
                     text = action.title,
                     style = MaterialTheme.typography.labelLarge,
