@@ -1512,7 +1512,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.53")
+                setRequestProperty("User-Agent", "ZFBML/0.2.54")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -4480,10 +4480,6 @@ private fun PlayerBottomControls(
                 }
             }
 
-            PlayerDanmakuInputBar(
-                danmakuEnabled = danmakuEnabled,
-                modifier = Modifier.fillMaxWidth(),
-            )
         } else {
             PlayerCompactInteractionRow(
                 positionText = formatPlaybackTime(displayPositionMs),
@@ -4508,7 +4504,7 @@ private fun PlayerBottomControls(
         }
 
         if (!compact) {
-            PlayerActionBar(
+            PlayerFullscreenControlRow(
                 quality = quality,
                 routeCount = routeOptions.size,
                 episodeCount = episodeCount,
@@ -4803,6 +4799,55 @@ private fun PlayerDockAction(
                 overflow = TextOverflow.Ellipsis,
             )
         }
+    }
+}
+
+@Composable
+private fun PlayerFullscreenControlRow(
+    quality: String,
+    routeCount: Int,
+    episodeCount: Int,
+    danmakuEnabled: Boolean,
+    density: Float,
+    playbackSpeed: Float,
+    activePanel: PlayerPanel?,
+    offlineEnabled: Boolean,
+    hasPlaybackIssue: Boolean,
+    canSelectNextRoute: Boolean,
+    onToggleDanmaku: () -> Unit,
+    onShowPanel: (PlayerPanel) -> Unit,
+    onOffline: () -> Unit,
+    onRetryRoute: () -> Unit,
+    onNextRoute: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        PlayerDanmakuInputBar(
+            danmakuEnabled = danmakuEnabled,
+            modifier = Modifier.weight(0.9f),
+        )
+        PlayerActionBar(
+            quality = quality,
+            routeCount = routeCount,
+            episodeCount = episodeCount,
+            danmakuEnabled = danmakuEnabled,
+            density = density,
+            playbackSpeed = playbackSpeed,
+            activePanel = activePanel,
+            offlineEnabled = offlineEnabled,
+            hasPlaybackIssue = hasPlaybackIssue,
+            canSelectNextRoute = canSelectNextRoute,
+            onToggleDanmaku = onToggleDanmaku,
+            onShowPanel = onShowPanel,
+            onOffline = onOffline,
+            onRetryRoute = onRetryRoute,
+            onNextRoute = onNextRoute,
+            modifier = Modifier.weight(1.6f),
+        )
     }
 }
 

@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.54
+
+中文：
+
+- 横屏全屏播放器底部改为单层操作区：左侧保留弹幕输入，右侧集中放弹幕、清晰度、倍速、线路、选集、缓存和更多。
+- 减少全屏底部原本“输入条一行 + 功能按钮一行”的纵向占用，播放画面遮挡更少。
+- 继续保持竖屏未全屏精简、横屏全屏功能全面的分层逻辑，更贴近国内视频 App 的播放器排布。
+
+English:
+
+- The landscape fullscreen bottom controls now use a single operation layer: danmaku input on the left and danmaku, quality, speed, source, episode, cache, and more actions on the right.
+- Reduced the previous two-row bottom footprint to avoid covering too much of the video.
+- This keeps portrait non-fullscreen lightweight while making landscape fullscreen complete, closer to familiar Chinese video-app player layouts.
+
 ### v0.2.53
 
 中文：
