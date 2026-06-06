@@ -1512,7 +1512,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.54")
+                setRequestProperty("User-Agent", "ZFBML/0.2.55")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -3308,6 +3308,7 @@ private fun PlayerScreen(
     var activePanel by remember(stream.id) { mutableStateOf<PlayerPanel?>(null) }
     var episodeLoadingId by remember { mutableStateOf<String?>(null) }
     var controlsVisible by remember(currentStream.id) { mutableStateOf(true) }
+    var controlsLocked by remember(currentStream.id) { mutableStateOf(false) }
     var controlsRevealSerial by remember(currentStream.id) { mutableIntStateOf(0) }
     var playbackPositionMs by remember(currentStream.id) { mutableStateOf(0L) }
     var playbackDurationMs by remember(currentStream.id) { mutableStateOf(0L) }
@@ -3329,6 +3330,7 @@ private fun PlayerScreen(
     }
 
     fun toggleControls() {
+        if (controlsLocked) return
         if (controlsVisible && activePanel == null) {
             controlsVisible = false
         } else {
@@ -3343,9 +3345,21 @@ private fun PlayerScreen(
     }
 
     fun exitFullscreen() {
+        controlsLocked = false
         revealControls()
         activity?.setPlayerImmersive(false)
         activity?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+    }
+
+    fun lockFullscreenControls() {
+        controlsLocked = true
+        controlsVisible = false
+        activePanel = null
+    }
+
+    fun unlockFullscreenControls() {
+        controlsLocked = false
+        revealControls()
     }
 
     LaunchedEffect(playbackSpeed) {
@@ -3383,6 +3397,11 @@ private fun PlayerScreen(
     }
     LaunchedEffect(controlsVisible) {
         if (!controlsVisible) {
+            activePanel = null
+        }
+    }
+    LaunchedEffect(controlsLocked) {
+        if (controlsLocked) {
             activePanel = null
         }
     }
@@ -3601,7 +3620,7 @@ private fun PlayerScreen(
                 modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().zIndex(3f),
             )
             AnimatedVisibility(
-                visible = controlsVisible,
+                visible = controlsVisible && !controlsLocked,
                 enter = fadeIn(),
                 exit = fadeOut(),
                 modifier = Modifier.align(Alignment.TopCenter).zIndex(4f),
@@ -3619,7 +3638,7 @@ private fun PlayerScreen(
                 )
             }
             AnimatedVisibility(
-                visible = controlsVisible && activePanel == null,
+                visible = controlsVisible && activePanel == null && !controlsLocked,
                 enter = fadeIn(),
                 exit = fadeOut(),
                 modifier = Modifier.align(Alignment.Center).zIndex(4f),
@@ -3648,7 +3667,7 @@ private fun PlayerScreen(
                 )
             }
             AnimatedVisibility(
-                visible = controlsVisible && activePanel == null && !compact,
+                visible = controlsVisible && activePanel == null && !compact && !controlsLocked,
                 enter = fadeIn(),
                 exit = fadeOut(),
                 modifier = Modifier.align(Alignment.CenterEnd).padding(end = 16.dp).zIndex(4f),
@@ -3670,7 +3689,7 @@ private fun PlayerScreen(
                 )
             }
             AnimatedVisibility(
-                visible = controlsVisible && activePanel == null,
+                visible = controlsVisible && activePanel == null && !controlsLocked,
                 enter = fadeIn(),
                 exit = fadeOut(),
                 modifier = Modifier.align(Alignment.BottomCenter).zIndex(4f),
@@ -3715,6 +3734,23 @@ private fun PlayerScreen(
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
+            AnimatedVisibility(
+                visible = !compact && activePanel == null && (controlsVisible || controlsLocked),
+                enter = fadeIn(),
+                exit = fadeOut(),
+                modifier = Modifier.align(Alignment.CenterStart).padding(start = 16.dp).zIndex(4.5f),
+            ) {
+                PlayerFullscreenLockButton(
+                    locked = controlsLocked,
+                    onClick = {
+                        if (controlsLocked) {
+                            unlockFullscreenControls()
+                        } else {
+                            lockFullscreenControls()
+                        }
+                    },
+                )
+            }
         }
     }
 
@@ -3725,6 +3761,7 @@ private fun PlayerScreen(
         }
         BackHandler {
             when {
+                controlsLocked -> unlockFullscreenControls()
                 activePanel != null -> {
                     activePanel = null
                     revealControls()
@@ -3771,7 +3808,7 @@ private fun PlayerScreen(
             )
         }
         AnimatedVisibility(
-            visible = controlsVisible && activePanel != null,
+            visible = controlsVisible && activePanel != null && !controlsLocked,
             enter = fadeIn(),
             exit = fadeOut(),
             modifier = Modifier.matchParentSize().zIndex(5f),
@@ -4799,6 +4836,30 @@ private fun PlayerDockAction(
                 overflow = TextOverflow.Ellipsis,
             )
         }
+    }
+}
+
+@Composable
+private fun PlayerFullscreenLockButton(
+    locked: Boolean,
+    onClick: () -> Unit,
+) {
+    TextButton(
+        onClick = onClick,
+        modifier = Modifier.width(52.dp).height(40.dp).focusable(),
+        shape = RoundedCornerShape(999.dp),
+        colors = ButtonDefaults.textButtonColors(
+            containerColor = if (locked) AnimeAccentPink.copy(alpha = 0.28f) else Color.Black.copy(alpha = 0.42f),
+            contentColor = if (locked) AnimeAccentPink else Color.White.copy(alpha = 0.88f),
+        ),
+        contentPadding = PaddingValues(0.dp),
+    ) {
+        Text(
+            text = if (locked) "解锁" else "锁定",
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+        )
     }
 }
 

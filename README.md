@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.55
+
+中文：
+
+- 横屏全屏播放器新增控制锁定按钮，锁定后隐藏顶部、中心、底部和侧边快捷控制，只保留左侧解锁入口。
+- 锁定状态下点击画面不会重新展开控制层，减少横屏握持时误触进度、换源、返回等高风险操作。
+- 按返回键会优先解除锁定，退出全屏时也会自动恢复普通控制状态，保持全屏功能完整但观看态更稳。
+
+English:
+
+- Added a control-lock button to the landscape fullscreen player. When locked, top, center, bottom, and side controls are hidden, leaving only a left-side unlock entry.
+- Tapping the video while locked no longer reopens the controls, reducing accidental seeks, route switches, or back actions during landscape viewing.
+- Back first unlocks the controls, and leaving fullscreen resets the player to the normal control state, keeping fullscreen powerful while making passive viewing steadier.
+
 ### v0.2.54
 
 中文：
