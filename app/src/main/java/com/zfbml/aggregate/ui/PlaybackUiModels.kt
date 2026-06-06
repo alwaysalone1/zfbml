@@ -221,12 +221,13 @@ internal fun buildPlayerOverlayState(
     notice: String?,
     error: String?,
 ): PlayerOverlayState {
+    val playbackStateLabel = playerPlaybackStateLabelForUi(playbackState)
     return PlayerOverlayState(
         title = title,
         episodeTitle = episodeTitle,
         routeLabel = playerRouteLabelForUi(stream, route),
-        playbackState = playbackState,
-        statusLabel = playerStatusLabelForUi(playbackState, notice, error),
+        playbackState = playbackStateLabel,
+        statusLabel = playerStatusLabelForUi(playbackStateLabel, notice, error),
         notice = notice,
         error = error,
     )
@@ -257,20 +258,43 @@ private fun routeUiScore(route: RouteCandidate, failedStreamIds: Set<String>): I
 }
 
 private fun playerRouteLabelForUi(stream: MediaStream, route: RouteCandidate?): String {
-    return listOfNotNull(
-        route?.sourceName ?: stream.metadata["routeProviderName"],
-        stream.quality?.takeIf { it.isNotBlank() },
-        stream.protocol.uiProtocolName(),
-    ).joinToString(" · ").ifBlank { stream.protocol.uiProtocolName() }
+    val quality = route?.quality
+        ?: stream.quality?.takeIf { it.isNotBlank() }
+    val visibleQuality = quality?.takeIf { value ->
+        value.isNotBlank() && !value.equals("auto", ignoreCase = true) && value != "自动"
+    }
+    val routeName = route?.routeName?.takeIf { name ->
+        name.isNotBlank() && visibleQuality?.let { qualityText ->
+            !name.contains(qualityText, ignoreCase = true)
+        } != false
+    }
+    val label = listOfNotNull(visibleQuality, routeName)
+        .distinct()
+        .joinToString(" · ")
+    return label.ifBlank {
+        if (stream.protocol == StreamProtocol.BITTORRENT) "边下边播" else "自动最佳"
+    }
+}
+
+private fun playerPlaybackStateLabelForUi(playbackState: String): String {
+    return when (playbackState.uppercase()) {
+        "IDLE" -> "等待播放"
+        "BUFFERING" -> "缓冲中"
+        "READY" -> "播放就绪"
+        "ENDED" -> "已播完"
+        else -> playbackState.ifBlank { "播放中" }
+    }
 }
 
 private fun playerStatusLabelForUi(playbackState: String, notice: String?, error: String?): String {
     return when {
         !error.isNullOrBlank() -> "异常"
         !notice.isNullOrBlank() -> "切源中"
-        playbackState.contains("播放", ignoreCase = true) -> "播放中"
+        playbackState.contains("等待", ignoreCase = true) -> "等待"
         playbackState.contains("缓冲", ignoreCase = true) -> "缓冲中"
         playbackState.contains("就绪", ignoreCase = true) -> "已就绪"
+        playbackState.contains("播放", ignoreCase = true) -> "播放中"
+        playbackState.contains("已播完", ignoreCase = true) -> "已播完"
         playbackState.isNotBlank() -> playbackState
         else -> "自动"
     }

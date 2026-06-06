@@ -220,8 +220,17 @@ class PlaybackUiModelsTest {
             episodeTitle = "第 1 集",
             stream = candidate.stream,
             route = candidate,
-            playbackState = "缓冲中",
+            playbackState = "BUFFERING",
             notice = "已切换到 Provider 1080p",
+            error = null,
+        )
+        val ready = buildPlayerOverlayState(
+            title = "Title",
+            episodeTitle = "第 1 集",
+            stream = candidate.stream,
+            route = candidate,
+            playbackState = "READY",
+            notice = null,
             error = null,
         )
         val failed = buildPlayerOverlayState(
@@ -234,9 +243,12 @@ class PlaybackUiModelsTest {
             error = "Source failed",
         )
 
-        assertEquals("Provider · 1080p · HLS", playing.routeLabel)
+        assertEquals("1080p", playing.routeLabel)
         assertEquals("播放中", playing.statusLabel)
+        assertEquals("缓冲中", switching.playbackState)
         assertEquals("切源中", switching.statusLabel)
+        assertEquals("播放就绪", ready.playbackState)
+        assertEquals("已就绪", ready.statusLabel)
         assertEquals("异常", failed.statusLabel)
     }
 

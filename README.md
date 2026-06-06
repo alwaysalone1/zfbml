@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.79
+
+中文：
+
+- 播放器顶部覆盖层状态从 `READY/BUFFERING` 等原始状态改为中文观看态，如“播放就绪”“缓冲中”“等待播放”。
+- 全屏顶部线路胶囊不再默认显示来源名和协议，改为展示清晰度、线路名或“自动最佳”。
+- 普通观看路径进一步减少源诊断信息，把来源和协议细节留给“换源”的详细模式。
+
+English:
+
+- Player top-overlay states now use localized viewing labels such as Ready, Buffering, and Waiting instead of raw `READY/BUFFERING` text.
+- The fullscreen top route pill no longer exposes source names and protocols by default, showing quality, route name, or Auto Best instead.
+- The normal viewing path now hides more source diagnostics, leaving source and protocol details to the source panel's Detailed mode.
+
 ### v0.2.78
 
 中文：
