@@ -176,6 +176,18 @@ internal fun preferredRouteForNextEpisode(
     } ?: playableRoutes.first()
 }
 
+internal fun recommendedSourceIdForRoutes(
+    routes: List<RouteCandidate>,
+    failedStreamIds: Set<String> = emptySet(),
+): String? {
+    return sortRoutesForUi(routes, failedStreamIds)
+        .firstOrNull { route ->
+            route.stream.id !in failedStreamIds &&
+                route.stream.protocol != StreamProtocol.WEBVIEW_ONLY
+        }
+        ?.sourceId
+}
+
 internal fun buildRoutePanelUiState(
     routes: List<RouteCandidate>,
     selectedStreamId: String,

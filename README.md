@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.68
+
+中文：
+
+- 详情页线路加载完成后，现在会默认聚焦到自动排序出的最佳可播来源，而不是展开后先展示所有来源混合列表。
+- 用户仍可点击“全部来源”查看完整线路，保留手动比较来源的能力。
+- 新增 `recommendedSourceIdForRoutes()` 状态工具和单元测试，让“推荐源优先”的规则可验证、可复用。
+
+English:
+
+- After routes finish loading on the detail page, the route list now defaults to the best playable source selected by the automatic ranking instead of showing all sources mixed together first.
+- Users can still tap All Sources to browse every route, preserving manual source comparison.
+- Added a tested `recommendedSourceIdForRoutes()` UI-state helper so the source-first recommendation rule is reusable and verifiable.
+
 ### v0.2.67
 
 中文：

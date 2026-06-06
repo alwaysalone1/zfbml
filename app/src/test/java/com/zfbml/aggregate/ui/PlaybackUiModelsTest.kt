@@ -151,6 +151,38 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun recommendedSourceIdForRoutesUsesBestPlayableSource() {
+        val webViewOnly = route(
+            id = "webview",
+            protocol = StreamProtocol.WEBVIEW_ONLY,
+            score = 3_000,
+            quality = "1080p",
+            sourceId = "source-web",
+            sourceName = "Web",
+        )
+        val bt = route(
+            id = "bt",
+            protocol = StreamProtocol.BITTORRENT,
+            score = 1_000,
+            quality = "1080p",
+            sourceId = "source-bt",
+            sourceName = "BT",
+        )
+        val hls = route(
+            id = "hls",
+            protocol = StreamProtocol.HLS,
+            score = 200,
+            quality = "720p",
+            sourceId = "source-online",
+            sourceName = "Online",
+        )
+
+        val sourceId = recommendedSourceIdForRoutes(listOf(webViewOnly, bt, hls))
+
+        assertEquals("source-online", sourceId)
+    }
+
+    @Test
     fun routePanelUiStateSummarizesRecommendationAndFailures() {
         val failed = route("failed", StreamProtocol.HLS, 900, quality = "1080p")
         val bt = route("bt", StreamProtocol.BITTORRENT, 800, quality = "1080p")
