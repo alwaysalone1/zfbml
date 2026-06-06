@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.81
+
+中文：
+
+- 横屏全屏播放器底部功能栏从固定宽度工具卡片改为一行式胶囊按钮，保留清晰度、倍速、线路、选集、缓存和更多入口。
+- 横屏弹幕输入条改为圆形胶囊，并统一使用“点我发弹幕”的移动端观看文案。
+- “换源”入口在横屏控制层改为“线路”，表达更贴近国内长视频 App 的用户语言。
+
+English:
+
+- The landscape fullscreen bottom action bar now uses compact one-line pill buttons instead of fixed-width tool cards, while keeping quality, speed, routes, episodes, cache, and more.
+- The landscape danmaku input now uses a rounded pill and the same mobile-viewing copy, "Tap to send danmaku".
+- The route-switching entry is labeled as Routes in the fullscreen control layer to better match Chinese long-form video app language.
+
 ### v0.2.80
 
 中文：

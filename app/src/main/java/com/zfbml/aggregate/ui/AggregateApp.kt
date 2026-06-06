@@ -1512,7 +1512,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.80")
+                setRequestProperty("User-Agent", "ZFBML/0.2.81")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -1889,7 +1889,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             Text("\u8BBE\u7F6E", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
-            Text("\u7248\u672C 0.2.80", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+            Text("\u7248\u672C 0.2.81", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         }
         item {
             StatusPanel(
@@ -4895,14 +4895,14 @@ private fun PlayerFullscreenControlRow(
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         PlayerDanmakuInputBar(
             danmakuEnabled = danmakuEnabled,
             onToggleDanmaku = onToggleDanmaku,
             onOpenDanmakuSettings = { onShowPanel(PlayerPanel.Danmaku) },
-            modifier = Modifier.weight(0.9f),
+            modifier = Modifier.weight(1f),
         )
         PlayerActionBar(
             quality = quality,
@@ -4917,7 +4917,7 @@ private fun PlayerFullscreenControlRow(
             onOffline = onOffline,
             onRetryRoute = onRetryRoute,
             onNextRoute = onNextRoute,
-            modifier = Modifier.weight(1.6f),
+            modifier = Modifier.weight(1.75f),
         )
     }
 }
@@ -4932,9 +4932,9 @@ private fun PlayerDanmakuInputBar(
     val interactionSource = remember { MutableInteractionSource() }
     Row(
         modifier = modifier
-            .height(38.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color.Black.copy(alpha = 0.38f))
+            .height(36.dp)
+            .clip(RoundedCornerShape(999.dp))
+            .background(Color.Black.copy(alpha = 0.32f))
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
@@ -4951,7 +4951,7 @@ private fun PlayerDanmakuInputBar(
             modifier = Modifier.size(18.dp),
         )
         Text(
-            text = if (danmakuEnabled) "发个友善的弹幕" else "弹幕已关闭",
+            text = if (danmakuEnabled) "点我发弹幕" else "弹幕已关闭",
             style = MaterialTheme.typography.bodyMedium,
             color = Color.White.copy(alpha = 0.7f),
             maxLines = 1,
@@ -4960,7 +4960,7 @@ private fun PlayerDanmakuInputBar(
         )
         TextButton(
             onClick = onToggleDanmaku,
-            modifier = Modifier.width(44.dp).height(28.dp).focusable(),
+            modifier = Modifier.width(42.dp).height(26.dp).focusable(),
             shape = RoundedCornerShape(999.dp),
             colors = ButtonDefaults.textButtonColors(
                 containerColor = if (danmakuEnabled) AnimeAccentPink.copy(alpha = 0.22f) else Color.White.copy(alpha = 0.08f),
@@ -4996,7 +4996,7 @@ private fun PlayerActionBar(
 ) {
     LazyRow(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(7.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
         contentPadding = PaddingValues(horizontal = 2.dp),
     ) {
         if (hasPlaybackIssue) {
@@ -5012,7 +5012,7 @@ private fun PlayerActionBar(
             item {
                 PlayerTextAction(
                     icon = Icons.Filled.VideoLibrary,
-                    title = "下一播放源",
+                    title = "下一源",
                     value = if (canSelectNextRoute) "可切" else "无",
                     enabled = canSelectNextRoute,
                     onClick = onNextRoute,
@@ -5041,7 +5041,7 @@ private fun PlayerActionBar(
         item {
             PlayerTextAction(
                 icon = Icons.Filled.VideoLibrary,
-                title = "换源",
+                title = "线路",
                 value = "${routeCount.coerceAtLeast(1)}条",
                 selected = activePanel == PlayerPanel.Route,
                 enabled = routeCount > 1,
@@ -6391,45 +6391,43 @@ private fun PlayerTextAction(
     TextButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = Modifier.width(82.dp).height(38.dp).focusable(),
-        shape = RoundedCornerShape(8.dp),
+        modifier = Modifier
+            .widthIn(min = 58.dp, max = 112.dp)
+            .height(34.dp)
+            .focusable(),
+        shape = RoundedCornerShape(999.dp),
         colors = ButtonDefaults.textButtonColors(
-            containerColor = if (selected) AnimeAccentPink.copy(alpha = 0.18f) else Color.Black.copy(alpha = 0.2f),
+            containerColor = if (selected) AnimeAccentPink.copy(alpha = 0.18f) else Color.Black.copy(alpha = 0.16f),
             contentColor = contentColor,
-            disabledContainerColor = Color.Black.copy(alpha = 0.12f),
+            disabledContainerColor = Color.Black.copy(alpha = 0.1f),
             disabledContentColor = Color.White.copy(alpha = 0.36f),
         ),
-        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier,
+            horizontalArrangement = Arrangement.spacedBy(5.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (icon != null) {
-                Icon(icon, contentDescription = null, modifier = Modifier.size(17.dp))
+                Icon(icon, contentDescription = null, modifier = Modifier.size(15.dp))
             }
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.Center,
-            ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelSmall,
+                color = contentColor,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            value?.takeIf { it.isNotBlank() }?.let {
                 Text(
-                    title,
+                    text = it,
                     style = MaterialTheme.typography.labelSmall,
-                    color = contentColor,
-                    fontWeight = FontWeight.SemiBold,
+                    color = contentColor.copy(alpha = if (enabled) 0.68f else 0.5f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                value?.takeIf { it.isNotBlank() }?.let {
-                    Text(
-                        it,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = contentColor.copy(alpha = if (enabled) 0.68f else 0.5f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
             }
         }
     }
