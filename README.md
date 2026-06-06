@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.65
+
+中文：
+
+- 播放器内“播放线路”面板打开时现在会默认聚焦当前播放来源，而不是先混合展示全部来源。
+- 线路列表标题改为“当前来源线路/全部来源线路”，用户能更清楚知道正在看的是当前来源下的线路还是全局线路。
+- 用户仍可点击“全部来源”查看所有可用线路，保留 Animeko 式先选来源、再选线路的多源体验。
+
+English:
+
+- The in-player Route panel now opens focused on the current playback source instead of showing every source mixed together first.
+- The route list heading now distinguishes Current Source Routes from All Source Routes, making the active filter clearer.
+- Users can still tap All Sources to browse every route, preserving the Animeko-style source-first, route-second switching flow.
+
 ### v0.2.64
 
 中文：

@@ -1514,7 +1514,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.64")
+                setRequestProperty("User-Agent", "ZFBML/0.2.65")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -1891,7 +1891,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             Text("\u8BBE\u7F6E", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
-            Text("\u7248\u672C 0.2.64", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+            Text("\u7248\u672C 0.2.65", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         }
         item {
             StatusPanel(
@@ -5483,7 +5483,10 @@ private fun PlayerRoutePanel(
         Text("暂时没有可用播放线路", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         return
     }
-    var selectedSourceId by remember(routes) { mutableStateOf<String?>(null) }
+    val currentSourceId = remember(routes, selectedStreamId) {
+        routes.firstOrNull { it.stream.id == selectedStreamId }?.sourceId
+    }
+    var selectedSourceId by remember(routes, selectedStreamId) { mutableStateOf(currentSourceId) }
     val availableSourceIds = remember(routes) { routes.map { it.sourceId }.toSet() }
     LaunchedEffect(availableSourceIds, selectedSourceId) {
         if (selectedSourceId != null && selectedSourceId !in availableSourceIds) {
@@ -5499,6 +5502,7 @@ private fun PlayerRoutePanel(
     val selectedSourceName = selectedSourceId?.let { sourceId ->
         routes.firstOrNull { it.sourceId == sourceId }?.sourceName ?: sourceId
     } ?: "全部来源"
+    val sourceListTitle = if (selectedSourceId == null) "全部来源线路" else "当前来源线路"
     LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         item {
             RoutePanelSummaryCard(
@@ -5520,7 +5524,7 @@ private fun PlayerRoutePanel(
         }
         item {
             Text(
-                "手动选择线路 · $selectedSourceName (${visibleRoutes.size})",
+                "$sourceListTitle · $selectedSourceName (${visibleRoutes.size})",
                 style = MaterialTheme.typography.labelMedium,
                 color = Color.White.copy(alpha = 0.72f),
                 fontWeight = FontWeight.SemiBold,
