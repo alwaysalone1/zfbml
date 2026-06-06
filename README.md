@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.67
+
+中文：
+
+- 横屏全屏播放器底部功能按钮由两行工具卡片改为更低矮的横向快捷胶囊，视觉上更接近国内视频 App 的播放控制层。
+- 清晰度、倍速、线路、选集、缓存、弹幕等全屏功能完整保留，同时减少控制层对画面的遮挡。
+- 故障时的“重试”和“下一线路”也沿用新的横向按钮样式，保持全屏状态下功能全面但不显得笨重。
+
+English:
+
+- The landscape fullscreen player action buttons were changed from tall two-line tool cards into lower horizontal quick-action pills, closer to China-market video player controls.
+- Fullscreen features such as quality, speed, routes, episodes, cache, and danmaku remain available while taking less visual space over the video.
+- Playback recovery actions like Retry and Next Route now share the same horizontal button style, keeping fullscreen controls complete without feeling heavy.
+
 ### v0.2.66
 
 中文：

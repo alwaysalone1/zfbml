@@ -1514,7 +1514,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.66")
+                setRequestProperty("User-Agent", "ZFBML/0.2.67")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -1891,7 +1891,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             Text("\u8BBE\u7F6E", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
-            Text("\u7248\u672C 0.2.66", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+            Text("\u7248\u672C 0.2.67", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         }
         item {
             StatusPanel(
@@ -4986,7 +4986,7 @@ private fun PlayerActionBar(
 ) {
     LazyRow(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(9.dp),
+        horizontalArrangement = Arrangement.spacedBy(7.dp),
         contentPadding = PaddingValues(horizontal = 2.dp),
     ) {
         if (hasPlaybackIssue) {
@@ -6340,39 +6340,45 @@ private fun PlayerTextAction(
     TextButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = Modifier.width(72.dp).height(52.dp).focusable(),
+        modifier = Modifier.width(82.dp).height(38.dp).focusable(),
         shape = RoundedCornerShape(8.dp),
         colors = ButtonDefaults.textButtonColors(
-            containerColor = if (selected) AnimeAccentPink.copy(alpha = 0.16f) else Color.White.copy(alpha = 0.06f),
+            containerColor = if (selected) AnimeAccentPink.copy(alpha = 0.18f) else Color.Black.copy(alpha = 0.2f),
             contentColor = contentColor,
-            disabledContainerColor = Color.White.copy(alpha = 0.04f),
+            disabledContainerColor = Color.Black.copy(alpha = 0.12f),
             disabledContentColor = Color.White.copy(alpha = 0.36f),
         ),
-        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp),
+        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             if (icon != null) {
-                Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
+                Icon(icon, contentDescription = null, modifier = Modifier.size(17.dp))
             }
-            Text(
-                title,
-                style = MaterialTheme.typography.labelSmall,
-                color = contentColor,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            value?.takeIf { it.isNotBlank() }?.let {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center,
+            ) {
                 Text(
-                    it,
+                    title,
                     style = MaterialTheme.typography.labelSmall,
-                    color = contentColor.copy(alpha = if (enabled) 0.68f else 0.5f),
+                    color = contentColor,
+                    fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
+                value?.takeIf { it.isNotBlank() }?.let {
+                    Text(
+                        it,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = contentColor.copy(alpha = if (enabled) 0.68f else 0.5f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
         }
     }
