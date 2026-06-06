@@ -213,7 +213,7 @@ private fun BrandSplashScreen() {
         ) {
             BrandMark(
                 modifier = Modifier
-                    .size(106.dp)
+                    .size(112.dp)
                     .scale(logoScale),
             )
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -230,7 +230,7 @@ private fun BrandSplashScreen() {
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
-                    text = "\u756A\u5267\u805A\u5408\u3001\u5F39\u5E55\u548C\u591A\u7EBF\u8DEF\u64AD\u653E",
+                    text = "\u4ECA\u665A\u7EE7\u7EED\u8FFD",
                     style = MaterialTheme.typography.bodyMedium,
                     color = AnimeMuted,
                 )
@@ -325,15 +325,23 @@ private fun BrandMark(modifier: Modifier = Modifier) {
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .background(AnimeAccentPink, RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp)),
+                    .background(Color(0xFFFF6B9A), RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp)),
             )
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .background(AnimeAccentViolet, RoundedCornerShape(topEnd = 8.dp, bottomEnd = 8.dp)),
+                    .background(Color(0xFF4ED7F5), RoundedCornerShape(topEnd = 8.dp, bottomEnd = 8.dp)),
             )
         }
+        Box(
+            modifier = Modifier
+                .width(30.dp)
+                .height(48.dp)
+                .align(Alignment.TopStart)
+                .padding(start = 16.dp)
+                .background(Color(0xFFFFC857), RoundedCornerShape(bottomStart = 6.dp, bottomEnd = 6.dp)),
+        )
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -342,7 +350,14 @@ private fun BrandMark(modifier: Modifier = Modifier) {
                 .padding(horizontal = 8.dp)
                 .background(Color.Black.copy(alpha = 0.28f), RoundedCornerShape(bottomStart = 8.dp, bottomEnd = 8.dp)),
         )
-        Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(42.dp))
+        Box(
+            modifier = Modifier
+                .size(54.dp)
+                .background(Color.Black.copy(alpha = 0.24f), CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(38.dp))
+        }
         Text(
             text = "Z",
             style = MaterialTheme.typography.titleLarge,
@@ -351,7 +366,7 @@ private fun BrandMark(modifier: Modifier = Modifier) {
             modifier = Modifier.align(Alignment.BottomStart).padding(start = 18.dp, bottom = 12.dp),
         )
         Text(
-            text = "\u25C6",
+            text = "\u2605",
             style = MaterialTheme.typography.titleLarge,
             color = AnimeAccentAmber,
             modifier = Modifier.align(Alignment.TopEnd).padding(end = 14.dp, top = 10.dp),
@@ -566,6 +581,7 @@ private fun DiscoverScreen(
                     scheduleLoading = loading,
                     scheduleError = error,
                     calendarExpanded = showCalendar,
+                    onToggleCalendar = { showCalendar = !showCalendar },
                     guessBatch = guessBatch,
                     onShuffleGuess = { guessBatch += 1 },
                     onOpenDetail = onOpenDetail,
@@ -740,6 +756,7 @@ private fun HomeFeedPage(
     scheduleLoading: Boolean,
     scheduleError: String?,
     calendarExpanded: Boolean,
+    onToggleCalendar: () -> Unit,
     guessBatch: Int,
     onShuffleGuess: () -> Unit,
     onOpenDetail: (SearchResult) -> Unit,
@@ -762,6 +779,16 @@ private fun HomeFeedPage(
                 title = "\u7cbe\u9009\u9996\u63a8",
                 items = feedSelection.spotlight,
                 onOpenDetail = onOpenDetail,
+            )
+        }
+        item {
+            HomeWatchHub(
+                continueItem = continueItem,
+                todayCount = selectedItems.size,
+                recommendationCount = remainder.size.coerceAtLeast(feedSelection.spotlight.size),
+                onContinue = { continueItem?.let(onOpenDetail) },
+                onCalendar = onToggleCalendar,
+                onRecommendation = { feedSelection.spotlight.firstOrNull()?.let(onOpenDetail) },
             )
         }
         if (homeLoading && featured.isEmpty()) {
@@ -818,7 +845,7 @@ private fun HomeFeedPage(
         }
         continueItem?.let { result ->
             item {
-                SectionHeader(title = "\u6b63\u5728\u64ad\u653e", action = "\u8ffd\u756a", onAction = {})
+                SectionHeader(title = "\u7ee7\u7eed\u89c2\u770b", action = "\u8ffd\u756a", onAction = {})
             }
             item {
                 ContinueWatchingRow(result = result, onClick = { onOpenDetail(result) })
@@ -903,6 +930,106 @@ private fun CategoryFeedPage(
             items(listItems) { item ->
                 ScheduleAnimeRow(result = item, onClick = { onOpenDetail(item) })
             }
+        }
+    }
+}
+
+@Composable
+private fun HomeWatchHub(
+    continueItem: SearchResult?,
+    todayCount: Int,
+    recommendationCount: Int,
+    onContinue: () -> Unit,
+    onCalendar: () -> Unit,
+    onRecommendation: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        HomeWatchHubCard(
+            title = "\u7ee7\u7eed\u770b",
+            subtitle = continueItem?.title ?: "\u6682\u65e0\u8fdb\u5ea6",
+            icon = Icons.Filled.PlayArrow,
+            accent = AnimeAccentPink,
+            enabled = continueItem != null,
+            onClick = onContinue,
+            modifier = Modifier.weight(1.18f),
+        )
+        HomeWatchHubCard(
+            title = "\u4eca\u65e5\u66f4\u65b0",
+            subtitle = if (todayCount > 0) "${todayCount}\u90e8\u653e\u9001" else "\u67e5\u770b\u65e5\u5386",
+            icon = Icons.Filled.Bookmarks,
+            accent = AnimeAccentCyan,
+            onClick = onCalendar,
+            modifier = Modifier.weight(1f),
+        )
+        HomeWatchHubCard(
+            title = "\u70ed\u95e8\u63a8\u8350",
+            subtitle = if (recommendationCount > 0) "${recommendationCount}\u90e8\u53ef\u9009" else "\u5148\u53bb\u641c\u7d22",
+            icon = Icons.Filled.VideoLibrary,
+            accent = AnimeAccentGreen,
+            enabled = recommendationCount > 0,
+            onClick = onRecommendation,
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+@Composable
+private fun HomeWatchHubCard(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    accent: Color,
+    enabled: Boolean = true,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Card(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier.height(78.dp).focusable(),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (enabled) AnimePanel else Color.White.copy(alpha = 0.035f),
+            disabledContainerColor = Color.White.copy(alpha = 0.035f),
+        ),
+        border = BorderStroke(1.dp, if (enabled) accent.copy(alpha = 0.28f) else Color.White.copy(alpha = 0.06f)),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(10.dp),
+            verticalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    title,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = if (enabled) Color.White else Color.White.copy(alpha = 0.42f),
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    tint = if (enabled) accent else Color.White.copy(alpha = 0.28f),
+                    modifier = Modifier.size(18.dp),
+                )
+            }
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = if (enabled) AnimeMuted else Color.White.copy(alpha = 0.32f),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }
@@ -1512,7 +1639,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.89")
+                setRequestProperty("User-Agent", "ZFBML/0.2.90")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -1889,7 +2016,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             Text("\u8BBE\u7F6E", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
-            Text("\u7248\u672C 0.2.89", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+            Text("\u7248\u672C 0.2.90", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         }
         item {
             StatusPanel(

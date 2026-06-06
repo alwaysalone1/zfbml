@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.90
+
+中文：
+
+- 首页首屏新增“继续看 / 今日更新 / 热门推荐”观影入口区，让打开 App 后先看到内容消费入口，而不是零散组件。
+- 首页“正在播放”区改名为“继续观看”，避免和真实播放状态混淆，更贴近日常追番表达。
+- 应用图标和 Compose 开屏 BrandMark 更新为书签、播放圆心和星光组合，品牌文案改为“今晚继续追”。
+
+English:
+
+- The home first screen now adds a Watch Hub for Continue, Today Updates, and Hot Picks, making the app feel more like a content-first video product.
+- The home “Now Playing” section is renamed to Continue Watching to avoid confusion with actual playback state.
+- The launcher icon and Compose splash BrandMark now use a bookmark, play center, and star motif with the new “Continue tonight” brand line.
+
 ### v0.2.89
 
 中文：
