@@ -1641,7 +1641,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.99")
+                setRequestProperty("User-Agent", "ZFBML/0.3.0")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2125,7 +2125,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.2.99",
+                version = "0.3.0",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )
@@ -4305,6 +4305,26 @@ private fun PlayerScreen(
                     },
                 )
             }
+            AnimatedVisibility(
+                visible = !compact && activePanel == null && controlsVisible && !controlsLocked,
+                enter = fadeIn(),
+                exit = fadeOut(),
+                modifier = Modifier.align(Alignment.CenterEnd).padding(end = 16.dp).zIndex(4.5f),
+            ) {
+                PlayerFullscreenSideDock(
+                    danmakuEnabled = danmakuEnabled,
+                    routeCount = routeOptions.size,
+                    episodeCount = detail.episodes.size,
+                    onToggleDanmaku = {
+                        revealControls()
+                        danmakuEnabled = !danmakuEnabled
+                    },
+                    onShowPanel = { panel ->
+                        revealControls()
+                        activePanel = panel
+                    },
+                )
+            }
         }
     }
 
@@ -5490,6 +5510,88 @@ private fun PlayerFullscreenLockButton(
             fontWeight = FontWeight.Bold,
             maxLines = 1,
         )
+    }
+}
+
+@Composable
+private fun PlayerFullscreenSideDock(
+    danmakuEnabled: Boolean,
+    routeCount: Int,
+    episodeCount: Int,
+    onToggleDanmaku: () -> Unit,
+    onShowPanel: (PlayerPanel) -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .width(56.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color.Black.copy(alpha = 0.34f))
+            .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(8.dp))
+            .padding(vertical = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        PlayerFullscreenDockButton(
+            icon = Icons.Filled.ClosedCaption,
+            label = if (danmakuEnabled) "弹幕开" else "弹幕关",
+            selected = danmakuEnabled,
+            onClick = onToggleDanmaku,
+        )
+        PlayerFullscreenDockButton(
+            icon = Icons.AutoMirrored.Filled.PlaylistPlay,
+            label = "选集",
+            enabled = episodeCount > 1,
+            onClick = { onShowPanel(PlayerPanel.Episode) },
+        )
+        PlayerFullscreenDockButton(
+            icon = Icons.Filled.VideoLibrary,
+            label = "换源",
+            enabled = routeCount > 1,
+            onClick = { onShowPanel(PlayerPanel.Route) },
+        )
+        PlayerFullscreenDockButton(
+            icon = Icons.Filled.MoreVert,
+            label = "更多",
+            onClick = { onShowPanel(PlayerPanel.More) },
+        )
+    }
+}
+
+@Composable
+private fun PlayerFullscreenDockButton(
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit,
+    selected: Boolean = false,
+    enabled: Boolean = true,
+) {
+    val accent = if (selected) AnimeAccentPink else Color.White.copy(alpha = 0.82f)
+    TextButton(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = Modifier.width(48.dp).height(48.dp).focusable(),
+        shape = RoundedCornerShape(8.dp),
+        colors = ButtonDefaults.textButtonColors(
+            containerColor = if (selected) AnimeAccentPink.copy(alpha = 0.16f) else Color.Transparent,
+            contentColor = accent,
+            disabledContainerColor = Color.Transparent,
+            disabledContentColor = Color.White.copy(alpha = 0.32f),
+        ),
+        contentPadding = PaddingValues(0.dp),
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(3.dp),
+        ) {
+            Icon(icon, contentDescription = label, modifier = Modifier.size(18.dp))
+            Text(
+                label,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
 }
 

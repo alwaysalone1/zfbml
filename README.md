@@ -25,6 +25,19 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.3.0
+
+中文：
+- 全屏/横屏播放器新增右侧快捷 Dock，提供弹幕、选集、换源和更多设置入口。
+- 右侧 Dock 只在控制层展开且未锁定时显示，避免常驻遮挡画面，同时让全屏操作更接近成熟视频 App。
+- 播放器版本进入 `0.3.0`，本阶段继续围绕“竖屏精简、全屏完整”的交互方向推进。
+
+English:
+
+- Fullscreen/landscape playback now includes a right-side quick dock for danmaku, episodes, source switching, and more settings.
+- The dock only appears while controls are visible and unlocked, keeping the video clean while making fullscreen actions easier to reach.
+- The app moves to `0.3.0`, continuing the player direction of compact portrait controls and comprehensive fullscreen controls.
+
 ### v0.2.99
 
 中文：
