@@ -25,6 +25,19 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.95
+
+中文：
+- 搜索页升级为“找番”入口，顶部说明改为“先进详情页，再自动匹配播放源”的观看流程。
+- 搜索框改成卡片式“全站找番”搜索台，减少表单工具感，按钮和图标更接近视频 App。
+- 新增“大家在找”快捷词横滑入口，用户可一键搜索热门番名；空结果提示也改为换番名/别名/关键词。
+
+English:
+
+- The Search tab is now a Find Anime entry, explaining the watch flow from detail page to automatic source matching.
+- The search field now uses a card-style global search station with clearer video-app controls.
+- Added a horizontal Trending Searches strip for one-tap anime searches, and the empty state now suggests alternate titles or keywords.
+
 ### v0.2.94
 
 中文：

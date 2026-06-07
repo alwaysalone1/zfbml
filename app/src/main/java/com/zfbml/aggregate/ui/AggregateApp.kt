@@ -1641,7 +1641,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.94")
+                setRequestProperty("User-Agent", "ZFBML/0.2.95")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -1747,13 +1747,15 @@ private fun SearchScreen(
     var searched by remember { mutableStateOf(false) }
     var searchMessage by remember { mutableStateOf<String?>(null) }
 
-    fun runSearch() {
-        if (query.trim().isBlank()) return
+    fun runSearch(searchTerm: String = query) {
+        val normalizedQuery = searchTerm.trim()
+        if (normalizedQuery.isBlank()) return
+        query = normalizedQuery
         scope.launch {
             searched = true
             loading = true
             searchMessage = null
-            runCatching { graph.sourceRegistry.searchAllWithReport(query.trim()) }
+            runCatching { graph.sourceRegistry.searchAllWithReport(normalizedQuery) }
                 .onSuccess { report ->
                     results = report.results
                     searchMessage = report.statusMessage()
@@ -1781,17 +1783,8 @@ private fun SearchScreen(
     ) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(
-                    text = "\u641c\u7d22",
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White,
-                )
-                Text(
-                    text = "\u5206\u7c7b\u548c\u63a8\u8350\u5df2\u653e\u5728\u9996\u9875\uff0c\u8fd9\u91cc\u4e13\u95e8\u7528\u6765\u7cbe\u51c6\u627e\u7247\u3002",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = AnimeMuted,
-                )
+                Text("\u627e\u756a", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Color.White)
+                Text("\u8f93\u5165\u756a\u540d\u6216\u7c98\u8d34\u64ad\u653e\u94fe\u63a5\uff0c\u5148\u8fdb\u8be6\u60c5\u9875\uff0c\u518d\u7531\u5e94\u7528\u81ea\u52a8\u5339\u914d\u6700\u5408\u9002\u7684\u64ad\u653e\u6e90\u3002", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
             }
         }
         item {
@@ -1801,6 +1794,14 @@ private fun SearchScreen(
                 onSearch = ::runSearch,
                 modifier = Modifier.fillMaxWidth(),
             )
+        }
+        if (!searched && results.isEmpty()) {
+            item {
+                SearchSuggestionStrip(
+                    suggestions = listOf("\u5b64\u72ec\u6447\u6eda", "\u51e1\u4eba\u4fee\u4ed9\u4f20", "\u9b3c\u706d\u4e4b\u5203", "\u9b54\u6cd5\u5c11\u5973\u5c0f\u5706", "\u590f\u76ee\u53cb\u4eba\u5e10"),
+                    onSelected = { runSearch(it) },
+                )
+            }
         }
         item {
             ResultsHeader()
@@ -2122,7 +2123,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             Text("\u8BBE\u7F6E", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
-            Text("\u7248\u672C 0.2.94", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+            Text("\u7248\u672C 0.2.95", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         }
         item {
             StatusPanel(
@@ -2185,33 +2186,73 @@ private fun SearchControls(
     onSearch: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(
-            text = "\u76f4\u63a5\u641c\u7d22",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
-        )
-        Text(
-            text = "\u8f93\u5165\u756a\u540d\u3001\u5267\u540d\u6216\u89c6\u9891\u94fe\u63a5",
-            style = MaterialTheme.typography.bodyMedium,
-            color = AnimeMuted,
-        )
-        OutlinedTextField(
-            value = query,
-            onValueChange = onQueryChange,
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            label = { Text("\u641C\u7D22\u756A\u540D\u3001\u5267\u540D\u6216\u7C98\u8D34\u64AD\u653E\u94FE\u63A5") },
-        )
-        Button(
-            modifier = Modifier
-                .fillMaxWidth()
-                .focusable(),
-            colors = ButtonDefaults.buttonColors(containerColor = AnimeAccentPink, contentColor = Color.White),
-            onClick = onSearch,
-        ) {
-            Text("\u641c\u7d22\u756a\u5267")
+    Card(
+        modifier = modifier,
+        colors = CardDefaults.cardColors(containerColor = AnimePanel),
+        border = BorderStroke(1.dp, AnimeBorder),
+        shape = RoundedCornerShape(8.dp),
+    ) {
+        Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                    modifier = Modifier.size(40.dp).clip(RoundedCornerShape(8.dp)).background(AnimeAccentPink),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(Icons.Filled.Search, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
+                }
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text("\u5168\u7ad9\u627e\u756a", style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold)
+                    Text("\u652f\u6301\u756a\u540d\u3001\u5267\u540d\u548c\u76f4\u94fe", style = MaterialTheme.typography.bodySmall, color = AnimeMuted)
+                }
+            }
+            OutlinedTextField(
+                value = query,
+                onValueChange = onQueryChange,
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                label = { Text("\u8f93\u5165\u756a\u540d\u6216\u7c98\u8d34\u64ad\u653e\u94fe\u63a5") },
+            )
+            Button(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(44.dp)
+                    .focusable(),
+                colors = ButtonDefaults.buttonColors(containerColor = AnimeAccentPink, contentColor = Color.White),
+                onClick = onSearch,
+            ) {
+                Icon(Icons.Filled.Search, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("\u5f00\u59cb\u641c\u7d22")
+            }
+        }
+    }
+}
+
+@Composable
+private fun SearchSuggestionStrip(
+    suggestions: List<String>,
+    onSelected: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(9.dp)) {
+        Text("\u5927\u5bb6\u5728\u627e", style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold)
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(suggestions) { suggestion ->
+                TextButton(
+                    onClick = { onSelected(suggestion) },
+                    modifier = Modifier.height(36.dp).focusable(),
+                    shape = RoundedCornerShape(999.dp),
+                    colors = ButtonDefaults.textButtonColors(
+                        containerColor = Color.White.copy(alpha = 0.08f),
+                        contentColor = Color.White,
+                    ),
+                    contentPadding = PaddingValues(horizontal = 13.dp, vertical = 0.dp),
+                ) {
+                    Icon(Icons.Filled.Search, contentDescription = null, tint = AnimeAccentCyan, modifier = Modifier.size(15.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(suggestion, style = MaterialTheme.typography.labelMedium, maxLines = 1)
+                }
+            }
         }
     }
 }
@@ -2225,8 +2266,8 @@ private fun SearchHintPanel() {
         shape = RoundedCornerShape(8.dp),
     ) {
         Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("\u641c\u7d22\u540e\u5148\u8fdb\u5165\u756a\u5267\u8be6\u60c5", style = MaterialTheme.typography.titleSmall, color = Color.White)
-            Text("\u5728\u8be6\u60c5\u9875\u9009\u96c6\uff0c\u5e94\u7528\u4f18\u5148\u5339\u914d\u5728\u7ebf\u64ad\u653e\u6e90\uff0cBT \u4f5c\u4e3a\u5907\u7528\u8865\u5145\u3002", style = MaterialTheme.typography.bodySmall, color = AnimeMuted)
+            Text("\u627e\u5230\u540e\u5148\u8fdb\u756a\u5267\u8be6\u60c5", style = MaterialTheme.typography.titleSmall, color = Color.White)
+            Text("\u8be6\u60c5\u9875\u4f1a\u5c55\u793a\u7b80\u4ecb\u3001\u9009\u96c6\u548c\u81ea\u52a8\u63a8\u8350\u7684\u64ad\u653e\u6e90\uff0c\u70b9\u64ad\u653e\u5c31\u80fd\u7ee7\u7eed\u770b\u3002", style = MaterialTheme.typography.bodySmall, color = AnimeMuted)
         }
     }
 }
@@ -2281,7 +2322,7 @@ private fun EmptySearchState() {
         border = BorderStroke(1.dp, AnimeBorder),
     ) {
         Text(
-            text = "\u7EE7\u7EED\u6362\u5173\u952E\u8BCD\uFF0C\u6216\u68C0\u67E5\u6A21\u62DF\u5668/\u624B\u673A\u7F51\u7EDC\u3002",
+            text = "\u6ca1\u627e\u5230\u5408\u9002\u7ed3\u679c\uff0c\u53ef\u4ee5\u6362\u4e00\u4e2a\u756a\u540d\u3001\u522b\u540d\u6216\u5173\u952e\u8bcd\u518d\u8bd5\u3002",
             style = MaterialTheme.typography.bodyMedium,
             color = AnimeMuted,
             modifier = Modifier.padding(14.dp),
