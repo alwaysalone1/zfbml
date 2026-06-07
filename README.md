@@ -25,6 +25,19 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.93
+
+中文：
+- 竖屏播放器把“线路”入口收敛为“换源”，只保留弹幕、选集、换源和全屏等轻量入口，普通观看时不再像调试面板。
+- 竖屏播放信息卡改为“继续看”语义，并显示当前源、清晰度和自动推荐状态，让用户更像在看视频而不是在看解析结果。
+- 横屏全屏按钮组同步改为“换源 / 播放源”表达，保留清晰度、倍速、选集、缓存和更多设置，完整功能集中在全屏场景。
+
+English:
+
+- The portrait player now uses Switch Source instead of Routes and keeps only lightweight entries for danmaku, episodes, source switching, and fullscreen.
+- The portrait watch card now reads as Continue Watching and surfaces the current source, quality, and auto recommendation state.
+- The landscape fullscreen controls now use source-oriented wording while keeping the full set of quality, speed, episodes, cache, and more actions.
+
 ### v0.2.92
 
 中文：
