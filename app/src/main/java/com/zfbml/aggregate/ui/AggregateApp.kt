@@ -132,6 +132,8 @@ import com.zfbml.aggregate.source.MediaDetail
 import com.zfbml.aggregate.source.MediaStream
 import com.zfbml.aggregate.source.RouteCandidate
 import com.zfbml.aggregate.source.SearchResult
+import com.zfbml.aggregate.source.SourceCapability
+import com.zfbml.aggregate.source.SourceManifest
 import com.zfbml.aggregate.source.StreamProtocol
 import com.zfbml.aggregate.source.SourceSearchReport
 import com.zfbml.aggregate.source.catalog.BangumiCalendarRepository
@@ -1639,7 +1641,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.93")
+                setRequestProperty("User-Agent", "ZFBML/0.2.94")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -1912,21 +1914,46 @@ private fun categoryAccent(categoryId: String): Color {
 @Composable
 private fun SourcesScreen(graph: AppGraph) {
     val providers = graph.sourceRegistry.manifests
+    val onlineCount = providers.count { SourceCapability.STREAM in it.capabilities && SourceCapability.BITTORRENT !in it.capabilities }
+    val btCount = providers.count { SourceCapability.BITTORRENT in it.capabilities }
+    val downloadableCount = providers.count { it.supportsDownload || SourceCapability.DOWNLOAD in it.capabilities }
+    val webViewCount = providers.count { it.requiresWebView || SourceCapability.WEBVIEW_SNIFF in it.capabilities }
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item {
-            Text("\u9891\u9053", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
-            Text("\u7BA1\u7406\u7247\u6E90\u3001\u6E05\u6670\u5EA6\u3001\u5F39\u5E55\u5339\u914D\u548C\u64AD\u653E\u7B56\u7565", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+            SourceLibraryHero(
+                providerCount = providers.size,
+                onlineCount = onlineCount,
+                btCount = btCount,
+            )
+        }
+        item {
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                item {
+                    SourceMetricCard("在线优先", "${onlineCount.coerceAtLeast(0)} 源", "HLS/MP4 优先开播", AnimeAccentCyan)
+                }
+                item {
+                    SourceMetricCard("BT 备用", "${btCount.coerceAtLeast(0)} 源", "资源站兜底补充", AnimeAccentAmber)
+                }
+                item {
+                    SourceMetricCard("可缓存", "${downloadableCount.coerceAtLeast(0)} 源", "支持离线观看", AnimeAccentGreen)
+                }
+                item {
+                    SourceMetricCard("网页嗅探", "${webViewCount.coerceAtLeast(0)} 源", "复杂页面兜底", AnimeAccentViolet)
+                }
+            }
+        }
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text("播放源", style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold)
+                Text("进入详情页后自动匹配，用户只需要点播放；换源留给需要时使用。", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+            }
         }
         items(providers) { manifest ->
             SourceCard(
-                name = manifest.name,
-                version = manifest.version,
-                author = manifest.author,
-                domains = manifest.domains.joinToString().ifBlank { "\u672C\u5730" },
-                capabilities = manifest.capabilities.joinToString { it.name.lowercase() },
+                manifest = manifest,
                 accent = providerAccent(manifest.id),
             )
         }
@@ -1934,18 +1961,94 @@ private fun SourcesScreen(graph: AppGraph) {
 }
 
 @Composable
-private fun SourceCard(
-    name: String,
-    version: String,
-    author: String,
-    domains: String,
-    capabilities: String,
+private fun SourceLibraryHero(
+    providerCount: Int,
+    onlineCount: Int,
+    btCount: Int,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        BrandMark(modifier = Modifier.size(66.dp))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text("片库频道", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
+            Text("在线视频优先，资源站作为补充；详情页会自动推荐最适合播放的来源。", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                item {
+                    RouteStatusBadge("${providerCount} 个来源", AnimeAccentPink)
+                }
+                item {
+                    RouteStatusBadge("${onlineCount} 在线", AnimeAccentCyan)
+                }
+                if (btCount > 0) {
+                    item {
+                        RouteStatusBadge("${btCount} BT", AnimeAccentAmber)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SourceMetricCard(
+    title: String,
+    value: String,
+    subtitle: String,
     accent: Color,
 ) {
+    Card(
+        modifier = Modifier.width(150.dp).height(96.dp).focusable(),
+        colors = CardDefaults.cardColors(containerColor = AnimePanel),
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.28f)),
+        shape = RoundedCornerShape(8.dp),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(12.dp),
+            verticalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(title, style = MaterialTheme.typography.labelMedium, color = AnimeMuted, maxLines = 1)
+            Text(value, style = MaterialTheme.typography.titleLarge, color = accent, fontWeight = FontWeight.Bold, maxLines = 1)
+            Text(subtitle, style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.72f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+    }
+}
+
+@Composable
+private fun SourceCard(
+    manifest: SourceManifest,
+    accent: Color,
+) {
+    val isBt = SourceCapability.BITTORRENT in manifest.capabilities
+    val isStream = SourceCapability.STREAM in manifest.capabilities
+    val statusLabel = when {
+        isStream && !isBt -> "在线源"
+        isBt -> "资源站"
+        SourceCapability.SEARCH in manifest.capabilities -> "索引源"
+        else -> "辅助源"
+    }
+    val statusColor = when {
+        isStream && !isBt -> AnimeAccentCyan
+        isBt -> AnimeAccentAmber
+        else -> AnimeAccentViolet
+    }
+    val featureText = buildList {
+        if (SourceCapability.SEARCH in manifest.capabilities) add("搜索")
+        if (SourceCapability.DETAIL in manifest.capabilities) add("详情")
+        if (SourceCapability.EPISODES in manifest.capabilities) add("选集")
+        if (isStream) add("播放")
+        if (manifest.supportsDownload || SourceCapability.DOWNLOAD in manifest.capabilities) add("缓存")
+        if (manifest.requiresWebView || SourceCapability.WEBVIEW_SNIFF in manifest.capabilities) add("嗅探")
+    }.joinToString(" · ").ifBlank { "基础来源" }
+    val domainText = manifest.domains.joinToString(" · ").ifBlank { "本地内置" }
     Card(
         modifier = Modifier.fillMaxWidth().focusable(),
         colors = CardDefaults.cardColors(containerColor = AnimePanel),
         border = BorderStroke(1.dp, AnimeBorder),
+        shape = RoundedCornerShape(8.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -1953,19 +2056,22 @@ private fun SourceCard(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
-                modifier = Modifier.size(52.dp).background(accent),
+                modifier = Modifier.size(52.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.92f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = Color.White)
+                Icon(if (isBt) Icons.Filled.Subscriptions else Icons.Filled.PlayArrow, contentDescription = null, tint = Color.White)
             }
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(name, style = MaterialTheme.typography.titleMedium, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text(version, style = MaterialTheme.typography.labelMedium, color = AnimeMuted)
+                    Text(manifest.name, style = MaterialTheme.typography.titleMedium, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    RouteStatusBadge(statusLabel, statusColor)
                 }
-                Text(author, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1)
-                Text(domains, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(capabilities, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(featureText, style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.78f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(domainText, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(manifest.version, style = MaterialTheme.typography.labelMedium, color = accent, fontWeight = FontWeight.Bold, maxLines = 1)
+                Text(manifest.author, style = MaterialTheme.typography.labelSmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
     }
@@ -2016,7 +2122,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             Text("\u8BBE\u7F6E", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
-            Text("\u7248\u672C 0.2.93", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+            Text("\u7248\u672C 0.2.94", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         }
         item {
             StatusPanel(
@@ -2037,7 +2143,7 @@ private fun SettingsScreen(graph: AppGraph) {
         item {
             StatusPanel(
                 title = "\u6570\u636E\u6E90",
-                subtitle = "\u5185\u7F6E Provider + RSS + JSON/XPath",
+                subtitle = "\u5185\u7F6E\u6765\u6E90 + RSS + JSON/XPath",
                 value = "${graph.sourceRegistry.manifests.size} \u4E2A",
                 accent = AnimeAccentPink,
             )
@@ -2120,7 +2226,7 @@ private fun SearchHintPanel() {
     ) {
         Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("\u641c\u7d22\u540e\u5148\u8fdb\u5165\u756a\u5267\u8be6\u60c5", style = MaterialTheme.typography.titleSmall, color = Color.White)
-            Text("\u5728\u8be6\u60c5\u9875\u9009\u96c6\uff0c\u5e94\u7528\u4f18\u5148\u5339\u914d\u5728\u7ebf\u89c6\u9891\u7ebf\u8def\uff0cBT \u4f5c\u4e3a\u5907\u7528\u8865\u5145\u3002", style = MaterialTheme.typography.bodySmall, color = AnimeMuted)
+            Text("\u5728\u8be6\u60c5\u9875\u9009\u96c6\uff0c\u5e94\u7528\u4f18\u5148\u5339\u914d\u5728\u7ebf\u64ad\u653e\u6e90\uff0cBT \u4f5c\u4e3a\u5907\u7528\u8865\u5145\u3002", style = MaterialTheme.typography.bodySmall, color = AnimeMuted)
         }
     }
 }

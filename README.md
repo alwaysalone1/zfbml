@@ -25,6 +25,19 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.94
+
+中文：
+- “频道”页重构为“片库频道”，顶部展示播放源总览，不再像 Provider 调试列表。
+- 新增在线优先、BT 备用、可缓存、网页嗅探四个能力卡，让用户先理解观看策略，再查看来源明细。
+- 播放源卡片改为视频 App 风格，展示来源类型、可用能力、域名和版本，弱化底层技术字段。
+
+English:
+
+- The Channels tab is now a Library Channels page with a source overview instead of a provider-debug list.
+- Added capability cards for Online First, BT Backup, Cacheable, and Web Sniffing so users understand the watch strategy before source details.
+- Source cards now read like video-app entries, showing source type, user-facing abilities, domains, and version while hiding raw technical noise.
+
 ### v0.2.93
 
 中文：
