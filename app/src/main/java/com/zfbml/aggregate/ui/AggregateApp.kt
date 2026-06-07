@@ -1832,7 +1832,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.3.3")
+                setRequestProperty("User-Agent", "ZFBML/0.3.4")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2323,7 +2323,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.3.3",
+                version = "0.3.4",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )
@@ -3716,41 +3716,45 @@ private fun RouteSourceSelector(
                 count = sourceRoutes.size,
                 onlineCount = sourceRoutes.count { it.protocol != StreamProtocol.BITTORRENT && it.protocol != StreamProtocol.WEBVIEW_ONLY },
                 btCount = sourceRoutes.count { it.protocol == StreamProtocol.BITTORRENT },
-                hasPlayable = sourceRoutes.any { it.protocol != StreamProtocol.WEBVIEW_ONLY },
+                playableCount = sourceRoutes.count { it.protocol != StreamProtocol.WEBVIEW_ONLY },
+                webOnlyCount = sourceRoutes.count { it.protocol == StreamProtocol.WEBVIEW_ONLY },
                 isRecommended = sourceId == recommendedSourceId,
             )
         }
         .sortedWith(
             compareByDescending<RouteSourceGroup> { it.isRecommended }
                 .thenByDescending { it.onlineCount > 0 }
-                .thenByDescending { it.hasPlayable }
+                .thenByDescending { it.playableCount }
                 .thenBy { it.name },
         )
     val recommendedGroup = groups.firstOrNull { it.isRecommended }
     val selectedGroup = groups.firstOrNull { it.id == selectedSourceId }
-    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(9.dp)) {
+    val playableCount = routes.count { it.protocol != StreamProtocol.WEBVIEW_ONLY }
+    val onlineCount = routes.count { it.protocol != StreamProtocol.BITTORRENT && it.protocol != StreamProtocol.WEBVIEW_ONLY }
+    val btCount = routes.count { it.protocol == StreamProtocol.BITTORRENT }
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         RouteSourceSelectorHeader(
             recommendedName = recommendedGroup?.name ?: "自动推荐",
-            selectedName = selectedGroup?.name ?: "全部播放源",
+            selectedName = selectedGroup?.name ?: "自动最佳",
             routeCount = routes.size,
             sourceCount = groups.size,
+            playableCount = playableCount,
+        )
+        RouteSourceAutoChoiceCard(
+            recommendedName = recommendedGroup?.name ?: "自动推荐",
+            selected = selectedSourceId == null,
+            routeCount = routes.size,
+            playableCount = playableCount,
+            onlineCount = onlineCount,
+            btCount = btCount,
+            onClick = { onSelected(null) },
         )
         LazyRow(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            item {
-                RouteSourceFilterPill(
-                    title = "全部播放源",
-                    subtitle = "${routes.count { it.protocol != StreamProtocol.WEBVIEW_ONLY }} 可播 · ${routes.count { it.protocol == StreamProtocol.BITTORRENT }} BT",
-                    badge = "${routes.size}",
-                    selected = selectedSourceId == null,
-                    recommended = false,
-                    onClick = { onSelected(null) },
-                )
-            }
             items(groups) { group ->
                 RouteSourceFilterPill(
                     title = group.name,
                     subtitle = group.sourceSummary,
-                    badge = group.count.toString(),
+                    badge = "${group.count}线",
                     selected = selectedSourceId == group.id,
                     recommended = group.isRecommended,
                     onClick = { onSelected(group.id) },
@@ -3766,6 +3770,7 @@ private fun RouteSourceSelectorHeader(
     selectedName: String,
     routeCount: Int,
     sourceCount: Int,
+    playableCount: Int,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -3774,7 +3779,7 @@ private fun RouteSourceSelectorHeader(
     ) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
-                text = "播放源分组",
+                text = "播放方案",
                 style = MaterialTheme.typography.titleMedium,
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
@@ -3782,7 +3787,7 @@ private fun RouteSourceSelectorHeader(
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text = "$sourceCount 组来源 · $routeCount 个播放源",
+                text = "$sourceCount 组来源 · $playableCount/$routeCount 可播 · 默认自动最佳",
                 style = MaterialTheme.typography.bodySmall,
                 color = AnimeMuted,
                 maxLines = 1,
@@ -3791,6 +3796,64 @@ private fun RouteSourceSelectorHeader(
         }
         RouteSourceStatusPill("推荐", recommendedName, AnimeAccentPink)
         RouteSourceStatusPill("当前", selectedName, AnimeAccentCyan)
+    }
+}
+
+@Composable
+private fun RouteSourceAutoChoiceCard(
+    recommendedName: String,
+    selected: Boolean,
+    routeCount: Int,
+    playableCount: Int,
+    onlineCount: Int,
+    btCount: Int,
+    onClick: () -> Unit,
+) {
+    val accent = if (selected) AnimeAccentCyan else AnimeAccentPink
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth().focusable(),
+        shape = RoundedCornerShape(8.dp),
+        colors = CardDefaults.cardColors(containerColor = if (selected) AnimePanelSoft else AnimePanel),
+        border = BorderStroke(1.dp, if (selected) AnimeAccentCyan else AnimeAccentPink.copy(alpha = 0.42f)),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier.size(42.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.18f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = accent, modifier = Modifier.size(22.dp))
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("自动最佳", style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1)
+                    RouteStatusBadge("推荐入口", AnimeAccentPink)
+                    if (selected) RouteStatusBadge("当前", AnimeAccentCyan)
+                }
+                Text(
+                    "优先 $recommendedName · $playableCount/$routeCount 可播",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = AnimeMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    if (onlineCount > 0) RouteStatusBadge("${onlineCount} 在线", AnimeAccentGreen)
+                    if (btCount > 0) RouteStatusBadge("${btCount} 备用", AnimeAccentAmber)
+                }
+            }
+            Text(
+                if (selected) "使用中" else "使用",
+                style = MaterialTheme.typography.labelLarge,
+                color = accent,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+            )
+        }
     }
 }
 
@@ -3831,7 +3894,7 @@ private fun RouteSourceFilterPill(
     }
     TextButton(
         onClick = onClick,
-        modifier = Modifier.width(152.dp).height(46.dp).focusable(),
+        modifier = Modifier.width(174.dp).height(76.dp).focusable(),
         shape = RoundedCornerShape(8.dp),
         colors = ButtonDefaults.textButtonColors(
             containerColor = when {
@@ -3842,53 +3905,64 @@ private fun RouteSourceFilterPill(
             contentColor = contentColor,
         ),
         border = BorderStroke(1.dp, if (selected || recommended) accent else AnimeBorder),
-        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
+        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
     ) {
-        Row(
+        Column(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalArrangement = Arrangement.SpaceBetween,
         ) {
-            if (recommended) {
-                Text(
-                    text = "荐",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = AnimeAccentPink,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(AnimeAccentPink.copy(alpha = 0.16f))
-                        .padding(horizontal = 5.dp, vertical = 2.dp),
-                )
-            }
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(1.dp),
-            ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.labelLarge,
                     color = contentColor,
                     fontWeight = if (selected || recommended) FontWeight.Bold else FontWeight.SemiBold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = subtitle,
+                    text = badge,
                     style = MaterialTheme.typography.labelSmall,
                     color = if (selected || recommended) accent else AnimeMuted,
+                    fontWeight = FontWeight.Bold,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
                 )
             }
             Text(
-                text = badge,
+                text = subtitle,
                 style = MaterialTheme.typography.labelSmall,
                 color = if (selected || recommended) accent else AnimeMuted,
-                fontWeight = FontWeight.Bold,
                 maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                if (recommended) {
+                    Text(
+                        text = "自动推荐",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = AnimeAccentPink,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                    )
+                }
+                if (selected) {
+                    Text(
+                        text = "当前方案",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = AnimeAccentCyan,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                    )
+                } else if (!recommended) {
+                    Text(
+                        text = "点按切换",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White.copy(alpha = 0.58f),
+                        maxLines = 1,
+                    )
+                }
+            }
         }
     }
 }
@@ -3948,11 +4022,12 @@ private fun RouteCandidate.routeStatusLabel(): Pair<String, Color> {
 
 private val RouteSourceGroup.sourceSummary: String
     get() = when {
-        onlineCount > 0 && btCount > 0 -> "$onlineCount 在线 · $btCount BT"
-        onlineCount > 0 -> "$onlineCount 在线"
-        btCount > 0 -> "$btCount BT"
-        hasPlayable -> "$count 个可播"
-        else -> "仅网页兜底"
+        onlineCount > 0 && btCount > 0 -> "${playableCount}可播 · ${onlineCount}在线 · ${btCount}BT"
+        onlineCount > 0 -> "${playableCount}可播 · ${onlineCount}在线"
+        btCount > 0 -> "${playableCount}可播 · ${btCount}备用"
+        playableCount > 0 -> "${playableCount}可播"
+        webOnlyCount > 0 -> "${webOnlyCount}网页兜底"
+        else -> "待检测"
     }
 
 private data class RouteSourceGroup(
@@ -3961,7 +4036,8 @@ private data class RouteSourceGroup(
     val count: Int,
     val onlineCount: Int,
     val btCount: Int,
-    val hasPlayable: Boolean,
+    val playableCount: Int,
+    val webOnlyCount: Int,
     val isRecommended: Boolean,
 )
 

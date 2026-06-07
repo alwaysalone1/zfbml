@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.3.4
+
+中文：
+
+- 详情页展开线路时从“播放源分组”改为“播放方案”，先展示“自动最佳”方案，再展示各来源方案卡。
+- 自动最佳方案卡会显示推荐来源、可播数量、在线源和备用源数量，让用户先理解默认会怎么播，再决定是否手动切源。
+- 来源方案卡改为更高的信息卡片，展示线路数、可播结构、自动推荐和当前方案状态，减少筛选器/调试器观感。
+
+English:
+
+- The detail route expansion now presents playback plans instead of a source filter strip, with the automatic best plan shown first.
+- The automatic plan card shows the recommended source, playable count, online routes, and backup routes before users decide whether to switch manually.
+- Source plan cards now show route count, playable structure, recommendation state, and current selection, reducing the previous diagnostic feel.
+
 ### v0.3.3
 
 中文：
