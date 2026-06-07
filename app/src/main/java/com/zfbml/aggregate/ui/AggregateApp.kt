@@ -1641,7 +1641,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.97")
+                setRequestProperty("User-Agent", "ZFBML/0.2.98")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2125,7 +2125,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.2.97",
+                version = "0.2.98",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )
@@ -2976,56 +2976,94 @@ private fun DetailFirstPlayStrip(
         RouteLoadStatus.Loading -> "$episodeLabel · 正在优先匹配在线播放"
         else -> state.detail
     }
-    Row(
+    val bestRoute = state.bestRoute
+    val qualityLabel = bestRoute?.let { playerQualityLabel(it) } ?: when (state.status) {
+        RouteLoadStatus.Loading -> "匹配中"
+        RouteLoadStatus.Failed -> "待重试"
+        RouteLoadStatus.Empty -> "待补源"
+        RouteLoadStatus.Idle -> "自动"
+        RouteLoadStatus.Ready -> "自动"
+    }
+    Column(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
             .background(Color.Black.copy(alpha = 0.32f))
             .padding(horizontal = 12.dp, vertical = 10.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalArrangement = Arrangement.spacedBy(9.dp),
     ) {
-        Box(
-            modifier = Modifier.size(34.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.18f)),
-            contentAlignment = Alignment.Center,
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (state.status == RouteLoadStatus.Loading) {
-                CircularProgressIndicator(color = accent, modifier = Modifier.size(18.dp))
-            } else {
-                Icon(
-                    imageVector = if (state.status == RouteLoadStatus.Ready) Icons.Filled.Check else Icons.Filled.VideoLibrary,
-                    contentDescription = null,
-                    tint = accent,
-                    modifier = Modifier.size(18.dp),
+            Box(
+                modifier = Modifier.size(34.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.18f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (state.status == RouteLoadStatus.Loading) {
+                    CircularProgressIndicator(color = accent, modifier = Modifier.size(18.dp))
+                } else {
+                    Icon(
+                        imageVector = if (state.status == RouteLoadStatus.Ready) Icons.Filled.Check else Icons.Filled.VideoLibrary,
+                        contentDescription = null,
+                        tint = accent,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    title,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = accent,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                )
+                Text(
+                    decision,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.White.copy(alpha = 0.78f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
-        }
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
-                title,
-                style = MaterialTheme.typography.labelMedium,
+                if (state.canPlay) "推荐播放" else "自动匹配",
+                style = MaterialTheme.typography.labelSmall,
                 color = accent,
-                fontWeight = FontWeight.Bold,
                 maxLines = 1,
-            )
-            Text(
-                decision,
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.White.copy(alpha = 0.78f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(accent.copy(alpha = 0.12f))
+                    .padding(horizontal = 8.dp, vertical = 5.dp),
             )
         }
-        Text(
-            if (state.canPlay) "自动最佳" else "自动匹配",
-            style = MaterialTheme.typography.labelSmall,
-            color = accent,
-            maxLines = 1,
-            modifier = Modifier
-                .clip(RoundedCornerShape(8.dp))
-                .background(accent.copy(alpha = 0.12f))
-                .padding(horizontal = 8.dp, vertical = 5.dp),
-        )
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(7.dp), modifier = Modifier.fillMaxWidth()) {
+            item { DetailDecisionChip("当前集", episodeLabel, AnimeAccentPink) }
+            item { DetailDecisionChip("推荐源", state.recommendationTitle, AnimeAccentCyan) }
+            item { DetailDecisionChip("清晰度", qualityLabel, AnimeAccentAmber) }
+            if (state.routeCount > 1) {
+                item { DetailDecisionChip("可切换", "${state.routeCount}源", AnimeAccentViolet) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DetailDecisionChip(label: String, value: String, color: Color) {
+    Row(
+        modifier = Modifier
+            .height(28.dp)
+            .clip(RoundedCornerShape(999.dp))
+            .background(Color.White.copy(alpha = 0.07f))
+            .border(1.dp, color.copy(alpha = 0.22f), RoundedCornerShape(999.dp))
+            .padding(horizontal = 9.dp),
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, style = MaterialTheme.typography.labelSmall, color = AnimeMuted, maxLines = 1)
+        Text(value.ifBlank { "自动" }, style = MaterialTheme.typography.labelSmall, color = color, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 

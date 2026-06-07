@@ -25,6 +25,19 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.98
+
+中文：
+- 详情页首屏的“即将播放”提示升级为观看决策卡，展示当前集、推荐源、清晰度和可切换播放源数量。
+- 主播放按钮上方现在能直接判断“点播放会看哪一集、从哪个源播、是否还有备用源”。
+- 底层播放源状态文案统一从“线路”收敛为“播放源”，详情页和播放器面板口径更一致。
+
+English:
+
+- The detail hero playback hint is now a watch decision card showing episode, recommended source, quality, and switchable source count.
+- Users can now tell which episode and source will play before pressing the main watch button.
+- Underlying route status wording now consistently uses playback source terminology across detail and player panels.
+
 ### v0.2.97
 
 中文：
