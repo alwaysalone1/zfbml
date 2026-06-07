@@ -1,14 +1,21 @@
 package com.zfbml.aggregate.source
 
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
 
 class SourceRegistry(
     providers: List<SourceProvider>,
+    private val routeCacheSize: Int = DEFAULT_ROUTE_CACHE_SIZE,
 ) {
     private val providersById = providers.associateBy { it.manifest.id }
+    private val routeCacheLock = Mutex()
+    private val routeCandidateCache = LinkedHashMap<RouteCacheKey, List<RouteCandidate>>(16, 0.75f, true)
+    private val inFlightRouteRequests = mutableMapOf<RouteCacheKey, Deferred<List<RouteCandidate>>>()
 
     val manifests: List<SourceManifest> = providers.map { it.manifest }
 
@@ -68,6 +75,44 @@ class SourceRegistry(
     }
 
     suspend fun resolveRouteCandidates(episode: Episode): List<RouteCandidate> {
+        val cacheKey = episode.routeCacheKey()
+        return coroutineScope {
+            var createdRequest = false
+            val request = routeCacheLock.withLock {
+                routeCandidateCache[cacheKey]?.let { return@coroutineScope it }
+                inFlightRouteRequests[cacheKey] ?: async {
+                    resolveRouteCandidatesUncached(episode)
+                }.also { deferred ->
+                    inFlightRouteRequests[cacheKey] = deferred
+                    createdRequest = true
+                }
+            }
+
+            try {
+                val routes = request.await()
+                if (createdRequest) {
+                    routeCacheLock.withLock {
+                        if (inFlightRouteRequests[cacheKey] === request) {
+                            inFlightRouteRequests.remove(cacheKey)
+                        }
+                        cacheRouteCandidates(cacheKey, routes)
+                    }
+                }
+                routes
+            } catch (error: Throwable) {
+                if (createdRequest) {
+                    routeCacheLock.withLock {
+                        if (inFlightRouteRequests[cacheKey] === request) {
+                            inFlightRouteRequests.remove(cacheKey)
+                        }
+                    }
+                }
+                throw error
+            }
+        }
+    }
+
+    private suspend fun resolveRouteCandidatesUncached(episode: Episode): List<RouteCandidate> {
         return resolveStreams(episode)
             .map { stream -> stream.toRouteCandidate(episode) }
             .sortedWith(compareByDescending<RouteCandidate> { it.score }.thenBy { it.title })
@@ -130,10 +175,42 @@ class SourceRegistry(
         return sourceId.replace('-', ' ').replaceFirstChar { it.uppercase() }
     }
 
+    private fun cacheRouteCandidates(key: RouteCacheKey, routes: List<RouteCandidate>) {
+        if (routeCacheSize <= 0) return
+        routeCandidateCache[key] = routes
+        while (routeCandidateCache.size > routeCacheSize) {
+            val iterator = routeCandidateCache.entries.iterator()
+            if (!iterator.hasNext()) break
+            iterator.next()
+            iterator.remove()
+        }
+    }
+
+    private fun Episode.routeCacheKey(): RouteCacheKey {
+        return RouteCacheKey(
+            providerId = providerId,
+            id = id,
+            url = url,
+            index = index,
+            subjectId = raw["subjectId"],
+            episodeId = raw["episodeId"],
+        )
+    }
+
     private companion object {
+        const val DEFAULT_ROUTE_CACHE_SIZE = 96
         const val SEARCH_PROVIDER_TIMEOUT_MS = 15_000L
     }
 }
+
+private data class RouteCacheKey(
+    val providerId: String,
+    val id: String,
+    val url: String,
+    val index: Int?,
+    val subjectId: String?,
+    val episodeId: String?,
+)
 
 data class SourceSearchReport(
     val results: List<SearchResult>,

@@ -25,6 +25,22 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.3.8
+
+中文：
+
+- `SourceRegistry` 新增按剧集的播放线路缓存，详情页、播放器切集和重复进入同一剧集时会复用已解析的线路结果，减少等待和重复请求。
+- 同一剧集的并发线路解析会合并为一次请求，避免用户连续点按、自动播放和面板刷新同时触发多路源加载。
+- 失败的线路解析不会写入缓存，临时网络失败后重试仍会重新请求来源。
+- 新增单测覆盖线路缓存命中、并发合并和不同剧集缓存隔离。
+
+English:
+
+- `SourceRegistry` now caches route candidates per episode, so the detail page, player episode switching, and repeated entry into the same episode can reuse resolved routes.
+- Concurrent route requests for the same episode are coalesced into one provider call, reducing duplicate source loading from rapid taps, autoplay, or panel refreshes.
+- Failed route resolutions are not cached, so transient network failures can still retry against providers.
+- Added tests for cache hits, concurrent coalescing, and cache separation across episodes.
+
 ### v0.3.7
 
 中文：
