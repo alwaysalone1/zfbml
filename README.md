@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.3.3
+
+中文：
+
+- 片库频道从能力统计页调整为“先播在线、备用补源、离线缓存、网页兜底”的观看策略入口，更接近国内长视频 App 的线路表达。
+- “已接入线路”区域弱化调试感，强调详情页自动选择最佳线路，手动切换只在卡顿、失效或换清晰度时使用。
+- “我的”页面升级为“我的追番中心”，把追番记录、缓存、弹幕设置和线路管理收拢成用户入口，同步版本和数据源 UA 到 `0.3.3`。
+
+English:
+
+- The source channel now presents watch-oriented strategy entries: online first, backup sources, offline cache, and web fallback.
+- The connected routes section now emphasizes automatic best-source selection on detail pages, leaving manual switching for buffering, failures, or quality changes.
+- The profile page is upgraded into a watch-center style hub with continue watching, cache, danmaku settings, and route management; version and source user agents are synchronized to `0.3.3`.
+
 ### v0.3.2
 
 中文：

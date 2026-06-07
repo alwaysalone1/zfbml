@@ -1832,7 +1832,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.3.2")
+                setRequestProperty("User-Agent", "ZFBML/0.3.3")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2124,23 +2124,23 @@ private fun SourcesScreen(graph: AppGraph) {
         item {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 item {
-                    SourceMetricCard("在线优先", "${onlineCount.coerceAtLeast(0)} 源", "HLS/MP4 优先开播", AnimeAccentCyan)
+                    SourceStrategyCard("先播在线", "${onlineCount.coerceAtLeast(0)} 源", "HLS/MP4 优先开播", AnimeAccentCyan)
                 }
                 item {
-                    SourceMetricCard("BT 备用", "${btCount.coerceAtLeast(0)} 源", "资源站兜底补充", AnimeAccentAmber)
+                    SourceStrategyCard("备用补源", "${btCount.coerceAtLeast(0)} 源", "资源站作为补充", AnimeAccentAmber)
                 }
                 item {
-                    SourceMetricCard("可缓存", "${downloadableCount.coerceAtLeast(0)} 源", "支持离线观看", AnimeAccentGreen)
+                    SourceStrategyCard("离线缓存", "${downloadableCount.coerceAtLeast(0)} 源", "可播线路可缓存", AnimeAccentGreen)
                 }
                 item {
-                    SourceMetricCard("网页嗅探", "${webViewCount.coerceAtLeast(0)} 源", "复杂页面兜底", AnimeAccentViolet)
+                    SourceStrategyCard("网页兜底", "${webViewCount.coerceAtLeast(0)} 源", "复杂页面再嗅探", AnimeAccentViolet)
                 }
             }
         }
         item {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("播放源", style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold)
-                Text("进入详情页后自动匹配，用户只需要点播放；换源留给需要时使用。", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+                Text("已接入线路", style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold)
+                Text("默认由详情页自动选择最佳线路，手动切换只在卡顿、失效或想换清晰度时进入。", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
             }
         }
         items(providers) { manifest ->
@@ -2159,25 +2159,32 @@ private fun SourceLibraryHero(
     btCount: Int,
     modifier: Modifier = Modifier,
 ) {
-    Row(
+    Surface(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        color = AnimePanel,
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, AnimeBorder),
     ) {
-        BrandMark(modifier = Modifier.size(66.dp))
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text("片库频道", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
-            Text("在线视频优先，资源站作为补充；详情页会自动推荐最适合播放的来源。", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                item {
-                    RouteStatusBadge("${providerCount} 个来源", AnimeAccentPink)
-                }
-                item {
-                    RouteStatusBadge("${onlineCount} 在线", AnimeAccentCyan)
-                }
-                if (btCount > 0) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            BrandMark(modifier = Modifier.size(68.dp))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                Text("片库频道", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
+                Text("像视频 App 一样点开就看：在线源先播，资源站和嗅探只做备用。", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                     item {
-                        RouteStatusBadge("${btCount} BT", AnimeAccentAmber)
+                        RouteStatusBadge("${providerCount} 个来源", AnimeAccentPink)
+                    }
+                    item {
+                        RouteStatusBadge("${onlineCount} 在线", AnimeAccentCyan)
+                    }
+                    if (btCount > 0) {
+                        item {
+                            RouteStatusBadge("${btCount} 备用", AnimeAccentAmber)
+                        }
                     }
                 }
             }
@@ -2186,7 +2193,7 @@ private fun SourceLibraryHero(
 }
 
 @Composable
-private fun SourceMetricCard(
+private fun SourceStrategyCard(
     title: String,
     value: String,
     subtitle: String,
@@ -2316,7 +2323,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.3.2",
+                version = "0.3.3",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )
@@ -2324,27 +2331,27 @@ private fun SettingsScreen(graph: AppGraph) {
         item {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 item {
-                    ProfileQuickCard("继续观看", "首页追番入口", Icons.Filled.PlayArrow, AnimeAccentPink)
+                    ProfileQuickCard("追番记录", "继续看入口", Icons.Filled.PlayArrow, AnimeAccentPink)
                 }
                 item {
-                    ProfileQuickCard("离线缓存", "HLS/MP4 可用", Icons.Filled.CloudDownload, AnimeAccentCyan)
+                    ProfileQuickCard("离线缓存", "可播线路缓存", Icons.Filled.CloudDownload, AnimeAccentCyan)
                 }
                 item {
-                    ProfileQuickCard("弹幕偏好", "${danmakuCount} 平台", Icons.Filled.ClosedCaption, AnimeAccentViolet)
+                    ProfileQuickCard("弹幕设置", "${danmakuCount} 平台样式", Icons.Filled.ClosedCaption, AnimeAccentViolet)
                 }
                 item {
-                    ProfileQuickCard("播放源", "${sourceCount} 来源", Icons.Filled.VideoLibrary, AnimeAccentAmber)
+                    ProfileQuickCard("线路管理", "${sourceCount} 个来源", Icons.Filled.VideoLibrary, AnimeAccentAmber)
                 }
             }
         }
         item {
-            Text("观看设置", style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold)
+            Text("播放体验", style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold)
         }
         item {
             ProfileSettingRow(
                 title = "播放内核",
-                subtitle = "Media3 ExoPlayer 优先，疑难格式后续接入兜底内核",
-                value = "默认",
+                subtitle = "在线播放默认走 Media3，疑难格式后续再接入兜底内核",
+                value = "Media3",
                 icon = Icons.Filled.PlayArrow,
                 accent = AnimeAccentCyan,
             )
@@ -2361,7 +2368,7 @@ private fun SettingsScreen(graph: AppGraph) {
         item {
             ProfileSettingRow(
                 title = "播放源策略",
-                subtitle = "在线播放优先，BT 和网页嗅探作为备用补充",
+                subtitle = "自动最佳优先，手动换源保留给卡顿和失效场景",
                 value = "${sourceCount} 来源",
                 icon = Icons.Filled.VideoLibrary,
                 accent = AnimeAccentPink,
@@ -2376,11 +2383,11 @@ private fun ProfileHeroCard(
     sourceCount: Int,
     danmakuCount: Int,
 ) {
-    Card(
+    Surface(
         modifier = Modifier.fillMaxWidth().focusable(),
-        colors = CardDefaults.cardColors(containerColor = AnimePanel),
-        border = BorderStroke(1.dp, AnimeBorder),
+        color = AnimePanel,
         shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, AnimeBorder),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -2389,8 +2396,8 @@ private fun ProfileHeroCard(
         ) {
             BrandMark(modifier = Modifier.size(66.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                Text("我的追番", style = MaterialTheme.typography.headlineSmall, color = Color.White, fontWeight = FontWeight.Bold)
-                Text("今晚继续追，不迷路", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+                Text("我的追番中心", style = MaterialTheme.typography.headlineSmall, color = Color.White, fontWeight = FontWeight.Bold)
+                Text("继续看、缓存、弹幕和线路都收在这里，普通用户不用面对调试入口。", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                     item { RouteStatusBadge("v$version", AnimeAccentPink) }
                     item { RouteStatusBadge("${sourceCount} 来源", AnimeAccentCyan) }
