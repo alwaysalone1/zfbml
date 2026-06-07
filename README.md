@@ -25,6 +25,24 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.3.5
+
+中文：
+
+- 横屏全屏播放器顶部新增状态胶囊，直接显示当前集、来源/线路数、清晰度和倍速，进入全屏后不用先扫底部按钮才能确认播放状态。
+- 竖屏未全屏播放器仍保持精简，只保留返回、必要提示、弹幕输入、选集、换源和全屏入口，避免遮挡画面。
+- 播放器顶部状态模型补充来源和清晰度字段，为后续全屏布局和面板联动继续提供稳定数据。
+- 弹幕渲染改为预编排轨道和测量结果，播放时每帧只计算当前位置，减少主线程测量和重排造成的顿挫感。
+- 视频 Surface 自身也接入点击控制层切换，横屏和竖屏点击画面都能稳定呼出播放器控制。
+
+English:
+
+- The landscape fullscreen player now adds top status chips for the current episode, source/route count, quality, and playback speed, so users can read playback context without scanning the bottom controls first.
+- The portrait non-fullscreen player remains intentionally minimal, keeping only back/status hints, danmaku input, episode/source shortcuts, and fullscreen entry to avoid covering the video.
+- The player overlay model now exposes source and quality labels, giving later fullscreen layout and panel interactions stable UI data.
+- Danmaku rendering now precomputes lanes and text metrics, so playback frames only calculate current positions and avoid repeated main-thread measuring/re-layout.
+- The video surface now forwards taps to the custom player overlay, making portrait and landscape controls reliably reveal from the video area.
+
 ### v0.3.4
 
 中文：

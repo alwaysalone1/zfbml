@@ -34,6 +34,8 @@ internal data class RouteUiState(
 internal data class PlayerOverlayState(
     val title: String,
     val episodeTitle: String,
+    val sourceLabel: String,
+    val qualityLabel: String,
     val routeLabel: String,
     val playbackState: String,
     val statusLabel: String,
@@ -225,6 +227,8 @@ internal fun buildPlayerOverlayState(
     return PlayerOverlayState(
         title = title,
         episodeTitle = episodeTitle,
+        sourceLabel = playerSourceLabelForUi(stream, route),
+        qualityLabel = playerQualityLabelForUi(stream, route),
         routeLabel = playerRouteLabelForUi(stream, route),
         playbackState = playbackStateLabel,
         statusLabel = playerStatusLabelForUi(playbackStateLabel, notice, error),
@@ -255,6 +259,21 @@ private fun routeUiScore(route: RouteCandidate, failedStreamIds: Set<String>): I
     }
     if (route.stream.id in failedStreamIds) score -= 2_000
     return score
+}
+
+private fun playerSourceLabelForUi(stream: MediaStream, route: RouteCandidate?): String {
+    return route?.sourceName
+        ?: stream.metadata["routeProviderName"]
+        ?: stream.providerId.takeIf { it.isNotBlank() }
+        ?: "自动源"
+}
+
+private fun playerQualityLabelForUi(stream: MediaStream, route: RouteCandidate?): String {
+    val quality = route?.quality
+        ?: stream.quality?.takeIf { it.isNotBlank() }
+    return quality
+        ?.takeIf { !it.equals("auto", ignoreCase = true) && it != "自动" }
+        ?: "自动"
 }
 
 private fun playerRouteLabelForUi(stream: MediaStream, route: RouteCandidate?): String {

@@ -99,4 +99,35 @@ class DanmakuLayoutEngineTest {
 
         assertEquals(2, rendered.size)
     }
+
+    @Test
+    fun preparedLayoutRendersFramesWithoutRemeasuring() {
+        val items = listOf(
+            DanmakuItem(
+                timeMs = 1_000L,
+                text = "smooth-scroll",
+                mode = DanmakuMode.Scroll,
+                platform = DanmakuPlatform.Local,
+            ),
+        )
+        var measureCalls = 0
+
+        val prepared = DanmakuLayoutEngine().prepare(
+            items = items,
+            widthPx = 1_920f,
+            heightPx = 1_080f,
+            profile = DanmakuProfile(DanmakuPlatform.Local),
+            settings = DanmakuSettings(),
+            measureText = {
+                measureCalls += 1
+                DanmakuTextMetrics(textSizePx = 64f, widthPx = 260f, lineHeightPx = 84f, baselineOffsetPx = 66f)
+            },
+        )
+
+        val first = prepared.render(playbackMs = 1_100, alpha = 0.9f).single()
+        val second = prepared.render(playbackMs = 1_350, alpha = 0.9f).single()
+
+        assertEquals(1, measureCalls)
+        assertTrue(second.x < first.x)
+    }
 }

@@ -11,6 +11,7 @@ data class RenderedDanmaku(
     val alpha: Float,
     val lane: Int,
     val widthPx: Float,
+    val metrics: DanmakuTextMetrics,
 )
 
 data class DanmakuTextMetrics(
@@ -18,6 +19,78 @@ data class DanmakuTextMetrics(
     val widthPx: Float,
     val lineHeightPx: Float,
     val baselineOffsetPx: Float,
+)
+
+internal class PreparedDanmakuLayout internal constructor(
+    private val entries: List<ScheduledDanmakuEntry>,
+    private val maxActiveItems: Int,
+    private val maxActiveWindowMs: Long,
+) {
+    fun render(playbackMs: Long, alpha: Float): List<RenderedDanmaku> {
+        if (entries.isEmpty()) return emptyList()
+        val firstIndex = lowerBound(playbackMs - maxActiveWindowMs)
+        val endIndex = upperBound(playbackMs)
+        if (firstIndex >= endIndex) return emptyList()
+        return entries
+            .subList(firstIndex, endIndex)
+            .filter { entry -> playbackMs >= entry.startMs && playbackMs - entry.startMs <= entry.activeWindowMs }
+            .takeLast(maxActiveItems)
+            .mapNotNull { entry ->
+                val elapsed = playbackMs - entry.startMs
+                val progress = (elapsed / entry.durationMs.toFloat()).coerceIn(0f, 1f)
+                val x = entry.startX + (entry.endX - entry.startX) * progress
+                if (x + entry.metrics.widthPx < 0f || x > entry.screenWidthPx) {
+                    null
+                } else {
+                    RenderedDanmaku(
+                        item = entry.item,
+                        x = x,
+                        y = entry.y,
+                        alpha = alpha,
+                        lane = entry.lane,
+                        widthPx = entry.metrics.widthPx,
+                        metrics = entry.metrics,
+                    )
+                }
+            }
+    }
+
+    private fun lowerBound(targetMs: Long): Int {
+        var low = 0
+        var high = entries.size
+        while (low < high) {
+            val mid = (low + high) ushr 1
+            if (entries[mid].startMs < targetMs) low = mid + 1 else high = mid
+        }
+        return low
+    }
+
+    private fun upperBound(targetMs: Long): Int {
+        var low = 0
+        var high = entries.size
+        while (low < high) {
+            val mid = (low + high) ushr 1
+            if (entries[mid].startMs <= targetMs) low = mid + 1 else high = mid
+        }
+        return low
+    }
+
+    companion object {
+        val Empty = PreparedDanmakuLayout(emptyList(), 1, 0L)
+    }
+}
+
+internal data class ScheduledDanmakuEntry(
+    val item: DanmakuItem,
+    val startMs: Long,
+    val durationMs: Long,
+    val activeWindowMs: Long,
+    val lane: Int,
+    val startX: Float,
+    val endX: Float,
+    val y: Float,
+    val screenWidthPx: Float,
+    val metrics: DanmakuTextMetrics,
 )
 
 class DanmakuLayoutEngine {
@@ -30,18 +103,30 @@ class DanmakuLayoutEngine {
         settings: DanmakuSettings,
         measureText: ((DanmakuItem) -> DanmakuTextMetrics)? = null,
     ): List<RenderedDanmaku> {
-        if (!settings.enabled || widthPx <= 0f || heightPx <= 0f) return emptyList()
-        val active = items
+        return prepare(
+            items = items,
+            widthPx = widthPx,
+            heightPx = heightPx,
+            profile = profile,
+            settings = settings,
+            measureText = measureText,
+        ).render(playbackMs, settings.alpha)
+    }
+
+    internal fun prepare(
+        items: List<DanmakuItem>,
+        widthPx: Float,
+        heightPx: Float,
+        profile: DanmakuProfile,
+        settings: DanmakuSettings,
+        measureText: ((DanmakuItem) -> DanmakuTextMetrics)? = null,
+    ): PreparedDanmakuLayout {
+        if (!settings.enabled || widthPx <= 0f || heightPx <= 0f) return PreparedDanmakuLayout.Empty
+        val maxActiveItems = max(1, (profile.maxItemsPerMinute * settings.density.coerceAtLeast(0.25f)).roundToInt())
+        val measured = items
             .asSequence()
             .filter { item -> settings.blockedWords.none { item.text.contains(it, ignoreCase = true) } }
-            .filter { item -> item.timeMs <= playbackMs && playbackMs - item.timeMs <= maxWindow(item, profile) }
             .sortedBy { it.timeMs }
-            .toList()
-        if (active.isEmpty()) return emptyList()
-
-        val maxActiveItems = max(1, (profile.maxItemsPerMinute * settings.density.coerceAtLeast(0.25f)).roundToInt())
-        val measured = active
-            .takeLast(maxActiveItems)
             .mapNotNull { item ->
                 val duration = durationFor(item, profile)
                 if (duration <= 0L) {
@@ -54,7 +139,8 @@ class DanmakuLayoutEngine {
                     )
                 }
             }
-        if (measured.isEmpty()) return emptyList()
+            .toList()
+        if (measured.isEmpty()) return PreparedDanmakuLayout.Empty
 
         val lineHeight = measured.maxOf { it.metrics.lineHeightPx }
             .coerceAtLeast(18f)
@@ -72,13 +158,11 @@ class DanmakuLayoutEngine {
         val topSlots = LongArray(max(1, topReserve)) { Long.MIN_VALUE }
         val bottomSlots = LongArray(max(1, bottomReserve)) { Long.MIN_VALUE }
         val gapPx = (lineHeight * 0.72f).coerceAtLeast(24f)
-        val rendered = mutableListOf<RenderedDanmaku>()
+        val scheduledEntries = mutableListOf<ScheduledDanmakuEntry>()
 
         measured.forEach { entry ->
             val item = entry.item
-            val elapsed = playbackMs - item.timeMs
             val metrics = entry.metrics
-            val progress = (elapsed / entry.durationMs.toFloat()).coerceIn(0f, 1f)
             val scheduled = when (item.mode) {
                 DanmakuMode.Scroll -> {
                     allocateMovingLane(
@@ -93,7 +177,8 @@ class DanmakuLayoutEngine {
                         val globalLane = movingStartLane + lane
                         ScheduledDanmaku(
                             lane = globalLane,
-                            x = widthPx - (widthPx + metrics.widthPx) * progress,
+                            startX = widthPx,
+                            endX = -metrics.widthPx,
                             y = baselineForLane(globalLane, lineHeight, metrics),
                         )
                     }
@@ -111,48 +196,63 @@ class DanmakuLayoutEngine {
                         val globalLane = movingStartLane + lane
                         ScheduledDanmaku(
                             lane = globalLane,
-                            x = -metrics.widthPx + (widthPx + metrics.widthPx) * progress,
+                            startX = -metrics.widthPx,
+                            endX = widthPx,
                             y = baselineForLane(globalLane, lineHeight, metrics),
                         )
                     }
                 }
                 DanmakuMode.Top -> allocateFixedLane(topSlots, item.timeMs, entry.durationMs)?.let { lane ->
+                    val x = (widthPx - metrics.widthPx) / 2f
                     ScheduledDanmaku(
                         lane = lane,
-                        x = (widthPx - metrics.widthPx) / 2f,
+                        startX = x,
+                        endX = x,
                         y = baselineForLane(lane, lineHeight, metrics),
                     )
                 }
                 DanmakuMode.Bottom -> allocateFixedLane(bottomSlots, item.timeMs, entry.durationMs)?.let { lane ->
                     val globalLane = totalTracks - 1 - lane
+                    val x = (widthPx - metrics.widthPx) / 2f
                     ScheduledDanmaku(
                         lane = globalLane,
-                        x = (widthPx - metrics.widthPx) / 2f,
+                        startX = x,
+                        endX = x,
                         y = bottomBaselineForLane(lane, heightPx, lineHeight, metrics),
                     )
                 }
                 DanmakuMode.Advanced -> {
                     val position = item.position
+                    val x = position?.let { it.x * widthPx } ?: ((widthPx - metrics.widthPx) / 2f)
                     ScheduledDanmaku(
                         lane = 0,
-                        x = position?.let { it.x * widthPx } ?: ((widthPx - metrics.widthPx) / 2f),
+                        startX = x,
+                        endX = x,
                         y = position?.let { it.y * heightPx } ?: baselineForLane(0, lineHeight, metrics),
                     )
                 }
                 DanmakuMode.Script -> null
             }
-            if (scheduled != null && scheduled.x + metrics.widthPx >= 0f && scheduled.x <= widthPx) {
-                rendered += RenderedDanmaku(
+            if (scheduled != null) {
+                scheduledEntries += ScheduledDanmakuEntry(
                     item = item,
-                    x = scheduled.x,
+                    startMs = item.timeMs,
+                    durationMs = entry.durationMs,
+                    activeWindowMs = maxWindow(item, profile),
                     y = scheduled.y,
-                    alpha = settings.alpha,
                     lane = scheduled.lane,
-                    widthPx = metrics.widthPx,
+                    startX = scheduled.startX,
+                    endX = scheduled.endX,
+                    screenWidthPx = widthPx,
+                    metrics = metrics,
                 )
             }
         }
-        return rendered
+        return PreparedDanmakuLayout(
+            entries = scheduledEntries,
+            maxActiveItems = maxActiveItems,
+            maxActiveWindowMs = scheduledEntries.maxOfOrNull { it.activeWindowMs } ?: 0L,
+        )
     }
 
     private fun fixedReserve(enabled: Boolean, availableTracks: Int): Int {
@@ -278,7 +378,8 @@ class DanmakuLayoutEngine {
 
     private data class ScheduledDanmaku(
         val lane: Int,
-        val x: Float,
+        val startX: Float,
+        val endX: Float,
         val y: Float,
     )
 

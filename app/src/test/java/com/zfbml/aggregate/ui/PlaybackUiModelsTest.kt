@@ -243,6 +243,8 @@ class PlaybackUiModelsTest {
             error = "Source failed",
         )
 
+        assertEquals("Provider", playing.sourceLabel)
+        assertEquals("1080p", playing.qualityLabel)
         assertEquals("1080p", playing.routeLabel)
         assertEquals("播放中", playing.statusLabel)
         assertEquals("缓冲中", switching.playbackState)

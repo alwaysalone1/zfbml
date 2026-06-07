@@ -25,6 +25,7 @@ fun DanmakuSurface(
     modifier: Modifier = Modifier,
 ) {
     val layoutEngine = remember { DanmakuLayoutEngine() }
+    val layoutCache = remember { DanmakuSurfaceLayoutCache() }
     val fillPaint = rememberTextPaint()
     val measurePaint = rememberTextPaint()
     val strokePaint = rememberTextPaint().apply {
@@ -43,9 +44,21 @@ fun DanmakuSurface(
     Canvas(modifier = modifier) {
         frameTimeMs
         val playbackMs = playbackMsProvider()
-        val metricsCache = HashMap<DanmakuItem, DanmakuTextMetrics>()
-        fun metricsFor(item: DanmakuItem): DanmakuTextMetrics {
-            return metricsCache.getOrPut(item) {
+        val preparedLayout = layoutCache.layoutFor(
+            items = items,
+            widthPx = size.width,
+            heightPx = size.height,
+            profile = profile,
+            settings = settings,
+            densityKey = density.density,
+        ) {
+            layoutEngine.prepare(
+                items = items,
+                widthPx = size.width,
+                heightPx = size.height,
+                profile = profile,
+                settings = settings,
+            ) { item ->
                 val textSizePx = with(density) {
                     (item.fontSizeSp * profile.fontScale * settings.fontScale).sp.toPx()
                 }
@@ -60,19 +73,11 @@ fun DanmakuSurface(
                 )
             }
         }
-        val rendered = layoutEngine.layout(
-            items = items,
-            playbackMs = playbackMs,
-            widthPx = size.width,
-            heightPx = size.height,
-            profile = profile,
-            settings = settings,
-            measureText = ::metricsFor,
-        )
+        val rendered = preparedLayout.render(playbackMs, settings.alpha)
         drawIntoCanvas { canvas ->
             val native = canvas.nativeCanvas
             rendered.forEach { entry ->
-                val metrics = metricsFor(entry.item)
+                val metrics = entry.metrics
                 val color = entry.item.color.withAlpha(entry.alpha)
                 strokePaint.textSize = metrics.textSizePx
                 strokePaint.strokeWidth = profile.strokeWidthPx
@@ -84,6 +89,44 @@ fun DanmakuSurface(
                 native.drawText(entry.item.text, entry.x, entry.y, fillPaint)
             }
         }
+    }
+}
+
+private class DanmakuSurfaceLayoutCache {
+    private var items: List<DanmakuItem>? = null
+    private var widthPx: Float = -1f
+    private var heightPx: Float = -1f
+    private var profile: DanmakuProfile? = null
+    private var settings: DanmakuSettings? = null
+    private var densityKey: Float = -1f
+    private var layout: PreparedDanmakuLayout = PreparedDanmakuLayout.Empty
+
+    fun layoutFor(
+        items: List<DanmakuItem>,
+        widthPx: Float,
+        heightPx: Float,
+        profile: DanmakuProfile,
+        settings: DanmakuSettings,
+        densityKey: Float,
+        build: () -> PreparedDanmakuLayout,
+    ): PreparedDanmakuLayout {
+        if (
+            this.items !== items ||
+            this.widthPx != widthPx ||
+            this.heightPx != heightPx ||
+            this.profile != profile ||
+            this.settings != settings ||
+            this.densityKey != densityKey
+        ) {
+            this.items = items
+            this.widthPx = widthPx
+            this.heightPx = heightPx
+            this.profile = profile
+            this.settings = settings
+            this.densityKey = densityKey
+            layout = build()
+        }
+        return layout
     }
 }
 

@@ -1832,7 +1832,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.3.4")
+                setRequestProperty("User-Agent", "ZFBML/0.3.5")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2323,7 +2323,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.3.4",
+                version = "0.3.5",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )
@@ -4421,6 +4421,7 @@ private fun PlayerScreen(
             } else {
                 PlayerViewSurface(
                     engine = engine,
+                    onSurfaceTap = ::toggleControls,
                     modifier = Modifier.fillMaxSize(),
                 )
             }
@@ -4469,6 +4470,18 @@ private fun PlayerScreen(
                 durationMs = playbackDurationMs,
                 modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().zIndex(3f),
             )
+            if (compact && activePanel == null) {
+                PlayerTinyIconAction(
+                    icon = Icons.Filled.Fullscreen,
+                    contentDescription = "全屏播放",
+                    onClick = ::enterFullscreen,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(end = 10.dp, bottom = 12.dp)
+                        .zIndex(4.4f)
+                        .width(38.dp),
+                )
+            }
             AnimatedVisibility(
                 visible = controlsVisible && !controlsLocked,
                 enter = fadeIn(),
@@ -4484,6 +4497,11 @@ private fun PlayerScreen(
                     },
                     onExitFullscreen = ::exitFullscreen,
                     compact = compact,
+                    episodeValue = currentEpisode.index?.let { index ->
+                        if (detail.episodes.size > 1) "$index/${detail.episodes.size}" else "第 $index 集"
+                    } ?: currentEpisode.title.ifBlank { "当前集" },
+                    routeCount = routeOptions.size,
+                    playbackSpeed = playbackSpeed,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -5116,10 +5134,13 @@ private fun PlayerTopOverlay(
     onOpenRoutePanel: () -> Unit,
     onExitFullscreen: () -> Unit,
     compact: Boolean,
+    episodeValue: String,
+    routeCount: Int,
+    playbackSpeed: Float,
     modifier: Modifier = Modifier,
 ) {
     val compactStatus = overlayState.error ?: overlayState.notice
-    Box(
+    Column(
         modifier = modifier
             .background(
                 Brush.verticalGradient(
@@ -5135,6 +5156,7 @@ private fun PlayerTopOverlay(
                 ),
             )
             .padding(horizontal = if (compact) 10.dp else 14.dp, vertical = if (compact) 8.dp else 12.dp),
+        verticalArrangement = Arrangement.spacedBy(if (compact) 0.dp else 8.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -5190,6 +5212,92 @@ private fun PlayerTopOverlay(
                 )
             }
         }
+        if (!compact) {
+            PlayerTopStatusStrip(
+                overlayState = overlayState,
+                episodeValue = episodeValue,
+                routeCount = routeCount,
+                playbackSpeed = playbackSpeed,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
+}
+
+@Composable
+private fun PlayerTopStatusStrip(
+    overlayState: PlayerOverlayState,
+    episodeValue: String,
+    routeCount: Int,
+    playbackSpeed: Float,
+    modifier: Modifier = Modifier,
+) {
+    val sourceValue = if (routeCount > 1) {
+        "${overlayState.sourceLabel} · ${routeCount}源"
+    } else {
+        overlayState.sourceLabel
+    }
+    val chips = listOf(
+        PlayerTopStatusSpec("本集", episodeValue, AnimeAccentPink),
+        PlayerTopStatusSpec("来源", sourceValue, AnimeAccentCyan),
+        PlayerTopStatusSpec("清晰度", overlayState.qualityLabel, AnimeAccentAmber),
+        PlayerTopStatusSpec("倍速", formatPlaybackSpeed(playbackSpeed), AnimeAccentGreen),
+    )
+
+    LazyRow(
+        modifier = modifier.height(32.dp),
+        horizontalArrangement = Arrangement.spacedBy(7.dp),
+        contentPadding = PaddingValues(end = 2.dp),
+    ) {
+        items(chips, key = { it.label }) { chip ->
+            PlayerTopStatusChip(
+                label = chip.label,
+                value = chip.value,
+                color = chip.color,
+            )
+        }
+    }
+}
+
+private data class PlayerTopStatusSpec(
+    val label: String,
+    val value: String,
+    val color: Color,
+)
+
+@Composable
+private fun PlayerTopStatusChip(
+    label: String,
+    value: String,
+    color: Color,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .height(30.dp)
+            .widthIn(min = 88.dp, max = 210.dp)
+            .clip(RoundedCornerShape(999.dp))
+            .background(Color.Black.copy(alpha = 0.28f))
+            .border(1.dp, color.copy(alpha = 0.2f), RoundedCornerShape(999.dp))
+            .padding(horizontal = 10.dp),
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = color,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+        )
+        Text(
+            text = value.ifBlank { "自动" },
+            modifier = Modifier.weight(1f, fill = false),
+            style = MaterialTheme.typography.labelSmall,
+            color = Color.White.copy(alpha = 0.86f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
