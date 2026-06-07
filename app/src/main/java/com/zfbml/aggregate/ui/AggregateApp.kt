@@ -1641,7 +1641,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.96")
+                setRequestProperty("User-Agent", "ZFBML/0.2.97")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2125,7 +2125,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.2.96",
+                version = "0.2.97",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )
@@ -5821,6 +5821,14 @@ private fun PlayerOptionPanel(
                     subtitle = playerPanelSubtitle(panel),
                     onDismiss = onDismiss,
                 )
+                PlayerPanelContextBar(
+                    title = detail.title,
+                    episode = currentEpisode,
+                    sourceLabel = currentRoute?.sourceName ?: currentStream.metadata["routeProviderName"] ?: currentStream.providerId,
+                    quality = currentStream.quality.orEmpty().ifBlank { "自动" },
+                    playbackSpeed = playbackSpeed,
+                    modifier = Modifier.fillMaxWidth(),
+                )
                 PlayerPanelQuickTabs(
                     selectedPanel = panel,
                     routeCount = routeOptions.size,
@@ -5919,6 +5927,55 @@ private fun PlayerPanelHeader(title: String, subtitle: String, onDismiss: () -> 
         }
         TextButton(onClick = onDismiss, modifier = Modifier.height(34.dp)) {
             Text("收起", color = Color.White.copy(alpha = 0.82f), style = MaterialTheme.typography.labelMedium)
+        }
+    }
+}
+
+@Composable
+private fun PlayerPanelContextBar(
+    title: String,
+    episode: Episode,
+    sourceLabel: String,
+    quality: String,
+    playbackSpeed: Float,
+    modifier: Modifier = Modifier,
+) {
+    val episodeLabel = episode.index?.let { "第 $it 集" } ?: "当前集"
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(8.dp),
+        color = Color.White.copy(alpha = 0.06f),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f)),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 11.dp, vertical = 9.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)).background(AnimeAccentPink.copy(alpha = 0.18f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = AnimeAccentPink, modifier = Modifier.size(18.dp))
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(
+                    title,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    listOf(episodeLabel, sourceLabel.ifBlank { "自动源" }, quality, formatPlaybackSpeed(playbackSpeed)).joinToString(" · "),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = AnimeMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            RouteStatusBadge("播放中", AnimeAccentGreen)
         }
     }
 }

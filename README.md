@@ -25,6 +25,19 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.97
+
+中文：
+- 播放器设置抽屉新增统一“播放上下文条”，打开清晰度、倍速、换源、选集、弹幕等面板时先显示当前番名和集数。
+- 上下文条同步展示当前播放源、清晰度和倍速，让横屏/竖屏面板操作时不容易迷路。
+- 面板顶部层级更接近国内视频播放器：标题、当前播放信息、快捷功能 Tab、具体设置内容。
+
+English:
+
+- Player option drawers now include a playback context bar for quality, speed, source, episode, danmaku, and more panels.
+- The context bar shows the current anime, episode, source, quality, and speed so users stay oriented while changing settings.
+- The panel hierarchy now better matches modern Chinese video players: title, current playback info, quick tabs, then detailed settings.
+
 ### v0.2.96
 
 中文：
