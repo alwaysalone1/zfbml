@@ -204,6 +204,69 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun routeSourceGroupsPromoteSelectedThenRecommendedSource() {
+        val recommended = route(
+            id = "recommended",
+            protocol = StreamProtocol.HLS,
+            score = 900,
+            quality = "1080p",
+            sourceId = "source-a",
+            sourceName = "Source A",
+        )
+        val selected = route(
+            id = "selected",
+            protocol = StreamProtocol.PROGRESSIVE,
+            score = 200,
+            quality = "720p",
+            sourceId = "source-b",
+            sourceName = "Source B",
+        )
+
+        val groups = buildRouteSourceGroups(
+            routes = listOf(recommended, selected),
+            selectedSourceId = "source-b",
+            recommendedSourceId = "source-a",
+        )
+
+        assertEquals("source-b", groups[0].id)
+        assertTrue(groups[0].isFilterSelected)
+        assertEquals("source-a", groups[1].id)
+        assertTrue(groups[1].hasRecommended)
+    }
+
+    @Test
+    fun routeSourceGroupsSummarizeAllSourcesAndFailedRoutes() {
+        val failedOnline = route("failed-hls", StreamProtocol.HLS, 900, quality = "1080p", sourceId = "online", sourceName = "Online")
+        val online = route("ok-hls", StreamProtocol.HLS, 800, quality = "720p", sourceId = "online", sourceName = "Online")
+        val bt = route("bt", StreamProtocol.BITTORRENT, 500, quality = "1080p", sourceId = "bt", sourceName = "BT")
+        val webOnly = route("web", StreamProtocol.WEBVIEW_ONLY, 100, quality = "1080p", sourceId = "web", sourceName = "Web")
+
+        val groups = buildRouteSourceGroups(
+            routes = listOf(failedOnline, online, bt, webOnly),
+            selectedStreamId = "ok-hls",
+            recommendedStreamId = "ok-hls",
+            failedStreamIds = setOf("failed-hls"),
+            includeAll = true,
+        )
+
+        val all = groups.first()
+        assertEquals(RouteAllSourcesId, all.id)
+        assertTrue(all.isAll)
+        assertTrue(all.isFilterSelected)
+        assertEquals(4, all.totalCount)
+        assertEquals(2, all.playableCount)
+        assertEquals(1, all.onlineCount)
+        assertEquals(1, all.btCount)
+        assertEquals(1, all.webOnlyCount)
+        assertEquals(1, all.failedCount)
+
+        val onlineGroup = groups.first { it.id == "online" }
+        assertTrue(onlineGroup.hasSelected)
+        assertTrue(onlineGroup.hasRecommended)
+        assertEquals("1可播 · 1在线", onlineGroup.sourceSummary)
+    }
+
+    @Test
     fun playerOverlayStateUsesShortStatusLabels() {
         val candidate = route("hls", StreamProtocol.HLS, 900, quality = "1080p")
         val playing = buildPlayerOverlayState(

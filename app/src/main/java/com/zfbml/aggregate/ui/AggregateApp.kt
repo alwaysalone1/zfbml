@@ -1832,7 +1832,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.3.6")
+                setRequestProperty("User-Agent", "ZFBML/0.3.7")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2323,7 +2323,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.3.6",
+                version = "0.3.7",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )
@@ -3707,46 +3707,38 @@ private fun RouteSourceSelector(
     onSelected: (String?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val groups = routes
-        .groupBy { it.sourceId }
-        .map { (sourceId, sourceRoutes) ->
-            RouteSourceGroup(
-                id = sourceId,
-                name = sourceRoutes.firstOrNull()?.sourceName ?: sourceId,
-                count = sourceRoutes.size,
-                onlineCount = sourceRoutes.count { it.protocol != StreamProtocol.BITTORRENT && it.protocol != StreamProtocol.WEBVIEW_ONLY },
-                btCount = sourceRoutes.count { it.protocol == StreamProtocol.BITTORRENT },
-                playableCount = sourceRoutes.count { it.protocol != StreamProtocol.WEBVIEW_ONLY },
-                webOnlyCount = sourceRoutes.count { it.protocol == StreamProtocol.WEBVIEW_ONLY },
-                isRecommended = sourceId == recommendedSourceId,
-            )
-        }
-        .sortedWith(
-            compareByDescending<RouteSourceGroup> { it.isRecommended }
-                .thenByDescending { it.onlineCount > 0 }
-                .thenByDescending { it.playableCount }
-                .thenBy { it.name },
+    val groups = remember(routes, selectedSourceId, recommendedSourceId) {
+        buildRouteSourceGroups(
+            routes = routes,
+            selectedSourceId = selectedSourceId,
+            recommendedSourceId = recommendedSourceId,
         )
-    val recommendedGroup = groups.firstOrNull { it.isRecommended }
-    val selectedGroup = groups.firstOrNull { it.id == selectedSourceId }
-    val playableCount = routes.count { it.protocol != StreamProtocol.WEBVIEW_ONLY }
-    val onlineCount = routes.count { it.protocol != StreamProtocol.BITTORRENT && it.protocol != StreamProtocol.WEBVIEW_ONLY }
-    val btCount = routes.count { it.protocol == StreamProtocol.BITTORRENT }
+    }
+    val allGroup = remember(routes, selectedSourceId, recommendedSourceId) {
+        buildRouteSourceGroups(
+            routes = routes,
+            selectedSourceId = selectedSourceId,
+            recommendedSourceId = recommendedSourceId,
+            includeAll = true,
+        ).first()
+    }
+    val recommendedGroup = groups.firstOrNull { it.hasRecommended }
+    val selectedGroup = groups.firstOrNull { it.isFilterSelected }
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         RouteSourceSelectorHeader(
             recommendedName = recommendedGroup?.name ?: "自动推荐",
             selectedName = selectedGroup?.name ?: "自动最佳",
-            routeCount = routes.size,
+            routeCount = allGroup.totalCount,
             sourceCount = groups.size,
-            playableCount = playableCount,
+            playableCount = allGroup.playableCount,
         )
         RouteSourceAutoChoiceCard(
             recommendedName = recommendedGroup?.name ?: "自动推荐",
             selected = selectedSourceId == null,
-            routeCount = routes.size,
-            playableCount = playableCount,
-            onlineCount = onlineCount,
-            btCount = btCount,
+            routeCount = allGroup.totalCount,
+            playableCount = allGroup.playableCount,
+            onlineCount = allGroup.onlineCount,
+            btCount = allGroup.btCount,
             onClick = { onSelected(null) },
         )
         LazyRow(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -3754,9 +3746,9 @@ private fun RouteSourceSelector(
                 RouteSourceFilterPill(
                     title = group.name,
                     subtitle = group.sourceSummary,
-                    badge = "${group.count}线",
-                    selected = selectedSourceId == group.id,
-                    recommended = group.isRecommended,
+                    badge = "${group.totalCount}线",
+                    selected = group.isFilterSelected,
+                    recommended = group.hasRecommended,
                     onClick = { onSelected(group.id) },
                 )
             }
@@ -4019,27 +4011,6 @@ private fun RouteCandidate.routeStatusLabel(): Pair<String, Color> {
         else -> protocol.displayName() to AnimeAccentCyan
     }
 }
-
-private val RouteSourceGroup.sourceSummary: String
-    get() = when {
-        onlineCount > 0 && btCount > 0 -> "${playableCount}可播 · ${onlineCount}在线 · ${btCount}BT"
-        onlineCount > 0 -> "${playableCount}可播 · ${onlineCount}在线"
-        btCount > 0 -> "${playableCount}可播 · ${btCount}备用"
-        playableCount > 0 -> "${playableCount}可播"
-        webOnlyCount > 0 -> "${webOnlyCount}网页兜底"
-        else -> "待检测"
-    }
-
-private data class RouteSourceGroup(
-    val id: String,
-    val name: String,
-    val count: Int,
-    val onlineCount: Int,
-    val btCount: Int,
-    val playableCount: Int,
-    val webOnlyCount: Int,
-    val isRecommended: Boolean,
-)
 
 @Composable
 private fun RouteCandidateRow(
@@ -7069,56 +7040,14 @@ private fun PlayerRouteSourceStrip(
     modifier: Modifier = Modifier,
 ) {
     val groups = remember(routes, selectedStreamId, selectedSourceId, recommendedStreamId, failedStreamIds) {
-        val sourceGroups = routes
-            .groupBy { it.sourceId }
-            .map { (sourceId, sourceRoutes) ->
-                PlayerRouteSourceGroup(
-                    id = sourceId,
-                    name = sourceRoutes.firstOrNull()?.sourceName ?: sourceId,
-                    totalCount = sourceRoutes.size,
-                    playableCount = sourceRoutes.count { route ->
-                        route.stream.id !in failedStreamIds && route.protocol != StreamProtocol.WEBVIEW_ONLY
-                    },
-                    onlineCount = sourceRoutes.count { route ->
-                        route.stream.id !in failedStreamIds &&
-                            route.protocol != StreamProtocol.BITTORRENT &&
-                            route.protocol != StreamProtocol.WEBVIEW_ONLY
-                    },
-                    btCount = sourceRoutes.count { route ->
-                        route.stream.id !in failedStreamIds && route.protocol == StreamProtocol.BITTORRENT
-                    },
-                    failedCount = sourceRoutes.count { it.stream.id in failedStreamIds },
-                    hasSelected = sourceRoutes.any { it.stream.id == selectedStreamId },
-                    hasRecommended = sourceRoutes.any { it.stream.id == recommendedStreamId },
-                    isFilterSelected = sourceId == selectedSourceId,
-                )
-            }
-            .sortedWith(
-                compareByDescending<PlayerRouteSourceGroup> { it.isFilterSelected }
-                    .thenByDescending { it.hasSelected }
-                    .thenByDescending { it.hasRecommended }
-                    .thenByDescending { it.onlineCount > 0 }
-                    .thenByDescending { it.playableCount }
-                    .thenBy { it.name },
-            )
-        val allGroup = PlayerRouteSourceGroup(
-            id = PlayerRouteAllSourceId,
-            name = "全部播放源",
-            totalCount = routes.size,
-            playableCount = routes.count { it.stream.id !in failedStreamIds && it.protocol != StreamProtocol.WEBVIEW_ONLY },
-            onlineCount = routes.count {
-                it.stream.id !in failedStreamIds &&
-                    it.protocol != StreamProtocol.BITTORRENT &&
-                    it.protocol != StreamProtocol.WEBVIEW_ONLY
-            },
-            btCount = routes.count { it.stream.id !in failedStreamIds && it.protocol == StreamProtocol.BITTORRENT },
-            failedCount = routes.count { it.stream.id in failedStreamIds },
-            hasSelected = routes.any { it.stream.id == selectedStreamId },
-            hasRecommended = recommendedStreamId != null && routes.any { it.stream.id == recommendedStreamId },
-            isAll = true,
-            isFilterSelected = selectedSourceId == null,
+        buildRouteSourceGroups(
+            routes = routes,
+            selectedSourceId = selectedSourceId,
+            selectedStreamId = selectedStreamId,
+            recommendedStreamId = recommendedStreamId,
+            failedStreamIds = failedStreamIds,
+            includeAll = true,
         )
-        listOf(allGroup) + sourceGroups
     }
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(7.dp)) {
         Text(
@@ -7142,25 +7071,9 @@ private fun PlayerRouteSourceStrip(
     }
 }
 
-private const val PlayerRouteAllSourceId = "__all_sources__"
-
-private data class PlayerRouteSourceGroup(
-    val id: String,
-    val name: String,
-    val totalCount: Int,
-    val playableCount: Int,
-    val onlineCount: Int,
-    val btCount: Int,
-    val failedCount: Int,
-    val hasSelected: Boolean,
-    val hasRecommended: Boolean,
-    val isAll: Boolean = false,
-    val isFilterSelected: Boolean = false,
-)
-
 @Composable
 private fun PlayerRouteSourceChip(
-    group: PlayerRouteSourceGroup,
+    group: RouteSourceGroupUiState,
     detailedMode: Boolean,
     onClick: () -> Unit,
 ) {

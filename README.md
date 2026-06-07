@@ -25,6 +25,22 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.3.7
+
+中文：
+
+- 详情页和播放器线路面板共用同一套播放源分组模型，推荐源、当前源、在线源、BT 备用源和失败源的统计不再各算各的。
+- 播放方案卡继续保留“自动最佳”入口，同时来源卡会按当前筛选、当前播放、推荐、在线可播数量排序，换源路径更接近追番场景。
+- 播放器全屏线路面板的来源筛选也改用统一模型，失败线路会从可播统计中降级，避免用户误以为不可用源仍是可选主线路。
+- 新增单测覆盖播放源分组排序、“全部播放源”聚合和失败线路统计。
+
+English:
+
+- Detail and player route panels now share one source-grouping model, keeping recommended, current, online, BT fallback, and failed source counts consistent.
+- The route plan card still keeps the automatic best-entry path, while source cards now sort by active filter, currently playing source, recommendation, and playable online count.
+- The fullscreen player route panel now uses the same grouping model, so failed routes are downgraded from playable counts instead of looking like primary choices.
+- Added unit coverage for source-group ordering, all-source aggregation, and failed-route accounting.
+
 ### v0.3.6
 
 中文：

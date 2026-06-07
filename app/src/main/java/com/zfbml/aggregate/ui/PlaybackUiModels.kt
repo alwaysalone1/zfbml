@@ -53,6 +53,34 @@ internal data class RoutePanelUiState(
     val failedCount: Int,
 )
 
+internal const val RouteAllSourcesId = "__all_sources__"
+
+internal data class RouteSourceGroupUiState(
+    val id: String,
+    val name: String,
+    val totalCount: Int,
+    val playableCount: Int,
+    val onlineCount: Int,
+    val btCount: Int,
+    val webOnlyCount: Int,
+    val failedCount: Int,
+    val hasSelected: Boolean,
+    val hasRecommended: Boolean,
+    val isAll: Boolean = false,
+    val isFilterSelected: Boolean = false,
+) {
+    val sourceSummary: String
+        get() = when {
+            onlineCount > 0 && btCount > 0 -> "${playableCount}可播 · ${onlineCount}在线 · ${btCount}BT"
+            onlineCount > 0 -> "${playableCount}可播 · ${onlineCount}在线"
+            btCount > 0 -> "${playableCount}可播 · ${btCount}备用"
+            playableCount > 0 -> "${playableCount}可播"
+            webOnlyCount > 0 -> "${webOnlyCount}网页兜底"
+            failedCount > 0 -> "${failedCount}条失败"
+            else -> "待检测"
+        }
+}
+
 internal fun buildRouteUiState(
     selectedEpisode: Episode?,
     routes: List<RouteCandidate>,
@@ -129,6 +157,52 @@ internal fun buildRouteUiState(
         recommendationTitle = recommendationTitle,
         recommendationDetail = recommendationDetail,
     )
+}
+
+internal fun buildRouteSourceGroups(
+    routes: List<RouteCandidate>,
+    selectedSourceId: String? = null,
+    selectedStreamId: String? = null,
+    recommendedSourceId: String? = null,
+    recommendedStreamId: String? = null,
+    failedStreamIds: Set<String> = emptySet(),
+    includeAll: Boolean = false,
+): List<RouteSourceGroupUiState> {
+    val sourceGroups = routes
+        .groupBy { it.sourceId }
+        .map { (sourceId, sourceRoutes) ->
+            sourceRoutes.toRouteSourceGroup(
+                id = sourceId,
+                name = sourceRoutes.firstOrNull()?.sourceName ?: sourceId,
+                selectedSourceId = selectedSourceId,
+                selectedStreamId = selectedStreamId,
+                recommendedSourceId = recommendedSourceId,
+                recommendedStreamId = recommendedStreamId,
+                failedStreamIds = failedStreamIds,
+            )
+        }
+        .sortedWith(
+            compareByDescending<RouteSourceGroupUiState> { it.isFilterSelected }
+                .thenByDescending { it.hasSelected }
+                .thenByDescending { it.hasRecommended }
+                .thenByDescending { it.onlineCount > 0 }
+                .thenByDescending { it.playableCount }
+                .thenBy { it.name },
+        )
+
+    if (!includeAll) return sourceGroups
+
+    val allGroup = routes.toRouteSourceGroup(
+        id = RouteAllSourcesId,
+        name = "全部播放源",
+        selectedSourceId = selectedSourceId,
+        selectedStreamId = selectedStreamId,
+        recommendedSourceId = recommendedSourceId,
+        recommendedStreamId = recommendedStreamId,
+        failedStreamIds = failedStreamIds,
+        isAll = true,
+    )
+    return listOf(allGroup) + sourceGroups
 }
 
 internal fun sortRoutesForUi(
@@ -293,6 +367,37 @@ private fun playerRouteLabelForUi(stream: MediaStream, route: RouteCandidate?): 
     return label.ifBlank {
         if (stream.protocol == StreamProtocol.BITTORRENT) "边下边播" else "自动最佳"
     }
+}
+
+private fun List<RouteCandidate>.toRouteSourceGroup(
+    id: String,
+    name: String,
+    selectedSourceId: String?,
+    selectedStreamId: String?,
+    recommendedSourceId: String?,
+    recommendedStreamId: String?,
+    failedStreamIds: Set<String>,
+    isAll: Boolean = false,
+): RouteSourceGroupUiState {
+    return RouteSourceGroupUiState(
+        id = id,
+        name = name,
+        totalCount = size,
+        playableCount = count { it.stream.id !in failedStreamIds && it.protocol != StreamProtocol.WEBVIEW_ONLY },
+        onlineCount = count { route ->
+            route.stream.id !in failedStreamIds &&
+                route.protocol != StreamProtocol.BITTORRENT &&
+                route.protocol != StreamProtocol.WEBVIEW_ONLY
+        },
+        btCount = count { it.stream.id !in failedStreamIds && it.protocol == StreamProtocol.BITTORRENT },
+        webOnlyCount = count { it.protocol == StreamProtocol.WEBVIEW_ONLY },
+        failedCount = count { it.stream.id in failedStreamIds },
+        hasSelected = selectedStreamId != null && any { it.stream.id == selectedStreamId },
+        hasRecommended = recommendedStreamId != null && any { it.stream.id == recommendedStreamId } ||
+            recommendedSourceId != null && (isAll || any { it.sourceId == recommendedSourceId }),
+        isAll = isAll,
+        isFilterSelected = if (isAll) selectedSourceId == null else id == selectedSourceId,
+    )
 }
 
 private fun playerPlaybackStateLabelForUi(playbackState: String): String {
