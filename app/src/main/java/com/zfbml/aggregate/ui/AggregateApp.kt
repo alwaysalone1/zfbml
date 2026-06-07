@@ -156,7 +156,7 @@ fun AggregateApp(graph: AppGraph, initialQuery: String? = null) {
     var screen by remember { mutableStateOf<AppScreen>(AppScreen.Main) }
     var showSplash by remember { mutableStateOf(true) }
     LaunchedEffect(Unit) {
-        delay(900)
+        delay(1_100)
         showSplash = false
     }
     Surface(modifier = Modifier.fillMaxSize(), color = AnimeBackground) {
@@ -195,8 +195,8 @@ private fun BrandSplashScreen() {
     var started by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { started = true }
     val logoScale by animateFloatAsState(
-        targetValue = if (started) 1f else 0.82f,
-        animationSpec = tween(durationMillis = 620, easing = FastOutSlowInEasing),
+        targetValue = if (started) 1f else 0.78f,
+        animationSpec = tween(durationMillis = 640, easing = FastOutSlowInEasing),
         label = "splashLogoScale",
     )
     val contentAlpha by animateFloatAsState(
@@ -204,20 +204,66 @@ private fun BrandSplashScreen() {
         animationSpec = tween(durationMillis = 720, delayMillis = 120, easing = FastOutSlowInEasing),
         label = "splashContentAlpha",
     )
+    val glowScale by animateFloatAsState(
+        targetValue = if (started) 1f else 0.66f,
+        animationSpec = tween(durationMillis = 760, delayMillis = 80, easing = FastOutSlowInEasing),
+        label = "splashGlowScale",
+    )
+    val railProgress by animateFloatAsState(
+        targetValue = if (started) 1f else 0.08f,
+        animationSpec = tween(durationMillis = 820, delayMillis = 160, easing = FastOutSlowInEasing),
+        label = "splashRailProgress",
+    )
     Box(
-        modifier = Modifier.fillMaxSize().background(AnimeBackground),
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        Color(0xFF171018),
+                        AnimeBackground,
+                        Color(0xFF10141A),
+                    ),
+                ),
+            ),
         contentAlignment = Alignment.Center,
     ) {
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .height(260.dp)
+                .background(
+                    Brush.radialGradient(
+                        listOf(AnimeAccentPink.copy(alpha = 0.2f), Color.Transparent),
+                    ),
+                ),
+        )
+        SplashPosterRibbon(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 74.dp)
+                .alpha(contentAlpha),
+        )
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(18.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp),
             modifier = Modifier.alpha(contentAlpha),
         ) {
-            BrandMark(
-                modifier = Modifier
-                    .size(112.dp)
-                    .scale(logoScale),
-            )
+            Box(contentAlignment = Alignment.Center) {
+                Box(
+                    modifier = Modifier
+                        .size(152.dp)
+                        .scale(glowScale)
+                        .clip(CircleShape)
+                        .background(AnimeAccentCyan.copy(alpha = 0.1f)),
+                )
+                BrandMark(
+                    modifier = Modifier
+                        .size(112.dp)
+                        .scale(logoScale),
+                )
+            }
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
                     text = "\u8FFD\u756A\u4E0D\u8FF7\u8DEF",
@@ -237,7 +283,71 @@ private fun BrandSplashScreen() {
                     color = AnimeMuted,
                 )
             }
+            SplashProgressRail(progress = railProgress, modifier = Modifier.width(164.dp))
         }
+    }
+}
+
+@Composable
+private fun SplashPosterRibbon(modifier: Modifier = Modifier) {
+    val tiles = listOf(
+        AnimeAccentPink,
+        AnimeAccentCyan,
+        AnimeAccentAmber,
+        AnimeAccentViolet,
+        AnimeAccentGreen,
+    )
+    Row(
+        modifier = modifier.height(58.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        tiles.forEachIndexed { index, color ->
+            Box(
+                modifier = Modifier
+                    .width(if (index == 2) 42.dp else 34.dp)
+                    .height(if (index == 2) 58.dp else 48.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(color.copy(alpha = if (index == 2) 0.56f else 0.28f))
+                    .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(8.dp)),
+            )
+        }
+    }
+}
+
+@Composable
+private fun SplashProgressRail(progress: Float, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(7.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(4.dp)
+                .clip(RoundedCornerShape(999.dp))
+                .background(Color.White.copy(alpha = 0.1f)),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(progress.coerceIn(0f, 1f))
+                    .height(4.dp)
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(AnimeAccentPink, AnimeAccentCyan),
+                        ),
+                    ),
+            )
+        }
+        Text(
+            text = "\u7247\u5355\u5DF2\u5C31\u7EEA",
+            style = MaterialTheme.typography.labelMedium,
+            color = Color.White.copy(alpha = 0.72f),
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+        )
     }
 }
 
@@ -1641,7 +1751,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.3.0")
+                setRequestProperty("User-Agent", "ZFBML/0.3.1")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2125,7 +2235,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.3.0",
+                version = "0.3.1",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )

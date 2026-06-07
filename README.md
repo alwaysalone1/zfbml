@@ -25,6 +25,19 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.3.1
+
+中文：
+- Compose 开屏升级为更完整的追番品牌场景，加入片单色块、品牌光晕和启动进度轨。
+- 开屏保留“追番不迷路 / ZFBML / 今晚继续追”的核心识别，同时把进入首页的等待控制在短时长内。
+- 应用内版本和数据源请求 UA 同步到 `0.3.1`，便于后续排查真实源加载问题。
+
+English:
+
+- The Compose splash screen now presents a fuller anime-tracking brand scene with watchlist tiles, brand glow, and a startup progress rail.
+- The splash keeps the core identity of “追番不迷路 / ZFBML / 今晚继续追” while staying short before entering the home screen.
+- In-app version display and source request user agents are now synchronized to `0.3.1`.
+
 ### v0.3.0
 
 中文：
