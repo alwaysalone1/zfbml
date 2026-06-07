@@ -1641,7 +1641,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.98")
+                setRequestProperty("User-Agent", "ZFBML/0.2.99")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2125,7 +2125,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.2.98",
+                version = "0.2.99",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )
@@ -5241,53 +5241,26 @@ private fun PlayerCompactInteractionRow(
 ) {
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(7.dp),
     ) {
         PlayerCompactProgressLine(progressFraction = progressFraction, modifier = Modifier.fillMaxWidth())
         Row(
-            modifier = Modifier.fillMaxWidth().height(32.dp),
+            modifier = Modifier.fillMaxWidth().height(36.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(7.dp),
         ) {
-            Row(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .clip(RoundedCornerShape(999.dp))
-                    .background(Color.Black.copy(alpha = 0.32f))
-                    .clickable(onClick = onOpenDanmakuSettings)
-                    .padding(horizontal = 11.dp),
-                horizontalArrangement = Arrangement.spacedBy(7.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Icon(
-                    Icons.Filled.ClosedCaption,
-                    contentDescription = null,
-                    tint = if (danmakuEnabled) AnimeAccentPink else Color.White.copy(alpha = 0.42f),
-                    modifier = Modifier.size(16.dp),
-                )
-                Text(
-                    text = if (danmakuEnabled) "点我发弹幕" else "弹幕已关闭",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.White.copy(alpha = 0.72f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-            PlayerTinyIconAction(
-                icon = Icons.Filled.ClosedCaption,
-                contentDescription = if (danmakuEnabled) "关闭弹幕" else "开启弹幕",
-                onClick = onToggleDanmaku,
-                selected = danmakuEnabled,
-                modifier = Modifier.width(36.dp),
+            PlayerCompactDanmakuInputBar(
+                danmakuEnabled = danmakuEnabled,
+                onOpenDanmakuSettings = onOpenDanmakuSettings,
+                onToggleDanmaku = onToggleDanmaku,
+                modifier = Modifier.weight(1f),
             )
             if (episodeCount > 1) {
                 PlayerCompactTextAction(
                     text = "选集",
                     selected = true,
                     onClick = onOpenEpisode,
-                    modifier = Modifier.width(44.dp),
+                    modifier = Modifier.width(46.dp),
                 )
             }
             if (routeCount > 1) {
@@ -5295,14 +5268,70 @@ private fun PlayerCompactInteractionRow(
                     text = "换源",
                     selected = false,
                     onClick = onOpenRoute,
-                    modifier = Modifier.width(44.dp),
+                    modifier = Modifier.width(46.dp),
                 )
             }
             PlayerTinyIconAction(
                 icon = Icons.Filled.Fullscreen,
                 contentDescription = "全屏播放",
                 onClick = onEnterFullscreen,
-                modifier = Modifier.width(36.dp),
+                modifier = Modifier.width(38.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun PlayerCompactDanmakuInputBar(
+    danmakuEnabled: Boolean,
+    onOpenDanmakuSettings: () -> Unit,
+    onToggleDanmaku: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    Row(
+        modifier = modifier
+            .fillMaxHeight()
+            .clip(RoundedCornerShape(999.dp))
+            .background(Color.Black.copy(alpha = 0.32f))
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onOpenDanmakuSettings,
+            )
+            .padding(start = 11.dp, end = 5.dp),
+        horizontalArrangement = Arrangement.spacedBy(7.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            Icons.Filled.ClosedCaption,
+            contentDescription = null,
+            tint = if (danmakuEnabled) AnimeAccentPink else Color.White.copy(alpha = 0.42f),
+            modifier = Modifier.size(16.dp),
+        )
+        Text(
+            text = if (danmakuEnabled) "发条弹幕" else "弹幕关闭",
+            style = MaterialTheme.typography.bodySmall,
+            color = Color.White.copy(alpha = 0.76f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        TextButton(
+            onClick = onToggleDanmaku,
+            modifier = Modifier.width(32.dp).height(26.dp).focusable(),
+            shape = RoundedCornerShape(999.dp),
+            colors = ButtonDefaults.textButtonColors(
+                containerColor = if (danmakuEnabled) AnimeAccentPink.copy(alpha = 0.2f) else Color.White.copy(alpha = 0.08f),
+                contentColor = if (danmakuEnabled) AnimeAccentPink else Color.White.copy(alpha = 0.56f),
+            ),
+            contentPadding = PaddingValues(0.dp),
+        ) {
+            Text(
+                text = if (danmakuEnabled) "开" else "关",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
             )
         }
     }

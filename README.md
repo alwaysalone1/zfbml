@@ -25,6 +25,19 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.99
+
+中文：
+- 竖屏未全屏播放器底部控制重构为“细进度条 + 弹幕输入胶囊 + 必要快捷键”，减少按钮拥挤感。
+- 弹幕开关收进输入胶囊右侧，保留发弹幕入口，同时让选集、换源、全屏的层级更清楚。
+- 横屏/全屏播放器继续保留完整控制区，清晰度、倍速、换源、选集、缓存和更多设置不受影响。
+
+English:
+
+- The portrait inline player bottom controls now use a slim progress line, danmaku input capsule, and only essential shortcuts.
+- The danmaku toggle now lives inside the input capsule, keeping the send entry visible while making episode, source, and fullscreen actions clearer.
+- Landscape/fullscreen playback still keeps the full control bar with quality, speed, source switching, episodes, cache, and more settings.
+
 ### v0.2.98
 
 中文：
