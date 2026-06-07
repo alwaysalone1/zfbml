@@ -1641,7 +1641,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.2.95")
+                setRequestProperty("User-Agent", "ZFBML/0.2.96")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2117,37 +2117,153 @@ private fun CacheScreen() {
 
 @Composable
 private fun SettingsScreen(graph: AppGraph) {
+    val sourceCount = graph.sourceRegistry.manifests.size
+    val danmakuCount = graph.danmakuRegistry.profiles.size
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item {
-            Text("\u8BBE\u7F6E", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
-            Text("\u7248\u672C 0.2.95", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+            ProfileHeroCard(
+                version = "0.2.96",
+                sourceCount = sourceCount,
+                danmakuCount = danmakuCount,
+            )
         }
         item {
-            StatusPanel(
-                title = "\u64AD\u653E\u5185\u6838",
-                subtitle = "Media3 ExoPlayer",
-                value = "\u9ED8\u8BA4",
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                item {
+                    ProfileQuickCard("继续观看", "首页追番入口", Icons.Filled.PlayArrow, AnimeAccentPink)
+                }
+                item {
+                    ProfileQuickCard("离线缓存", "HLS/MP4 可用", Icons.Filled.CloudDownload, AnimeAccentCyan)
+                }
+                item {
+                    ProfileQuickCard("弹幕偏好", "${danmakuCount} 平台", Icons.Filled.ClosedCaption, AnimeAccentViolet)
+                }
+                item {
+                    ProfileQuickCard("播放源", "${sourceCount} 来源", Icons.Filled.VideoLibrary, AnimeAccentAmber)
+                }
+            }
+        }
+        item {
+            Text("观看设置", style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold)
+        }
+        item {
+            ProfileSettingRow(
+                title = "播放内核",
+                subtitle = "Media3 ExoPlayer 优先，疑难格式后续接入兜底内核",
+                value = "默认",
+                icon = Icons.Filled.PlayArrow,
                 accent = AnimeAccentCyan,
             )
         }
         item {
-            StatusPanel(
-                title = "\u5F39\u5E55",
-                subtitle = "\u54D4\u54E9\u54D4\u54E9 / \u817E\u8BAF / \u7231\u5947\u827A / \u4F18\u9177",
-                value = "${graph.danmakuRegistry.profiles.size} \u6E90",
+            ProfileSettingRow(
+                title = "弹幕样式",
+                subtitle = "B站 / 腾讯 / 爱奇艺 / 优酷样式持续补齐",
+                value = "${danmakuCount} 平台",
+                icon = Icons.Filled.ClosedCaption,
                 accent = AnimeAccentViolet,
             )
         }
         item {
-            StatusPanel(
-                title = "\u6570\u636E\u6E90",
-                subtitle = "\u5185\u7F6E\u6765\u6E90 + RSS + JSON/XPath",
-                value = "${graph.sourceRegistry.manifests.size} \u4E2A",
+            ProfileSettingRow(
+                title = "播放源策略",
+                subtitle = "在线播放优先，BT 和网页嗅探作为备用补充",
+                value = "${sourceCount} 来源",
+                icon = Icons.Filled.VideoLibrary,
                 accent = AnimeAccentPink,
             )
+        }
+    }
+}
+
+@Composable
+private fun ProfileHeroCard(
+    version: String,
+    sourceCount: Int,
+    danmakuCount: Int,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth().focusable(),
+        colors = CardDefaults.cardColors(containerColor = AnimePanel),
+        border = BorderStroke(1.dp, AnimeBorder),
+        shape = RoundedCornerShape(8.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            BrandMark(modifier = Modifier.size(66.dp))
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                Text("我的追番", style = MaterialTheme.typography.headlineSmall, color = Color.White, fontWeight = FontWeight.Bold)
+                Text("今晚继续追，不迷路", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    item { RouteStatusBadge("v$version", AnimeAccentPink) }
+                    item { RouteStatusBadge("${sourceCount} 来源", AnimeAccentCyan) }
+                    item { RouteStatusBadge("${danmakuCount} 弹幕平台", AnimeAccentViolet) }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfileQuickCard(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    accent: Color,
+) {
+    Card(
+        modifier = Modifier.width(136.dp).height(92.dp).focusable(),
+        colors = CardDefaults.cardColors(containerColor = AnimePanel),
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.28f)),
+        shape = RoundedCornerShape(8.dp),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(12.dp),
+            verticalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(22.dp))
+            Text(title, style = MaterialTheme.typography.titleSmall, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1)
+            Text(subtitle, style = MaterialTheme.typography.labelSmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+    }
+}
+
+@Composable
+private fun ProfileSettingRow(
+    title: String,
+    subtitle: String,
+    value: String,
+    icon: ImageVector,
+    accent: Color,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth().focusable(),
+        colors = CardDefaults.cardColors(containerColor = AnimePanel),
+        border = BorderStroke(1.dp, AnimeBorder),
+        shape = RoundedCornerShape(8.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(14.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier.size(38.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.16f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(20.dp))
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(title, style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.SemiBold)
+                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            Text(value, style = MaterialTheme.typography.labelLarge, color = accent, fontWeight = FontWeight.Bold, maxLines = 1)
         }
     }
 }

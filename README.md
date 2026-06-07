@@ -25,6 +25,19 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.2.96
+
+中文：
+- “我的”页从设置状态面板重构为“我的追番”用户中心，顶部展示品牌、版本、播放源和弹幕平台概况。
+- 新增继续观看、离线缓存、弹幕偏好、播放源四个快捷能力卡，让个人页更像视频 App。
+- 观看设置区改为带图标的偏好列表，展示播放内核、弹幕样式和播放源策略，减少工程状态感。
+
+English:
+
+- The Mine tab is now a My Anime profile center with brand identity, version, source count, and danmaku platform overview.
+- Added quick cards for Continue Watching, Offline Cache, Danmaku Preferences, and Playback Sources.
+- The watch settings area now uses icon-led preference rows for player engine, danmaku style, and source strategy instead of raw status panels.
+
 ### v0.2.95
 
 中文：
