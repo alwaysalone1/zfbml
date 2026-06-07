@@ -25,6 +25,22 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.3.6
+
+中文：
+
+- 弹幕播放时钟改为基于播放器采样点和每帧时间外推，播放器进度粗粒度刷新时弹幕仍按帧连续移动，seek、暂停和倍速变化会重新同步。
+- 弹幕布局新增无分配的可见弹幕遍历路径，Canvas 绘制不再每帧创建 RenderedDanmaku 列表，减少 GC 抖动造成的顿挫。
+- 弹幕渲染把描边、阴影等帧内固定画笔参数移出单条弹幕循环，进一步降低每帧主线程开销。
+- 播放器向弹幕层传入播放状态和倍速，让弹幕在暂停、缓冲、倍速播放时和真实视频时钟更一致。
+
+English:
+
+- Danmaku now uses a smooth playback clock anchored to player samples and frame time, so comments keep moving continuously between coarse player progress updates while still resyncing on seek, pause, and speed changes.
+- The prepared danmaku layout now exposes an allocation-light visible traversal path, letting Canvas draw active comments without creating a RenderedDanmaku list every frame.
+- Stroke and shadow paint parameters that are stable within a frame are moved out of the per-comment loop to reduce main-thread draw overhead.
+- The player now passes playback state and speed into the danmaku layer, keeping paused, buffered, and speed-adjusted playback closer to the actual video clock.
+
 ### v0.3.5
 
 中文：

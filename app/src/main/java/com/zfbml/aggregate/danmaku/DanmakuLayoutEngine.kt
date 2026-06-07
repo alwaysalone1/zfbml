@@ -27,35 +27,55 @@ internal class PreparedDanmakuLayout internal constructor(
     private val maxActiveWindowMs: Long,
 ) {
     fun render(playbackMs: Long, alpha: Float): List<RenderedDanmaku> {
-        if (entries.isEmpty()) return emptyList()
-        val firstIndex = lowerBound(playbackMs - maxActiveWindowMs)
-        val endIndex = upperBound(playbackMs)
-        if (firstIndex >= endIndex) return emptyList()
-        return entries
-            .subList(firstIndex, endIndex)
-            .filter { entry -> playbackMs >= entry.startMs && playbackMs - entry.startMs <= entry.activeWindowMs }
-            .takeLast(maxActiveItems)
-            .mapNotNull { entry ->
-                val elapsed = playbackMs - entry.startMs
-                val progress = (elapsed / entry.durationMs.toFloat()).coerceIn(0f, 1f)
-                val x = entry.startX + (entry.endX - entry.startX) * progress
-                if (x + entry.metrics.widthPx < 0f || x > entry.screenWidthPx) {
-                    null
-                } else {
-                    RenderedDanmaku(
-                        item = entry.item,
-                        x = x,
-                        y = entry.y,
-                        alpha = alpha,
-                        lane = entry.lane,
-                        widthPx = entry.metrics.widthPx,
-                        metrics = entry.metrics,
-                    )
-                }
-            }
+        return render(playbackMs.toDouble(), alpha)
     }
 
-    private fun lowerBound(targetMs: Long): Int {
+    fun render(playbackMs: Double, alpha: Float): List<RenderedDanmaku> {
+        if (entries.isEmpty()) return emptyList()
+        val rendered = mutableListOf<RenderedDanmaku>()
+        forEachVisible(playbackMs, alpha) { entry, x, entryAlpha ->
+            rendered += RenderedDanmaku(
+                item = entry.item,
+                x = x,
+                y = entry.y,
+                alpha = entryAlpha,
+                lane = entry.lane,
+                widthPx = entry.metrics.widthPx,
+                metrics = entry.metrics,
+            )
+        }
+        return rendered
+    }
+
+    internal fun forEachVisible(
+        playbackMs: Double,
+        alpha: Float,
+        block: (entry: ScheduledDanmakuEntry, x: Float, alpha: Float) -> Unit,
+    ) {
+        if (entries.isEmpty()) return
+        val firstIndex = lowerBound(playbackMs - maxActiveWindowMs)
+        val endIndex = upperBound(playbackMs)
+        if (firstIndex >= endIndex) return
+
+        var visibleCount = 0
+        var startIndex = endIndex
+        for (index in endIndex - 1 downTo firstIndex) {
+            val entry = entries[index]
+            if (entry.isVisibleAt(playbackMs)) {
+                startIndex = index
+                visibleCount += 1
+                if (visibleCount >= maxActiveItems) break
+            }
+        }
+
+        for (index in startIndex until endIndex) {
+            val entry = entries[index]
+            if (!entry.isVisibleAt(playbackMs)) continue
+            block(entry, entry.xAt(playbackMs), alpha)
+        }
+    }
+
+    private fun lowerBound(targetMs: Double): Int {
         var low = 0
         var high = entries.size
         while (low < high) {
@@ -65,7 +85,7 @@ internal class PreparedDanmakuLayout internal constructor(
         return low
     }
 
-    private fun upperBound(targetMs: Long): Int {
+    private fun upperBound(targetMs: Double): Int {
         var low = 0
         var high = entries.size
         while (low < high) {
@@ -92,6 +112,19 @@ internal data class ScheduledDanmakuEntry(
     val screenWidthPx: Float,
     val metrics: DanmakuTextMetrics,
 )
+
+private fun ScheduledDanmakuEntry.isVisibleAt(playbackMs: Double): Boolean {
+    val elapsed = playbackMs - startMs
+    if (elapsed < 0.0 || elapsed > activeWindowMs) return false
+    val x = xAt(playbackMs)
+    return x + metrics.widthPx >= 0f && x <= screenWidthPx
+}
+
+private fun ScheduledDanmakuEntry.xAt(playbackMs: Double): Float {
+    val elapsed = playbackMs - startMs
+    val progress = (elapsed / durationMs.toDouble()).coerceIn(0.0, 1.0)
+    return (startX + (endX - startX) * progress).toFloat()
+}
 
 class DanmakuLayoutEngine {
     fun layout(

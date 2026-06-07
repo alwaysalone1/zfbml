@@ -130,4 +130,60 @@ class DanmakuLayoutEngineTest {
         assertEquals(1, measureCalls)
         assertTrue(second.x < first.x)
     }
+
+    @Test
+    fun preparedLayoutSupportsFractionalFrameProgress() {
+        val items = listOf(
+            DanmakuItem(
+                timeMs = 1_000L,
+                text = "fractional-scroll",
+                mode = DanmakuMode.Scroll,
+                platform = DanmakuPlatform.Local,
+            ),
+        )
+
+        val prepared = DanmakuLayoutEngine().prepare(
+            items = items,
+            widthPx = 1_920f,
+            heightPx = 1_080f,
+            profile = DanmakuProfile(DanmakuPlatform.Local),
+            settings = DanmakuSettings(),
+            measureText = { DanmakuTextMetrics(textSizePx = 64f, widthPx = 260f, lineHeightPx = 84f, baselineOffsetPx = 66f) },
+        )
+
+        val wholeMs = prepared.render(playbackMs = 1_100.0, alpha = 0.9f).single()
+        val halfMs = prepared.render(playbackMs = 1_100.5, alpha = 0.9f).single()
+
+        assertTrue(halfMs.x < wholeMs.x)
+        assertTrue(wholeMs.x - halfMs.x in 0.05f..0.25f)
+    }
+
+    @Test
+    fun visibleTraversalMatchesRenderedList() {
+        val items = (0 until 4).map { index ->
+            DanmakuItem(
+                timeMs = 1_000L + index * 80L,
+                text = "visible-$index",
+                mode = DanmakuMode.Scroll,
+                platform = DanmakuPlatform.Local,
+            )
+        }
+
+        val prepared = DanmakuLayoutEngine().prepare(
+            items = items,
+            widthPx = 1_920f,
+            heightPx = 1_080f,
+            profile = DanmakuProfile(DanmakuPlatform.Local),
+            settings = DanmakuSettings(),
+            measureText = { DanmakuTextMetrics(textSizePx = 64f, widthPx = 260f, lineHeightPx = 84f, baselineOffsetPx = 66f) },
+        )
+        val rendered = prepared.render(playbackMs = 1_400.25, alpha = 0.76f)
+        val traversed = mutableListOf<Pair<String, Float>>()
+
+        prepared.forEachVisible(playbackMs = 1_400.25, alpha = 0.76f) { entry, x, _ ->
+            traversed += entry.item.text to x
+        }
+
+        assertEquals(rendered.map { it.item.text to it.x }, traversed)
+    }
 }

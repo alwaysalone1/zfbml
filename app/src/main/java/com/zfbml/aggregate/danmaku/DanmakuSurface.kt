@@ -9,7 +9,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.withFrameMillis
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
@@ -22,10 +22,13 @@ fun DanmakuSurface(
     playbackMsProvider: () -> Long,
     profile: DanmakuProfile,
     settings: DanmakuSettings,
+    isPlaying: Boolean,
+    playbackSpeed: Float,
     modifier: Modifier = Modifier,
 ) {
     val layoutEngine = remember { DanmakuLayoutEngine() }
     val layoutCache = remember { DanmakuSurfaceLayoutCache() }
+    val playbackClock = remember { DanmakuPlaybackClock() }
     val fillPaint = rememberTextPaint()
     val measurePaint = rememberTextPaint()
     val strokePaint = rememberTextPaint().apply {
@@ -33,17 +36,25 @@ fun DanmakuSurface(
         strokeJoin = Paint.Join.ROUND
     }
     val density = LocalDensity.current
-    var frameTimeMs by remember { mutableLongStateOf(0L) }
+    var frameTimeNs by remember { mutableLongStateOf(0L) }
 
-    LaunchedEffect(settings.enabled, items) {
+    LaunchedEffect(settings.enabled) {
         while (settings.enabled) {
-            frameTimeMs = withFrameMillis { it }
+            frameTimeNs = withFrameNanos { it }
         }
+    }
+    LaunchedEffect(items, profile, settings.enabled, settings.density, settings.fontScale, settings.blockedWords) {
+        playbackClock.reset()
     }
 
     Canvas(modifier = modifier) {
-        frameTimeMs
-        val playbackMs = playbackMsProvider()
+        frameTimeNs
+        val playbackMs = playbackClock.positionMs(
+            sampledPlaybackMs = playbackMsProvider(),
+            frameTimeNs = frameTimeNs,
+            isPlaying = isPlaying,
+            playbackSpeed = playbackSpeed,
+        )
         val preparedLayout = layoutCache.layoutFor(
             items = items,
             widthPx = size.width,
@@ -73,20 +84,19 @@ fun DanmakuSurface(
                 )
             }
         }
-        val rendered = preparedLayout.render(playbackMs, settings.alpha)
         drawIntoCanvas { canvas ->
             val native = canvas.nativeCanvas
-            rendered.forEach { entry ->
+            strokePaint.strokeWidth = profile.strokeWidthPx
+            strokePaint.color = 0xCC000000.toInt()
+            fillPaint.setShadowLayer(profile.shadowRadiusPx, 1f, 1f, 0x88000000.toInt())
+            preparedLayout.forEachVisible(playbackMs, settings.alpha) { entry, x, entryAlpha ->
                 val metrics = entry.metrics
-                val color = entry.item.color.withAlpha(entry.alpha)
+                val color = entry.item.color.withAlpha(entryAlpha)
                 strokePaint.textSize = metrics.textSizePx
-                strokePaint.strokeWidth = profile.strokeWidthPx
-                strokePaint.color = 0xCC000000.toInt()
                 fillPaint.textSize = metrics.textSizePx
                 fillPaint.color = color
-                fillPaint.setShadowLayer(profile.shadowRadiusPx, 1f, 1f, 0x88000000.toInt())
-                native.drawText(entry.item.text, entry.x, entry.y, strokePaint)
-                native.drawText(entry.item.text, entry.x, entry.y, fillPaint)
+                native.drawText(entry.item.text, x, entry.y, strokePaint)
+                native.drawText(entry.item.text, x, entry.y, fillPaint)
             }
         }
     }
@@ -97,7 +107,7 @@ private class DanmakuSurfaceLayoutCache {
     private var widthPx: Float = -1f
     private var heightPx: Float = -1f
     private var profile: DanmakuProfile? = null
-    private var settings: DanmakuSettings? = null
+    private var settings: DanmakuLayoutSettingsKey? = null
     private var densityKey: Float = -1f
     private var layout: PreparedDanmakuLayout = PreparedDanmakuLayout.Empty
 
@@ -110,24 +120,39 @@ private class DanmakuSurfaceLayoutCache {
         densityKey: Float,
         build: () -> PreparedDanmakuLayout,
     ): PreparedDanmakuLayout {
+        val settingsKey = DanmakuLayoutSettingsKey(settings)
         if (
             this.items !== items ||
             this.widthPx != widthPx ||
             this.heightPx != heightPx ||
             this.profile != profile ||
-            this.settings != settings ||
+            this.settings != settingsKey ||
             this.densityKey != densityKey
         ) {
             this.items = items
             this.widthPx = widthPx
             this.heightPx = heightPx
             this.profile = profile
-            this.settings = settings
+            this.settings = settingsKey
             this.densityKey = densityKey
             layout = build()
         }
         return layout
     }
+}
+
+private data class DanmakuLayoutSettingsKey(
+    val enabled: Boolean,
+    val density: Float,
+    val fontScale: Float,
+    val blockedWords: Set<String>,
+) {
+    constructor(settings: DanmakuSettings) : this(
+        enabled = settings.enabled,
+        density = settings.density,
+        fontScale = settings.fontScale,
+        blockedWords = settings.blockedWords,
+    )
 }
 
 @Composable
