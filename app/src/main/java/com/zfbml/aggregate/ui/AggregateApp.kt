@@ -555,14 +555,24 @@ private fun AppNavigationBar(
     selectedTab: AppTab,
     onTabSelected: (AppTab) -> Unit,
 ) {
-    NavigationBar(containerColor = AnimePanel) {
-        AppTab.entries.forEach { tab ->
-            NavigationBarItem(
-                selected = selectedTab == tab,
-                onClick = { onTabSelected(tab) },
-                icon = { Icon(tab.icon, contentDescription = tab.label) },
-                label = { Text(tab.label) },
-            )
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = AnimePanel,
+        border = BorderStroke(1.dp, AnimeBorder),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().height(72.dp).padding(horizontal = 10.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            AppTab.entries.forEach { tab ->
+                AppBottomNavItem(
+                    tab = tab,
+                    selected = selectedTab == tab,
+                    onClick = { onTabSelected(tab) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
         }
     }
 }
@@ -572,25 +582,96 @@ private fun AppNavigationRail(
     selectedTab: AppTab,
     onTabSelected: (AppTab) -> Unit,
 ) {
-    NavigationRail(
-        modifier = Modifier.fillMaxHeight(),
-        containerColor = AnimePanel,
-        header = {
-            Text(
-                text = "Z",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-                color = AnimeAccentPink,
-                modifier = Modifier.padding(vertical = 18.dp),
-            )
-        },
+    Surface(
+        modifier = Modifier.width(92.dp).fillMaxHeight(),
+        color = AnimePanel,
+        border = BorderStroke(1.dp, AnimeBorder),
     ) {
-        AppTab.entries.forEach { tab ->
-            NavigationRailItem(
-                selected = selectedTab == tab,
-                onClick = { onTabSelected(tab) },
-                icon = { Icon(tab.icon, contentDescription = tab.label) },
-                label = { Text(tab.label) },
+        Column(
+            modifier = Modifier.fillMaxHeight().padding(horizontal = 8.dp, vertical = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            BrandMark(Modifier.size(48.dp))
+            Spacer(Modifier.height(6.dp))
+            AppTab.entries.forEach { tab ->
+                AppRailNavItem(
+                    tab = tab,
+                    selected = selectedTab == tab,
+                    onClick = { onTabSelected(tab) },
+                )
+            }
+            Spacer(Modifier.weight(1f))
+            Text(
+                "ZFBML",
+                style = MaterialTheme.typography.labelSmall,
+                color = AnimeAccentCyan,
+                fontWeight = FontWeight.Bold,
+            )
+        }
+    }
+}
+
+@Composable
+private fun AppBottomNavItem(
+    tab: AppTab,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val accent = if (selected) AnimeAccentPink else Color.White.copy(alpha = 0.62f)
+    TextButton(
+        onClick = onClick,
+        modifier = modifier.height(56.dp).focusable(),
+        shape = RoundedCornerShape(8.dp),
+        colors = ButtonDefaults.textButtonColors(
+            containerColor = if (selected) AnimeAccentPink.copy(alpha = 0.16f) else Color.Transparent,
+            contentColor = accent,
+        ),
+        contentPadding = PaddingValues(0.dp),
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Icon(tab.icon, contentDescription = tab.label, modifier = Modifier.size(if (selected) 23.dp else 21.dp))
+            Text(
+                tab.label,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                maxLines = 1,
+            )
+        }
+    }
+}
+
+@Composable
+private fun AppRailNavItem(
+    tab: AppTab,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val accent = if (selected) AnimeAccentPink else Color.White.copy(alpha = 0.62f)
+    TextButton(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth().height(62.dp).focusable(),
+        shape = RoundedCornerShape(8.dp),
+        colors = ButtonDefaults.textButtonColors(
+            containerColor = if (selected) AnimeAccentPink.copy(alpha = 0.16f) else Color.Transparent,
+            contentColor = accent,
+        ),
+        contentPadding = PaddingValues(0.dp),
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(5.dp),
+        ) {
+            Icon(tab.icon, contentDescription = tab.label, modifier = Modifier.size(if (selected) 24.dp else 22.dp))
+            Text(
+                tab.label,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                maxLines = 1,
             )
         }
     }
@@ -1751,7 +1832,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.3.1")
+                setRequestProperty("User-Agent", "ZFBML/0.3.2")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2235,7 +2316,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.3.1",
+                version = "0.3.2",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )

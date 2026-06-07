@@ -25,6 +25,19 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.3.2
+
+中文：
+- 主框架底部导航改为自定义追番风格胶囊按钮，选中态更明显，减少默认 Material 工具感。
+- 宽屏/TV 侧边导航同步升级，顶部使用应用品牌标识，频道入口更像正式视频 App。
+- 应用内版本和数据源请求 UA 同步到 `0.3.2`。
+
+English:
+
+- The main bottom navigation now uses custom anime-app capsule buttons with clearer selected states instead of the default Material look.
+- Wide-screen/TV navigation is upgraded with the app brand mark and more video-app-like channel entries.
+- In-app version display and source request user agents are now synchronized to `0.3.2`.
+
 ### v0.3.1
 
 中文：
