@@ -25,6 +25,23 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.49
+
+中文：
+- 首页新番时间表状态提升到主 `MainScaffold`，导航栏和首页内容共用同一份 `HomeScheduleUiState`。
+- 主导航的首页状态现在会在日程加载完成后显示真实“今日 N”更新数量，不再停留在静态推荐占位。
+- 首页日程网络请求从 `DiscoverScreen` 内部移到 app shell，避免切换页面时导航、首页摘要和时间表状态分叉。
+- 新增单元测试覆盖 `HomeScheduleUiState.todayCount` 驱动 `AppNavigationUiState` 首页状态。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.49`。
+
+English:
+
+- Home schedule state is now hoisted into `MainScaffold`, so navigation and the home feed share the same `HomeScheduleUiState`.
+- The Discover tab in main navigation now updates to the real `今日 N` count once schedule data is loaded instead of staying on a static recommendation placeholder.
+- Schedule loading moved out of `DiscoverScreen` into the app shell, preventing navigation, home digest, and calendar state from diverging during tab switches.
+- Added unit coverage for `HomeScheduleUiState.todayCount` driving `AppNavigationUiState`.
+- App version labels, request user agents, and README notes are now updated to `0.5.49`.
+
 ### v0.5.48
 
 中文：

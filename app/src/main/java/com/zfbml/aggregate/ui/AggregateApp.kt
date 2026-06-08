@@ -760,13 +760,46 @@ private fun MainScaffold(
 ) {
     val sourceManifests = graph.sourceRegistry.manifests
     val advancedDownloadAvailable = graph.advancedDownloadProvider.isAvailable()
-    val navigationState = remember(selectedTab, sourceManifests, advancedDownloadAvailable) {
+    val currentDayId = remember { BangumiCalendarRepository.currentBangumiWeekdayId() }
+    var schedule by remember { mutableStateOf<List<BangumiScheduleDay>>(emptyList()) }
+    var selectedDayId by remember { mutableStateOf(currentDayId) }
+    var scheduleLoading by remember { mutableStateOf(true) }
+    var scheduleError by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(graph.bangumiCalendarRepository, currentDayId) {
+        scheduleLoading = true
+        scheduleError = null
+        runCatching { graph.bangumiCalendarRepository.loadWeeklySchedule() }
+            .onSuccess { days ->
+                schedule = days
+                val currentSelection = days.firstOrNull {
+                    it.weekdayId == selectedDayId && it.items.isNotEmpty()
+                }
+                if (currentSelection == null) {
+                    days.firstOrNull { it.items.isNotEmpty() }?.let { selectedDayId = it.weekdayId }
+                }
+            }
+            .onFailure { failure ->
+                scheduleError = failure.message ?: failure::class.simpleName.orEmpty().ifBlank { "未知错误" }
+            }
+        scheduleLoading = false
+    }
+
+    val scheduleUiState = remember(schedule, selectedDayId, currentDayId) {
+        buildHomeScheduleUiState(
+            schedule = schedule,
+            selectedDayId = selectedDayId,
+            currentDayId = currentDayId,
+        )
+    }
+    val navigationState = remember(selectedTab, sourceManifests, advancedDownloadAvailable, scheduleUiState.todayCount) {
         val cacheState = buildCacheLibraryUiState(
             manifests = sourceManifests,
             advancedEngineAvailable = advancedDownloadAvailable,
         )
         buildAppNavigationUiState(
             selectedTabId = selectedTab.navigationId,
+            todayCount = scheduleUiState.todayCount,
             searchableSourceCount = sourceManifests.count { SourceCapability.SEARCH in it.capabilities },
             sourceCount = sourceManifests.size,
             cacheableSourceCount = cacheState.cacheableSourceCount,
@@ -785,6 +818,12 @@ private fun MainScaffold(
                     initialQuery = initialQuery,
                     onOpenDetail = onOpenDetail,
                     onTabSelected = onTabSelected,
+                    scheduleUiState = scheduleUiState,
+                    selectedDayId = selectedDayId,
+                    currentDayId = currentDayId,
+                    onDaySelected = { selectedDayId = it },
+                    scheduleLoading = scheduleLoading,
+                    scheduleError = scheduleError,
                     modifier = Modifier.weight(1f).fillMaxHeight(),
                 )
             }
@@ -796,6 +835,12 @@ private fun MainScaffold(
                     initialQuery = initialQuery,
                     onOpenDetail = onOpenDetail,
                     onTabSelected = onTabSelected,
+                    scheduleUiState = scheduleUiState,
+                    selectedDayId = selectedDayId,
+                    currentDayId = currentDayId,
+                    onDaySelected = { selectedDayId = it },
+                    scheduleLoading = scheduleLoading,
+                    scheduleError = scheduleError,
                     modifier = Modifier.weight(1f).fillMaxWidth(),
                 )
                 AppNavigationBar(
@@ -814,12 +859,24 @@ private fun MainTabContent(
     initialQuery: String?,
     onOpenDetail: (SearchResult) -> Unit,
     onTabSelected: (AppTab) -> Unit,
+    scheduleUiState: HomeScheduleUiState,
+    selectedDayId: Int,
+    currentDayId: Int,
+    onDaySelected: (Int) -> Unit,
+    scheduleLoading: Boolean,
+    scheduleError: String?,
     modifier: Modifier = Modifier,
 ) {
     Box(modifier = modifier.background(AnimeBackground)) {
         when (selectedTab) {
             AppTab.Discover -> DiscoverScreen(
                 graph = graph,
+                scheduleUiState = scheduleUiState,
+                selectedDayId = selectedDayId,
+                currentDayId = currentDayId,
+                onDaySelected = onDaySelected,
+                scheduleLoading = scheduleLoading,
+                scheduleError = scheduleError,
                 onOpenDetail = onOpenDetail,
                 onSearch = { onTabSelected(AppTab.Search) },
             )
@@ -997,6 +1054,12 @@ private fun AppRailNavItem(
 @Composable
 private fun DiscoverScreen(
     graph: AppGraph,
+    scheduleUiState: HomeScheduleUiState,
+    selectedDayId: Int,
+    currentDayId: Int,
+    onDaySelected: (Int) -> Unit,
+    scheduleLoading: Boolean,
+    scheduleError: String?,
     onOpenDetail: (SearchResult) -> Unit,
     onSearch: () -> Unit,
 ) {
@@ -1012,27 +1075,6 @@ private fun DiscoverScreen(
     var categoryResults by remember { mutableStateOf<Map<String, BangumiCategoryResult>>(emptyMap()) }
     var categoryLoadingIds by remember { mutableStateOf<Set<String>>(emptySet()) }
     var categoryErrors by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
-    var schedule by remember { mutableStateOf<List<BangumiScheduleDay>>(emptyList()) }
-    var selectedDayId by remember { mutableStateOf(BangumiCalendarRepository.currentBangumiWeekdayId()) }
-    var loading by remember { mutableStateOf(true) }
-    var error by remember { mutableStateOf<String?>(null) }
-
-    LaunchedEffect(Unit) {
-        loading = true
-        error = null
-        runCatching { graph.bangumiCalendarRepository.loadWeeklySchedule() }
-            .onSuccess { days ->
-                schedule = days
-                val currentDay = days.firstOrNull { it.weekdayId == selectedDayId && it.items.isNotEmpty() }
-                if (currentDay == null) {
-                    days.firstOrNull { it.items.isNotEmpty() }?.let { selectedDayId = it.weekdayId }
-                }
-            }
-            .onFailure { failure ->
-                error = failure.message ?: failure::class.simpleName.orEmpty().ifBlank { "\u672a\u77e5\u9519\u8bef" }
-            }
-        loading = false
-    }
 
     LaunchedEffect(Unit) {
         homePicksLoading = true
@@ -1084,11 +1126,12 @@ private fun DiscoverScreen(
                 HomePage.Home -> HomeFeedPage(
                     featured = featured,
                     homeLoading = homePicksLoading,
-                    schedule = schedule,
+                    scheduleUiState = scheduleUiState,
                     selectedDayId = selectedDayId,
-                    onDaySelected = { selectedDayId = it },
-                    scheduleLoading = loading,
-                    scheduleError = error,
+                    currentDayId = currentDayId,
+                    onDaySelected = onDaySelected,
+                    scheduleLoading = scheduleLoading,
+                    scheduleError = scheduleError,
                     calendarExpanded = showCalendar,
                     onToggleCalendar = { showCalendar = !showCalendar },
                     guessBatch = guessBatch,
@@ -1259,8 +1302,9 @@ private fun HomeCategoryBar(
 private fun HomeFeedPage(
     featured: List<SearchResult>,
     homeLoading: Boolean,
-    schedule: List<BangumiScheduleDay>,
+    scheduleUiState: HomeScheduleUiState,
     selectedDayId: Int,
+    currentDayId: Int,
     onDaySelected: (Int) -> Unit,
     scheduleLoading: Boolean,
     scheduleError: String?,
@@ -1270,14 +1314,6 @@ private fun HomeFeedPage(
     onShuffleGuess: () -> Unit,
     onOpenDetail: (SearchResult) -> Unit,
 ) {
-    val currentDayId = remember { BangumiCalendarRepository.currentBangumiWeekdayId() }
-    val scheduleUiState = remember(schedule, selectedDayId, currentDayId) {
-        buildHomeScheduleUiState(
-            schedule = schedule,
-            selectedDayId = selectedDayId,
-            currentDayId = currentDayId,
-        )
-    }
     val selectedItems = scheduleUiState.selectedItems
     val feedSelection = splitSpotlightFeed(featured, spotlightCount = 5)
     val remainder = feedSelection.remainder.ifEmpty { featured.distinctBy { it.stableMediaKey() } }
@@ -2293,7 +2329,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.48")
+                setRequestProperty("User-Agent", "ZFBML/0.5.49")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2768,7 +2804,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.48",
+            version = "0.5.49",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,

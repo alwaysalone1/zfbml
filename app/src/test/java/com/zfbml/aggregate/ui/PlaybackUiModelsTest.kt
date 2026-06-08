@@ -799,6 +799,37 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun appNavigationUiStateUsesHomeScheduleTodayCount() {
+        val scheduleState = buildHomeScheduleUiState(
+            schedule = listOf(
+                scheduleDay(1, "\u661f\u671f\u4e00", listOf(searchResult("bangumi-catalog", "Alpha"))),
+                scheduleDay(
+                    2,
+                    "\u661f\u671f\u4e8c",
+                    listOf(
+                        searchResult("bangumi-catalog", "Beta"),
+                        searchResult("bangumi-catalog", "Gamma"),
+                    ),
+                ),
+            ),
+            selectedDayId = 2,
+            currentDayId = 2,
+        )
+
+        val navigationState = buildAppNavigationUiState(
+            selectedTabId = "discover",
+            todayCount = scheduleState.todayCount,
+            searchableSourceCount = 1,
+            sourceCount = 1,
+            cacheableSourceCount = 0,
+        )
+
+        assertEquals(2, scheduleState.todayCount)
+        assertEquals("今日 2", navigationState.selectedTab?.statusLabel)
+        assertEquals(SourceLibraryTone.Primary, navigationState.selectedTab?.tone)
+    }
+
+    @Test
     fun sourceLibraryUiStateSummarizesStrategiesAndCards() {
         val manifests = listOf(
             manifest(
@@ -955,19 +986,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.48",
+            version = "0.5.49",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.48", state.version)
+        assertEquals("0.5.49", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.48" })
+        assertTrue(state.chips.any { it.label == "v0.5.49" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -981,7 +1012,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.48",
+            version = "0.5.49",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,

@@ -103,3 +103,5 @@ This pass upgrades the offline cache surface. `CacheLibraryUiState` now centrali
 This pass upgrades the Profile surface. `ProfileCenterUiState` now centralizes the user-center hero, quick actions, status chips, and playback settings so Profile copy follows real source, danmaku, and cache capability instead of static Compose text.
 
 This pass upgrades the app shell navigation. `AppNavigationUiState` now centralizes top-level tab labels, status copy, selection state, and semantic tone, and the bottom bar / navigation rail surface recommendation, search-source, source-library, and cache-readiness status from shared models.
+
+This pass wires the app shell navigation to the real home schedule digest. `MainScaffold` now owns the weekly schedule load and shares one `HomeScheduleUiState` with both the Discover feed and top-level navigation, so the Discover tab can show the actual "today" update count once Bangumi schedule data is available.
