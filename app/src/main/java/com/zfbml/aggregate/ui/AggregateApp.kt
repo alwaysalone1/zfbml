@@ -2032,7 +2032,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.23")
+                setRequestProperty("User-Agent", "ZFBML/0.5.24")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2523,7 +2523,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.5.23",
+                version = "0.5.24",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )
@@ -7268,8 +7268,12 @@ private fun PlayerRoutePanel(
     }
     val sourceCount = remember(routes) { routes.map { it.sourceId }.distinct().size }
     val showSourceStrip = detailedMode || sourceCount > 1
-    val visibleRoutes = remember(routes, selectedSourceId) {
-        selectedSourceId?.let { sourceId -> routes.filter { it.sourceId == sourceId } } ?: routes
+    val visibleRoutes = remember(routes, selectedSourceId, failedStreamIds) {
+        routePanelVisibleRoutes(
+            routes = routes,
+            selectedSourceId = selectedSourceId,
+            failedStreamIds = failedStreamIds,
+        )
     }
     val selectedSourceName = selectedSourceId?.let { sourceId ->
         routes.firstOrNull { it.sourceId == sourceId }?.sourceName ?: sourceId

@@ -282,6 +282,25 @@ internal fun firstPlayableRouteForAutoplay(
         }
 }
 
+internal fun routePanelVisibleRoutes(
+    routes: List<RouteCandidate>,
+    selectedSourceId: String? = null,
+    failedStreamIds: Set<String> = emptySet(),
+): List<RouteCandidate> {
+    val sourceFilteredRoutes = selectedSourceId
+        ?.let { sourceId -> routes.filter { it.sourceId == sourceId } }
+        ?: routes
+    return sourceFilteredRoutes
+        .sortedWith(
+            compareBy<RouteCandidate> { routePanelAvailabilityRank(it, failedStreamIds) }
+                .thenByDescending { routeUiScore(it, failedStreamIds) }
+                .thenBy { it.sourceName }
+                .thenBy { it.routeName.orEmpty() }
+                .thenBy { it.title },
+        )
+        .distinctBy { it.stream.id }
+}
+
 internal fun nextPlayableRoute(
     routes: List<RouteCandidate>,
     currentStreamId: String,
@@ -437,6 +456,14 @@ internal fun buildPlayerOverlayState(
         notice = notice,
         error = error,
     )
+}
+
+private fun routePanelAvailabilityRank(route: RouteCandidate, failedStreamIds: Set<String>): Int {
+    return when {
+        route.stream.id in failedStreamIds -> 2
+        route.stream.protocol == StreamProtocol.WEBVIEW_ONLY -> 3
+        else -> 0
+    }
 }
 
 private fun routeUiScore(route: RouteCandidate, failedStreamIds: Set<String>): Int {

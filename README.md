@@ -25,6 +25,22 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.24
+
+中文：
+
+- 播放页“换源”面板的线路列表现在复用面板专用排序：可直接播放线路优先，失败线路和 WebView-only 网页兜底自动后置。
+- 线路面板列表会按 `stream.id` 去重，并在来源筛选时先过滤再去重，避免跨来源共享流导致用户选中的来源被隐藏。
+- 新增单元测试覆盖换源面板排序、失败/网页兜底后置和来源筛选去重规则。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.24`。
+
+English:
+
+- The player route-switching panel now uses panel-specific ordering: directly playable routes come first, while failed routes and WebView-only fallbacks are pushed behind.
+- Route rows are deduplicated by `stream.id`, with source filtering applied before deduplication so a selected provider remains visible when providers share a stream.
+- Added unit coverage for route-panel ordering, failed/web fallback demotion, and source-filtered deduplication.
+- App version labels, request user agents, and README notes are now updated to `0.5.24`.
+
 ### v0.5.23
 
 中文：

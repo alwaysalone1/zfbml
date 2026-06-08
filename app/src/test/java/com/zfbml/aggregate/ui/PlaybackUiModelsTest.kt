@@ -251,6 +251,50 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun routePanelVisibleRoutesPrioritizePlayableRoutesBeforeFallbacks() {
+        val webView = route("web", StreamProtocol.WEBVIEW_ONLY, 8_000, quality = "1080p")
+        val failed = route("failed", StreamProtocol.HLS, 8_000, quality = "1080p")
+        val duplicateLowerQuality = route("hls", StreamProtocol.PROGRESSIVE, 1, quality = "480p")
+        val playable = route("hls", StreamProtocol.HLS, 100, quality = "720p")
+
+        val routes = routePanelVisibleRoutes(
+            routes = listOf(webView, failed, duplicateLowerQuality, playable),
+            failedStreamIds = setOf("failed"),
+        )
+
+        assertEquals(listOf("hls", "failed", "web"), routes.map { it.stream.id })
+        assertEquals(StreamProtocol.HLS, routes.first().protocol)
+    }
+
+    @Test
+    fun routePanelVisibleRoutesFilterSourceBeforeDeduplicating() {
+        val sourceA = route(
+            id = "shared",
+            protocol = StreamProtocol.HLS,
+            score = 900,
+            quality = "1080p",
+            sourceId = "source-a",
+            sourceName = "Source A",
+        )
+        val sourceB = route(
+            id = "shared",
+            protocol = StreamProtocol.HLS,
+            score = 100,
+            quality = "720p",
+            sourceId = "source-b",
+            sourceName = "Source B",
+        )
+
+        val routes = routePanelVisibleRoutes(
+            routes = listOf(sourceA, sourceB),
+            selectedSourceId = "source-b",
+        )
+
+        assertEquals(1, routes.size)
+        assertEquals("source-b", routes.first().sourceId)
+    }
+
+    @Test
     fun routeSourceGroupsPromoteSelectedThenRecommendedSource() {
         val recommended = route(
             id = "recommended",
