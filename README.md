@@ -25,6 +25,21 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.2
+
+中文：
+- 竖屏未全屏播放器进一步精简：视频层底部只保留弹幕输入/开关、轻量进度线和全屏入口。
+- 选集、换源等次级操作保留在视频下方信息区和弹层中，避免播放画面上重复出现同类按钮。
+- 移除竖屏视频层里常驻的重复全屏浮动按钮，减少控件重叠和画面遮挡。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.2`。
+
+English:
+
+- Portrait non-fullscreen playback is leaner: the video layer now keeps only danmaku input/toggle, a lightweight progress line, and the fullscreen entry.
+- Episode and route switching remain available in the watch-info area and option panels instead of duplicating controls over the video.
+- Removed the always-on duplicate fullscreen floating button from the portrait video surface to reduce overlap and visual obstruction.
+- App version labels, request user agents, and README notes are now updated to `0.5.2`.
+
 ### v0.5.1
 
 中文：

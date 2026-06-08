@@ -1960,7 +1960,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.1")
+                setRequestProperty("User-Agent", "ZFBML/0.5.2")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2451,7 +2451,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.5.1",
+                version = "0.5.2",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )
@@ -4652,18 +4652,6 @@ private fun PlayerScreen(
                 durationMs = playbackDurationMs,
                 modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().zIndex(3f),
             )
-            if (compact && activePanel == null) {
-                PlayerTinyIconAction(
-                    icon = Icons.Filled.Fullscreen,
-                    contentDescription = "全屏播放",
-                    onClick = ::enterFullscreen,
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(end = 10.dp, bottom = 12.dp)
-                        .zIndex(4.4f)
-                        .width(38.dp),
-                )
-            }
             AnimatedVisibility(
                 visible = controlsVisible && !controlsLocked,
                 enter = fadeIn(),
@@ -5785,12 +5773,8 @@ private fun PlayerBottomControls(
             PlayerCompactInteractionRow(
                 progressFraction = if (durationMs > 0L) displayPositionMs.toFloat() / durationMs.toFloat() else null,
                 danmakuEnabled = danmakuEnabled,
-                routeCount = routeOptions.size,
-                episodeCount = episodeCount,
                 onToggleDanmaku = onToggleDanmaku,
                 onOpenDanmakuSettings = { onShowPanel(PlayerPanel.Danmaku) },
-                onOpenRoute = { onShowPanel(PlayerPanel.Route) },
-                onOpenEpisode = { onShowPanel(PlayerPanel.Episode) },
                 onEnterFullscreen = onEnterFullscreen,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -5875,12 +5859,8 @@ private fun PlayerFullscreenNoticeStrip(
 private fun PlayerCompactInteractionRow(
     progressFraction: Float?,
     danmakuEnabled: Boolean,
-    routeCount: Int,
-    episodeCount: Int,
     onToggleDanmaku: () -> Unit,
     onOpenDanmakuSettings: () -> Unit,
-    onOpenRoute: () -> Unit,
-    onOpenEpisode: () -> Unit,
     onEnterFullscreen: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -5900,22 +5880,6 @@ private fun PlayerCompactInteractionRow(
                 onToggleDanmaku = onToggleDanmaku,
                 modifier = Modifier.weight(1f),
             )
-            if (episodeCount > 1) {
-                PlayerCompactTextAction(
-                    text = "选集",
-                    selected = true,
-                    onClick = onOpenEpisode,
-                    modifier = Modifier.width(46.dp),
-                )
-            }
-            if (routeCount > 1) {
-                PlayerCompactTextAction(
-                    text = "换源",
-                    selected = false,
-                    onClick = onOpenRoute,
-                    modifier = Modifier.width(46.dp),
-                )
-            }
             PlayerTinyIconAction(
                 icon = Icons.Filled.Fullscreen,
                 contentDescription = "全屏播放",
@@ -6000,37 +5964,6 @@ private fun PlayerCompactProgressLine(
                 .height(3.dp)
                 .clip(RoundedCornerShape(999.dp))
                 .background(Color.White.copy(alpha = 0.18f)),
-        )
-    }
-}
-
-@Composable
-private fun PlayerCompactTextAction(
-    text: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier.width(46.dp),
-    selected: Boolean = false,
-    enabled: Boolean = true,
-) {
-    TextButton(
-        onClick = onClick,
-        enabled = enabled,
-        modifier = modifier.height(34.dp).focusable(),
-        shape = RoundedCornerShape(8.dp),
-        colors = ButtonDefaults.textButtonColors(
-            containerColor = if (selected) AnimeAccentPink.copy(alpha = 0.18f) else Color.White.copy(alpha = 0.08f),
-            contentColor = if (selected) AnimeAccentPink else Color.White.copy(alpha = 0.72f),
-            disabledContainerColor = Color.White.copy(alpha = 0.04f),
-            disabledContentColor = Color.White.copy(alpha = 0.3f),
-        ),
-        contentPadding = PaddingValues(horizontal = 0.dp),
-    ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.labelSmall,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            fontWeight = FontWeight.Bold,
         )
     }
 }
