@@ -2033,7 +2033,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.33")
+                setRequestProperty("User-Agent", "ZFBML/0.5.34")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2524,7 +2524,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.5.33",
+                version = "0.5.34",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )
@@ -2990,6 +2990,7 @@ private fun DetailScreen(
     var routesLoading by remember(result) { mutableStateOf(false) }
     var routesError by remember(result) { mutableStateOf<String?>(null) }
     var routeSourceFilter by remember(result) { mutableStateOf<String?>(null) }
+    var routesFromCache by remember(result) { mutableStateOf(false) }
     var routesExpanded by remember(result) { mutableStateOf(false) }
 
     fun loadRoutesFor(episode: Episode, autoPlay: Boolean = false) {
@@ -2999,6 +3000,7 @@ private fun DetailScreen(
         routes = cachedRoutes ?: emptyList()
         routesError = null
         routeSourceFilter = cachedRoutes?.let { recommendedSourceIdForRoutes(it) }
+        routesFromCache = cachedRoutes != null
         routesExpanded = false
         routesLoading = cachedRoutes == null
         if (cachedRoutes != null) {
@@ -3018,6 +3020,7 @@ private fun DetailScreen(
                     val sortedCandidates = sortRoutesForUi(candidates)
                     routes = sortedCandidates
                     routeSourceFilter = recommendedSourceIdForRoutes(sortedCandidates)
+                    routesFromCache = false
                     if (autoPlay) {
                         val media = detail
                         val firstRoute = firstPlayableRouteForAutoplay(sortedCandidates)
@@ -3029,6 +3032,7 @@ private fun DetailScreen(
                 .onFailure { failure ->
                     if (selectedEpisode?.id != episode.id) return@onFailure
                     routesError = failure.message ?: failure::class.simpleName.orEmpty().ifBlank { "\u672a\u77e5\u9519\u8bef" }
+                    routesFromCache = false
                 }
             if (selectedEpisode?.id == episode.id) {
                 routesLoading = false
@@ -3042,6 +3046,7 @@ private fun DetailScreen(
         routes = emptyList()
         routesError = null
         routeSourceFilter = null
+        routesFromCache = false
         routesExpanded = false
         routesLoading = false
         runCatching { graph.sourceRegistry.loadDetail(result) }
@@ -3061,6 +3066,7 @@ private fun DetailScreen(
         loading = routesLoading,
         error = routesError,
         selectedSourceId = routeSourceFilter,
+        loadedFromCache = routesFromCache,
     )
     LaunchedEffect(detail?.url, selectedEpisode?.id, routesLoading, routesError, routes) {
         val media = detail ?: return@LaunchedEffect
@@ -3468,6 +3474,9 @@ private fun DetailFirstPlayStrip(
             item { DetailDecisionChip("当前集", episodeLabel, AnimeAccentPink) }
             item { DetailDecisionChip("推荐源", state.recommendationTitle, AnimeAccentCyan) }
             item { DetailDecisionChip("清晰度", qualityLabel, AnimeAccentAmber) }
+            if (state.status != RouteLoadStatus.Idle) {
+                item { DetailDecisionChip("加载", state.loadOriginLabel, AnimeAccentGreen) }
+            }
             if (state.routeCount > 1) {
                 item { DetailDecisionChip("可切换", state.sourceCoverageLabel, AnimeAccentViolet) }
             }
@@ -3662,13 +3671,6 @@ private fun RouteSourceFocusRow(state: RouteUiState, accent: Color) {
         RouteLoadStatus.Idle -> "待选择"
         RouteLoadStatus.Ready -> "自动"
     }
-    val protocolValue = route?.protocol?.displayName() ?: when (state.status) {
-        RouteLoadStatus.Loading -> "HLS/MP4"
-        RouteLoadStatus.Failed -> "重试"
-        RouteLoadStatus.Empty -> "备用"
-        RouteLoadStatus.Idle -> "多源"
-        RouteLoadStatus.Ready -> "可播"
-    }
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -3676,7 +3678,7 @@ private fun RouteSourceFocusRow(state: RouteUiState, accent: Color) {
     ) {
         RouteSourceFocusChip("推荐源", sourceValue, accent, Modifier.weight(1f))
         RouteSourceFocusChip("来源覆盖", state.sourceCoverageLabel, AnimeAccentCyan, Modifier.weight(1f))
-        RouteSourceFocusChip("播放方式", protocolValue, AnimeAccentAmber, Modifier.weight(1f))
+        RouteSourceFocusChip("加载方式", state.loadOriginLabel, AnimeAccentAmber, Modifier.weight(1f))
     }
 }
 

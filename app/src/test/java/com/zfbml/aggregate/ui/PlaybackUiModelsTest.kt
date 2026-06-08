@@ -92,6 +92,36 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun routeUiStateLabelsCachedAndLiveRouteOrigins() {
+        val hls = route("hls", StreamProtocol.HLS, 450, quality = "720p", sourceId = "online", sourceName = "Online")
+
+        val cached = buildRouteUiState(
+            selectedEpisode = episode(),
+            routes = listOf(hls),
+            loading = false,
+            error = null,
+            loadedFromCache = true,
+        )
+        val live = buildRouteUiState(
+            selectedEpisode = episode(),
+            routes = listOf(hls),
+            loading = false,
+            error = null,
+            loadedFromCache = false,
+        )
+        val loading = buildRouteUiState(
+            selectedEpisode = episode(),
+            routes = emptyList(),
+            loading = true,
+            error = null,
+        )
+
+        assertEquals("预取命中", cached.loadOriginLabel)
+        assertEquals("实时匹配", live.loadOriginLabel)
+        assertEquals("实时匹配", loading.loadOriginLabel)
+    }
+
+    @Test
     fun routeUiStateSummarizesOnlineSourceCoverage() {
         val first = route("hls-a", StreamProtocol.HLS, 600, quality = "1080p", sourceId = "online-a", sourceName = "Online A")
         val second = route("hls-b", StreamProtocol.HLS, 400, quality = "720p", sourceId = "online-b", sourceName = "Online B")

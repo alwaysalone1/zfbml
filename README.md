@@ -25,6 +25,24 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.34
+
+中文：
+
+- 详情页线路状态新增“加载”标签，区分预取缓存命中、实时匹配、可重试和待补源。
+- 选集命中邻近集预取缓存时会显示“预取命中”，用户能直接感知线路是否已经提前加载好。
+- 线路诊断区第三格改为“加载方式”，让来源覆盖和加载路径一起可见。
+- 新增单元测试覆盖缓存命中与实时匹配标签。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.34`。
+
+English:
+
+- The detail route state now exposes a loading-origin label that distinguishes prefetched cache hits, live matching, retryable failures, and missing routes.
+- Episode selections that hit the nearby-episode prefetch cache now show `预取命中`, making warmed source loading visible to users.
+- The route diagnostics row now shows loading origin alongside source coverage.
+- Added unit coverage for cached and live route-origin labels.
+- App version labels, request user agents, and README notes are now updated to `0.5.34`.
+
 ### v0.5.33
 
 中文：

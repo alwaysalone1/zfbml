@@ -26,6 +26,7 @@ internal data class RouteUiState(
     val btSourceCount: Int,
     val sourceCount: Int,
     val sourceCoverageLabel: String,
+    val loadOriginLabel: String,
     val failedCount: Int,
     val message: String,
     val detail: String,
@@ -104,6 +105,7 @@ internal fun buildRouteUiState(
     error: String?,
     selectedSourceId: String? = null,
     failedStreamIds: Set<String> = emptySet(),
+    loadedFromCache: Boolean = false,
 ): RouteUiState {
     val sortedRoutes = sortRoutesForUi(routes, failedStreamIds)
     val visibleRoutes = sortedRoutes.filter { selectedSourceId == null || it.sourceId == selectedSourceId }
@@ -159,6 +161,14 @@ internal fun buildRouteUiState(
             route.protocol.uiProtocolName(),
         ).distinct().joinToString(" · ")
     } ?: detail
+    val loadOriginLabel = when {
+        status == RouteLoadStatus.Ready && loadedFromCache -> "预取命中"
+        status == RouteLoadStatus.Ready -> "实时匹配"
+        status == RouteLoadStatus.Loading -> "实时匹配"
+        status == RouteLoadStatus.Failed -> "可重试"
+        status == RouteLoadStatus.Empty -> "待补源"
+        else -> "待选集"
+    }
 
     return RouteUiState(
         status = status,
@@ -187,6 +197,7 @@ internal fun buildRouteUiState(
             onlineSourceCount = onlineSourceCount,
             btCount = btCount,
         ),
+        loadOriginLabel = loadOriginLabel,
         failedCount = failedStreamIds.size,
         message = message,
         detail = detail,
