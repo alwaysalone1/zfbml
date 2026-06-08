@@ -60,6 +60,12 @@ Tooling: Android SDK `apkanalyzer.bat` for manifest, resource, file, and dex pac
 - Youku exposes `DownloadHomeActivity`, `CacheSeriesActivity`, and preload receivers, reinforcing that episode-level caching and preloading need clear labels before full task management exists.
 - ZFBML implementation direction: every player cache entry should explain whether the current route can be cached and why. Media3-compatible HLS/DASH/MP4 streams can enter the offline queue, WebView/DRM routes should surface their block reason, and BT routes should be described as handled by the torrent edge-cache path.
 
+## Source Library And Route Strategy Findings
+
+- Dandanplay separates cache, danmaku source, advanced search, detail, and player pages, suggesting source management should be understandable as user workflow rather than raw provider debugging.
+- Bilibili, Tencent Video, and Youku all expose large player/source ecosystems through normal preference, preload, offline, and player-service surfaces instead of asking users to reason about provider internals.
+- ZFBML implementation direction: the source library should summarize online-first playback, BT fallback, cache eligibility, and WebView sniffing as a strategy surface, then list source capabilities and domains for inspection.
+
 ## Current Implementation Focus
 
 This pass exposes route prefetching in the detail page. The app already warms nearby episodes through `SourceRegistry.prefetchRouteCandidates`; the UI now surfaces whether adjacent episodes are warming, warmed, queued, or waiting for fallback source coverage.
@@ -75,3 +81,5 @@ This pass upgrades the home schedule surface. `HomeScheduleUiState` now centrali
 This pass adds a detail playback readiness summary. `DetailPlaybackReadinessUiState` now condenses route recommendation, online coverage, BT fallback, and cache capability for the detail hero, keeping the normal watch path clear while preserving diagnostics in route panels.
 
 This pass upgrades the category browse surface. `CategoryBrowseUiState` now centralizes category coverage, top rating, heat, source, list title, and empty/fallback copy, so category pages present a normal video-app channel summary instead of a loose list plus ad hoc metrics.
+
+This pass upgrades the source library surface. `SourceLibraryUiState` now centralizes online, BT fallback, cacheable, WebView sniffing, strategy-card, and source-card state, keeping route/source policy explainable without spreading provider logic through the Compose tree.

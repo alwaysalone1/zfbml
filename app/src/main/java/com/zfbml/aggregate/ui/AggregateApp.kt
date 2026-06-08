@@ -142,7 +142,6 @@ import com.zfbml.aggregate.source.MediaStream
 import com.zfbml.aggregate.source.RouteCandidate
 import com.zfbml.aggregate.source.SearchResult
 import com.zfbml.aggregate.source.SourceCapability
-import com.zfbml.aggregate.source.SourceManifest
 import com.zfbml.aggregate.source.StreamProtocol
 import com.zfbml.aggregate.source.SourceSearchReport
 import com.zfbml.aggregate.source.catalog.BangumiCalendarRepository
@@ -2228,7 +2227,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.44")
+                setRequestProperty("User-Agent", "ZFBML/0.5.45")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2531,47 +2530,39 @@ private fun categoryAccent(categoryId: String): Color {
 @Composable
 private fun SourcesScreen(graph: AppGraph) {
     val providers = graph.sourceRegistry.manifests
-    val onlineCount = providers.count { SourceCapability.STREAM in it.capabilities && SourceCapability.BITTORRENT !in it.capabilities }
-    val btCount = providers.count { SourceCapability.BITTORRENT in it.capabilities }
-    val downloadableCount = providers.count { it.supportsDownload || SourceCapability.DOWNLOAD in it.capabilities }
-    val webViewCount = providers.count { it.requiresWebView || SourceCapability.WEBVIEW_SNIFF in it.capabilities }
+    val sourceLibraryState = remember(providers) { buildSourceLibraryUiState(providers) }
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item {
-            SourceLibraryHero(
-                providerCount = providers.size,
-                onlineCount = onlineCount,
-                btCount = btCount,
-            )
+            SourceLibraryHero(state = sourceLibraryState)
         }
         item {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                item {
-                    SourceStrategyCard("先播在线", "${onlineCount.coerceAtLeast(0)} 源", "HLS/MP4 优先开播", AnimeAccentCyan)
-                }
-                item {
-                    SourceStrategyCard("备用补源", "${btCount.coerceAtLeast(0)} 源", "资源站作为补充", AnimeAccentAmber)
-                }
-                item {
-                    SourceStrategyCard("离线缓存", "${downloadableCount.coerceAtLeast(0)} 源", "可播线路可缓存", AnimeAccentGreen)
-                }
-                item {
-                    SourceStrategyCard("网页兜底", "${webViewCount.coerceAtLeast(0)} 源", "复杂页面再嗅探", AnimeAccentViolet)
+                items(sourceLibraryState.strategies, key = { it.id }) { strategy ->
+                    SourceStrategyCard(strategy)
                 }
             }
         }
         item {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("已接入线路", style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold)
-                Text("默认由详情页自动选择最佳线路，手动切换只在卡顿、失效或想换清晰度时进入。", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+                Text(sourceLibraryState.sourceListTitle, style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold)
+                Text(sourceLibraryState.sourceListSummary, style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
             }
         }
-        items(providers) { manifest ->
+        if (sourceLibraryState.sourceCards.isEmpty()) {
+            item {
+                ScheduleStatusPanel(
+                    title = sourceLibraryState.emptyTitle,
+                    subtitle = sourceLibraryState.emptySubtitle,
+                )
+            }
+        }
+        items(sourceLibraryState.sourceCards, key = { it.id }) { source ->
             SourceCard(
-                manifest = manifest,
-                accent = providerAccent(manifest.id),
+                state = source,
+                accent = providerAccent(source.id),
             )
         }
     }
@@ -2579,9 +2570,7 @@ private fun SourcesScreen(graph: AppGraph) {
 
 @Composable
 private fun SourceLibraryHero(
-    providerCount: Int,
-    onlineCount: Int,
-    btCount: Int,
+    state: SourceLibraryUiState,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -2597,19 +2586,11 @@ private fun SourceLibraryHero(
         ) {
             BrandMark(modifier = Modifier.size(68.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                Text("片库频道", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
-                Text("像视频 App 一样点开就看：在线源先播，资源站和嗅探只做备用。", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+                Text(state.headline, style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
+                Text(state.summary, style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                    item {
-                        RouteStatusBadge("${providerCount} 个来源", AnimeAccentPink)
-                    }
-                    item {
-                        RouteStatusBadge("${onlineCount} 在线", AnimeAccentCyan)
-                    }
-                    if (btCount > 0) {
-                        item {
-                            RouteStatusBadge("${btCount} 备用", AnimeAccentAmber)
-                        }
+                    items(state.chips) { chip ->
+                        RouteStatusBadge(chip.label, sourceLibraryToneColor(chip.tone))
                     }
                 }
             }
@@ -2619,11 +2600,9 @@ private fun SourceLibraryHero(
 
 @Composable
 private fun SourceStrategyCard(
-    title: String,
-    value: String,
-    subtitle: String,
-    accent: Color,
+    strategy: SourceStrategyUiState,
 ) {
+    val accent = sourceLibraryToneColor(strategy.tone)
     Card(
         modifier = Modifier.width(150.dp).height(96.dp).focusable(),
         colors = CardDefaults.cardColors(containerColor = AnimePanel),
@@ -2634,40 +2613,18 @@ private fun SourceStrategyCard(
             modifier = Modifier.fillMaxSize().padding(12.dp),
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
-            Text(title, style = MaterialTheme.typography.labelMedium, color = AnimeMuted, maxLines = 1)
-            Text(value, style = MaterialTheme.typography.titleLarge, color = accent, fontWeight = FontWeight.Bold, maxLines = 1)
-            Text(subtitle, style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.72f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(strategy.title, style = MaterialTheme.typography.labelMedium, color = AnimeMuted, maxLines = 1)
+            Text(strategy.value, style = MaterialTheme.typography.titleLarge, color = accent, fontWeight = FontWeight.Bold, maxLines = 1)
+            Text(strategy.subtitle, style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.72f), maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }
 
 @Composable
 private fun SourceCard(
-    manifest: SourceManifest,
+    state: SourceCardUiState,
     accent: Color,
 ) {
-    val isBt = SourceCapability.BITTORRENT in manifest.capabilities
-    val isStream = SourceCapability.STREAM in manifest.capabilities
-    val statusLabel = when {
-        isStream && !isBt -> "在线源"
-        isBt -> "资源站"
-        SourceCapability.SEARCH in manifest.capabilities -> "索引源"
-        else -> "辅助源"
-    }
-    val statusColor = when {
-        isStream && !isBt -> AnimeAccentCyan
-        isBt -> AnimeAccentAmber
-        else -> AnimeAccentViolet
-    }
-    val featureText = buildList {
-        if (SourceCapability.SEARCH in manifest.capabilities) add("搜索")
-        if (SourceCapability.DETAIL in manifest.capabilities) add("详情")
-        if (SourceCapability.EPISODES in manifest.capabilities) add("选集")
-        if (isStream) add("播放")
-        if (manifest.supportsDownload || SourceCapability.DOWNLOAD in manifest.capabilities) add("缓存")
-        if (manifest.requiresWebView || SourceCapability.WEBVIEW_SNIFF in manifest.capabilities) add("嗅探")
-    }.joinToString(" · ").ifBlank { "基础来源" }
-    val domainText = manifest.domains.joinToString(" · ").ifBlank { "本地内置" }
     Card(
         modifier = Modifier.fillMaxWidth().focusable(),
         colors = CardDefaults.cardColors(containerColor = AnimePanel),
@@ -2683,21 +2640,32 @@ private fun SourceCard(
                 modifier = Modifier.size(52.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.92f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(if (isBt) Icons.Filled.Subscriptions else Icons.Filled.PlayArrow, contentDescription = null, tint = Color.White)
+                Icon(if (state.isBt) Icons.Filled.Subscriptions else Icons.Filled.PlayArrow, contentDescription = null, tint = Color.White)
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(manifest.name, style = MaterialTheme.typography.titleMedium, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    RouteStatusBadge(statusLabel, statusColor)
+                    Text(state.name, style = MaterialTheme.typography.titleMedium, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    RouteStatusBadge(state.statusLabel, sourceLibraryToneColor(state.statusTone))
                 }
-                Text(featureText, style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.78f), maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text(domainText, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(state.featureText, style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.78f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(state.domainText, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(manifest.version, style = MaterialTheme.typography.labelMedium, color = accent, fontWeight = FontWeight.Bold, maxLines = 1)
-                Text(manifest.author, style = MaterialTheme.typography.labelSmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(state.version, style = MaterialTheme.typography.labelMedium, color = accent, fontWeight = FontWeight.Bold, maxLines = 1)
+                Text(state.author, style = MaterialTheme.typography.labelSmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
+    }
+}
+
+private fun sourceLibraryToneColor(tone: SourceLibraryTone): Color {
+    return when (tone) {
+        SourceLibraryTone.Primary -> AnimeAccentPink
+        SourceLibraryTone.Online -> AnimeAccentCyan
+        SourceLibraryTone.Backup -> AnimeAccentAmber
+        SourceLibraryTone.Cache -> AnimeAccentGreen
+        SourceLibraryTone.Web -> AnimeAccentViolet
+        SourceLibraryTone.Muted -> AnimeMuted
     }
 }
 
@@ -2751,7 +2719,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.5.44",
+                version = "0.5.45",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )

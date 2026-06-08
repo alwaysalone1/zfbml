@@ -25,6 +25,23 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.45
+
+中文：
+- 来源/线路页新增 `SourceLibraryUiState`，统一计算在线源、BT 备用、可缓存源、网页嗅探源和来源卡片状态。
+- 片库频道 Hero、策略卡和来源列表改为模型驱动，页面先说明自动选源策略，再展示每个来源的能力、域名和类型。
+- 空来源状态新增明确文案，后续接入规则源或来源健康度时不需要继续把业务判断散在 Compose 层。
+- 新增单元测试覆盖来源策略摘要、在线/BT/WebView/缓存能力卡片和空来源状态。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.45`。
+
+English:
+
+- The sources/routes page now uses `SourceLibraryUiState` to centralize online, BT fallback, cacheable, WebView sniffing, and source-card state.
+- The source library hero, strategy cards, and source list are model-driven, explaining automatic route strategy before showing each source's capabilities, domains, and type.
+- Empty source states now have explicit copy, keeping future rule-source or route-health work out of scattered Compose conditionals.
+- Added unit coverage for source strategy summaries, online/BT/WebView/cache cards, and empty provider state.
+- App version labels, request user agents, and README notes are now updated to `0.5.45`.
+
 ### v0.5.44
 
 中文：

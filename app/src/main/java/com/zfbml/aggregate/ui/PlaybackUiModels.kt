@@ -157,6 +157,57 @@ internal data class CategoryBrowseUiState(
     val hasItems: Boolean,
 )
 
+internal enum class SourceLibraryTone {
+    Primary,
+    Online,
+    Backup,
+    Cache,
+    Web,
+    Muted,
+}
+
+internal data class SourceLibraryChipUiState(
+    val label: String,
+    val tone: SourceLibraryTone,
+)
+
+internal data class SourceStrategyUiState(
+    val id: String,
+    val title: String,
+    val value: String,
+    val subtitle: String,
+    val tone: SourceLibraryTone,
+)
+
+internal data class SourceCardUiState(
+    val id: String,
+    val name: String,
+    val version: String,
+    val author: String,
+    val statusLabel: String,
+    val statusTone: SourceLibraryTone,
+    val featureText: String,
+    val domainText: String,
+    val isBt: Boolean,
+)
+
+internal data class SourceLibraryUiState(
+    val headline: String,
+    val summary: String,
+    val providerCount: Int,
+    val onlineCount: Int,
+    val btCount: Int,
+    val downloadableCount: Int,
+    val webViewCount: Int,
+    val chips: List<SourceLibraryChipUiState>,
+    val strategies: List<SourceStrategyUiState>,
+    val sourceCards: List<SourceCardUiState>,
+    val sourceListTitle: String,
+    val sourceListSummary: String,
+    val emptyTitle: String,
+    val emptySubtitle: String,
+)
+
 internal data class PlayerOverlayState(
     val title: String,
     val episodeTitle: String,
@@ -881,6 +932,80 @@ internal fun buildCategoryBrowseUiState(
     )
 }
 
+internal fun buildSourceLibraryUiState(manifests: List<SourceManifest>): SourceLibraryUiState {
+    val providerCount = manifests.size
+    val onlineCount = manifests.count { SourceCapability.STREAM in it.capabilities && SourceCapability.BITTORRENT !in it.capabilities }
+    val btCount = manifests.count { SourceCapability.BITTORRENT in it.capabilities }
+    val downloadableCount = manifests.count { it.supportsDownload || SourceCapability.DOWNLOAD in it.capabilities }
+    val webViewCount = manifests.count { it.requiresWebView || SourceCapability.WEBVIEW_SNIFF in it.capabilities }
+    val chips = buildList {
+        add(SourceLibraryChipUiState("${providerCount} 个来源", SourceLibraryTone.Primary))
+        add(SourceLibraryChipUiState("${onlineCount} 在线", SourceLibraryTone.Online))
+        if (btCount > 0) add(SourceLibraryChipUiState("${btCount} 备用", SourceLibraryTone.Backup))
+        if (downloadableCount > 0) add(SourceLibraryChipUiState("${downloadableCount} 可缓存", SourceLibraryTone.Cache))
+    }
+    val headline = if (providerCount > 0) {
+        "片库频道已接入 $providerCount 个来源"
+    } else {
+        "片库来源待接入"
+    }
+    val summary = when {
+        providerCount == 0 -> "接入在线、BT 或规则来源后，这里会展示播放策略和线路能力。"
+        onlineCount > 0 -> "默认优先使用 $onlineCount 个在线源开播，BT、嗅探和缓存能力作为备用补齐。"
+        btCount > 0 -> "当前以 BT 资源站为主，适合边下边播；后续可补充 HLS/MP4 在线源。"
+        else -> "当前来源偏索引或辅助能力，详情页会继续尝试匹配可播放线路。"
+    }
+    return SourceLibraryUiState(
+        headline = headline,
+        summary = summary,
+        providerCount = providerCount,
+        onlineCount = onlineCount,
+        btCount = btCount,
+        downloadableCount = downloadableCount,
+        webViewCount = webViewCount,
+        chips = chips,
+        strategies = listOf(
+            SourceStrategyUiState(
+                id = "online",
+                title = "先播在线",
+                value = "${onlineCount.coerceAtLeast(0)} 源",
+                subtitle = if (onlineCount > 0) "HLS/MP4 优先开播" else "等待在线源",
+                tone = SourceLibraryTone.Online,
+            ),
+            SourceStrategyUiState(
+                id = "backup",
+                title = "备用补源",
+                value = "${btCount.coerceAtLeast(0)} 源",
+                subtitle = if (btCount > 0) "资源站作为补充" else "暂无 BT 备用",
+                tone = SourceLibraryTone.Backup,
+            ),
+            SourceStrategyUiState(
+                id = "cache",
+                title = "离线缓存",
+                value = "${downloadableCount.coerceAtLeast(0)} 源",
+                subtitle = if (downloadableCount > 0) "可播线路可缓存" else "待接缓存能力",
+                tone = SourceLibraryTone.Cache,
+            ),
+            SourceStrategyUiState(
+                id = "web",
+                title = "网页兜底",
+                value = "${webViewCount.coerceAtLeast(0)} 源",
+                subtitle = if (webViewCount > 0) "复杂页面再嗅探" else "优先原生线路",
+                tone = SourceLibraryTone.Web,
+            ),
+        ),
+        sourceCards = manifests.map { it.toSourceCardUiState() },
+        sourceListTitle = if (providerCount > 0) "已接入线路" else "暂无线路来源",
+        sourceListSummary = if (providerCount > 0) {
+            "默认由详情页自动选择最佳线路，手动切换只在卡顿、失效或想换清晰度时进入。"
+        } else {
+            "先添加或启用来源，详情页才能自动匹配播放线路。"
+        },
+        emptyTitle = "暂无可展示来源",
+        emptySubtitle = "接入在线源、BT 资源站或规则源后，这里会显示线路能力和兜底策略。",
+    )
+}
+
 internal fun nextEpisodeForPlayer(
     episodes: List<Episode>,
     currentEpisode: Episode,
@@ -1292,6 +1417,42 @@ private fun Int.compactBrowseCount(): String {
     val whole = this / 10_000
     val tenth = (this % 10_000) / 1_000
     return if (tenth > 0) "$whole.${tenth}\u4e07" else "$whole\u4e07"
+}
+
+private fun SourceManifest.toSourceCardUiState(): SourceCardUiState {
+    val isBt = SourceCapability.BITTORRENT in capabilities
+    val isStream = SourceCapability.STREAM in capabilities
+    val statusLabel = when {
+        isStream && !isBt -> "在线源"
+        isBt -> "资源站"
+        SourceCapability.SEARCH in capabilities -> "索引源"
+        else -> "辅助源"
+    }
+    val statusTone = when {
+        isStream && !isBt -> SourceLibraryTone.Online
+        isBt -> SourceLibraryTone.Backup
+        requiresWebView || SourceCapability.WEBVIEW_SNIFF in capabilities -> SourceLibraryTone.Web
+        else -> SourceLibraryTone.Muted
+    }
+    val featureText = buildList {
+        if (SourceCapability.SEARCH in capabilities) add("搜索")
+        if (SourceCapability.DETAIL in capabilities) add("详情")
+        if (SourceCapability.EPISODES in capabilities) add("选集")
+        if (isStream) add("播放")
+        if (supportsDownload || SourceCapability.DOWNLOAD in capabilities) add("缓存")
+        if (requiresWebView || SourceCapability.WEBVIEW_SNIFF in capabilities) add("嗅探")
+    }.joinToString(" · ").ifBlank { "基础来源" }
+    return SourceCardUiState(
+        id = id,
+        name = name,
+        version = version,
+        author = author,
+        statusLabel = statusLabel,
+        statusTone = statusTone,
+        featureText = featureText,
+        domainText = domains.joinToString(" · ").ifBlank { "本地内置" },
+        isBt = isBt,
+    )
 }
 
 internal fun StreamProtocol.uiProtocolName(): String {

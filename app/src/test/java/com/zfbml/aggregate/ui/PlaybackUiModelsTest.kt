@@ -751,6 +751,76 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun sourceLibraryUiStateSummarizesStrategiesAndCards() {
+        val manifests = listOf(
+            manifest(
+                id = "online",
+                name = "Online",
+                capabilities = setOf(
+                    SourceCapability.SEARCH,
+                    SourceCapability.DETAIL,
+                    SourceCapability.EPISODES,
+                    SourceCapability.STREAM,
+                    SourceCapability.DOWNLOAD,
+                ),
+                supportsDownload = true,
+                domains = setOf("online.example"),
+            ),
+            manifest(
+                id = "bt",
+                name = "BT",
+                capabilities = setOf(SourceCapability.SEARCH, SourceCapability.STREAM, SourceCapability.BITTORRENT),
+            ),
+            manifest(
+                id = "web",
+                name = "Web",
+                capabilities = setOf(SourceCapability.SEARCH, SourceCapability.WEBVIEW_SNIFF),
+                requiresWebView = true,
+            ),
+        )
+
+        val state = buildSourceLibraryUiState(manifests)
+
+        assertEquals(3, state.providerCount)
+        assertEquals(1, state.onlineCount)
+        assertEquals(1, state.btCount)
+        assertEquals(1, state.downloadableCount)
+        assertEquals(1, state.webViewCount)
+        assertTrue(state.headline.contains("3 \u4e2a\u6765\u6e90"))
+        assertTrue(state.summary.contains("1 \u4e2a\u5728\u7ebf\u6e90"))
+        assertTrue(state.chips.any { it.label == "1 \u53ef\u7f13\u5b58" })
+
+        val onlineStrategy = state.strategies.first { it.id == "online" }
+        val webStrategy = state.strategies.first { it.id == "web" }
+        assertEquals("1 \u6e90", onlineStrategy.value)
+        assertEquals(SourceLibraryTone.Online, onlineStrategy.tone)
+        assertEquals("\u590d\u6742\u9875\u9762\u518d\u55c5\u63a2", webStrategy.subtitle)
+
+        val onlineCard = state.sourceCards.first { it.id == "online" }
+        val btCard = state.sourceCards.first { it.id == "bt" }
+        val webCard = state.sourceCards.first { it.id == "web" }
+        assertEquals("\u5728\u7ebf\u6e90", onlineCard.statusLabel)
+        assertTrue(onlineCard.featureText.contains("\u7f13\u5b58"))
+        assertEquals("online.example", onlineCard.domainText)
+        assertTrue(btCard.isBt)
+        assertEquals(SourceLibraryTone.Backup, btCard.statusTone)
+        assertEquals(SourceLibraryTone.Web, webCard.statusTone)
+        assertTrue(webCard.featureText.contains("\u55c5\u63a2"))
+    }
+
+    @Test
+    fun sourceLibraryUiStateExplainsEmptyProviderList() {
+        val state = buildSourceLibraryUiState(emptyList())
+
+        assertEquals(0, state.providerCount)
+        assertEquals("\u7247\u5e93\u6765\u6e90\u5f85\u63a5\u5165", state.headline)
+        assertEquals("\u6682\u65e0\u7ebf\u8def\u6765\u6e90", state.sourceListTitle)
+        assertTrue(state.sourceCards.isEmpty())
+        assertEquals("0 \u6e90", state.strategies.first { it.id == "online" }.value)
+        assertTrue(state.emptySubtitle.contains("\u89c4\u5219\u6e90"))
+    }
+
+    @Test
     fun nextEpisodeForPlayerUsesPlaybackListOrder() {
         val episodes = listOf(
             episode(id = "ep-1", index = 1),
@@ -988,6 +1058,9 @@ class PlaybackUiModelsTest {
         id: String,
         name: String,
         capabilities: Set<SourceCapability> = setOf(SourceCapability.SEARCH),
+        domains: Set<String> = emptySet(),
+        requiresWebView: Boolean = false,
+        supportsDownload: Boolean = false,
     ): SourceManifest {
         return SourceManifest(
             id = id,
@@ -995,6 +1068,9 @@ class PlaybackUiModelsTest {
             version = "1.0",
             author = "test",
             capabilities = capabilities,
+            domains = domains,
+            requiresWebView = requiresWebView,
+            supportsDownload = supportsDownload,
         )
     }
 
