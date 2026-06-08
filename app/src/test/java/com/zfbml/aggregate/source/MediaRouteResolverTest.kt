@@ -1,5 +1,6 @@
 package com.zfbml.aggregate.source
 
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
@@ -223,6 +224,30 @@ class MediaRouteResolverTest {
 
         assertEquals(listOf("Online One", "Online Two"), routes.map { it.sourceName }.distinct())
         assertEquals(0, backupProvider.detailCount.get())
+    }
+
+    @Test
+    fun resolverDiversifiesOnlineHitsBeforeResolvingDetails() = runTest {
+        val provider = DiversifiedOnlineProvider()
+        val request = MediaFetchRequest.fromEpisode(
+            Episode(
+                providerId = "bangumi-catalog",
+                id = "catalog-1",
+                title = "Episode 1",
+                url = "bangumi://subject/1/episode/1",
+                index = 1,
+                raw = mapOf(
+                    "subjectNameCn" to "Test Anime",
+                    "subjectName" to "Test JP",
+                ),
+            ),
+        )
+
+        val routes = MediaRouteResolver(listOf(provider), providerTimeoutMs = 1_000L).resolve(request)
+
+        assertTrue(provider.loadedSourceIds.contains("source-a"))
+        assertTrue(provider.loadedSourceIds.contains("source-b"))
+        assertTrue(routes.map { it.sourceId }.contains("source-b"))
     }
 
     private class FakeRouteProvider : SourceProvider {
@@ -582,6 +607,88 @@ class MediaRouteResolverTest {
                     protocol = StreamProtocol.HLS,
                     quality = "1080p",
                     sourceScore = 80,
+                ),
+            )
+        }
+    }
+
+    private class DiversifiedOnlineProvider : SourceProvider {
+        val loadedSourceIds = ConcurrentLinkedQueue<String>()
+
+        override val manifest = SourceManifest(
+            id = "diverse-online",
+            name = "Diverse Online",
+            version = "1",
+            author = "test",
+            capabilities = setOf(SourceCapability.SEARCH, SourceCapability.DETAIL, SourceCapability.STREAM),
+        )
+
+        override suspend fun search(query: String): List<SearchResult> {
+            val dominant = (0 until 10).map { index ->
+                SearchResult(
+                    providerId = manifest.id,
+                    title = "$query - 01 1080p source A $index",
+                    url = "diverse://source-a/$index",
+                    raw = mapOf(
+                        "mediaKind" to "online",
+                        "onlineSourceId" to "source-a",
+                        "onlineSourceName" to "Source A",
+                    ),
+                )
+            }
+            val secondary = SearchResult(
+                providerId = manifest.id,
+                title = "$query - 01 source B",
+                url = "diverse://source-b/1",
+                raw = mapOf(
+                    "mediaKind" to "online",
+                    "onlineSourceId" to "source-b",
+                    "onlineSourceName" to "Source B",
+                    "sourceTier" to "6",
+                ),
+            )
+            return dominant + secondary
+        }
+
+        override suspend fun loadDetail(result: SearchResult): MediaDetail {
+            val sourceId = result.raw.getValue("onlineSourceId")
+            val sourceName = result.raw.getValue("onlineSourceName")
+            loadedSourceIds += sourceId
+            return MediaDetail(
+                providerId = manifest.id,
+                title = result.title,
+                url = result.url,
+                episodes = listOf(
+                    Episode(
+                        providerId = manifest.id,
+                        id = "$sourceId-ep-1",
+                        title = result.title,
+                        url = "${result.url}/stream",
+                        index = 1,
+                        raw = mapOf(
+                            "sourceId" to sourceId,
+                            "sourceName" to sourceName,
+                        ),
+                    ),
+                ),
+            )
+        }
+
+        override suspend fun resolveStreams(episode: Episode): List<MediaStream> {
+            val sourceId = episode.raw.getValue("sourceId")
+            val sourceName = episode.raw.getValue("sourceName")
+            return listOf(
+                MediaStream(
+                    id = episode.id,
+                    providerId = sourceId,
+                    url = "${episode.url}.m3u8",
+                    protocol = StreamProtocol.HLS,
+                    quality = "1080p",
+                    sourceScore = 80,
+                    metadata = mapOf(
+                        "routeProviderId" to sourceId,
+                        "routeProviderName" to sourceName,
+                    ),
                 ),
             )
         }

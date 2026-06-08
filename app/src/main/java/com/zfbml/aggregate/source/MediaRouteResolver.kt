@@ -46,9 +46,9 @@ class MediaRouteResolver(
             .sortedByDescending { it.score }
             .take(MAX_SEARCH_HITS)
 
-        val onlineHits = hits
-            .filter { hit -> hit.result.raw["mediaKind"] == "online" }
-            .take(MAX_ONLINE_HITS)
+        val onlineHits = selectOnlineHitsForResolution(
+            hits.filter { hit -> hit.result.raw["mediaKind"] == "online" },
+        )
         val onlineRoutes = resolveHits(onlineHits, request)
         val shouldSupplementFallback = shouldResolveFallbackRoutes(onlineRoutes)
         val fallbackRoutes = if (shouldSupplementFallback) {
@@ -98,6 +98,29 @@ class MediaRouteResolver(
         val playableOnlineRoutes = onlineRoutes.filter { it.protocol != StreamProtocol.WEBVIEW_ONLY }
         if (playableOnlineRoutes.size < MIN_PLAYABLE_ONLINE_ROUTES) return true
         return playableOnlineRoutes.map { it.sourceId }.distinct().size < MIN_PLAYABLE_ONLINE_SOURCES
+    }
+
+    private fun selectOnlineHitsForResolution(hits: List<SearchHit>): List<SearchHit> {
+        if (hits.size <= MAX_ONLINE_HITS) return hits
+        val selected = mutableListOf<SearchHit>()
+        val selectedResultKeys = mutableSetOf<String>()
+        val coveredSourceKeys = mutableSetOf<String>()
+
+        hits.forEach { hit ->
+            if (hit.onlineSourceKey() !in coveredSourceKeys) {
+                selected += hit
+                selectedResultKeys += hit.resultKey()
+                coveredSourceKeys += hit.onlineSourceKey()
+                if (selected.size >= MAX_ONLINE_HITS) return selected
+            }
+        }
+        hits.forEach { hit ->
+            if (selectedResultKeys.add(hit.resultKey())) {
+                selected += hit
+                if (selected.size >= MAX_ONLINE_HITS) return selected
+            }
+        }
+        return selected
     }
 
     private suspend fun resolveHit(
@@ -283,7 +306,15 @@ class MediaRouteResolver(
         val result: SearchResult,
         val alias: String,
         val score: Int,
-    )
+    ) {
+        fun onlineSourceKey(): String {
+            return result.raw["onlineSourceId"]
+                ?: result.raw["sourceId"]
+                ?: result.providerId
+        }
+
+        fun resultKey(): String = "${result.providerId}|${result.url}"
+    }
 
     private companion object {
         const val MAX_ALIAS_SEARCH_COUNT = 4

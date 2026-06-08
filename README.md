@@ -25,6 +25,21 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.28
+
+中文：
+- 路由解析器选择在线命中时先覆盖更多在线来源，再按分数补足，避免同一 Animeko 在线源的多个相似结果挤掉其它来源。
+- 详情页和播放器线路面板因此更容易拿到多来源候选，单源失败时也更容易切换到其它在线源。
+- 新增单元测试覆盖同一 provider 下多在线源命中的解析多样性。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.28`。
+
+English:
+
+- Route resolution now diversifies online hits by source before filling the remaining slots by score, so repeated high-score results from one Animeko online source do not crowd out other sources.
+- Detail and player route panels are more likely to receive multi-source candidates, making source switching more resilient when one source fails.
+- Added unit coverage for diversified online-hit resolution within a single provider.
+- App version labels, request user agents, and README notes are now updated to `0.5.28`.
+
 ### v0.5.27
 
 中文：
