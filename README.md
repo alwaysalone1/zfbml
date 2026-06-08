@@ -25,6 +25,24 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.26
+
+中文：
+
+- 全屏横屏控制条新增“下一集”快捷按钮，用户不用先打开选集面板即可连续追番。
+- 下一集选择规则抽到 `PlaybackUiModels`，按当前播放列表顺序取下一项；最后一集或当前集不在列表时按钮置灰。
+- 竖屏未全屏播放器保持精简布局，不增加额外功能按钮。
+- 新增单元测试覆盖下一集选择规则。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.26`。
+
+English:
+
+- The landscape fullscreen control bar now has a direct "next episode" action so users can continue watching without opening the episode panel first.
+- Next-episode selection is modeled in `PlaybackUiModels` and follows the current playback list order; the action is disabled on the last episode or when the current episode is not in the list.
+- Portrait non-fullscreen playback remains compact with no extra action button added.
+- Added unit coverage for next-episode selection.
+- App version labels, request user agents, and README notes are now updated to `0.5.26`.
+
 ### v0.5.25
 
 中文：

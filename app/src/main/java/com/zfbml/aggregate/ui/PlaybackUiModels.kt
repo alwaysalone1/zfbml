@@ -357,6 +357,15 @@ internal fun routePrefetchWindow(
     return result
 }
 
+internal fun nextEpisodeForPlayer(
+    episodes: List<Episode>,
+    currentEpisode: Episode,
+): Episode? {
+    val currentIndex = episodes.indexOfFirst { it.id == currentEpisode.id }
+    if (currentIndex < 0) return null
+    return episodes.getOrNull(currentIndex + 1)
+}
+
 internal fun playerProgressPollDelayMs(
     isPlaying: Boolean,
     controlsVisible: Boolean,

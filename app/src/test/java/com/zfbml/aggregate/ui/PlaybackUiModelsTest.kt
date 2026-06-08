@@ -371,6 +371,20 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun nextEpisodeForPlayerUsesPlaybackListOrder() {
+        val episodes = listOf(
+            episode(id = "ep-1", index = 1),
+            episode(id = "special", index = 99),
+            episode(id = "ep-2", index = 2),
+        )
+
+        assertEquals("special", nextEpisodeForPlayer(episodes, episodes[0])?.id)
+        assertEquals("ep-2", nextEpisodeForPlayer(episodes, episodes[1])?.id)
+        assertEquals(null, nextEpisodeForPlayer(episodes, episodes[2]))
+        assertEquals(null, nextEpisodeForPlayer(episodes, episode(id = "outside", index = 99)))
+    }
+
+    @Test
     fun playerProgressPollDelayPrioritizesVisiblePlayingControls() {
         assertEquals(
             100L,

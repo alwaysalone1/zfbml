@@ -73,6 +73,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Replay10
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Subscriptions
 import androidx.compose.material.icons.filled.VideoLibrary
@@ -2032,7 +2033,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.25")
+                setRequestProperty("User-Agent", "ZFBML/0.5.26")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2523,7 +2524,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.5.25",
+                version = "0.5.26",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )
@@ -4662,6 +4663,9 @@ private fun PlayerScreen(
         notice = routeNotice,
         error = effectiveErrorMessage,
     )
+    val nextEpisode = remember(detail.episodes, currentEpisode.id) {
+        nextEpisodeForPlayer(detail.episodes, currentEpisode)
+    }
 
     @Composable
     fun VideoStage(modifier: Modifier, compact: Boolean) {
@@ -4826,6 +4830,7 @@ private fun PlayerScreen(
                     playbackSpeed = playbackSpeed,
                     activePanel = activePanel,
                     episodeCount = detail.episodes.size,
+                    nextEpisode = nextEpisode,
                     positionMs = playbackPositionMs,
                     durationMs = playbackDurationMs,
                     compact = compact,
@@ -4840,6 +4845,9 @@ private fun PlayerScreen(
                         activePanel = panel
                     },
                     onEnterFullscreen = ::enterFullscreen,
+                    onNextEpisode = {
+                        nextEpisode?.let(::selectEpisode)
+                    },
                     onToggleDanmaku = {
                         revealControls()
                         danmakuEnabled = !danmakuEnabled
@@ -5767,6 +5775,7 @@ private fun PlayerBottomControls(
     playbackSpeed: Float,
     activePanel: PlayerPanel?,
     episodeCount: Int,
+    nextEpisode: Episode?,
     positionMs: Long,
     durationMs: Long,
     compact: Boolean,
@@ -5775,6 +5784,7 @@ private fun PlayerBottomControls(
     onSeek: (Long) -> Unit,
     onShowPanel: (PlayerPanel) -> Unit,
     onEnterFullscreen: () -> Unit,
+    onNextEpisode: () -> Unit,
     onToggleDanmaku: () -> Unit,
     onOffline: () -> Unit,
     onRetryRoute: () -> Unit,
@@ -5889,6 +5899,7 @@ private fun PlayerBottomControls(
                 quality = quality,
                 routeCount = routeOptions.size,
                 episodeCount = episodeCount,
+                nextEpisode = nextEpisode,
                 danmakuEnabled = danmakuEnabled,
                 playbackSpeed = playbackSpeed,
                 activePanel = activePanel,
@@ -5897,6 +5908,7 @@ private fun PlayerBottomControls(
                 canSelectNextRoute = canSelectNextRoute,
                 onToggleDanmaku = onToggleDanmaku,
                 onShowPanel = onShowPanel,
+                onNextEpisode = onNextEpisode,
                 onOffline = onOffline,
                 onRetryRoute = onRetryRoute,
                 onNextRoute = onNextRoute,
@@ -6262,6 +6274,7 @@ private fun PlayerFullscreenControlRow(
     quality: String,
     routeCount: Int,
     episodeCount: Int,
+    nextEpisode: Episode?,
     danmakuEnabled: Boolean,
     playbackSpeed: Float,
     activePanel: PlayerPanel?,
@@ -6270,6 +6283,7 @@ private fun PlayerFullscreenControlRow(
     canSelectNextRoute: Boolean,
     onToggleDanmaku: () -> Unit,
     onShowPanel: (PlayerPanel) -> Unit,
+    onNextEpisode: () -> Unit,
     onOffline: () -> Unit,
     onRetryRoute: () -> Unit,
     onNextRoute: () -> Unit,
@@ -6303,12 +6317,14 @@ private fun PlayerFullscreenControlRow(
                 quality = quality,
                 routeCount = routeCount,
                 episodeCount = episodeCount,
+                nextEpisode = nextEpisode,
                 playbackSpeed = playbackSpeed,
                 activePanel = activePanel,
                 offlineEnabled = offlineEnabled,
                 hasPlaybackIssue = hasPlaybackIssue,
                 canSelectNextRoute = canSelectNextRoute,
                 onShowPanel = onShowPanel,
+                onNextEpisode = onNextEpisode,
                 onOffline = onOffline,
                 onRetryRoute = onRetryRoute,
                 onNextRoute = onNextRoute,
@@ -6434,12 +6450,14 @@ private fun PlayerActionBar(
     quality: String,
     routeCount: Int,
     episodeCount: Int,
+    nextEpisode: Episode?,
     playbackSpeed: Float,
     activePanel: PlayerPanel?,
     offlineEnabled: Boolean,
     hasPlaybackIssue: Boolean,
     canSelectNextRoute: Boolean,
     onShowPanel: (PlayerPanel) -> Unit,
+    onNextEpisode: () -> Unit,
     onOffline: () -> Unit,
     onRetryRoute: () -> Unit,
     onNextRoute: () -> Unit,
@@ -6503,6 +6521,15 @@ private fun PlayerActionBar(
                 selected = activePanel == PlayerPanel.Episode,
                 enabled = episodeCount > 1,
                 onClick = { onShowPanel(PlayerPanel.Episode) },
+            ),
+        )
+        add(
+            PlayerActionSpec(
+                icon = Icons.Filled.SkipNext,
+                title = "下一集",
+                value = nextEpisode?.index?.let { "第${it}集" } ?: nextEpisode?.title ?: "无",
+                enabled = nextEpisode != null,
+                onClick = onNextEpisode,
             ),
         )
         add(
