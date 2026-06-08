@@ -235,12 +235,23 @@ private fun BrandSplashScreen() {
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
-                .height(260.dp)
+                .height(252.dp)
                 .background(
-                    Brush.radialGradient(
-                        listOf(AnimeAccentPink.copy(alpha = 0.2f), Color.Transparent),
+                    Brush.verticalGradient(
+                        listOf(
+                            AnimeAccentPink.copy(alpha = 0.18f),
+                            AnimeAccentCyan.copy(alpha = 0.07f),
+                            Color.Transparent,
+                        ),
                     ),
                 ),
+        )
+        SplashSignalRails(
+            progress = railProgress,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 78.dp)
+                .alpha(contentAlpha),
         )
         SplashPosterRibbon(
             modifier = Modifier
@@ -313,6 +324,64 @@ private fun SplashPosterRibbon(modifier: Modifier = Modifier) {
                     .clip(RoundedCornerShape(8.dp))
                     .background(color.copy(alpha = if (index == 2) 0.56f else 0.28f))
                     .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(8.dp)),
+                contentAlignment = Alignment.BottomStart,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(if (index == 2) 0.72f else 0.58f)
+                        .height(3.dp)
+                        .offset(x = 5.dp, y = (-8).dp)
+                        .background(Color.White.copy(alpha = 0.62f), RoundedCornerShape(999.dp)),
+                )
+                Box(
+                    modifier = Modifier
+                        .size(if (index == 2) 14.dp else 10.dp)
+                        .align(Alignment.Center)
+                        .clip(CircleShape)
+                        .background(Color.Black.copy(alpha = 0.24f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .width(if (index == 2) 6.dp else 4.dp)
+                            .height(if (index == 2) 8.dp else 6.dp)
+                            .background(Color.White.copy(alpha = 0.72f), RoundedCornerShape(2.dp)),
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SplashSignalRails(progress: Float, modifier: Modifier = Modifier) {
+    val rails = listOf(
+        Triple(132.dp, AnimeAccentCyan, 0.18f),
+        Triple(92.dp, AnimeAccentPink, 0.28f),
+        Triple(118.dp, AnimeAccentAmber, 0.12f),
+    )
+    Column(
+        modifier = modifier.fillMaxWidth().padding(horizontal = 28.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        rails.forEachIndexed { index, (width, color, startAlpha) ->
+            Box(
+                modifier = Modifier
+                    .width(width)
+                    .height(3.dp)
+                    .offset(x = ((progress - 0.5f) * (index + 1) * 18f).dp)
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(
+                                Color.Transparent,
+                                color.copy(alpha = startAlpha + progress.coerceIn(0f, 1f) * 0.28f),
+                                Color.White.copy(alpha = 0.12f),
+                                Color.Transparent,
+                            ),
+                        ),
+                    ),
             )
         }
     }
@@ -465,6 +534,26 @@ private fun BrandMark(modifier: Modifier = Modifier) {
                 .padding(horizontal = 7.dp)
                 .background(Color.Black.copy(alpha = 0.32f), RoundedCornerShape(bottomStart = 8.dp, bottomEnd = 8.dp)),
         )
+        Column(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = 20.dp, end = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(5.dp),
+            horizontalAlignment = Alignment.End,
+        ) {
+            Box(
+                modifier = Modifier
+                    .width(28.dp)
+                    .height(4.dp)
+                    .background(Color.White.copy(alpha = 0.72f), RoundedCornerShape(999.dp)),
+            )
+            Box(
+                modifier = Modifier
+                    .width(18.dp)
+                    .height(4.dp)
+                    .background(AnimeAccentCyan.copy(alpha = 0.82f), RoundedCornerShape(999.dp)),
+            )
+        }
         Box(
             modifier = Modifier
                 .align(Alignment.BottomStart)
@@ -489,12 +578,32 @@ private fun BrandMark(modifier: Modifier = Modifier) {
         ) {
             Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(40.dp))
         }
-        Text(
-            text = "✦",
-            style = MaterialTheme.typography.titleLarge,
-            color = AnimeAccentAmber,
-            modifier = Modifier.align(Alignment.TopEnd).padding(end = 11.dp, top = 8.dp),
-        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(end = 12.dp, top = 7.dp)
+                .size(20.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(
+                modifier = Modifier
+                    .width(20.dp)
+                    .height(3.dp)
+                    .background(AnimeAccentAmber, RoundedCornerShape(999.dp)),
+            )
+            Box(
+                modifier = Modifier
+                    .width(3.dp)
+                    .height(20.dp)
+                    .background(AnimeAccentAmber, RoundedCornerShape(999.dp)),
+            )
+            Box(
+                modifier = Modifier
+                    .size(7.dp)
+                    .clip(CircleShape)
+                    .background(Color.White.copy(alpha = 0.9f)),
+            )
+        }
         Text(
             text = "Z",
             style = MaterialTheme.typography.labelLarge,
@@ -1851,7 +1960,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.0")
+                setRequestProperty("User-Agent", "ZFBML/0.5.1")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2342,7 +2451,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.5.0",
+                version = "0.5.1",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )

@@ -25,6 +25,21 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.1
+
+中文：
+- 开屏页改为片单、弹幕轨迹和播放标记组合，弱化纯装饰光晕，让启动体验更贴近二次元追番产品。
+- App 品牌标记去掉文字符号依赖，改用可控几何形状绘制高光和弹幕线，避免字体/编码差异造成显示不一致。
+- 启动图标、adaptive icon 前景和背景同步为同一套追番片单视觉，系统图标与 Compose 开屏保持一致。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.1`。
+
+English:
+
+- The splash screen now combines watch-list tiles, danmaku signal rails, and a play mark, reducing decorative glow and making launch feel more anime-tracking focused.
+- The brand mark no longer depends on a special text glyph; highlights and danmaku lines are drawn with stable geometry for consistent rendering.
+- Launcher icon, adaptive-icon foreground, and adaptive-icon background now share the same watch-list visual language as the Compose splash screen.
+- App version labels, request user agents, and README notes are now updated to `0.5.1`.
+
 ### v0.5.0
 
 中文：
