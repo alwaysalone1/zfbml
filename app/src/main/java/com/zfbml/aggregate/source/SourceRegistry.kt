@@ -137,7 +137,9 @@ class SourceRegistry(
                         if (inFlightRouteRequests[cacheKey] === request) {
                             inFlightRouteRequests.remove(cacheKey)
                         }
-                        cacheRouteCandidates(cacheKey, routes)
+                        if (routes.isNotEmpty()) {
+                            cacheRouteCandidates(cacheKey, routes)
+                        }
                     }
                 }
                 routes
@@ -167,7 +169,7 @@ class SourceRegistry(
     suspend fun prefetchRouteCandidates(episode: Episode): Boolean {
         return runCatching {
             resolveRouteCandidates(episode)
-        }.isSuccess
+        }.getOrDefault(emptyList()).isNotEmpty()
     }
 
     private suspend fun resolveRouteCandidatesUncached(episode: Episode): List<RouteCandidate> {

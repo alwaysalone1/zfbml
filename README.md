@@ -25,6 +25,24 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.17
+
+中文：
+
+- 线路解析缓存现在只写入非空结果，临时没有解析到播放源时不会把“空线路”固定进缓存。
+- 详情页和预取流程在遇到空线路结果后可以重新尝试解析同一集，避免网络波动、资源站临时无结果或在线源短暂失败后长期显示“暂无播放源”。
+- 预取线路只有拿到至少一条可用线路才会标记为预热成功，后续进入剧集时不会被空预取结果误导。
+- 新增单元测试覆盖空线路不缓存、空预取不暖缓存，以及空结果后恢复可播线路的路径。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.17`。
+
+English:
+
+- Route resolution caching now stores only non-empty results, so temporary no-route responses no longer poison the episode cache.
+- Detail and prefetch flows can retry the same episode after an empty route result, improving recovery from transient source or network misses.
+- Route prefetch reports success only when at least one playable route is resolved, preventing empty prefetch results from misleading later playback.
+- Added unit coverage for non-cached empty route results, empty prefetch behavior, and recovery from an empty first result.
+- App version labels, request user agents, and README notes are now updated to `0.5.17`.
+
 ### v0.5.16
 
 中文：

@@ -105,6 +105,21 @@ class SourceRegistryTest {
     }
 
     @Test
+    fun emptyRouteCandidateResolutionIsNotCached() = runTest {
+        val provider = EmptyThenReadyProvider()
+        val registry = SourceRegistry(listOf(provider))
+        val episode = episode("7")
+
+        val first = registry.resolveRouteCandidates(episode)
+        val second = registry.resolveRouteCandidates(episode)
+
+        assertEquals(emptyList<RouteCandidate>(), first)
+        assertEquals(1, second.size)
+        assertEquals("ep-7-recovered-hls", second.single().stream.id)
+        assertEquals(2, provider.resolveCount.get())
+    }
+
+    @Test
     fun prefetchRouteCandidatesWarmsCache() = runTest {
         val provider = CountingProvider()
         val registry = SourceRegistry(listOf(provider))
@@ -142,6 +157,20 @@ class SourceRegistryTest {
         val prefetched = registry.prefetchRouteCandidates(episode("5"))
 
         assertEquals(false, prefetched)
+        assertEquals(1, provider.resolveCount.get())
+    }
+
+    @Test
+    fun prefetchRouteCandidatesDoesNotWarmEmptyResults() = runTest {
+        val provider = EmptyProvider()
+        val registry = SourceRegistry(listOf(provider))
+        val episode = episode("8")
+
+        val prefetched = registry.prefetchRouteCandidates(episode)
+        val cached = registry.peekRouteCandidates(episode)
+
+        assertEquals(false, prefetched)
+        assertNull(cached)
         assertEquals(1, provider.resolveCount.get())
     }
 
@@ -270,6 +299,62 @@ class SourceRegistryTest {
         override suspend fun resolveStreams(episode: Episode): List<MediaStream> {
             resolveCount.incrementAndGet()
             error("source failure")
+        }
+    }
+
+    private class EmptyProvider : SourceProvider {
+        val resolveCount = AtomicInteger(0)
+
+        override val manifest = SourceManifest(
+            id = "counting",
+            name = "Empty Provider",
+            version = "1",
+            author = "test",
+            capabilities = setOf(SourceCapability.SEARCH, SourceCapability.DETAIL, SourceCapability.EPISODES, SourceCapability.STREAM),
+        )
+
+        override suspend fun search(query: String): List<SearchResult> = emptyList()
+
+        override suspend fun loadDetail(result: SearchResult): MediaDetail {
+            return MediaDetail(providerId = manifest.id, title = result.title, url = result.url)
+        }
+
+        override suspend fun resolveStreams(episode: Episode): List<MediaStream> {
+            resolveCount.incrementAndGet()
+            return emptyList()
+        }
+    }
+
+    private class EmptyThenReadyProvider : SourceProvider {
+        val resolveCount = AtomicInteger(0)
+
+        override val manifest = SourceManifest(
+            id = "counting",
+            name = "Empty Then Ready Provider",
+            version = "1",
+            author = "test",
+            capabilities = setOf(SourceCapability.SEARCH, SourceCapability.DETAIL, SourceCapability.EPISODES, SourceCapability.STREAM),
+        )
+
+        override suspend fun search(query: String): List<SearchResult> = emptyList()
+
+        override suspend fun loadDetail(result: SearchResult): MediaDetail {
+            return MediaDetail(providerId = manifest.id, title = result.title, url = result.url)
+        }
+
+        override suspend fun resolveStreams(episode: Episode): List<MediaStream> {
+            val count = resolveCount.incrementAndGet()
+            if (count == 1) return emptyList()
+            return listOf(
+                MediaStream(
+                    id = "${episode.id}-recovered-hls",
+                    providerId = manifest.id,
+                    url = "${episode.url}/recovered.m3u8",
+                    protocol = StreamProtocol.HLS,
+                    quality = "1080p",
+                    sourceScore = 100,
+                ),
+            )
         }
     }
 }
