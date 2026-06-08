@@ -34,6 +34,35 @@ class DanmakuPlaybackClockTest {
     }
 
     @Test
+    fun frameAlignedSamplesAdvanceWithoutMicroStalls() {
+        val clock = DanmakuPlaybackClock()
+
+        val first = clock.positionMs(
+            sampledPlaybackMs = 2_000,
+            frameTimeNs = 0,
+            isPlaying = true,
+            playbackSpeed = 1f,
+        )
+        val second = clock.positionMs(
+            sampledPlaybackMs = 2_016,
+            frameTimeNs = 16_666_667,
+            isPlaying = true,
+            playbackSpeed = 1f,
+        )
+        val third = clock.positionMs(
+            sampledPlaybackMs = 2_033,
+            frameTimeNs = 33_333_334,
+            isPlaying = true,
+            playbackSpeed = 1f,
+        )
+
+        assertTrue(second > first)
+        assertTrue(third > second)
+        assertTrue(second - first in 15.0..18.0)
+        assertTrue(third - second in 15.0..18.0)
+    }
+
+    @Test
     fun resyncsAfterSeekBackward() {
         val clock = DanmakuPlaybackClock()
 

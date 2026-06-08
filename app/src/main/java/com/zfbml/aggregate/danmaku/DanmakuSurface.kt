@@ -49,24 +49,15 @@ fun DanmakuSurface(
             isPlaying = isPlaying,
         ) ?: return@LaunchedEffect
         while (true) {
-            frameTimeNs = withFrameNanos { it }
-            if (frameDelayMs > 0L) {
-                delay(frameDelayMs)
-            }
-        }
-    }
-    LaunchedEffect(settings.enabled, items.isNotEmpty(), isPlaying) {
-        val sampleDelayMs = danmakuPlaybackSampleDelayMs(
-            enabled = settings.enabled,
-            hasItems = items.isNotEmpty(),
-            isPlaying = isPlaying,
-        ) ?: return@LaunchedEffect
-        while (true) {
+            val nextFrameTimeNs = withFrameNanos { it }
             val nextPlaybackMs = currentPlaybackMsProvider().coerceAtLeast(0L)
             if (nextPlaybackMs != sampledPlaybackMs) {
                 sampledPlaybackMs = nextPlaybackMs
             }
-            delay(sampleDelayMs)
+            frameTimeNs = nextFrameTimeNs
+            if (frameDelayMs > 0L) {
+                delay(frameDelayMs)
+            }
         }
     }
     LaunchedEffect(items, profile, settings.enabled, settings.density, settings.fontScale, settings.blockedWords) {
@@ -217,18 +208,8 @@ internal fun danmakuFrameDelayMs(
     return if (isPlaying) 0L else PausedFrameDelayMs
 }
 
-internal fun danmakuPlaybackSampleDelayMs(
-    enabled: Boolean,
-    hasItems: Boolean,
-    isPlaying: Boolean,
-): Long? {
-    if (!enabled || !hasItems) return null
-    return if (isPlaying) PlayingPlaybackSampleDelayMs else PausedFrameDelayMs
-}
-
 internal fun danmakuFrameTimeReady(frameTimeNs: Long): Boolean = frameTimeNs != DanmakuFrameTimeUnsetNs
 
 internal const val DanmakuFrameTimeUnsetNs = Long.MIN_VALUE
-private const val PlayingPlaybackSampleDelayMs = 32L
 private const val PausedFrameDelayMs = 250L
 private const val DanmakuStrokeAlpha = 0.8f

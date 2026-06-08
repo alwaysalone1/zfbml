@@ -25,6 +25,21 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.27
+
+中文：
+- 弹幕 Surface 将播放位置采样并入每帧 `withFrameNanos` 渲染循环，减少采样定时器和绘制帧错位带来的细小校正。
+- 移除播放中独立 32ms 采样循环，播放时每个可绘制帧都会使用最新播放器位置，暂停时仍保持低频刷新。
+- 新增单元测试覆盖帧对齐采样下的弹幕时钟单调推进和稳定步进。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.27`。
+
+English:
+
+- Danmaku playback-position sampling now runs inside the per-frame `withFrameNanos` render loop, reducing small corrections caused by timer/render-frame misalignment.
+- The separate 32ms playing sampler was removed; playback uses the latest player position on each renderable frame while paused playback remains low-rate.
+- Added unit coverage for monotonic, stable danmaku clock steps with frame-aligned samples.
+- App version labels, request user agents, and README notes are now updated to `0.5.27`.
+
 ### v0.5.26
 
 中文：

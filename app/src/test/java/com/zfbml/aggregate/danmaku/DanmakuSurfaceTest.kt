@@ -37,14 +37,6 @@ class DanmakuSurfaceTest {
     }
 
     @Test
-    fun playbackSamplingUsesLowerRateThanFrameRendering() {
-        assertEquals(null, danmakuPlaybackSampleDelayMs(enabled = false, hasItems = true, isPlaying = true))
-        assertEquals(null, danmakuPlaybackSampleDelayMs(enabled = true, hasItems = false, isPlaying = true))
-        assertEquals(32L, danmakuPlaybackSampleDelayMs(enabled = true, hasItems = true, isPlaying = true))
-        assertEquals(250L, danmakuPlaybackSampleDelayMs(enabled = true, hasItems = true, isPlaying = false))
-    }
-
-    @Test
     fun frameTimeIsNotReadyUntilVsyncProvidesRealTimestamp() {
         assertEquals(false, danmakuFrameTimeReady(DanmakuFrameTimeUnsetNs))
         assertEquals(true, danmakuFrameTimeReady(0L))
