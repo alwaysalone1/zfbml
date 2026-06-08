@@ -2081,7 +2081,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.37")
+                setRequestProperty("User-Agent", "ZFBML/0.5.38")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2572,7 +2572,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.5.37",
+                version = "0.5.38",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )
@@ -3040,6 +3040,9 @@ private fun DetailScreen(
     var routeSourceFilter by remember(result) { mutableStateOf<String?>(null) }
     var routesFromCache by remember(result) { mutableStateOf(false) }
     var routesExpanded by remember(result) { mutableStateOf(false) }
+    var routePrefetchingEpisodeIds by remember(result) { mutableStateOf<Set<String>>(emptySet()) }
+    var routePrefetchedEpisodeIds by remember(result) { mutableStateOf<Set<String>>(emptySet()) }
+    var routePrefetchEmptyEpisodeIds by remember(result) { mutableStateOf<Set<String>>(emptySet()) }
 
     fun loadRoutesFor(episode: Episode, autoPlay: Boolean = false) {
         val cachedRoutes = graph.sourceRegistry.peekRouteCandidates(episode)
@@ -3097,6 +3100,9 @@ private fun DetailScreen(
         routesFromCache = false
         routesExpanded = false
         routesLoading = false
+        routePrefetchingEpisodeIds = emptySet()
+        routePrefetchedEpisodeIds = emptySet()
+        routePrefetchEmptyEpisodeIds = emptySet()
         runCatching { graph.sourceRegistry.loadDetail(result) }
             .onSuccess { media ->
                 detail = media
@@ -3116,13 +3122,41 @@ private fun DetailScreen(
         selectedSourceId = routeSourceFilter,
         loadedFromCache = routesFromCache,
     )
+    val routePrefetchUiState = detail?.let { media ->
+        buildRoutePrefetchUiState(
+            episodes = media.episodes,
+            currentEpisode = selectedEpisode,
+            warmingEpisodeIds = routePrefetchingEpisodeIds,
+            warmedEpisodeIds = routePrefetchedEpisodeIds,
+            emptyEpisodeIds = routePrefetchEmptyEpisodeIds,
+        )
+    } ?: buildRoutePrefetchUiState(emptyList(), null)
     LaunchedEffect(detail?.url, selectedEpisode?.id, routesLoading, routesError, routes) {
         val media = detail ?: return@LaunchedEffect
         val episode = selectedEpisode ?: return@LaunchedEffect
         if (routesLoading || routesError != null || routes.isEmpty()) return@LaunchedEffect
         routePrefetchWindow(media.episodes, episode).forEach { prefetchEpisode ->
+            val prefetchId = prefetchEpisode.id
+            if (graph.sourceRegistry.peekRouteCandidates(prefetchEpisode) != null) {
+                routePrefetchingEpisodeIds = routePrefetchingEpisodeIds - prefetchId
+                routePrefetchedEpisodeIds = routePrefetchedEpisodeIds + prefetchId
+                routePrefetchEmptyEpisodeIds = routePrefetchEmptyEpisodeIds - prefetchId
+                return@forEach
+            }
+            if (prefetchId in routePrefetchingEpisodeIds || prefetchId in routePrefetchedEpisodeIds) {
+                return@forEach
+            }
+            routePrefetchingEpisodeIds = routePrefetchingEpisodeIds + prefetchId
+            routePrefetchEmptyEpisodeIds = routePrefetchEmptyEpisodeIds - prefetchId
             launch {
-                graph.sourceRegistry.prefetchRouteCandidates(prefetchEpisode)
+                val warmed = graph.sourceRegistry.prefetchRouteCandidates(prefetchEpisode)
+                routePrefetchingEpisodeIds = routePrefetchingEpisodeIds - prefetchId
+                if (warmed) {
+                    routePrefetchedEpisodeIds = routePrefetchedEpisodeIds + prefetchId
+                    routePrefetchEmptyEpisodeIds = routePrefetchEmptyEpisodeIds - prefetchId
+                } else {
+                    routePrefetchEmptyEpisodeIds = routePrefetchEmptyEpisodeIds + prefetchId
+                }
             }
         }
     }
@@ -3216,6 +3250,14 @@ private fun DetailScreen(
                     },
                     modifier = Modifier.padding(horizontal = 18.dp),
                 )
+            }
+            if (routePrefetchUiState.items.isNotEmpty()) {
+                item {
+                    DetailRoutePrefetchCard(
+                        state = routePrefetchUiState,
+                        modifier = Modifier.padding(horizontal = 18.dp),
+                    )
+                }
             }
             if (routesExpanded) {
                 if (routes.isNotEmpty()) {
@@ -3665,6 +3707,88 @@ private fun DetailRouteStatusCard(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun DetailRoutePrefetchCard(
+    state: RoutePrefetchUiState,
+    modifier: Modifier = Modifier,
+) {
+    val accent = when {
+        state.hasActivePrefetch -> AnimeAccentCyan
+        state.items.all { it.status == RoutePrefetchStatus.Ready } -> AnimeAccentGreen
+        state.items.any { it.status == RoutePrefetchStatus.Empty } -> AnimeAccentAmber
+        else -> AnimeAccentViolet
+    }
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(8.dp),
+        color = Color.White.copy(alpha = 0.055f),
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.24f)),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier.size(34.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.16f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (state.hasActivePrefetch) {
+                        CircularProgressIndicator(color = accent, modifier = Modifier.size(18.dp))
+                    } else {
+                        Icon(Icons.Filled.CloudDownload, contentDescription = null, tint = accent, modifier = Modifier.size(18.dp))
+                    }
+                }
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(state.headline, style = MaterialTheme.typography.titleSmall, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(state.summary, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+                RouteStatusBadge("\u9884\u70ed", accent)
+            }
+            if (state.hasActivePrefetch) {
+                LinearProgressIndicator(
+                    modifier = Modifier.fillMaxWidth().height(3.dp).clip(RoundedCornerShape(8.dp)),
+                    color = accent,
+                    trackColor = Color.White.copy(alpha = 0.08f),
+                )
+            }
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                items(state.items, key = { it.episodeId }) { item ->
+                    DetailRoutePrefetchChip(item)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DetailRoutePrefetchChip(item: RoutePrefetchItemUiState) {
+    val (statusLabel, accent) = when (item.status) {
+        RoutePrefetchStatus.Queued -> "\u6392\u961f" to AnimeAccentViolet
+        RoutePrefetchStatus.Warming -> "\u9884\u70ed\u4e2d" to AnimeAccentCyan
+        RoutePrefetchStatus.Ready -> "\u5df2\u547d\u4e2d" to AnimeAccentGreen
+        RoutePrefetchStatus.Empty -> "\u5f85\u8865\u6e90" to AnimeAccentAmber
+    }
+    Row(
+        modifier = Modifier
+            .height(34.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(accent.copy(alpha = 0.1f))
+            .border(1.dp, accent.copy(alpha = 0.22f), RoundedCornerShape(8.dp))
+            .padding(horizontal = 9.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.size(6.dp).clip(CircleShape).background(accent))
+        Text(item.title, style = MaterialTheme.typography.labelSmall, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1)
+        Text(statusLabel, style = MaterialTheme.typography.labelSmall, color = accent, maxLines = 1)
     }
 }
 

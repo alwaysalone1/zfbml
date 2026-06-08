@@ -43,6 +43,27 @@ internal data class RouteLoadingStepUiState(
     val active: Boolean,
 )
 
+internal enum class RoutePrefetchStatus {
+    Queued,
+    Warming,
+    Ready,
+    Empty,
+}
+
+internal data class RoutePrefetchItemUiState(
+    val episodeId: String,
+    val title: String,
+    val status: RoutePrefetchStatus,
+)
+
+internal data class RoutePrefetchUiState(
+    val items: List<RoutePrefetchItemUiState>,
+    val headline: String,
+    val summary: String,
+) {
+    val hasActivePrefetch: Boolean = items.any { it.status == RoutePrefetchStatus.Warming }
+}
+
 internal data class PlayerOverlayState(
     val title: String,
     val episodeTitle: String,
@@ -439,6 +460,48 @@ internal fun routePrefetchWindow(
         if (result.size >= maxCount) return result
     }
     return result
+}
+
+internal fun buildRoutePrefetchUiState(
+    episodes: List<Episode>,
+    currentEpisode: Episode?,
+    warmingEpisodeIds: Set<String> = emptySet(),
+    warmedEpisodeIds: Set<String> = emptySet(),
+    emptyEpisodeIds: Set<String> = emptySet(),
+    maxCount: Int = 2,
+): RoutePrefetchUiState {
+    val prefetchEpisodes = currentEpisode
+        ?.let { routePrefetchWindow(episodes, it, maxCount) }
+        ?: emptyList()
+    val items = prefetchEpisodes.map { episode ->
+        RoutePrefetchItemUiState(
+            episodeId = episode.id,
+            title = episode.index?.let { "\u7b2c $it \u96c6" }
+                ?: episode.title.takeIf { it.isNotBlank() }
+                ?: "\u90bb\u8fd1\u5267\u96c6",
+            status = when (episode.id) {
+                in warmedEpisodeIds -> RoutePrefetchStatus.Ready
+                in warmingEpisodeIds -> RoutePrefetchStatus.Warming
+                in emptyEpisodeIds -> RoutePrefetchStatus.Empty
+                else -> RoutePrefetchStatus.Queued
+            },
+        )
+    }
+    val headline = when {
+        items.isEmpty() -> "\u65e0\u90bb\u96c6\u53ef\u9884\u70ed"
+        items.all { it.status == RoutePrefetchStatus.Ready } -> "\u90bb\u96c6\u7ebf\u8def\u5df2\u9884\u70ed"
+        items.any { it.status == RoutePrefetchStatus.Warming } -> "\u6b63\u5728\u9884\u70ed\u90bb\u96c6"
+        items.any { it.status == RoutePrefetchStatus.Queued } -> "\u90bb\u96c6\u7b49\u5f85\u9884\u70ed"
+        else -> "\u90bb\u96c6\u6682\u5f85\u8865\u6e90"
+    }
+    val summary = when {
+        items.isEmpty() -> "\u5f53\u524d\u5267\u96c6\u6682\u65e0\u53ef\u9884\u70ed\u7684\u524d\u540e\u96c6"
+        items.all { it.status == RoutePrefetchStatus.Ready } -> "\u5207\u6362\u5230\u76f8\u90bb\u96c6\u65f6\u53ef\u76f4\u63a5\u547d\u4e2d\u7f13\u5b58\u7ebf\u8def"
+        items.any { it.status == RoutePrefetchStatus.Warming } -> "\u6b63\u5728\u540e\u53f0\u63d0\u524d\u5339\u914d\u4e0b\u4e00\u6279\u64ad\u653e\u6e90"
+        items.any { it.status == RoutePrefetchStatus.Queued } -> "\u64ad\u653e\u6e90\u5c31\u7eea\u540e\u4f1a\u81ea\u52a8\u5f00\u59cb\u9884\u70ed"
+        else -> "\u90bb\u8fd1\u5267\u96c6\u6682\u672a\u547d\u4e2d\u53ef\u64ad\u653e\u7ebf\u8def"
+    }
+    return RoutePrefetchUiState(items = items, headline = headline, summary = summary)
 }
 
 internal fun nextEpisodeForPlayer(

@@ -25,6 +25,23 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.38
+
+中文：
+- 新增 `docs/apk-template-analysis.md`，记录 Animeko、B站、弹弹play、腾讯视频和优酷 APK 的 Manifest、资源命名和结构性启发。
+- 详情页新增“邻集预热”卡片，把后台线路预取从隐藏逻辑变成可见状态，显示排队、预热中、已命中和待补源。
+- 预取状态复用已有 `SourceRegistry.prefetchRouteCandidates` 缓存，不改变线路解析契约，切集时更接近大厂视频 App 的预加载心智。
+- 新增单元测试覆盖邻集预热 UI 状态模型。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.38`。
+
+English:
+
+- Added `docs/apk-template-analysis.md` with structural findings from Animeko, Bilibili, Dandanplay, Tencent Video, and Youku APK manifests/resources.
+- The detail page now shows a nearby-episode preheat card, turning hidden route prefetching into visible queued, warming, ready, and empty states.
+- Prefetch visibility reuses the existing `SourceRegistry.prefetchRouteCandidates` cache without changing route-resolution contracts, making episode switching feel closer to large video apps.
+- Added unit coverage for the route-prefetch UI state model.
+- App version labels, request user agents, and README notes are now updated to `0.5.38`.
+
 ### v0.5.37
 
 中文：

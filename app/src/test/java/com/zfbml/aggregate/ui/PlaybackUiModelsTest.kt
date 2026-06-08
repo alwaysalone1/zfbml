@@ -453,6 +453,48 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun routePrefetchUiStateTracksWarmingReadyAndEmptyEpisodes() {
+        val episodes = (1..4).map { episode(id = "ep-$it", index = it) }
+
+        val state = buildRoutePrefetchUiState(
+            episodes = episodes,
+            currentEpisode = episodes[1],
+            warmingEpisodeIds = setOf("ep-3"),
+            warmedEpisodeIds = setOf("ep-4"),
+            emptyEpisodeIds = setOf("ep-1"),
+            maxCount = 3,
+        )
+
+        assertEquals(listOf("ep-3", "ep-4", "ep-1"), state.items.map { it.episodeId })
+        assertEquals(RoutePrefetchStatus.Warming, state.items[0].status)
+        assertEquals(RoutePrefetchStatus.Ready, state.items[1].status)
+        assertEquals(RoutePrefetchStatus.Empty, state.items[2].status)
+        assertTrue(state.hasActivePrefetch)
+        assertTrue(state.headline.contains("\u9884\u70ed"))
+    }
+
+    @Test
+    fun routePrefetchUiStateReportsAllReadyAndNoNeighborCases() {
+        val episodes = listOf(episode(id = "ep-1", index = 1), episode(id = "ep-2", index = 2))
+
+        val ready = buildRoutePrefetchUiState(
+            episodes = episodes,
+            currentEpisode = episodes[0],
+            warmedEpisodeIds = setOf("ep-2"),
+        )
+        val none = buildRoutePrefetchUiState(
+            episodes = listOf(episodes[0]),
+            currentEpisode = episodes[0],
+        )
+
+        assertEquals(RoutePrefetchStatus.Ready, ready.items.single().status)
+        assertFalse(ready.hasActivePrefetch)
+        assertTrue(ready.summary.contains("\u7f13\u5b58\u7ebf\u8def"))
+        assertTrue(none.items.isEmpty())
+        assertTrue(none.headline.contains("\u65e0\u90bb\u96c6"))
+    }
+
+    @Test
     fun nextEpisodeForPlayerUsesPlaybackListOrder() {
         val episodes = listOf(
             episode(id = "ep-1", index = 1),
