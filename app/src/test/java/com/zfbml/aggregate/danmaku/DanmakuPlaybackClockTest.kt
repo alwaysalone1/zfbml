@@ -102,6 +102,43 @@ class DanmakuPlaybackClockTest {
     }
 
     @Test
+    fun moderateForwardSampleDriftIsSoftCorrectedWhilePlaying() {
+        val clock = DanmakuPlaybackClock()
+
+        clock.positionMs(sampledPlaybackMs = 5_000, frameTimeNs = 0, isPlaying = true, playbackSpeed = 1f)
+        val beforeDrift = clock.positionMs(
+            sampledPlaybackMs = 5_000,
+            frameTimeNs = 16_000_000,
+            isPlaying = true,
+            playbackSpeed = 1f,
+        )
+        val drifted = clock.positionMs(
+            sampledPlaybackMs = 5_200,
+            frameTimeNs = 32_000_000,
+            isPlaying = true,
+            playbackSpeed = 1f,
+        )
+
+        assertTrue(drifted > beforeDrift)
+        assertTrue(drifted < 5_060.0)
+    }
+
+    @Test
+    fun obviousForwardSeekHardSyncsImmediately() {
+        val clock = DanmakuPlaybackClock()
+
+        clock.positionMs(sampledPlaybackMs = 2_000, frameTimeNs = 0, isPlaying = true, playbackSpeed = 1f)
+        val seeked = clock.positionMs(
+            sampledPlaybackMs = 3_000,
+            frameTimeNs = 16_000_000,
+            isPlaying = true,
+            playbackSpeed = 1f,
+        )
+
+        assertEquals(3_000.0, seeked, 0.01)
+    }
+
+    @Test
     fun speedChangeKeepsClockContinuousAndAdvancing() {
         val clock = DanmakuPlaybackClock()
 

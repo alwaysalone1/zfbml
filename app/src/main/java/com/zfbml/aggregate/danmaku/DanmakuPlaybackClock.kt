@@ -4,9 +4,10 @@ import kotlin.math.abs
 import kotlin.math.max
 
 internal class DanmakuPlaybackClock(
-    private val hardSyncToleranceMs: Double = 90.0,
+    private val hardSyncToleranceMs: Double = 700.0,
     private val softSyncToleranceMs: Double = 24.0,
     private val seekToleranceMs: Double = 260.0,
+    private val maxSoftCorrectionMs: Double = 12.0,
 ) {
     private var anchorPlaybackMs = 0.0
     private var anchorFrameNs = Long.MIN_VALUE
@@ -35,11 +36,12 @@ internal class DanmakuPlaybackClock(
         val previousSample = lastSampledPlaybackMs
         val sampleChanged = previousSample == null || sampled != previousSample
         val seekedBack = previousSample != null && sampled < previousSample - seekToleranceMs
+        val seekedForward = previousSample != null && sampled > previousSample + hardSyncToleranceMs
         val clockChanged = isPlaying != lastPlaying || abs(speed - lastSpeed) > 0.001
 
         val previousOutput = lastOutputPlaybackMs
         var predicted = when {
-            anchorFrameNs == Long.MIN_VALUE || frameTimeNs < anchorFrameNs || seekedBack -> {
+            anchorFrameNs == Long.MIN_VALUE || frameTimeNs < anchorFrameNs || seekedBack || seekedForward -> {
                 syncTo(sampled, frameTimeNs, isPlaying, speed)
                 sampled
             }
@@ -66,7 +68,7 @@ internal class DanmakuPlaybackClock(
             }
         }
 
-        if (isPlaying && sampleChanged && !seekedBack) {
+        if (isPlaying && sampleChanged && !seekedBack && !seekedForward) {
             val driftMs = sampled - predicted
             when {
                 driftMs > hardSyncToleranceMs -> {
@@ -74,7 +76,8 @@ internal class DanmakuPlaybackClock(
                     predicted = sampled
                 }
                 abs(driftMs) > softSyncToleranceMs -> {
-                    val correctionMs = driftMs * SOFT_CORRECTION_RATIO
+                    val correctionMs = (driftMs * SOFT_CORRECTION_RATIO)
+                        .coerceIn(-maxSoftCorrectionMs, maxSoftCorrectionMs)
                     anchorPlaybackMs += correctionMs
                     predicted += correctionMs
                 }
