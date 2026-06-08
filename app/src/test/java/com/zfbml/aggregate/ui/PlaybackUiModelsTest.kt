@@ -1,6 +1,7 @@
 package com.zfbml.aggregate.ui
 
 import com.zfbml.aggregate.source.Episode
+import com.zfbml.aggregate.source.DownloadPolicy
 import com.zfbml.aggregate.source.MediaStream
 import com.zfbml.aggregate.source.RouteCandidate
 import com.zfbml.aggregate.source.SearchResult
@@ -653,6 +654,65 @@ class PlaybackUiModelsTest {
         assertEquals(0, locked.endInsetDp)
         assertEquals(0, compact.endInsetDp)
         assertTrue(compact.bottomInsetDp > hidden.bottomInsetDp)
+    }
+
+    @Test
+    fun playerCacheActionStateExplainsAllowedAndBlockedStreams() {
+        val hls = buildPlayerCacheActionUiState(
+            MediaStream(
+                id = "hls",
+                providerId = "online",
+                url = "https://example.invalid/live.m3u8",
+                protocol = StreamProtocol.HLS,
+            ),
+        )
+        val webView = buildPlayerCacheActionUiState(
+            MediaStream(
+                id = "web",
+                providerId = "web",
+                url = "https://example.invalid/watch",
+                protocol = StreamProtocol.WEBVIEW_ONLY,
+                downloadPolicy = DownloadPolicy.BlockedWebViewOnly,
+            ),
+        )
+        val drm = buildPlayerCacheActionUiState(
+            MediaStream(
+                id = "drm",
+                providerId = "drm",
+                url = "https://example.invalid/manifest.mpd",
+                protocol = StreamProtocol.DASH,
+                downloadPolicy = DownloadPolicy.BlockedDrm,
+            ),
+        )
+        val bt = buildPlayerCacheActionUiState(
+            MediaStream(
+                id = "bt",
+                providerId = "bt",
+                url = "magnet:?xt=urn:btih:test",
+                protocol = StreamProtocol.BITTORRENT,
+                downloadPolicy = DownloadPolicy.CacheOnly,
+            ),
+        )
+        val rtsp = buildPlayerCacheActionUiState(
+            MediaStream(
+                id = "rtsp",
+                providerId = "rtsp",
+                url = "rtsp://example.invalid/live",
+                protocol = StreamProtocol.RTSP,
+            ),
+        )
+
+        assertTrue(hls.enabled)
+        assertEquals("\u53ef\u79bb\u7ebf", hls.value)
+        assertEquals("\u7f13\u5b58\u672c\u96c6", hls.actionLabel)
+        assertFalse(webView.enabled)
+        assertTrue(webView.reason.contains("\u7f51\u9875\u55c5\u63a2"))
+        assertFalse(drm.enabled)
+        assertEquals("DRM", drm.value)
+        assertFalse(bt.enabled)
+        assertEquals("\u8fb9\u4e0b\u8fb9\u64ad", bt.value)
+        assertFalse(rtsp.enabled)
+        assertEquals("RTSP", rtsp.value)
     }
 
     @Test

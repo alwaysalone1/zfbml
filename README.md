@@ -25,6 +25,23 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.41
+
+中文：
+- 播放器新增缓存动作状态模型，按 `DownloadPolicy`、协议、WebView 嗅探和 DRM 情况解释当前线路是否能离线缓存。
+- 全屏底栏和“更多”面板的缓存入口统一使用同一份状态；可缓存线路加入 Media3 离线队列，不可缓存线路会显示明确原因。
+- “我的”页离线缓存卡片改为展示真实可缓存来源数量，并补充 Media3/BT 缓存职责说明。
+- 新增单元测试覆盖 HLS、WebView、DRM、BT 和 RTSP 等缓存可用性分支。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.41`。
+
+English:
+
+- The player now has a cache-action UI model that explains offline availability from `DownloadPolicy`, protocol, WebView sniffing, and DRM state.
+- Fullscreen controls and the More panel share that model; cacheable streams enqueue Media3 offline tasks, while blocked streams surface the exact reason.
+- The Profile cache card now shows the real count of cache-capable sources and clarifies Media3 versus BT cache responsibilities.
+- Added unit coverage for cache availability across HLS, WebView, DRM, BT, and RTSP streams.
+- App version labels, request user agents, and README notes are now updated to `0.5.41`.
+
 ### v0.5.40
 
 中文：

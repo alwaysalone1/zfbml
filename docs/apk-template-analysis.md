@@ -38,6 +38,13 @@ Tooling: Android SDK `apkanalyzer.bat` for manifest, resource, file, and dex pac
 - ZFBML implementation direction: the search page should show searchable source count, failed sources, result count, and quick source filters. Result filtering should be a first-class index interaction, not a debug message.
 - Updated player direction: fullscreen controls, danmaku, route panels, and transient notices need explicit anti-obstruction rules so they do not cover the decisive video area or fight with each other.
 
+## Cache And Offline Findings
+
+- Dandanplay has a dedicated `CacheManagerActivity`, which supports treating cache as a normal anime workflow rather than a hidden download implementation detail.
+- Tencent Video exposes `PreDownloadSettingActivity` and `VBOfflineService`, pointing to a split between user-visible offline policy and background task execution.
+- Youku exposes `DownloadHomeActivity`, `CacheSeriesActivity`, and preload receivers, reinforcing that episode-level caching and preloading need clear labels before full task management exists.
+- ZFBML implementation direction: every player cache entry should explain whether the current route can be cached and why. Media3-compatible HLS/DASH/MP4 streams can enter the offline queue, WebView/DRM routes should surface their block reason, and BT routes should be described as handled by the torrent edge-cache path.
+
 ## Current Implementation Focus
 
 This pass exposes route prefetching in the detail page. The app already warms nearby episodes through `SourceRegistry.prefetchRouteCandidates`; the UI now surfaces whether adjacent episodes are warming, warmed, queued, or waiting for fallback source coverage.
@@ -45,3 +52,5 @@ This pass exposes route prefetching in the detail page. The app already warms ne
 The next pass after route prefetching adds visible search source coverage and per-source result filtering, based on the search/index findings above.
 
 This pass adds player anti-obstruction support for danmaku. `DanmakuSafeArea` lets the layout engine reserve top, bottom, start, and end zones, and the player now derives those zones from visible controls, fullscreen side dock, option panels, lock state, and route/error notices.
+
+This pass also unifies the player cache action model. Fullscreen controls, the More panel, and the Profile cache card now share source/route cacheability signals so users can see when Media3 offline caching is available, when WebView or DRM blocks caching, and when BT is handled by the torrent engine.

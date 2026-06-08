@@ -1,6 +1,7 @@
 package com.zfbml.aggregate.ui
 
 import com.zfbml.aggregate.source.Episode
+import com.zfbml.aggregate.source.DownloadPolicy
 import com.zfbml.aggregate.source.MediaStream
 import com.zfbml.aggregate.source.RouteCandidate
 import com.zfbml.aggregate.source.SearchResult
@@ -117,6 +118,14 @@ internal data class PlayerDanmakuSafeAreaUiState(
     val bottomInsetDp: Int,
     val startInsetDp: Int,
     val endInsetDp: Int,
+)
+
+internal data class PlayerCacheActionUiState(
+    val enabled: Boolean,
+    val title: String,
+    val value: String,
+    val reason: String,
+    val actionLabel: String,
 )
 
 internal enum class PlayerSeekFeedbackPlacement {
@@ -691,6 +700,60 @@ internal fun buildPlayerDanmakuSafeAreaUiState(
         startInsetDp = startInset,
         endInsetDp = endInset,
     )
+}
+
+internal fun buildPlayerCacheActionUiState(stream: MediaStream): PlayerCacheActionUiState {
+    val media3Cacheable = stream.protocol in setOf(
+        StreamProtocol.HLS,
+        StreamProtocol.DASH,
+        StreamProtocol.SMOOTH_STREAMING,
+        StreamProtocol.PROGRESSIVE,
+    )
+    return when {
+        stream.downloadPolicy == DownloadPolicy.BlockedDrm || stream.drmInfo != null -> PlayerCacheActionUiState(
+            enabled = false,
+            title = "\u7f13\u5b58",
+            value = "DRM",
+            reason = "DRM \u53d7\u9650\uff0c\u4e0d\u52a0\u5165\u79bb\u7ebf\u961f\u5217",
+            actionLabel = "\u4e0d\u53ef\u7f13\u5b58",
+        )
+        stream.downloadPolicy == DownloadPolicy.BlockedWebViewOnly ||
+            stream.protocol == StreamProtocol.WEBVIEW_ONLY -> PlayerCacheActionUiState(
+            enabled = false,
+            title = "\u7f13\u5b58",
+            value = "\u55c5\u63a2",
+            reason = "\u7f51\u9875\u55c5\u63a2\u6e90\u9700\u73b0\u573a\u64ad\u653e\uff0c\u6682\u4e0d\u652f\u6301\u79bb\u7ebf",
+            actionLabel = "\u4e0d\u53ef\u7f13\u5b58",
+        )
+        stream.protocol == StreamProtocol.BITTORRENT -> PlayerCacheActionUiState(
+            enabled = false,
+            title = "\u7f13\u5b58",
+            value = "\u8fb9\u4e0b\u8fb9\u64ad",
+            reason = "BT \u7ebf\u8def\u7531\u79cd\u5b50\u5f15\u64ce\u8fb9\u4e0b\u8fb9\u64ad",
+            actionLabel = "\u67e5\u770b BT \u7f13\u5b58",
+        )
+        stream.downloadPolicy == DownloadPolicy.CacheOnly && media3Cacheable -> PlayerCacheActionUiState(
+            enabled = true,
+            title = "\u7f13\u5b58",
+            value = "\u4ec5\u7f13\u5b58",
+            reason = "Media3 \u4f1a\u6309\u8be5\u7ebf\u8def\u7684\u7f13\u5b58\u7b56\u7565\u52a0\u5165\u961f\u5217",
+            actionLabel = "\u7f13\u5b58\u672c\u96c6",
+        )
+        stream.downloadPolicy == DownloadPolicy.Allowed && media3Cacheable -> PlayerCacheActionUiState(
+            enabled = true,
+            title = "\u7f13\u5b58",
+            value = "\u53ef\u79bb\u7ebf",
+            reason = "Media3 \u79bb\u7ebf\u7f13\u5b58\u961f\u5217",
+            actionLabel = "\u7f13\u5b58\u672c\u96c6",
+        )
+        else -> PlayerCacheActionUiState(
+            enabled = false,
+            title = "\u7f13\u5b58",
+            value = stream.protocol.uiProtocolName(),
+            reason = "${stream.protocol.uiProtocolName()} \u534f\u8bae\u6682\u672a\u63a5\u5165\u79bb\u7ebf\u7f13\u5b58",
+            actionLabel = "\u4e0d\u53ef\u7f13\u5b58",
+        )
+    }
 }
 
 internal fun playerSeekTargetMs(

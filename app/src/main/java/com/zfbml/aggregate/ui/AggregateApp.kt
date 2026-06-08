@@ -2083,7 +2083,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.40")
+                setRequestProperty("User-Agent", "ZFBML/0.5.41")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2597,13 +2597,16 @@ private fun CacheScreen() {
 private fun SettingsScreen(graph: AppGraph) {
     val sourceCount = graph.sourceRegistry.manifests.size
     val danmakuCount = graph.danmakuRegistry.profiles.size
+    val cacheableSourceCount = graph.sourceRegistry.manifests.count {
+        it.supportsDownload || SourceCapability.DOWNLOAD in it.capabilities
+    }
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item {
             ProfileHeroCard(
-                version = "0.5.40",
+                version = "0.5.41",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )
@@ -2614,7 +2617,7 @@ private fun SettingsScreen(graph: AppGraph) {
                     ProfileQuickCard("追番记录", "继续看入口", Icons.Filled.PlayArrow, AnimeAccentPink)
                 }
                 item {
-                    ProfileQuickCard("离线缓存", "可播线路缓存", Icons.Filled.CloudDownload, AnimeAccentCyan)
+                    ProfileQuickCard("离线缓存", "${cacheableSourceCount} 源可缓存", Icons.Filled.CloudDownload, AnimeAccentCyan)
                 }
                 item {
                     ProfileQuickCard("弹幕设置", "${danmakuCount} 平台样式", Icons.Filled.ClosedCaption, AnimeAccentViolet)
@@ -2634,6 +2637,15 @@ private fun SettingsScreen(graph: AppGraph) {
                 value = "Media3",
                 icon = Icons.Filled.PlayArrow,
                 accent = AnimeAccentCyan,
+            )
+        }
+        item {
+            ProfileSettingRow(
+                title = "离线缓存",
+                subtitle = "HLS / DASH / MP4 走 Media3 队列，BT 由边下边播引擎接管",
+                value = "${cacheableSourceCount} 源",
+                icon = Icons.Filled.CloudDownload,
+                accent = AnimeAccentGreen,
             )
         }
         item {
@@ -4907,6 +4919,19 @@ private fun PlayerScreen(
     }
     val hasPlaybackIssue = effectiveErrorMessage != null
     val nextRoute = nextPlayableRoute(playerRoutes, currentStream.id, failedStreamIds)
+    val cacheActionState = remember(currentStream) {
+        buildPlayerCacheActionUiState(currentStream)
+    }
+
+    fun enqueueCurrentStreamForOffline() {
+        revealControls()
+        if (!cacheActionState.enabled) {
+            routeNotice = cacheActionState.reason
+            return
+        }
+        graph.media3DownloadCoordinator.enqueue(currentStream, "${detail.title} ${currentEpisode.title}")
+        routeNotice = "\u5df2\u52a0\u5165\u79bb\u7ebf\u7f13\u5b58 \u00b7 ${cacheActionState.reason}"
+    }
 
     fun selectRoute(route: RouteCandidate) {
         revealControls()
@@ -5174,6 +5199,7 @@ private fun PlayerScreen(
                 PlayerBottomControls(
                     currentStream = currentStream,
                     currentRoute = currentRoute,
+                    cacheActionState = cacheActionState,
                     routeOptions = routeOptions,
                     routeCoverageLabel = routeCoverageLabel,
                     routeNotice = routeNotice,
@@ -5213,12 +5239,7 @@ private fun PlayerScreen(
                         revealControls()
                         danmakuEnabled = !danmakuEnabled
                     },
-                    onOffline = {
-                        revealControls()
-                        if (currentStream.protocol != StreamProtocol.BITTORRENT) {
-                            graph.media3DownloadCoordinator.enqueue(currentStream, "${detail.title} ${currentEpisode.title}")
-                        }
-                    },
+                    onOffline = ::enqueueCurrentStreamForOffline,
                     onRetryRoute = ::retryCurrentRoute,
                     onNextRoute = ::selectNextRoute,
                     modifier = Modifier.fillMaxWidth(),
@@ -5330,6 +5351,7 @@ private fun PlayerScreen(
                     routeOptions = routeOptions,
                     selectedStreamId = currentStream.id,
                     currentStream = currentStream,
+                    cacheActionState = cacheActionState,
                     danmakuEnabled = danmakuEnabled,
                     density = density,
                     danmakuAlpha = danmakuAlpha,
@@ -5366,12 +5388,7 @@ private fun PlayerScreen(
                         revealControls()
                         activePanel = nextPanel
                     },
-                    onOffline = {
-                        revealControls()
-                        if (currentStream.protocol != StreamProtocol.BITTORRENT) {
-                            graph.media3DownloadCoordinator.enqueue(currentStream, "${detail.title} ${currentEpisode.title}")
-                        }
-                    },
+                    onOffline = ::enqueueCurrentStreamForOffline,
                     modifier = Modifier.fillMaxSize(),
                 )
             }
@@ -6145,6 +6162,7 @@ private fun PlayerSeekFeedbackPlacement.feedbackIcon(): ImageVector? {
 private fun PlayerBottomControls(
     currentStream: MediaStream,
     currentRoute: RouteCandidate?,
+    cacheActionState: PlayerCacheActionUiState,
     routeOptions: List<RouteCandidate>,
     routeCoverageLabel: String,
     routeNotice: String?,
@@ -6285,7 +6303,7 @@ private fun PlayerBottomControls(
                 danmakuEnabled = danmakuEnabled,
                 playbackSpeed = playbackSpeed,
                 activePanel = activePanel,
-                offlineEnabled = currentStream.protocol != StreamProtocol.BITTORRENT,
+                cacheActionState = cacheActionState,
                 hasPlaybackIssue = hasPlaybackIssue,
                 canSelectNextRoute = canSelectNextRoute,
                 onToggleDanmaku = onToggleDanmaku,
@@ -6663,7 +6681,7 @@ private fun PlayerFullscreenControlRow(
     danmakuEnabled: Boolean,
     playbackSpeed: Float,
     activePanel: PlayerPanel?,
-    offlineEnabled: Boolean,
+    cacheActionState: PlayerCacheActionUiState,
     hasPlaybackIssue: Boolean,
     canSelectNextRoute: Boolean,
     onToggleDanmaku: () -> Unit,
@@ -6713,7 +6731,7 @@ private fun PlayerFullscreenControlRow(
                 nextEpisode = nextEpisode,
                 playbackSpeed = playbackSpeed,
                 activePanel = activePanel,
-                offlineEnabled = offlineEnabled,
+                cacheActionState = cacheActionState,
                 hasPlaybackIssue = hasPlaybackIssue,
                 canSelectNextRoute = canSelectNextRoute,
                 onShowPanel = onShowPanel,
@@ -6900,7 +6918,7 @@ private fun PlayerActionBar(
     nextEpisode: Episode?,
     playbackSpeed: Float,
     activePanel: PlayerPanel?,
-    offlineEnabled: Boolean,
+    cacheActionState: PlayerCacheActionUiState,
     hasPlaybackIssue: Boolean,
     canSelectNextRoute: Boolean,
     onShowPanel: (PlayerPanel) -> Unit,
@@ -6982,9 +7000,9 @@ private fun PlayerActionBar(
         add(
             PlayerActionSpec(
                 icon = Icons.Filled.CloudDownload,
-                title = "缓存",
-                value = if (offlineEnabled) "离线" else "不可用",
-                enabled = offlineEnabled,
+                title = cacheActionState.title,
+                value = cacheActionState.value,
+                enabled = cacheActionState.enabled,
                 onClick = onOffline,
             ),
         )
@@ -7037,6 +7055,7 @@ private fun PlayerOptionPanel(
     routeOptions: List<RouteCandidate>,
     selectedStreamId: String,
     currentStream: MediaStream,
+    cacheActionState: PlayerCacheActionUiState,
     danmakuEnabled: Boolean,
     density: Float,
     danmakuAlpha: Float,
@@ -7153,7 +7172,7 @@ private fun PlayerOptionPanel(
                             quality = currentStream.quality.orEmpty().ifBlank { "自动" },
                             playbackSpeed = playbackSpeed,
                             danmakuEnabled = danmakuEnabled,
-                            offlineEnabled = currentStream.protocol != StreamProtocol.BITTORRENT,
+                            cacheActionState = cacheActionState,
                             onShowPanel = onShowPanel,
                             onOffline = onOffline,
                         )
@@ -7415,7 +7434,7 @@ private fun PlayerMorePanel(
     quality: String,
     playbackSpeed: Float,
     danmakuEnabled: Boolean,
-    offlineEnabled: Boolean,
+    cacheActionState: PlayerCacheActionUiState,
     onShowPanel: (PlayerPanel) -> Unit,
     onOffline: () -> Unit,
 ) {
@@ -7454,10 +7473,10 @@ private fun PlayerMorePanel(
             onClick = { onShowPanel(PlayerPanel.Danmaku) },
         ),
         PlayerMoreAction(
-            title = "缓存",
-            subtitle = if (offlineEnabled) "本集离线" else "暂不支持",
+            title = cacheActionState.title,
+            subtitle = if (cacheActionState.enabled) cacheActionState.actionLabel else cacheActionState.reason,
             icon = Icons.Filled.CloudDownload,
-            enabled = offlineEnabled,
+            enabled = cacheActionState.enabled,
             onClick = onOffline,
         ),
     )
