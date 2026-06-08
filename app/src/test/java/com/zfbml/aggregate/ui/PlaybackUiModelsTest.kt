@@ -280,6 +280,30 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun playerProgressPollDelayPrioritizesVisiblePlayingControls() {
+        assertEquals(
+            100L,
+            playerProgressPollDelayMs(isPlaying = true, controlsVisible = true, panelOpen = false),
+        )
+        assertEquals(
+            160L,
+            playerProgressPollDelayMs(isPlaying = true, controlsVisible = true, panelOpen = true),
+        )
+        assertEquals(
+            250L,
+            playerProgressPollDelayMs(isPlaying = true, controlsVisible = false, panelOpen = false),
+        )
+        assertEquals(
+            300L,
+            playerProgressPollDelayMs(isPlaying = false, controlsVisible = true, panelOpen = false),
+        )
+        assertEquals(
+            500L,
+            playerProgressPollDelayMs(isPlaying = false, controlsVisible = false, panelOpen = false),
+        )
+    }
+
+    @Test
     fun playerOverlayStateUsesShortStatusLabels() {
         val candidate = route("hls", StreamProtocol.HLS, 900, quality = "1080p")
         val playing = buildPlayerOverlayState(

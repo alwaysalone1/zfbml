@@ -1848,7 +1848,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.4.1")
+                setRequestProperty("User-Agent", "ZFBML/0.4.2")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2339,7 +2339,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.4.1",
+                version = "0.4.2",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )
@@ -4235,11 +4235,17 @@ private fun PlayerScreen(
             )
         }
     }
-    LaunchedEffect(currentStream.id) {
+    LaunchedEffect(currentStream.id, state.isPlaying, controlsVisible, activePanel != null) {
         while (true) {
             playbackPositionMs = engine.currentPositionMs().coerceAtLeast(0L)
             playbackDurationMs = normalizePlaybackDurationMs(engine.player.duration)
-            delay(500)
+            delay(
+                playerProgressPollDelayMs(
+                    isPlaying = state.isPlaying,
+                    controlsVisible = controlsVisible,
+                    panelOpen = activePanel != null,
+                ),
+            )
         }
     }
     LaunchedEffect(controlsVisible) {

@@ -25,6 +25,22 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.4.2
+
+中文：
+
+- 播放器进度轮询改为按 UI 状态动态调度：播放中且下方控制条可见时提高刷新频率，让进度条和时间显示更顺滑。
+- 面板打开、控制层隐藏或暂停时自动降频，减少不可见场景的主线程刷新压力。
+- 新增单测覆盖播放器进度轮询策略，保持播放中的可见进度优先级。
+- App 内版本号、请求 UA 和 README 同步到 `0.4.2`。
+
+English:
+
+- Player progress polling now adapts to UI state: visible controls refresh more often while playback is active, making the progress bar and time labels feel smoother.
+- Polling backs off when panels are open, controls are hidden, or playback is paused, reducing main-thread refresh pressure in less visible states.
+- Added unit coverage for the player progress polling policy so visible playback remains prioritized.
+- App version labels, request user agents, and README notes are now updated to `0.4.2`.
+
 ### v0.4.1
 
 中文：

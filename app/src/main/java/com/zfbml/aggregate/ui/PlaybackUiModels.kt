@@ -272,6 +272,20 @@ internal fun routePrefetchWindow(
     return result
 }
 
+internal fun playerProgressPollDelayMs(
+    isPlaying: Boolean,
+    controlsVisible: Boolean,
+    panelOpen: Boolean,
+): Long {
+    return when {
+        isPlaying && controlsVisible && !panelOpen -> 100L
+        isPlaying && controlsVisible -> 160L
+        isPlaying -> 250L
+        controlsVisible -> 300L
+        else -> 500L
+    }
+}
+
 internal fun recommendedSourceIdForRoutes(
     routes: List<RouteCandidate>,
     failedStreamIds: Set<String> = emptySet(),
