@@ -25,6 +25,22 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.30
+
+中文：
+
+- 弹幕 Canvas 绘制路径新增 Paint 状态缓存，避免每帧重复设置相同描边、阴影、字号和颜色。
+- 高弹幕密度下每帧绘制开销更低，有助于减少弹幕滚动的细微顿挫。
+- 保持现有弹幕时钟、布局和视觉表现不变，只优化帧内绘制稳定性。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.30`。
+
+English:
+
+- The danmaku Canvas draw path now caches Paint state, avoiding repeated per-frame writes of identical stroke, shadow, text-size, and color values.
+- Frame draw overhead is lower under dense danmaku, helping reduce subtle scrolling hitches.
+- Existing danmaku timing, layout, and visual output are preserved while improving per-frame stability.
+- App version labels, request user agents, and README notes are now updated to `0.5.30`.
+
 ### v0.5.29
 
 中文：

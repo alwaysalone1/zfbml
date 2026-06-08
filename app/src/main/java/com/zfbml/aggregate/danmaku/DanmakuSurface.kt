@@ -33,6 +33,7 @@ fun DanmakuSurface(
     val playbackClock = remember { DanmakuPlaybackClock() }
     val fillPaint = rememberTextPaint()
     val measurePaint = rememberTextPaint()
+    val paintCache = remember { DanmakuPaintCache() }
     val strokePaint = rememberTextPaint().apply {
         style = Paint.Style.STROKE
         strokeJoin = Paint.Join.ROUND
@@ -106,20 +107,79 @@ fun DanmakuSurface(
         }
         drawIntoCanvas { canvas ->
             val native = canvas.nativeCanvas
-            strokePaint.strokeWidth = profile.strokeWidthPx
-            fillPaint.setShadowLayer(profile.shadowRadiusPx, 1f, 1f, 0x88000000.toInt())
+            paintCache.applyFrameStyle(
+                fillPaint = fillPaint,
+                strokePaint = strokePaint,
+                strokeWidthPx = profile.strokeWidthPx,
+                shadowRadiusPx = profile.shadowRadiusPx,
+            )
             preparedLayout.forEachVisible(playbackMs, settings.alpha) { entry, x, entryAlpha ->
                 val metrics = entry.metrics
-                val color = danmakuFillColor(entry.item.color, entryAlpha)
-                strokePaint.textSize = metrics.textSizePx
-                strokePaint.color = danmakuStrokeColor(entryAlpha)
-                fillPaint.textSize = metrics.textSizePx
-                fillPaint.color = color
+                paintCache.applyEntryStyle(
+                    fillPaint = fillPaint,
+                    strokePaint = strokePaint,
+                    textSizePx = metrics.textSizePx,
+                    fillColor = danmakuFillColor(entry.item.color, entryAlpha),
+                    strokeColor = danmakuStrokeColor(entryAlpha),
+                )
                 native.drawText(entry.item.text, x, entry.y, strokePaint)
                 native.drawText(entry.item.text, x, entry.y, fillPaint)
             }
         }
     }
+}
+
+private class DanmakuPaintCache {
+    private var strokeWidthPx = Float.NaN
+    private var shadowRadiusPx = Float.NaN
+    private var textSizePx = Float.NaN
+    private var fillColor: Int? = null
+    private var strokeColor: Int? = null
+
+    fun applyFrameStyle(
+        fillPaint: Paint,
+        strokePaint: Paint,
+        strokeWidthPx: Float,
+        shadowRadiusPx: Float,
+    ) {
+        val safeStrokeWidth = strokeWidthPx.coerceFiniteAtLeast(0f)
+        if (this.strokeWidthPx != safeStrokeWidth) {
+            strokePaint.strokeWidth = safeStrokeWidth
+            this.strokeWidthPx = safeStrokeWidth
+        }
+        val safeShadowRadius = shadowRadiusPx.coerceFiniteAtLeast(0f)
+        if (this.shadowRadiusPx != safeShadowRadius) {
+            fillPaint.setShadowLayer(safeShadowRadius, 1f, 1f, DanmakuShadowColor)
+            this.shadowRadiusPx = safeShadowRadius
+        }
+    }
+
+    fun applyEntryStyle(
+        fillPaint: Paint,
+        strokePaint: Paint,
+        textSizePx: Float,
+        fillColor: Int,
+        strokeColor: Int,
+    ) {
+        val safeTextSizePx = textSizePx.coerceFiniteAtLeast(1f)
+        if (this.textSizePx != safeTextSizePx) {
+            fillPaint.textSize = safeTextSizePx
+            strokePaint.textSize = safeTextSizePx
+            this.textSizePx = safeTextSizePx
+        }
+        if (this.fillColor != fillColor) {
+            fillPaint.color = fillColor
+            this.fillColor = fillColor
+        }
+        if (this.strokeColor != strokeColor) {
+            strokePaint.color = strokeColor
+            this.strokeColor = strokeColor
+        }
+    }
+}
+
+private fun Float.coerceFiniteAtLeast(minimumValue: Float): Float {
+    return if (isFinite()) coerceAtLeast(minimumValue) else minimumValue
 }
 
 internal class DanmakuSurfaceLayoutCache {
@@ -213,3 +273,4 @@ internal fun danmakuFrameTimeReady(frameTimeNs: Long): Boolean = frameTimeNs != 
 internal const val DanmakuFrameTimeUnsetNs = Long.MIN_VALUE
 private const val PausedFrameDelayMs = 250L
 private const val DanmakuStrokeAlpha = 0.8f
+private const val DanmakuShadowColor = 0x88000000.toInt()

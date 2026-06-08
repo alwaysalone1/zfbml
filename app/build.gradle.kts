@@ -13,8 +13,8 @@ android {
         applicationId = "com.zfbml.aggregate"
         minSdk = 23
         targetSdk = 36
-        versionCode = 149
-        versionName = "0.5.29"
+        versionCode = 150
+        versionName = "0.5.30"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
