@@ -25,6 +25,21 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.36
+
+中文：
+- 启动页标题区新增三枚状态胶囊，突出今日片单、源站在线和弹幕同步状态，强化打开 App 时的追番场景感。
+- 状态胶囊复用粉、青、琥珀三色体系，并随启动进度渐入，和现有海报 ribbon、弹幕轨道保持一致。
+- 布局放在现有标题组内，避免增加新的大块区域，小屏启动页仍保持紧凑。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.36`。
+
+English:
+
+- The splash title area now adds three compact status pills for today's queue, source availability, and danmaku sync, making the first launch frame feel more like an anime watchlist.
+- The pills reuse the pink, cyan, and amber palette and fade in with the splash progress, matching the existing poster ribbon and danmaku rails.
+- The layout stays inside the existing title group, keeping the splash compact on smaller screens.
+- App version labels, request user agents, and README notes are now updated to `0.5.36`.
+
 ### v0.5.35
 
 中文：

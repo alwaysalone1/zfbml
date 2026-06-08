@@ -306,6 +306,7 @@ private fun BrandSplashScreen() {
                     style = MaterialTheme.typography.bodyMedium,
                     color = AnimeMuted,
                 )
+                SplashStatusPills(progress = railProgress, modifier = Modifier.padding(top = 2.dp))
             }
             SplashProgressRail(progress = railProgress, modifier = Modifier.width(164.dp))
         }
@@ -421,6 +422,53 @@ private fun SplashPosterRibbon(modifier: Modifier = Modifier) {
                             .background(Color.White.copy(alpha = 0.72f), RoundedCornerShape(2.dp)),
                     )
                 }
+            }
+        }
+    }
+}
+
+private data class SplashStatusPillSpec(val label: String, val color: Color)
+
+@Composable
+private fun SplashStatusPills(progress: Float, modifier: Modifier = Modifier) {
+    val pills = listOf(
+        SplashStatusPillSpec("\u4ECA\u65E5\u7247\u5355", AnimeAccentPink),
+        SplashStatusPillSpec("\u6E90\u7AD9\u5728\u7EBF", AnimeAccentCyan),
+        SplashStatusPillSpec("\u5F39\u5E55\u540C\u6B65", AnimeAccentAmber),
+    )
+    Row(
+        modifier = modifier.widthIn(max = 286.dp),
+        horizontalArrangement = Arrangement.spacedBy(7.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        pills.forEachIndexed { index, pill ->
+            val visibleProgress = (progress - index * 0.14f).coerceIn(0.38f, 1f)
+            Row(
+                modifier = Modifier
+                    .height(26.dp)
+                    .offset(y = ((1f - visibleProgress) * 4f).dp)
+                    .alpha(0.62f + visibleProgress * 0.38f)
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(pill.color.copy(alpha = 0.08f + visibleProgress * 0.08f))
+                    .border(1.dp, pill.color.copy(alpha = 0.18f + visibleProgress * 0.2f), RoundedCornerShape(999.dp))
+                    .padding(horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(5.dp)
+                        .clip(CircleShape)
+                        .background(pill.color.copy(alpha = 0.78f + visibleProgress * 0.22f)),
+                )
+                Text(
+                    text = pill.label,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White.copy(alpha = 0.72f + visibleProgress * 0.22f),
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Clip,
+                )
             }
         }
     }
@@ -2033,7 +2081,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.35")
+                setRequestProperty("User-Agent", "ZFBML/0.5.36")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2524,7 +2572,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.5.35",
+                version = "0.5.36",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )
