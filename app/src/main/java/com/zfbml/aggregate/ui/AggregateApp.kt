@@ -1960,7 +1960,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.6")
+                setRequestProperty("User-Agent", "ZFBML/0.5.7")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2451,7 +2451,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.5.6",
+                version = "0.5.7",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )
@@ -2994,7 +2994,9 @@ private fun DetailScreen(
         val episode = selectedEpisode ?: return@LaunchedEffect
         if (routesLoading || routesError != null || routes.isEmpty()) return@LaunchedEffect
         routePrefetchWindow(media.episodes, episode).forEach { prefetchEpisode ->
-            graph.sourceRegistry.prefetchRouteCandidates(prefetchEpisode)
+            launch {
+                graph.sourceRegistry.prefetchRouteCandidates(prefetchEpisode)
+            }
         }
     }
 
@@ -3443,7 +3445,9 @@ private fun DetailRouteStatusCard(
         else -> "备用"
     }
     val compactReady = state.status == RouteLoadStatus.Ready && !expanded
-    val showDiagnostics = expanded || state.status == RouteLoadStatus.Failed
+    val showDiagnostics = expanded ||
+        state.status == RouteLoadStatus.Loading ||
+        state.status == RouteLoadStatus.Failed
     val headerSubtitle = if (compactReady) {
         state.bestRoute?.let { route ->
             listOfNotNull(
@@ -3518,15 +3522,7 @@ private fun DetailRouteStatusCard(
             }
             if (showDiagnostics) {
                 RouteSourceFocusRow(state = state, accent = accent)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    RouteDiagnosticStep("选集", state.selectedEpisodeTitle, true, accent, Modifier.weight(1f))
-                    RouteDiagnosticStep("在线播放", onlineValue, state.onlineCount > 0 || state.status == RouteLoadStatus.Loading, AnimeAccentCyan, Modifier.weight(1f))
-                    RouteDiagnosticStep("备用源", btValue, state.btCount > 0, AnimeAccentAmber, Modifier.weight(1f))
-                }
+                RouteLoadingStepRow(state = state, accent = accent)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -3635,6 +3631,29 @@ private fun RouteSourceFocusChip(
     ) {
         Text(label, style = MaterialTheme.typography.labelSmall, color = accent, maxLines = 1, overflow = TextOverflow.Ellipsis)
         Text(value, style = MaterialTheme.typography.bodySmall, color = Color.White, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+    }
+}
+
+@Composable
+private fun RouteLoadingStepRow(
+    state: RouteUiState,
+    accent: Color,
+) {
+    val colors = listOf(accent, AnimeAccentCyan, AnimeAccentAmber)
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        state.loadingSteps.take(3).forEachIndexed { index, step ->
+            RouteDiagnosticStep(
+                title = step.title,
+                value = step.value,
+                active = step.active,
+                accent = colors.getOrElse(index) { accent },
+                modifier = Modifier.weight(1f),
+            )
+        }
     }
 }
 
@@ -4369,7 +4388,9 @@ private fun PlayerScreen(
     LaunchedEffect(currentEpisode.id, detail.episodes, playerRoutes) {
         if (playerRoutes.isEmpty()) return@LaunchedEffect
         routePrefetchWindow(detail.episodes, currentEpisode).forEach { prefetchEpisode ->
-            graph.sourceRegistry.prefetchRouteCandidates(prefetchEpisode)
+            launch {
+                graph.sourceRegistry.prefetchRouteCandidates(prefetchEpisode)
+            }
         }
     }
     LaunchedEffect(currentStream.id, torrentPlaybackUrl) {

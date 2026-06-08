@@ -18,6 +18,7 @@ internal data class RouteUiState(
     val selectedEpisodeTitle: String,
     val bestRoute: RouteCandidate?,
     val visibleRoutes: List<RouteCandidate>,
+    val loadingSteps: List<RouteLoadingStepUiState>,
     val routeCount: Int,
     val onlineCount: Int,
     val btCount: Int,
@@ -30,6 +31,12 @@ internal data class RouteUiState(
 ) {
     val canPlay: Boolean = bestRoute != null
 }
+
+internal data class RouteLoadingStepUiState(
+    val title: String,
+    val value: String,
+    val active: Boolean,
+)
 
 internal data class PlayerOverlayState(
     val title: String,
@@ -153,6 +160,12 @@ internal fun buildRouteUiState(
         selectedEpisodeTitle = episodeTitle,
         bestRoute = bestRoute,
         visibleRoutes = visibleRoutes,
+        loadingSteps = buildRouteLoadingSteps(
+            status = status,
+            episodeTitle = episodeTitle,
+            onlineCount = onlineCount,
+            btCount = btCount,
+        ),
         routeCount = routes.size,
         onlineCount = onlineCount,
         btCount = btCount,
@@ -162,6 +175,43 @@ internal fun buildRouteUiState(
         detail = detail,
         recommendationTitle = recommendationTitle,
         recommendationDetail = recommendationDetail,
+    )
+}
+
+internal fun buildRouteLoadingSteps(
+    status: RouteLoadStatus,
+    episodeTitle: String,
+    onlineCount: Int,
+    btCount: Int,
+): List<RouteLoadingStepUiState> {
+    val hasSelectedEpisode = status != RouteLoadStatus.Idle
+    val matching = status == RouteLoadStatus.Loading
+    return listOf(
+        RouteLoadingStepUiState(
+            title = "选集",
+            value = episodeTitle,
+            active = hasSelectedEpisode,
+        ),
+        RouteLoadingStepUiState(
+            title = "在线源",
+            value = when {
+                onlineCount > 0 -> "${onlineCount} 条"
+                matching -> "优先匹配"
+                status == RouteLoadStatus.Failed -> "未命中"
+                else -> "待匹配"
+            },
+            active = matching || onlineCount > 0,
+        ),
+        RouteLoadingStepUiState(
+            title = "备用源",
+            value = when {
+                btCount > 0 -> "${btCount} 条"
+                matching -> "必要时启用"
+                status == RouteLoadStatus.Failed -> "可重试"
+                else -> "兜底"
+            },
+            active = matching || btCount > 0 || status == RouteLoadStatus.Failed,
+        ),
     )
 }
 

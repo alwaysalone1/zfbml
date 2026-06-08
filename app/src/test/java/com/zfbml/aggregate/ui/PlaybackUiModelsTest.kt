@@ -63,6 +63,34 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun routeUiStateExposesLoadingStepsForDetailCard() {
+        val loading = buildRouteUiState(episode(), emptyList(), loading = true, error = null)
+
+        assertEquals(3, loading.loadingSteps.size)
+        assertTrue(loading.loadingSteps.all { it.active })
+        assertEquals(loading.selectedEpisodeTitle, loading.loadingSteps.first().value)
+    }
+
+    @Test
+    fun routeUiStateLoadingStepsSummarizeResolvedSources() {
+        val hls = route("hls", StreamProtocol.HLS, 450, quality = "720p")
+        val bt = route("bt", StreamProtocol.BITTORRENT, 900, quality = "1080p")
+
+        val ready = buildRouteUiState(
+            selectedEpisode = episode(),
+            routes = listOf(hls, bt),
+            loading = false,
+            error = null,
+        )
+
+        assertEquals(RouteLoadStatus.Ready, ready.status)
+        assertTrue(ready.loadingSteps[1].active)
+        assertTrue(ready.loadingSteps[2].active)
+        assertEquals("1 条", ready.loadingSteps[1].value)
+        assertEquals("1 条", ready.loadingSteps[2].value)
+    }
+
+    @Test
     fun routeUiStateDoesNotAutoplayWebViewOnlyRoute() {
         val webView = route("webview", StreamProtocol.WEBVIEW_ONLY, 1_000, quality = "1080p")
 

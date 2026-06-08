@@ -25,6 +25,22 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.7
+
+中文：
+
+- 详情页线路状态现在暴露“选集 / 在线源 / 备用源”三段加载步骤，匹配播放源时能看到当前策略和兜底路径。
+- 线路诊断卡在加载中也会展开阶段信息，减少用户等待时的黑盒感，源选择体验更接近 Animeko 的可理解加载流程。
+- 详情页和播放器的相邻集线路预取改为并发启动，下一集解析较慢时不会阻塞其他邻近剧集预热。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.7`。
+
+English:
+
+- The detail route state now exposes three loading steps: episode selection, online sources, and fallback sources, making route matching strategy visible while waiting.
+- The route diagnostics card shows step progress during loading, reducing black-box waits and moving source selection closer to Animeko-style readable loading.
+- Adjacent-episode route prefetch now starts concurrently from both the detail page and player, so a slow next episode does not block warming other nearby episodes.
+- App version labels, request user agents, and README notes are now updated to `0.5.7`.
+
 ### v0.5.6
 
 中文：
