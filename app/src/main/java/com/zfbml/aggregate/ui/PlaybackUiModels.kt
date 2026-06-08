@@ -166,6 +166,22 @@ internal enum class SourceLibraryTone {
     Muted,
 }
 
+internal data class AppNavigationTabUiState(
+    val id: String,
+    val label: String,
+    val statusLabel: String,
+    val selected: Boolean,
+    val tone: SourceLibraryTone,
+)
+
+internal data class AppNavigationUiState(
+    val selectedTabId: String,
+    val tabs: List<AppNavigationTabUiState>,
+) {
+    val selectedTab: AppNavigationTabUiState?
+        get() = tabs.firstOrNull { it.selected }
+}
+
 internal data class SourceLibraryChipUiState(
     val label: String,
     val tone: SourceLibraryTone,
@@ -976,6 +992,78 @@ internal fun buildCategoryBrowseUiState(
             "\u53ef\u4ee5\u5207\u5230\u5176\u4ed6\u5206\u7c7b\uff0c\u6216\u76f4\u63a5\u641c\u7d22\u756a\u540d\u3002"
         },
         hasItems = items.isNotEmpty(),
+    )
+}
+
+private const val NAV_DISCOVER_ID = "discover"
+private const val NAV_SEARCH_ID = "search"
+private const val NAV_SOURCES_ID = "sources"
+private const val NAV_SETTINGS_ID = "settings"
+
+internal fun buildAppNavigationUiState(
+    selectedTabId: String,
+    todayCount: Int = 0,
+    searchableSourceCount: Int,
+    sourceCount: Int,
+    cacheableSourceCount: Int,
+): AppNavigationUiState {
+    val selectedId = selectedTabId.trim().lowercase().ifBlank { NAV_DISCOVER_ID }
+    val today = todayCount.coerceAtLeast(0)
+    val searchable = searchableSourceCount.coerceAtLeast(0)
+    val sources = sourceCount.coerceAtLeast(0)
+    val cacheable = cacheableSourceCount.coerceAtLeast(0)
+
+    fun tab(
+        id: String,
+        label: String,
+        statusLabel: String,
+        tone: SourceLibraryTone,
+    ): AppNavigationTabUiState {
+        return AppNavigationTabUiState(
+            id = id,
+            label = label,
+            statusLabel = statusLabel,
+            selected = id == selectedId,
+            tone = tone,
+        )
+    }
+
+    return AppNavigationUiState(
+        selectedTabId = selectedId,
+        tabs = listOf(
+            tab(
+                id = NAV_DISCOVER_ID,
+                label = "首页",
+                statusLabel = if (today > 0) "今日 $today" else "推荐",
+                tone = if (today > 0) SourceLibraryTone.Primary else SourceLibraryTone.Online,
+            ),
+            tab(
+                id = NAV_SEARCH_ID,
+                label = "搜索",
+                statusLabel = if (searchable > 0) "$searchable 源" else "待索引",
+                tone = if (searchable > 0) SourceLibraryTone.Online else SourceLibraryTone.Muted,
+            ),
+            tab(
+                id = NAV_SOURCES_ID,
+                label = "频道",
+                statusLabel = if (sources > 0) "$sources 来源" else "待接入",
+                tone = if (sources > 0) SourceLibraryTone.Backup else SourceLibraryTone.Muted,
+            ),
+            tab(
+                id = NAV_SETTINGS_ID,
+                label = "我的",
+                statusLabel = when {
+                    cacheable > 0 -> "$cacheable 可缓存"
+                    sources > 0 -> "待缓存"
+                    else -> "我的"
+                },
+                tone = when {
+                    cacheable > 0 -> SourceLibraryTone.Cache
+                    sources > 0 -> SourceLibraryTone.Web
+                    else -> SourceLibraryTone.Muted
+                },
+            ),
+        ),
     )
 }
 

@@ -751,6 +751,54 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun appNavigationUiStateSummarizesSelectedTabAndCapabilities() {
+        val state = buildAppNavigationUiState(
+            selectedTabId = "search",
+            todayCount = 7,
+            searchableSourceCount = 3,
+            sourceCount = 4,
+            cacheableSourceCount = 2,
+        )
+
+        assertEquals("search", state.selectedTabId)
+        assertEquals(listOf("discover", "search", "sources", "settings"), state.tabs.map { it.id })
+        assertEquals("搜索", state.selectedTab?.label)
+        assertEquals("3 源", state.selectedTab?.statusLabel)
+        assertTrue(state.tabs.first { it.id == "search" }.selected)
+
+        val discover = state.tabs.first { it.id == "discover" }
+        val sources = state.tabs.first { it.id == "sources" }
+        val settings = state.tabs.first { it.id == "settings" }
+        assertEquals("今日 7", discover.statusLabel)
+        assertEquals(SourceLibraryTone.Primary, discover.tone)
+        assertEquals("4 来源", sources.statusLabel)
+        assertEquals(SourceLibraryTone.Backup, sources.tone)
+        assertEquals("2 可缓存", settings.statusLabel)
+        assertEquals(SourceLibraryTone.Cache, settings.tone)
+    }
+
+    @Test
+    fun appNavigationUiStateExplainsEmptySourceCoverage() {
+        val state = buildAppNavigationUiState(
+            selectedTabId = "",
+            todayCount = -1,
+            searchableSourceCount = -1,
+            sourceCount = 0,
+            cacheableSourceCount = 0,
+        )
+
+        assertEquals("discover", state.selectedTabId)
+        assertEquals("首页", state.selectedTab?.label)
+        assertEquals("推荐", state.tabs.first { it.id == "discover" }.statusLabel)
+        assertEquals("待索引", state.tabs.first { it.id == "search" }.statusLabel)
+        assertEquals(SourceLibraryTone.Muted, state.tabs.first { it.id == "search" }.tone)
+        assertEquals("待接入", state.tabs.first { it.id == "sources" }.statusLabel)
+        assertEquals(SourceLibraryTone.Muted, state.tabs.first { it.id == "sources" }.tone)
+        assertEquals("我的", state.tabs.first { it.id == "settings" }.statusLabel)
+        assertEquals(SourceLibraryTone.Muted, state.tabs.first { it.id == "settings" }.tone)
+    }
+
+    @Test
     fun sourceLibraryUiStateSummarizesStrategiesAndCards() {
         val manifests = listOf(
             manifest(
@@ -907,19 +955,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.47",
+            version = "0.5.48",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.47", state.version)
+        assertEquals("0.5.48", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.47" })
+        assertTrue(state.chips.any { it.label == "v0.5.48" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -933,7 +981,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.47",
+            version = "0.5.48",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,

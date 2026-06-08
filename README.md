@@ -25,6 +25,23 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.48
+
+中文：
+- 主导航新增 `AppNavigationUiState`，统一生成首页、搜索、频道、我的四个 Tab 的状态文案、选中态和语义色。
+- 手机底栏会在当前 Tab 下显示能力摘要，宽屏侧栏会持续展示推荐、搜索源、来源接入和缓存能力状态。
+- 导航状态复用来源清单和缓存能力模型，搜索、频道、个人中心入口不再只显示静态 Tab 文案。
+- 新增单元测试覆盖有来源/可缓存状态和空来源状态下的导航摘要。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.48`。
+
+English:
+
+- Main navigation now has `AppNavigationUiState` to generate tab labels, status text, selection state, and semantic tone for Discover, Search, Sources, and Profile.
+- The mobile bottom bar shows a capability summary for the active tab, while the wide navigation rail keeps recommendation, search-source, source-library, and cache-readiness status visible.
+- Navigation state now reuses source inventory and cache capability models instead of leaving Search, Sources, and Profile as static tab labels.
+- Added unit coverage for populated/cacheable and empty-source navigation summaries.
+- App version labels, request user agents, and README notes are now updated to `0.5.48`.
+
 ### v0.5.47
 
 中文：

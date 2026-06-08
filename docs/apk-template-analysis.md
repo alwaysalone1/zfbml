@@ -30,6 +30,13 @@ Tooling: Android SDK `apkanalyzer.bat` for manifest, resource, file, and dex pac
 4. Borrow Tencent/Youku's preload mindset: source matching and next-episode route warming should be treated as a first-class playback surface, not hidden diagnostics.
 5. Keep source/route decisions explainable: users should see why the app recommends a route, when the next episode is warmed, and when fallback sources are being used.
 
+## App Shell And Navigation Findings
+
+- Animeko's small Compose-heavy structure supports a single coherent app frame where top-level navigation stays lightweight.
+- Bilibili, Tencent Video, and Youku all expose major video workflows through stable app-level entry points rather than hiding search, cache, source, and profile readiness deep in settings.
+- Dandanplay's explicit cache, danmaku-source, search, detail, and player activities suggest that anime-focused utility features need clear navigation affordances even when the shell remains compact.
+- ZFBML implementation direction: the main navigation should summarize recommendation, search-source coverage, source-library readiness, and cache capability from shared state models so the shell feels like a video app control surface, not static page labels.
+
 ## Search, Index, And Overlay Findings
 
 - Bilibili exposes search as a platform surface, not a plain text box: its resource map includes search, bangumi, player, and danmaku preference surfaces that point to scoped discovery and visible playback decisions.
@@ -94,3 +101,5 @@ This pass upgrades the source library surface. `SourceLibraryUiState` now centra
 This pass upgrades the offline cache surface. `CacheLibraryUiState` now centralizes Media3 cacheable sources, BT edge-cache sources, WebView/sniffing blockers, advanced-download runtime status, and cache capability cards so Profile and cache pages share one user-facing cache strategy model.
 
 This pass upgrades the Profile surface. `ProfileCenterUiState` now centralizes the user-center hero, quick actions, status chips, and playback settings so Profile copy follows real source, danmaku, and cache capability instead of static Compose text.
+
+This pass upgrades the app shell navigation. `AppNavigationUiState` now centralizes top-level tab labels, status copy, selection state, and semantic tone, and the bottom bar / navigation rail surface recommendation, search-source, source-library, and cache-readiness status from shared models.

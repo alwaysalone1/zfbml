@@ -121,6 +121,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
@@ -141,6 +142,7 @@ import com.zfbml.aggregate.source.MediaDetail
 import com.zfbml.aggregate.source.MediaStream
 import com.zfbml.aggregate.source.RouteCandidate
 import com.zfbml.aggregate.source.SearchResult
+import com.zfbml.aggregate.source.SourceCapability
 import com.zfbml.aggregate.source.StreamProtocol
 import com.zfbml.aggregate.source.SourceSearchReport
 import com.zfbml.aggregate.source.catalog.BangumiCalendarRepository
@@ -562,6 +564,19 @@ private enum class AppTab(val label: String, val icon: ImageVector) {
     Settings("\u6211\u7684", Icons.Filled.AccountCircle),
 }
 
+private val AppTab.navigationId: String
+    get() = name.lowercase()
+
+private fun AppNavigationUiState.tabState(tab: AppTab): AppNavigationTabUiState {
+    return tabs.firstOrNull { it.id == tab.navigationId } ?: AppNavigationTabUiState(
+        id = tab.navigationId,
+        label = tab.label,
+        statusLabel = "",
+        selected = selectedTabId == tab.navigationId,
+        tone = SourceLibraryTone.Muted,
+    )
+}
+
 private enum class PlayerPanel {
     More,
     Danmaku,
@@ -743,10 +758,27 @@ private fun MainScaffold(
     initialQuery: String?,
     onOpenDetail: (SearchResult) -> Unit,
 ) {
+    val sourceManifests = graph.sourceRegistry.manifests
+    val advancedDownloadAvailable = graph.advancedDownloadProvider.isAvailable()
+    val navigationState = remember(selectedTab, sourceManifests, advancedDownloadAvailable) {
+        val cacheState = buildCacheLibraryUiState(
+            manifests = sourceManifests,
+            advancedEngineAvailable = advancedDownloadAvailable,
+        )
+        buildAppNavigationUiState(
+            selectedTabId = selectedTab.navigationId,
+            searchableSourceCount = sourceManifests.count { SourceCapability.SEARCH in it.capabilities },
+            sourceCount = sourceManifests.size,
+            cacheableSourceCount = cacheState.cacheableSourceCount,
+        )
+    }
     BoxWithConstraints(modifier = Modifier.fillMaxSize().background(AnimeBackground)) {
         if (maxWidth >= 840.dp) {
             Row(modifier = Modifier.fillMaxSize()) {
-                AppNavigationRail(selectedTab = selectedTab, onTabSelected = onTabSelected)
+                AppNavigationRail(
+                    navigationState = navigationState,
+                    onTabSelected = onTabSelected,
+                )
                 MainTabContent(
                     graph = graph,
                     selectedTab = selectedTab,
@@ -766,7 +798,10 @@ private fun MainScaffold(
                     onTabSelected = onTabSelected,
                     modifier = Modifier.weight(1f).fillMaxWidth(),
                 )
-                AppNavigationBar(selectedTab = selectedTab, onTabSelected = onTabSelected)
+                AppNavigationBar(
+                    navigationState = navigationState,
+                    onTabSelected = onTabSelected,
+                )
             }
         }
     }
@@ -801,7 +836,7 @@ private fun MainTabContent(
 
 @Composable
 private fun AppNavigationBar(
-    selectedTab: AppTab,
+    navigationState: AppNavigationUiState,
     onTabSelected: (AppTab) -> Unit,
 ) {
     Surface(
@@ -815,9 +850,11 @@ private fun AppNavigationBar(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             AppTab.entries.forEach { tab ->
+                val itemState = navigationState.tabState(tab)
                 AppBottomNavItem(
                     tab = tab,
-                    selected = selectedTab == tab,
+                    state = itemState,
+                    selected = itemState.selected,
                     onClick = { onTabSelected(tab) },
                     modifier = Modifier.weight(1f),
                 )
@@ -828,7 +865,7 @@ private fun AppNavigationBar(
 
 @Composable
 private fun AppNavigationRail(
-    selectedTab: AppTab,
+    navigationState: AppNavigationUiState,
     onTabSelected: (AppTab) -> Unit,
 ) {
     Surface(
@@ -844,9 +881,11 @@ private fun AppNavigationRail(
             BrandMark(Modifier.size(48.dp))
             Spacer(Modifier.height(6.dp))
             AppTab.entries.forEach { tab ->
+                val itemState = navigationState.tabState(tab)
                 AppRailNavItem(
                     tab = tab,
-                    selected = selectedTab == tab,
+                    state = itemState,
+                    selected = itemState.selected,
                     onClick = { onTabSelected(tab) },
                 )
             }
@@ -864,32 +903,47 @@ private fun AppNavigationRail(
 @Composable
 private fun AppBottomNavItem(
     tab: AppTab,
+    state: AppNavigationTabUiState,
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val accent = if (selected) AnimeAccentPink else Color.White.copy(alpha = 0.62f)
+    val selectedAccent = sourceLibraryToneColor(state.tone)
+    val accent = if (selected) selectedAccent else Color.White.copy(alpha = 0.62f)
     TextButton(
         onClick = onClick,
         modifier = modifier.height(56.dp).focusable(),
         shape = RoundedCornerShape(8.dp),
         colors = ButtonDefaults.textButtonColors(
-            containerColor = if (selected) AnimeAccentPink.copy(alpha = 0.16f) else Color.Transparent,
+            containerColor = if (selected) selectedAccent.copy(alpha = 0.16f) else Color.Transparent,
             contentColor = accent,
         ),
         contentPadding = PaddingValues(0.dp),
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+            verticalArrangement = Arrangement.spacedBy(if (selected) 1.dp else 4.dp),
         ) {
-            Icon(tab.icon, contentDescription = tab.label, modifier = Modifier.size(if (selected) 23.dp else 21.dp))
+            Icon(tab.icon, contentDescription = state.label, modifier = Modifier.size(if (selected) 21.dp else 20.dp))
             Text(
-                tab.label,
-                style = MaterialTheme.typography.labelMedium,
+                text = state.label,
+                style = MaterialTheme.typography.labelSmall,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
                 maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center,
             )
+            if (selected && state.statusLabel.isNotBlank()) {
+                Text(
+                    text = state.statusLabel,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = selectedAccent.copy(alpha = 0.82f),
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
+                )
+            }
         }
     }
 }
@@ -897,30 +951,43 @@ private fun AppBottomNavItem(
 @Composable
 private fun AppRailNavItem(
     tab: AppTab,
+    state: AppNavigationTabUiState,
     selected: Boolean,
     onClick: () -> Unit,
 ) {
-    val accent = if (selected) AnimeAccentPink else Color.White.copy(alpha = 0.62f)
+    val selectedAccent = sourceLibraryToneColor(state.tone)
+    val accent = if (selected) selectedAccent else Color.White.copy(alpha = 0.62f)
     TextButton(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth().height(62.dp).focusable(),
+        modifier = Modifier.fillMaxWidth().height(72.dp).focusable(),
         shape = RoundedCornerShape(8.dp),
         colors = ButtonDefaults.textButtonColors(
-            containerColor = if (selected) AnimeAccentPink.copy(alpha = 0.16f) else Color.Transparent,
+            containerColor = if (selected) selectedAccent.copy(alpha = 0.16f) else Color.Transparent,
             contentColor = accent,
         ),
         contentPadding = PaddingValues(0.dp),
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(5.dp),
+            verticalArrangement = Arrangement.spacedBy(3.dp),
         ) {
-            Icon(tab.icon, contentDescription = tab.label, modifier = Modifier.size(if (selected) 24.dp else 22.dp))
+            Icon(tab.icon, contentDescription = state.label, modifier = Modifier.size(if (selected) 23.dp else 21.dp))
             Text(
-                tab.label,
+                text = state.label,
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
                 maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center,
+            )
+            Text(
+                text = state.statusLabel,
+                style = MaterialTheme.typography.labelSmall,
+                color = if (selected) selectedAccent.copy(alpha = 0.82f) else Color.White.copy(alpha = 0.42f),
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center,
             )
         }
     }
@@ -2226,7 +2293,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.47")
+                setRequestProperty("User-Agent", "ZFBML/0.5.48")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2701,7 +2768,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.47",
+            version = "0.5.48",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
