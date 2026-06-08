@@ -40,7 +40,7 @@ class DanmakuSurfaceTest {
     fun playbackSamplingUsesLowerRateThanFrameRendering() {
         assertEquals(null, danmakuPlaybackSampleDelayMs(enabled = false, hasItems = true, isPlaying = true))
         assertEquals(null, danmakuPlaybackSampleDelayMs(enabled = true, hasItems = false, isPlaying = true))
-        assertEquals(96L, danmakuPlaybackSampleDelayMs(enabled = true, hasItems = true, isPlaying = true))
+        assertEquals(48L, danmakuPlaybackSampleDelayMs(enabled = true, hasItems = true, isPlaying = true))
         assertEquals(250L, danmakuPlaybackSampleDelayMs(enabled = true, hasItems = true, isPlaying = false))
     }
 

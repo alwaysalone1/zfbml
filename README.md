@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.21
+
+中文：
+
+- 弹幕播放位置采样从 96ms 缩短到 48ms，继续保留逐帧 vsync 渲染与预测时钟，减少播放器采样漂移带来的微校正顿挫。
+- 单元测试同步覆盖新的播放中采样节奏，锁定弹幕 Surface 的低频采样与逐帧渲染分离策略。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.21`。
+
+English:
+
+- Danmaku playback-position sampling now runs every 48ms instead of 96ms while preserving per-vsync rendering and the predictive clock, reducing micro-corrections caused by coarse player samples.
+- Unit coverage now locks the updated playing sample cadence and the separation between low-frequency player sampling and frame-rate rendering.
+- App version labels, request user agents, and README notes are now updated to `0.5.21`.
+
 ### v0.5.20
 
 中文：

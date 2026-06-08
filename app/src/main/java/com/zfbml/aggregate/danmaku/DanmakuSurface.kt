@@ -221,6 +221,6 @@ internal fun danmakuPlaybackSampleDelayMs(
     return if (isPlaying) PlayingPlaybackSampleDelayMs else PausedFrameDelayMs
 }
 
-private const val PlayingPlaybackSampleDelayMs = 96L
+private const val PlayingPlaybackSampleDelayMs = 48L
 private const val PausedFrameDelayMs = 250L
 private const val DanmakuStrokeAlpha = 0.8f
