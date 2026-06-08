@@ -25,6 +25,21 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.14
+
+中文：
+- 弹幕平台匹配现在并发执行，B站、腾讯、爱奇艺、优酷等 provider 不再按顺序逐个等待，进入播放器时弹幕匹配等待更接近最慢平台而不是总和。
+- 最佳弹幕候选如果返回空时间轴，会继续尝试下一候选平台，避免高分但临时无弹幕的结果直接导致整集无弹幕。
+- 新增单元测试覆盖多 provider 并发匹配和空时间轴兜底，继续增强弹幕加载稳定性。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.14`。
+
+English:
+
+- Danmaku provider matching now runs concurrently, so Bilibili, Tencent, iQiyi, Youku, and other providers no longer wait one by one when entering playback.
+- If the best danmaku match returns an empty timeline, the registry now tries the next candidate provider instead of leaving the whole episode without danmaku.
+- Added unit coverage for concurrent provider matching and empty-timeline fallback to keep danmaku loading stable.
+- App version labels, request user agents, and README notes are now updated to `0.5.14`.
+
 ### v0.5.13
 
 中文：

@@ -7,6 +7,7 @@ import java.nio.charset.StandardCharsets
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -89,10 +90,14 @@ class DanmakuRegistry(
 
     fun provider(id: String): DanmakuProvider? = byId[id]
 
-    suspend fun matchAll(detail: MediaDetail, episode: Episode): List<DanmakuMatch> {
-        return byId.values.flatMap { provider ->
-            runCatching { provider.match(detail, episode) }.getOrDefault(emptyList())
-        }.sortedByDescending { it.score }
+    suspend fun matchAll(detail: MediaDetail, episode: Episode): List<DanmakuMatch> = coroutineScope {
+        byId.values.map { provider ->
+            async {
+                runCatching { provider.match(detail, episode) }.getOrDefault(emptyList())
+            }
+        }.awaitAll()
+            .flatten()
+            .sortedByDescending { it.score }
     }
 
     suspend fun fetchBestTimeline(detail: MediaDetail, episode: Episode): List<DanmakuItem> {
@@ -136,8 +141,13 @@ class DanmakuRegistry(
     }
 
     private suspend fun fetchBestTimelineUncached(detail: MediaDetail, episode: Episode): List<DanmakuItem> {
-        val match = matchAll(detail, episode).firstOrNull() ?: return emptyList()
-        return provider(match.providerId)?.fetchTimeline(match).orEmpty()
+        for (match in matchAll(detail, episode)) {
+            val timeline = runCatching {
+                provider(match.providerId)?.fetchTimeline(match).orEmpty()
+            }.getOrDefault(emptyList())
+            if (timeline.isNotEmpty()) return timeline
+        }
+        return emptyList()
     }
 
     private fun cacheTimeline(key: DanmakuTimelineCacheKey, timeline: List<DanmakuItem>) {
