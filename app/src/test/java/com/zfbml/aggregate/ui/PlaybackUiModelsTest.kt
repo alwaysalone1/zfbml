@@ -295,14 +295,14 @@ class PlaybackUiModelsTest {
     }
 
     @Test
-    fun routePrefetchWindowPrioritizesNextThenPreviousEpisode() {
+    fun routePrefetchWindowPrioritizesFutureEpisodesBeforePrevious() {
         val episodes = (1..5).map { episode(id = "ep-$it", index = it) }
 
         val middle = routePrefetchWindow(episodes, episodes[2], maxCount = 3)
         val first = routePrefetchWindow(episodes, episodes[0], maxCount = 2)
         val last = routePrefetchWindow(episodes, episodes[4], maxCount = 2)
 
-        assertEquals(listOf("ep-4", "ep-2", "ep-5"), middle.map { it.id })
+        assertEquals(listOf("ep-4", "ep-5", "ep-2"), middle.map { it.id })
         assertEquals(listOf("ep-2", "ep-3"), first.map { it.id })
         assertEquals(listOf("ep-4", "ep-3"), last.map { it.id })
     }

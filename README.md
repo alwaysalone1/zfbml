@@ -25,6 +25,21 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.10
+
+中文：
+- 详情页和播放器的相邻剧集线路预取现在优先预热后续剧集，连续追番时会先缓存下一集、下下一集，再补充上一集。
+- 中间剧集的预取窗口从“下一集、上一集交替”调整为“未来剧集优先”，让自动连播和手动下一集更容易直接命中已解析线路。
+- 更新单元测试锁定新的预取顺序，避免后续退回不利于连续观看的策略。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.10`。
+
+English:
+
+- Detail and player route prefetch now warms upcoming episodes first, so binge watching caches the next and following episodes before backfilling the previous one.
+- Middle-episode prefetch changed from alternating next/previous to future-first, making autoplay and manual next-episode switches more likely to hit already resolved routes.
+- Updated unit coverage to lock the new prefetch order and prevent regressions to a less continuous-watch-friendly strategy.
+- App version labels, request user agents, and README notes are now updated to `0.5.10`.
+
 ### v0.5.9
 
 中文：

@@ -318,12 +318,13 @@ internal fun routePrefetchWindow(
     if (currentIndex < 0) return emptyList()
 
     val result = mutableListOf<Episode>()
-    var distance = 1
-    while (result.size < maxCount && (currentIndex + distance < episodes.size || currentIndex - distance >= 0)) {
-        episodes.getOrNull(currentIndex + distance)?.let { result.add(it) }
-        if (result.size >= maxCount) break
-        episodes.getOrNull(currentIndex - distance)?.let { result.add(it) }
-        distance += 1
+    for (index in (currentIndex + 1) until episodes.size) {
+        result.add(episodes[index])
+        if (result.size >= maxCount) return result
+    }
+    for (index in (currentIndex - 1) downTo 0) {
+        result.add(episodes[index])
+        if (result.size >= maxCount) return result
     }
     return result
 }
