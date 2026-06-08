@@ -254,6 +254,19 @@ internal fun routeSourceCoverageLabel(
     }
 }
 
+internal fun playerRouteCoverageLabel(routes: List<RouteCandidate>): String {
+    val visibleRoutes = routes.distinctBy { it.stream.id }
+    val routeCount = visibleRoutes.size
+    val sourceCount = visibleRoutes.map { it.sourceId }.distinct().size
+    return when {
+        routeCount <= 0 -> "无线路"
+        sourceCount > 1 && routeCount > sourceCount -> "${sourceCount}源 · ${routeCount}线"
+        sourceCount > 1 -> "${sourceCount}源"
+        routeCount > 1 -> "${routeCount}线"
+        else -> "单线"
+    }
+}
+
 private fun routeSourceCountLabel(sourceCount: Int, routeCount: Int): String {
     return if (sourceCount > 1) {
         "${sourceCount}源 · ${routeCount}线"

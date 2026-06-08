@@ -110,6 +110,19 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun playerRouteCoverageLabelDistinguishesSourcesFromRoutes() {
+        val onlineA = route("hls-a", StreamProtocol.HLS, 600, quality = "1080p", sourceId = "online-a", sourceName = "Online A")
+        val onlineB = route("hls-b", StreamProtocol.HLS, 500, quality = "720p", sourceId = "online-b", sourceName = "Online B")
+        val onlineBBackup = route("mp4-b", StreamProtocol.PROGRESSIVE, 400, quality = "480p", sourceId = "online-b", sourceName = "Online B")
+
+        assertEquals("无线路", playerRouteCoverageLabel(emptyList()))
+        assertEquals("单线", playerRouteCoverageLabel(listOf(onlineA)))
+        assertEquals("2线", playerRouteCoverageLabel(listOf(onlineB, onlineBBackup)))
+        assertEquals("2源", playerRouteCoverageLabel(listOf(onlineA, onlineB)))
+        assertEquals("2源 · 3线", playerRouteCoverageLabel(listOf(onlineA, onlineB, onlineBBackup)))
+    }
+
+    @Test
     fun routeUiStateDoesNotAutoplayWebViewOnlyRoute() {
         val webView = route("webview", StreamProtocol.WEBVIEW_ONLY, 1_000, quality = "1080p")
 

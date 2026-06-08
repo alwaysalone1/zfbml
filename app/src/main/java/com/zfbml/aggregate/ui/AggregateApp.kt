@@ -2033,7 +2033,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.31")
+                setRequestProperty("User-Agent", "ZFBML/0.5.32")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2524,7 +2524,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.5.31",
+                version = "0.5.32",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )
@@ -3469,7 +3469,7 @@ private fun DetailFirstPlayStrip(
             item { DetailDecisionChip("推荐源", state.recommendationTitle, AnimeAccentCyan) }
             item { DetailDecisionChip("清晰度", qualityLabel, AnimeAccentAmber) }
             if (state.routeCount > 1) {
-                item { DetailDecisionChip("可切换", "${state.routeCount}源", AnimeAccentViolet) }
+                item { DetailDecisionChip("可切换", state.sourceCoverageLabel, AnimeAccentViolet) }
             }
         }
     }
@@ -3527,7 +3527,7 @@ private fun DetailRouteStatusCard(
                 state.selectedEpisodeTitle,
                 "自动最佳",
                 playerQualityLabel(route),
-                if (state.routeCount > 1) "${state.routeCount} 个播放源" else null,
+                if (state.routeCount > 1) state.sourceCoverageLabel else null,
             ).filter { it.isNotBlank() }.distinct().joinToString(" · ")
         } ?: state.selectedEpisodeTitle
     } else {
@@ -4352,6 +4352,7 @@ private fun PlayerScreen(
     val routeOptions = remember(playerRoutes, failedStreamIds) {
         sortRoutesForUi(playerRoutes, failedStreamIds).distinctBy { it.stream.id }
     }
+    val routeCoverageLabel = remember(routeOptions) { playerRouteCoverageLabel(routeOptions) }
     var routeNotice by remember(stream.id) { mutableStateOf<String?>(null) }
     var danmakuItems by remember { mutableStateOf<List<DanmakuItem>>(emptyList()) }
     var danmakuEnabled by remember { mutableStateOf(true) }
@@ -4762,6 +4763,7 @@ private fun PlayerScreen(
                         if (detail.episodes.size > 1) "$index/${detail.episodes.size}" else "第 $index 集"
                     } ?: currentEpisode.title.ifBlank { "当前集" },
                     routeCount = routeOptions.size,
+                    routeCoverageLabel = routeCoverageLabel,
                     playbackSpeed = playbackSpeed,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -4816,6 +4818,7 @@ private fun PlayerScreen(
                     currentStream = currentStream,
                     currentRoute = currentRoute,
                     routeOptions = routeOptions,
+                    routeCoverageLabel = routeCoverageLabel,
                     routeNotice = routeNotice,
                     errorMessage = effectiveErrorMessage,
                     danmakuEnabled = danmakuEnabled,
@@ -5358,14 +5361,16 @@ private fun PortraitRouteInsightRow(
     stream: MediaStream,
     modifier: Modifier = Modifier,
 ) {
-    val routeCount = routes.size.takeIf { it > 0 } ?: 1
-    val onlineCount = routes.count { it.protocol != StreamProtocol.BITTORRENT && it.protocol != StreamProtocol.WEBVIEW_ONLY }
-    val btCount = routes.count { it.protocol == StreamProtocol.BITTORRENT }
+    val routeCoverageLabel = if (routes.isNotEmpty()) playerRouteCoverageLabel(routes) else "单线"
+    val onlineRoutes = routes.filter { it.protocol != StreamProtocol.BITTORRENT && it.protocol != StreamProtocol.WEBVIEW_ONLY }
+    val btRoutes = routes.filter { it.protocol == StreamProtocol.BITTORRENT }
+    val onlineValue = routeInsightCountLabel(onlineRoutes)
+    val btValue = routeInsightCountLabel(btRoutes)
     val currentLabel = stream.quality?.takeIf { it.isNotBlank() } ?: stream.protocol.displayName()
     val chips = listOf(
-        Triple("播放源", "${routeCount}源", AnimeAccentCyan),
-        Triple("在线", if (onlineCount > 0) "${onlineCount}源" else "待匹配", AnimeAccentPink),
-        Triple("备用", if (btCount > 0) "${btCount}源" else "自动", AnimeAccentAmber),
+        Triple("覆盖", routeCoverageLabel, AnimeAccentCyan),
+        Triple("在线", onlineValue ?: "待匹配", AnimeAccentPink),
+        Triple("备用", btValue ?: "自动", AnimeAccentAmber),
         Triple("当前", currentLabel, AnimeAccentGreen),
     )
 
@@ -5378,6 +5383,18 @@ private fun PortraitRouteInsightRow(
             val (label, value, color) = chips[index]
             PortraitRouteInsightChip(label = label, value = value, color = color)
         }
+    }
+}
+
+private fun routeInsightCountLabel(routes: List<RouteCandidate>): String? {
+    if (routes.isEmpty()) return null
+    val sourceCount = routes.map { it.sourceId }.distinct().size
+    val routeCount = routes.distinctBy { it.stream.id }.size
+    return when {
+        sourceCount > 1 && routeCount > sourceCount -> "${sourceCount}源 · ${routeCount}线"
+        sourceCount > 1 -> "${sourceCount}源"
+        routeCount > 1 -> "${routeCount}线"
+        else -> "单线"
     }
 }
 
@@ -5412,6 +5429,7 @@ private fun PlayerTopOverlay(
     compact: Boolean,
     episodeValue: String,
     routeCount: Int,
+    routeCoverageLabel: String,
     playbackSpeed: Float,
     modifier: Modifier = Modifier,
 ) {
@@ -5493,6 +5511,7 @@ private fun PlayerTopOverlay(
                 overlayState = overlayState,
                 episodeValue = episodeValue,
                 routeCount = routeCount,
+                routeCoverageLabel = routeCoverageLabel,
                 playbackSpeed = playbackSpeed,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -5505,11 +5524,12 @@ private fun PlayerTopStatusStrip(
     overlayState: PlayerOverlayState,
     episodeValue: String,
     routeCount: Int,
+    routeCoverageLabel: String,
     playbackSpeed: Float,
     modifier: Modifier = Modifier,
 ) {
     val sourceValue = if (routeCount > 1) {
-        "${overlayState.sourceLabel} · ${routeCount}源"
+        "${overlayState.sourceLabel} · $routeCoverageLabel"
     } else {
         overlayState.sourceLabel
     }
@@ -5761,6 +5781,7 @@ private fun PlayerBottomControls(
     currentStream: MediaStream,
     currentRoute: RouteCandidate?,
     routeOptions: List<RouteCandidate>,
+    routeCoverageLabel: String,
     routeNotice: String?,
     errorMessage: String?,
     danmakuEnabled: Boolean,
@@ -5891,6 +5912,7 @@ private fun PlayerBottomControls(
                 routeSummary = routeSummary,
                 quality = quality,
                 routeCount = routeOptions.size,
+                routeCoverageLabel = routeCoverageLabel,
                 episodeCount = episodeCount,
                 nextEpisode = nextEpisode,
                 danmakuEnabled = danmakuEnabled,
@@ -6266,6 +6288,7 @@ private fun PlayerFullscreenControlRow(
     routeSummary: String,
     quality: String,
     routeCount: Int,
+    routeCoverageLabel: String,
     episodeCount: Int,
     nextEpisode: Episode?,
     danmakuEnabled: Boolean,
@@ -6290,6 +6313,7 @@ private fun PlayerFullscreenControlRow(
             routeSummary = routeSummary,
             quality = quality,
             routeCount = routeCount,
+            routeCoverageLabel = routeCoverageLabel,
             episodeCount = episodeCount,
             playbackSpeed = playbackSpeed,
             hasPlaybackIssue = hasPlaybackIssue,
@@ -6309,6 +6333,7 @@ private fun PlayerFullscreenControlRow(
             PlayerActionBar(
                 quality = quality,
                 routeCount = routeCount,
+                routeCoverageLabel = routeCoverageLabel,
                 episodeCount = episodeCount,
                 nextEpisode = nextEpisode,
                 playbackSpeed = playbackSpeed,
@@ -6332,6 +6357,7 @@ private fun PlayerFullscreenStatusStrip(
     routeSummary: String,
     quality: String,
     routeCount: Int,
+    routeCoverageLabel: String,
     episodeCount: Int,
     playbackSpeed: Float,
     hasPlaybackIssue: Boolean,
@@ -6363,7 +6389,7 @@ private fun PlayerFullscreenStatusStrip(
         PlayerStatusTinyText(quality)
         PlayerStatusTinyText(formatPlaybackSpeed(playbackSpeed))
         if (routeCount > 1) {
-            PlayerStatusTinyText("${routeCount}源")
+            PlayerStatusTinyText(routeCoverageLabel)
         }
         if (episodeCount > 1) {
             PlayerStatusTinyText("${episodeCount}集")
@@ -6442,6 +6468,7 @@ private fun PlayerDanmakuInputBar(
 private fun PlayerActionBar(
     quality: String,
     routeCount: Int,
+    routeCoverageLabel: String,
     episodeCount: Int,
     nextEpisode: Episode?,
     playbackSpeed: Float,
@@ -6500,7 +6527,7 @@ private fun PlayerActionBar(
             PlayerActionSpec(
                 icon = Icons.Filled.VideoLibrary,
                 title = "换源",
-                value = "${routeCount.coerceAtLeast(1)}源",
+                value = routeCoverageLabel,
                 selected = activePanel == PlayerPanel.Route,
                 enabled = routeCount > 1,
                 onClick = { onShowPanel(PlayerPanel.Route) },
@@ -6603,6 +6630,7 @@ private fun PlayerOptionPanel(
     onOffline: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val routeCoverageLabel = remember(routeOptions) { playerRouteCoverageLabel(routeOptions) }
     BoxWithConstraints(modifier = modifier) {
         val landscape = maxWidth > maxHeight
         val panelWidth = when {
@@ -6682,6 +6710,7 @@ private fun PlayerOptionPanel(
                 PlayerPanelQuickTabs(
                     selectedPanel = panel,
                     routeCount = routeOptions.size,
+                    routeCoverageLabel = routeCoverageLabel,
                     episodeCount = detail.episodes.size,
                     danmakuEnabled = danmakuEnabled,
                     onSelected = onShowPanel,
@@ -6691,6 +6720,7 @@ private fun PlayerOptionPanel(
                     when (panel) {
                         PlayerPanel.More -> PlayerMorePanel(
                             routeCount = routeOptions.size,
+                            routeCoverageLabel = routeCoverageLabel,
                             episodeCount = detail.episodes.size,
                             routeLabel = currentRoute?.primaryRouteLabel() ?: currentStream.protocol.displayName(),
                             quality = currentStream.quality.orEmpty().ifBlank { "自动" },
@@ -6834,6 +6864,7 @@ private fun PlayerPanelContextBar(
 private fun PlayerPanelQuickTabs(
     selectedPanel: PlayerPanel,
     routeCount: Int,
+    routeCoverageLabel: String,
     episodeCount: Int,
     danmakuEnabled: Boolean,
     onSelected: (PlayerPanel) -> Unit,
@@ -6857,7 +6888,7 @@ private fun PlayerPanelQuickTabs(
             panel = PlayerPanel.Route,
             label = "换源",
             icon = Icons.Filled.VideoLibrary,
-            value = "${routeCount.coerceAtLeast(1)}源",
+            value = routeCoverageLabel,
             enabled = routeCount > 1,
         ),
         PlayerPanelTabSpec(
@@ -6951,6 +6982,7 @@ private fun PlayerPanelQuickTab(
 @Composable
 private fun PlayerMorePanel(
     routeCount: Int,
+    routeCoverageLabel: String,
     episodeCount: Int,
     routeLabel: String,
     quality: String,
@@ -6982,7 +7014,7 @@ private fun PlayerMorePanel(
         ),
         PlayerMoreAction(
             title = "换源",
-            subtitle = if (routeCount > 1) "$routeCount 个播放源" else "自动推荐",
+            subtitle = if (routeCount > 1) routeCoverageLabel else "自动推荐",
             icon = Icons.Filled.VideoLibrary,
             enabled = routeCount > 1,
             onClick = { onShowPanel(PlayerPanel.Route) },
@@ -7011,7 +7043,7 @@ private fun PlayerMorePanel(
             routeLabel = routeLabel,
             quality = quality,
             playbackSpeed = playbackSpeed,
-            routeCount = routeCount,
+            routeCoverageLabel = routeCoverageLabel,
             episodeCount = episodeCount,
             modifier = Modifier.fillMaxWidth(),
         )
@@ -7043,7 +7075,7 @@ private fun PlayerMoreSummaryCard(
     routeLabel: String,
     quality: String,
     playbackSpeed: Float,
-    routeCount: Int,
+    routeCoverageLabel: String,
     episodeCount: Int,
     modifier: Modifier = Modifier,
 ) {
@@ -7082,7 +7114,7 @@ private fun PlayerMoreSummaryCard(
                 Text(
                     text = listOf(
                         "当前源 ${routeLabel.ifBlank { "自动推荐" }}",
-                        "${routeCount.coerceAtLeast(1)} 个播放源",
+                        routeCoverageLabel,
                         "${episodeCount.coerceAtLeast(1)} 集",
                     ).joinToString(" · "),
                     style = MaterialTheme.typography.bodySmall,

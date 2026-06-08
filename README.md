@@ -25,6 +25,24 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.32
+
+中文：
+
+- 播放器新增统一的线路覆盖标签，区分“来源数”和“线路数”，避免把多线路误显示为多来源。
+- 横屏全屏顶部状态条、底部状态条、换源按钮、面板快捷入口和更多菜单统一使用覆盖标签。
+- 详情页决策 chip、压缩线路状态和竖屏线路洞察同步使用“几源 / 几线”语义。
+- 新增单元测试覆盖播放器线路覆盖标签。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.32`。
+
+English:
+
+- The player now uses a unified route-coverage label that distinguishes source count from route count, avoiding multi-route results being shown as multi-source.
+- Landscape fullscreen top status, bottom status, route action, panel quick tabs, and the More panel now share the same coverage label.
+- Detail decision chips, compact route status, and portrait route insights now use the same source/route wording.
+- Added unit coverage for the player route-coverage label.
+- App version labels, request user agents, and README notes are now updated to `0.5.32`.
+
 ### v0.5.31
 
 中文：
