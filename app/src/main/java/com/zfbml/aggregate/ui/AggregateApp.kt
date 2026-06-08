@@ -120,6 +120,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.zfbml.aggregate.AppGraph
@@ -265,6 +266,12 @@ private fun BrandSplashScreen() {
             modifier = Modifier.alpha(contentAlpha),
         ) {
             Box(contentAlignment = Alignment.Center) {
+                SplashDanmakuOrbit(
+                    progress = railProgress,
+                    modifier = Modifier
+                        .size(190.dp)
+                        .scale(glowScale),
+                )
                 Box(
                     modifier = Modifier
                         .size(152.dp)
@@ -300,6 +307,69 @@ private fun BrandSplashScreen() {
             SplashProgressRail(progress = railProgress, modifier = Modifier.width(164.dp))
         }
     }
+}
+
+@Composable
+private fun SplashDanmakuOrbit(progress: Float, modifier: Modifier = Modifier) {
+    Box(modifier = modifier) {
+        SplashDanmakuStreak(
+            width = 78.dp,
+            color = AnimeAccentCyan,
+            alpha = 0.44f,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .offset(x = (22 + progress * 14).dp, y = 25.dp),
+        )
+        SplashDanmakuStreak(
+            width = 58.dp,
+            color = AnimeAccentPink,
+            alpha = 0.4f,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .offset(x = ((1f - progress) * -16).dp, y = 56.dp),
+        )
+        SplashDanmakuStreak(
+            width = 92.dp,
+            color = AnimeAccentAmber,
+            alpha = 0.34f,
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .offset(x = (10 + progress * 20).dp, y = (-48).dp),
+        )
+        SplashDanmakuStreak(
+            width = 68.dp,
+            color = AnimeAccentViolet,
+            alpha = 0.32f,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .offset(x = ((1f - progress) * -18).dp, y = (-22).dp),
+        )
+    }
+}
+
+@Composable
+private fun SplashDanmakuStreak(
+    width: Dp,
+    color: Color,
+    alpha: Float,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .width(width)
+            .height(4.dp)
+            .clip(RoundedCornerShape(999.dp))
+            .background(
+                Brush.horizontalGradient(
+                    listOf(
+                        Color.Transparent,
+                        color.copy(alpha = alpha),
+                        Color.White.copy(alpha = alpha * 0.5f),
+                        Color.Transparent,
+                    ),
+                ),
+            ),
+    )
 }
 
 @Composable
@@ -1960,7 +2030,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.18")
+                setRequestProperty("User-Agent", "ZFBML/0.5.19")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2451,7 +2521,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.5.18",
+                version = "0.5.19",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )

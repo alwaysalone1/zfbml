@@ -9,7 +9,7 @@
         <item name="android:statusBarColor">#0D0D10</item>
         <item name="android:colorAccent">#FF5C8A</item>
         <item name="android:windowSplashScreenBackground">#0D0D10</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
         <item name="android:windowSplashScreenIconBackgroundColor">#18181C</item>
     </style>
 </resources>

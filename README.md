@@ -25,6 +25,22 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.19
+
+中文：
+
+- 应用图标补上 Android 13 themed/monochrome 图层，保留番剧书册、播放按钮、弹幕轨迹和收藏星标的核心品牌符号。
+- Android 12+ 系统启动页改用前景图层作为 splash icon，避免启动页把完整图标背景重复叠在系统图标底色上，视觉更干净。
+- Compose 开屏动画在 BrandMark 周围新增弹幕扫描轨道，和已有海报带、加载轨道一起形成更明确的二次元追番入口。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.19`。
+
+English:
+
+- Added an Android 13 themed/monochrome launcher icon layer while keeping the anime booklet, play button, danmaku trail, and favorite star brand marks.
+- Android 12+ system splash now uses the foreground icon layer, avoiding a duplicated full-icon background inside the splash icon container.
+- The Compose splash animation now adds danmaku sweep rails around the BrandMark, reinforcing the anime-tracking identity alongside the poster ribbon and loading rail.
+- App version labels, request user agents, and README notes are now updated to `0.5.19`.
+
 ### v0.5.18
 
 中文：
