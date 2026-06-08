@@ -25,6 +25,22 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.18
+
+中文：
+
+- Bangumi/Animeko 详情页的线路解析现在会在在线线路选择不足时补充少量备用命中，避免只有单一路线时线路面板缺少可切换兜底。
+- 补源策略保持有限：已有多个在线来源时不再解析备用源，在线不足时只取少量备用命中，并使用更短超时，兼顾开播速度和可切换空间。
+- 新增单元测试覆盖“单在线源会补备用线路”和“多在线源不触发备用补源”，锁定自动推荐优先、备用源补位的行为。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.18`。
+
+English:
+
+- Bangumi/Animeko detail route resolution now supplements sparse online results with a small number of fallback hits, giving the route panel a real backup choice instead of a single locked path.
+- The fallback pass is intentionally limited: diverse online sources skip fallback work, while sparse online results use only a few fallback hits with a shorter timeout.
+- Added unit coverage for sparse-online fallback supplementation and diverse-online fast return behavior.
+- App version labels, request user agents, and README notes are now updated to `0.5.18`.
+
 ### v0.5.17
 
 中文：

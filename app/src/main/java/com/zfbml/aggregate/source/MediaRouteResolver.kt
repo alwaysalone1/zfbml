@@ -50,11 +50,19 @@ class MediaRouteResolver(
             .filter { hit -> hit.result.raw["mediaKind"] == "online" }
             .take(MAX_ONLINE_HITS)
         val onlineRoutes = resolveHits(onlineHits, request)
-        val fallbackRoutes = if (onlineRoutes.isEmpty()) {
+        val shouldSupplementFallback = shouldResolveFallbackRoutes(onlineRoutes)
+        val fallbackRoutes = if (shouldSupplementFallback) {
+            val fallbackLimit = if (onlineRoutes.isEmpty()) MAX_FALLBACK_HITS else MAX_SUPPLEMENTAL_FALLBACK_HITS
+            val timeoutMs = if (onlineRoutes.isEmpty()) {
+                providerTimeoutMs
+            } else {
+                providerTimeoutMs.coerceAtMost(SUPPLEMENTAL_FALLBACK_TIMEOUT_MS)
+            }
             resolveHits(
                 hits.filterNot { hit -> hit.result.raw["mediaKind"] == "online" }
-                    .take(MAX_FALLBACK_HITS),
+                    .take(fallbackLimit),
                 request,
+                timeoutMs = timeoutMs,
             )
         } else {
             emptyList()
@@ -69,10 +77,11 @@ class MediaRouteResolver(
     private suspend fun resolveHits(
         hits: List<SearchHit>,
         request: MediaFetchRequest,
+        timeoutMs: Long = providerTimeoutMs,
     ): List<RouteCandidate> = coroutineScope {
         hits.map { hit ->
             async {
-                withTimeoutOrNull(providerTimeoutMs) {
+                withTimeoutOrNull(timeoutMs) {
                     resolveHit(hit, request)
                 }.orEmpty()
             }
@@ -82,6 +91,13 @@ class MediaRouteResolver(
             .distinctBy { "${it.sourceId}|${it.stream.url}" }
             .sortedWith(routeComparator())
             .take(MAX_ROUTES)
+    }
+
+    private fun shouldResolveFallbackRoutes(onlineRoutes: List<RouteCandidate>): Boolean {
+        if (onlineRoutes.isEmpty()) return true
+        val playableOnlineRoutes = onlineRoutes.filter { it.protocol != StreamProtocol.WEBVIEW_ONLY }
+        if (playableOnlineRoutes.size < MIN_PLAYABLE_ONLINE_ROUTES) return true
+        return playableOnlineRoutes.map { it.sourceId }.distinct().size < MIN_PLAYABLE_ONLINE_SOURCES
     }
 
     private suspend fun resolveHit(
@@ -274,7 +290,11 @@ class MediaRouteResolver(
         const val MAX_SEARCH_HITS = 24
         const val MAX_ONLINE_HITS = 8
         const val MAX_FALLBACK_HITS = 10
+        const val MAX_SUPPLEMENTAL_FALLBACK_HITS = 2
         const val MAX_EPISODES_PER_HIT = 2
         const val MAX_ROUTES = 24
+        const val MIN_PLAYABLE_ONLINE_ROUTES = 2
+        const val MIN_PLAYABLE_ONLINE_SOURCES = 2
+        const val SUPPLEMENTAL_FALLBACK_TIMEOUT_MS = 2_500L
     }
 }

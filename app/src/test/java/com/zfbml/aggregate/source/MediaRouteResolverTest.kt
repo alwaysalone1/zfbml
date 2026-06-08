@@ -175,6 +175,56 @@ class MediaRouteResolverTest {
         assertTrue(provider.maxConcurrentSearches.get() > 1)
     }
 
+    @Test
+    fun resolverSupplementsSparseOnlineRoutesWithLimitedFallback() = runTest {
+        val onlineProvider = OnlineChoiceProvider(id = "online-one", name = "Online One")
+        val backupProvider = BackupChoiceProvider()
+        val request = MediaFetchRequest.fromEpisode(
+            Episode(
+                providerId = "bangumi-catalog",
+                id = "catalog-1",
+                title = "Episode 1",
+                url = "bangumi://subject/1/episode/1",
+                index = 1,
+                raw = mapOf(
+                    "subjectNameCn" to "Test Anime",
+                    "subjectName" to "Test JP",
+                ),
+            ),
+        )
+
+        val routes = MediaRouteResolver(listOf(onlineProvider, backupProvider), providerTimeoutMs = 1_000L).resolve(request)
+
+        assertEquals(listOf("Online One", "Backup Choice"), routes.map { it.sourceName }.distinct())
+        assertEquals(StreamProtocol.HLS, routes.first().protocol)
+        assertEquals(1, backupProvider.detailCount.get())
+    }
+
+    @Test
+    fun resolverSkipsFallbackWhenOnlineSourcesAreAlreadyDiverse() = runTest {
+        val firstOnline = OnlineChoiceProvider(id = "online-one", name = "Online One")
+        val secondOnline = OnlineChoiceProvider(id = "online-two", name = "Online Two")
+        val backupProvider = BackupChoiceProvider()
+        val request = MediaFetchRequest.fromEpisode(
+            Episode(
+                providerId = "bangumi-catalog",
+                id = "catalog-1",
+                title = "Episode 1",
+                url = "bangumi://subject/1/episode/1",
+                index = 1,
+                raw = mapOf(
+                    "subjectNameCn" to "Test Anime",
+                    "subjectName" to "Test JP",
+                ),
+            ),
+        )
+
+        val routes = MediaRouteResolver(listOf(firstOnline, secondOnline, backupProvider), providerTimeoutMs = 1_000L).resolve(request)
+
+        assertEquals(listOf("Online One", "Online Two"), routes.map { it.sourceName }.distinct())
+        assertEquals(0, backupProvider.detailCount.get())
+    }
+
     private class FakeRouteProvider : SourceProvider {
         override val manifest = SourceManifest(
             id = "fake",
@@ -478,6 +528,113 @@ class MediaRouteResolverTest {
                     protocol = StreamProtocol.HLS,
                     quality = "1080p",
                     sourceScore = 60,
+                ),
+            )
+        }
+    }
+
+    private class OnlineChoiceProvider(
+        private val id: String,
+        private val name: String,
+    ) : SourceProvider {
+        override val manifest = SourceManifest(
+            id = id,
+            name = name,
+            version = "1",
+            author = "test",
+            capabilities = setOf(SourceCapability.SEARCH, SourceCapability.DETAIL, SourceCapability.STREAM),
+        )
+
+        override suspend fun search(query: String): List<SearchResult> {
+            return listOf(
+                SearchResult(
+                    providerId = manifest.id,
+                    title = "$query - 01 online",
+                    url = "$id://result/1",
+                    raw = mapOf("mediaKind" to "online"),
+                ),
+            )
+        }
+
+        override suspend fun loadDetail(result: SearchResult): MediaDetail {
+            return MediaDetail(
+                providerId = manifest.id,
+                title = result.title,
+                url = result.url,
+                episodes = listOf(
+                    Episode(
+                        providerId = manifest.id,
+                        id = "$id-ep-1",
+                        title = result.title,
+                        url = "${result.url}/stream",
+                        index = 1,
+                    ),
+                ),
+            )
+        }
+
+        override suspend fun resolveStreams(episode: Episode): List<MediaStream> {
+            return listOf(
+                MediaStream(
+                    id = episode.id,
+                    providerId = manifest.id,
+                    url = "${episode.url}.m3u8",
+                    protocol = StreamProtocol.HLS,
+                    quality = "1080p",
+                    sourceScore = 80,
+                ),
+            )
+        }
+    }
+
+    private class BackupChoiceProvider : SourceProvider {
+        val detailCount = AtomicInteger(0)
+
+        override val manifest = SourceManifest(
+            id = "backup-choice",
+            name = "Backup Choice",
+            version = "1",
+            author = "test",
+            capabilities = setOf(SourceCapability.SEARCH, SourceCapability.DETAIL, SourceCapability.STREAM),
+        )
+
+        override suspend fun search(query: String): List<SearchResult> {
+            return listOf(
+                SearchResult(
+                    providerId = manifest.id,
+                    title = "$query - 01 backup",
+                    url = "backup-choice://result/1",
+                ),
+            )
+        }
+
+        override suspend fun loadDetail(result: SearchResult): MediaDetail {
+            detailCount.incrementAndGet()
+            return MediaDetail(
+                providerId = manifest.id,
+                title = result.title,
+                url = result.url,
+                episodes = listOf(
+                    Episode(
+                        providerId = manifest.id,
+                        id = "backup-ep-1",
+                        title = result.title,
+                        url = "${result.url}/stream",
+                        index = 1,
+                    ),
+                ),
+            )
+        }
+
+        override suspend fun resolveStreams(episode: Episode): List<MediaStream> {
+            return listOf(
+                MediaStream(
+                    id = episode.id,
+                    providerId = manifest.id,
+                    url = "${episode.url}.mp4",
+                    protocol = StreamProtocol.PROGRESSIVE,
+                    quality = "720p",
+                    sourceScore = 40,
                 ),
             )
         }
