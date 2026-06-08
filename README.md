@@ -25,6 +25,23 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.51
+
+中文：
+- 搜索结果新增 `SearchResultCardUiState`，统一生成标题、副标题、来源标签、结果类型、动作文案和元数据标签。
+- 搜索结果卡现在会区分 Bangumi 资料库、直链、BT/RSS 和普通视频源，用户进入详情前即可判断结果类型。
+- 结果卡新增评分、集数、分类和热度标签，减少只看标题/来源名时的信息不足。
+- 新增单元测试覆盖 Bangumi 元数据摘要、直链结果和 BT/RSS 结果的卡片状态。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.51`。
+
+English:
+
+- Search results now use `SearchResultCardUiState` to centralize title, subtitle, source label, result type, action copy, and metadata chips.
+- Result cards distinguish Bangumi catalog hits, direct links, BT/RSS entries, and generic video sources before the user opens detail.
+- Result cards now show rating, episode count, category, and popularity chips when available.
+- Added unit coverage for Bangumi metadata, direct-link results, and BT/RSS result-card state.
+- App version labels, request user agents, and README notes are now updated to `0.5.51`.
+
 ### v0.5.50
 
 中文：

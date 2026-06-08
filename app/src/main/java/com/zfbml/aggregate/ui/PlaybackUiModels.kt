@@ -134,6 +134,23 @@ internal data class SearchLandingUiState(
     val searchableSourceCount: Int,
 )
 
+internal data class SearchResultChipUiState(
+    val label: String,
+    val tone: SourceLibraryTone,
+)
+
+internal data class SearchResultCardUiState(
+    val title: String,
+    val subtitle: String,
+    val providerLabel: String,
+    val typeLabel: String,
+    val actionLabel: String,
+    val posterUrl: String?,
+    val providerId: String,
+    val tone: SourceLibraryTone,
+    val chips: List<SearchResultChipUiState>,
+)
+
 internal data class ScheduleDayChipUiState(
     val weekdayId: Int,
     val label: String,
@@ -936,6 +953,38 @@ internal fun buildSearchLandingUiState(
         suggestions = suggestions,
         scheduleSuggestionCount = scheduleCount,
         searchableSourceCount = searchable,
+    )
+}
+
+internal fun buildSearchResultCardUiState(result: SearchResult): SearchResultCardUiState {
+    val providerKind = result.providerKindForSearch()
+    val chips = buildList {
+        result.raw["rating"]?.takeIf { it.isNotBlank() }?.let {
+            add(SearchResultChipUiState("评分 $it", SourceLibraryTone.Primary))
+        }
+        result.raw["episodeCount"]?.takeIf { it.isNotBlank() }?.let {
+            add(SearchResultChipUiState("${it} 集", SourceLibraryTone.Online))
+        }
+        result.raw["categoryTitle"]?.takeIf { it.isNotBlank() }?.let {
+            add(SearchResultChipUiState(it, SourceLibraryTone.Backup))
+        }
+        result.raw["doing"]?.toIntOrNull()?.takeIf { it > 0 }?.let {
+            add(SearchResultChipUiState("${it.compactBrowseCount()} 在看", SourceLibraryTone.Web))
+        }
+        if (isEmpty()) {
+            add(SearchResultChipUiState(providerKind.typeLabel, providerKind.tone))
+        }
+    }.distinctBy { it.label }.take(3)
+    return SearchResultCardUiState(
+        title = result.title.ifBlank { "未命名条目" },
+        subtitle = result.subtitle?.takeIf { it.isNotBlank() } ?: providerKind.subtitle,
+        providerLabel = providerKind.providerLabel,
+        typeLabel = providerKind.typeLabel,
+        actionLabel = providerKind.actionLabel,
+        posterUrl = result.posterUrl,
+        providerId = result.providerId,
+        tone = providerKind.tone,
+        chips = chips,
     )
 }
 
@@ -1772,6 +1821,47 @@ private fun SearchResult.searchKeywordCandidate(): String? {
         raw["name"],
     ).firstOrNull { !it.isNullOrBlank() }
     return (rawKeyword ?: title).trim().takeIf { it.isNotBlank() }
+}
+
+private data class SearchProviderKind(
+    val providerLabel: String,
+    val typeLabel: String,
+    val subtitle: String,
+    val actionLabel: String,
+    val tone: SourceLibraryTone,
+)
+
+private fun SearchResult.providerKindForSearch(): SearchProviderKind {
+    return when (providerId.lowercase()) {
+        "bangumi-catalog" -> SearchProviderKind(
+            providerLabel = "Bangumi 资料库",
+            typeLabel = "资料库",
+            subtitle = "番剧资料 / 选集 / 自动匹配播放源",
+            actionLabel = "进详情",
+            tone = SourceLibraryTone.Online,
+        )
+        "direct-url", "direct" -> SearchProviderKind(
+            providerLabel = "在线链接",
+            typeLabel = "直链",
+            subtitle = "直接播放入口 / 进入详情确认线路",
+            actionLabel = "确认线路",
+            tone = SourceLibraryTone.Primary,
+        )
+        "mikan", "dmhy", "nyaa", "acg-rip", "bangumi-moe", "bt" -> SearchProviderKind(
+            providerLabel = "番剧频道",
+            typeLabel = "BT/RSS",
+            subtitle = "资源频道 / 边下边播候选",
+            actionLabel = "看资源",
+            tone = SourceLibraryTone.Backup,
+        )
+        else -> SearchProviderKind(
+            providerLabel = providerDisplayIdForSearch(providerId),
+            typeLabel = "视频源",
+            subtitle = "来源命中 / 详情页继续匹配线路",
+            actionLabel = "进详情",
+            tone = SourceLibraryTone.Web,
+        )
+    }
 }
 
 private fun List<BangumiScheduleDay>.firstActiveScheduleDayFrom(currentDayId: Int): BangumiScheduleDay? {

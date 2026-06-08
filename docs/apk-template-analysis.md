@@ -107,3 +107,5 @@ This pass upgrades the app shell navigation. `AppNavigationUiState` now centrali
 This pass wires the app shell navigation to the real home schedule digest. `MainScaffold` now owns the weekly schedule load and shares one `HomeScheduleUiState` with both the Discover feed and top-level navigation, so the Discover tab can show the actual "today" update count once Bangumi schedule data is available.
 
 This pass upgrades the search landing surface. `SearchLandingUiState` turns the shared home schedule digest into first-class search suggestions, then fills with popular fallback keywords, so the search tab opens with data-backed anime entries and source-readiness copy before the user types.
+
+This pass upgrades search result cards. `SearchResultCardUiState` classifies catalog, direct-link, BT/RSS, and generic video-source hits, then exposes rating, episode count, category, and popularity chips so users can decide which result to open without relying on raw source names.

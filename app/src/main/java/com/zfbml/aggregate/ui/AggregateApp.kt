@@ -2330,7 +2330,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.50")
+                setRequestProperty("User-Agent", "ZFBML/0.5.51")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2823,7 +2823,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.50",
+            version = "0.5.51",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -3330,7 +3330,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.searchStatusItems(
         }
     } else {
         items(results) { result ->
-            ResultCard(result = result, onClick = { onOpenDetail(result) })
+            ResultCard(state = buildSearchResultCardUiState(result), onClick = { onOpenDetail(result) })
         }
     }
 }
@@ -3414,7 +3414,7 @@ private fun HeroTile(label: String, title: String, accent: Color, modifier: Modi
 private fun AnimeFeatureShelf() {
     LazyColumn(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         items(featureShelfItems()) { item ->
-            ResultCard(result = item, onClick = {})
+            ResultCard(state = buildSearchResultCardUiState(item), onClick = {})
         }
     }
 }
@@ -3422,7 +3422,8 @@ private fun AnimeFeatureShelf() {
 private fun featureShelfItems(): List<SearchResult> = featuredOnlineResults()
 
 @Composable
-private fun ResultCard(result: SearchResult, onClick: () -> Unit) {
+private fun ResultCard(state: SearchResultCardUiState, onClick: () -> Unit) {
+    val accent = sourceLibraryToneColor(state.tone)
     Card(
         onClick = onClick,
         modifier = Modifier
@@ -3438,20 +3439,40 @@ private fun ResultCard(result: SearchResult, onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             PosterArtwork(
-                posterUrl = result.posterUrl,
-                accent = providerAccent(result.providerId),
+                posterUrl = state.posterUrl,
+                accent = providerAccent(state.providerId),
                 modifier = Modifier
                     .width(112.dp)
                     .height(64.dp),
                 shape = RoundedCornerShape(6.dp),
                 icon = Icons.Filled.PlayArrow,
             )
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(result.title, style = MaterialTheme.typography.titleMedium, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                result.subtitle?.takeIf(String::isNotBlank)?.let {
-                    Text(it, style = MaterialTheme.typography.bodyMedium, color = AnimeMuted, maxLines = 1)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        state.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color.White,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
+                    )
+                    RouteStatusBadge(state.typeLabel, accent)
                 }
-                Text(providerDisplayName(result.providerId), style = MaterialTheme.typography.bodySmall, color = AnimeAccentCyan, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(state.subtitle, style = MaterialTheme.typography.bodyMedium, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    items(state.chips) { chip ->
+                        RouteStatusBadge(chip.label, sourceLibraryToneColor(chip.tone))
+                    }
+                }
+            }
+            Column(
+                modifier = Modifier.widthIn(max = 96.dp),
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(5.dp),
+            ) {
+                Text(state.providerLabel, style = MaterialTheme.typography.labelMedium, color = accent, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(state.actionLabel, style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.72f), maxLines = 1)
             }
         }
     }

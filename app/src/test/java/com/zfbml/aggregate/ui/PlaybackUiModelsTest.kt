@@ -624,6 +624,50 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun searchResultCardUiStateSummarizesBangumiMetadata() {
+        val state = buildSearchResultCardUiState(
+            SearchResult(
+                providerId = "bangumi-catalog",
+                title = "Alpha",
+                url = "bangumi://subject/1",
+                subtitle = "Bangumi 资料库 / 2024 / TV",
+                raw = mapOf(
+                    "rating" to "8.7",
+                    "episodeCount" to "12",
+                    "categoryTitle" to "日本动画",
+                    "doing" to "13200",
+                ),
+            ),
+        )
+
+        assertEquals("Alpha", state.title)
+        assertEquals("Bangumi 资料库", state.providerLabel)
+        assertEquals("资料库", state.typeLabel)
+        assertEquals("进详情", state.actionLabel)
+        assertEquals(SourceLibraryTone.Online, state.tone)
+        assertEquals(listOf("评分 8.7", "12 集", "日本动画"), state.chips.map { it.label })
+        assertEquals(SourceLibraryTone.Primary, state.chips.first().tone)
+    }
+
+    @Test
+    fun searchResultCardUiStateExplainsDirectAndBtFallbackKinds() {
+        val direct = buildSearchResultCardUiState(searchResult(providerId = "direct-url", title = "Direct"))
+        val bt = buildSearchResultCardUiState(searchResult(providerId = "mikan", title = "BT"))
+
+        assertEquals("在线链接", direct.providerLabel)
+        assertEquals("直链", direct.typeLabel)
+        assertEquals("确认线路", direct.actionLabel)
+        assertEquals(SourceLibraryTone.Primary, direct.tone)
+        assertEquals(listOf("直链"), direct.chips.map { it.label })
+
+        assertEquals("番剧频道", bt.providerLabel)
+        assertEquals("BT/RSS", bt.typeLabel)
+        assertEquals("看资源", bt.actionLabel)
+        assertEquals(SourceLibraryTone.Backup, bt.tone)
+        assertEquals(listOf("BT/RSS"), bt.chips.map { it.label })
+    }
+
+    @Test
     fun searchIndexUiStateSummarizesSourcesResultsAndFailures() {
         val manifests = listOf(
             manifest("bangumi-catalog", "Bangumi", setOf(SourceCapability.SEARCH, SourceCapability.DETAIL, SourceCapability.EPISODES)),
@@ -1046,19 +1090,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.50",
+            version = "0.5.51",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.50", state.version)
+        assertEquals("0.5.51", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.50" })
+        assertTrue(state.chips.any { it.label == "v0.5.51" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1072,7 +1116,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.50",
+            version = "0.5.51",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,
