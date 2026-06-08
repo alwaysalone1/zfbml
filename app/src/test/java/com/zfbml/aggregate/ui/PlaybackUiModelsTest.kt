@@ -821,6 +821,74 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun cacheLibraryUiStateSummarizesMedia3BtBlockedAndAdvancedCapabilities() {
+        val manifests = listOf(
+            manifest(
+                id = "hls",
+                name = "HLS",
+                capabilities = setOf(SourceCapability.SEARCH, SourceCapability.STREAM, SourceCapability.DOWNLOAD),
+                supportsDownload = true,
+            ),
+            manifest(
+                id = "bt",
+                name = "BT",
+                capabilities = setOf(SourceCapability.SEARCH, SourceCapability.STREAM, SourceCapability.BITTORRENT),
+                supportsDownload = true,
+            ),
+            manifest(
+                id = "web",
+                name = "Web",
+                capabilities = setOf(SourceCapability.SEARCH, SourceCapability.WEBVIEW_SNIFF),
+                requiresWebView = true,
+            ),
+        )
+
+        val state = buildCacheLibraryUiState(
+            manifests = manifests,
+            advancedEngineAvailable = true,
+        )
+
+        assertEquals(2, state.cacheableSourceCount)
+        assertEquals(1, state.media3SourceCount)
+        assertEquals(1, state.btSourceCount)
+        assertEquals(1, state.webBlockedSourceCount)
+        assertTrue(state.advancedEngineAvailable)
+        assertEquals("\u79bb\u7ebf\u7247\u5e93\u5df2\u63a5\u5165 2 \u4e2a\u7f13\u5b58\u6765\u6e90", state.headline)
+        assertTrue(state.summary.contains("Media3"))
+        assertTrue(state.summary.contains("BT"))
+        assertTrue(state.chips.any { it.label == "1 Media3" })
+        assertTrue(state.chips.any { it.label == "1 \u963b\u65ad" })
+
+        val media3 = state.capabilities.first { it.id == "media3" }
+        val bt = state.capabilities.first { it.id == "bt" }
+        val blocked = state.capabilities.first { it.id == "blocked" }
+        val advanced = state.capabilities.first { it.id == "advanced" }
+        assertEquals("1 \u6e90", media3.value)
+        assertEquals(SourceLibraryTone.Online, media3.tone)
+        assertEquals("1 \u6e90", bt.value)
+        assertEquals(SourceLibraryTone.Backup, bt.tone)
+        assertEquals("1 \u6e90", blocked.value)
+        assertEquals(SourceLibraryTone.Web, blocked.tone)
+        assertEquals("\u53ef\u7528", advanced.value)
+        assertEquals(SourceLibraryTone.Cache, advanced.tone)
+    }
+
+    @Test
+    fun cacheLibraryUiStateExplainsEmptyAndPendingAdvancedRuntime() {
+        val state = buildCacheLibraryUiState(emptyList())
+
+        assertEquals(0, state.cacheableSourceCount)
+        assertEquals("\u79bb\u7ebf\u7247\u5e93\u5f85\u63a5\u5165\u53ef\u7f13\u5b58\u6765\u6e90", state.headline)
+        assertTrue(state.summary.contains("HLS"))
+        assertEquals("0 \u53ef\u7f13\u5b58", state.chips.first().label)
+        assertEquals("\u5f85\u63a5", state.capabilities.first { it.id == "media3" }.value)
+        assertEquals("\u5f85\u6e90", state.capabilities.first { it.id == "bt" }.value)
+        assertEquals("\u65e0\u963b\u65ad", state.capabilities.first { it.id == "blocked" }.value)
+        assertEquals("\u5f85\u63a5", state.capabilities.first { it.id == "advanced" }.value)
+        assertEquals(SourceLibraryTone.Muted, state.capabilities.first { it.id == "advanced" }.tone)
+    }
+
+    @Test
     fun nextEpisodeForPlayerUsesPlaybackListOrder() {
         val episodes = listOf(
             episode(id = "ep-1", index = 1),

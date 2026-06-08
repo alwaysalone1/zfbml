@@ -59,6 +59,7 @@ Tooling: Android SDK `apkanalyzer.bat` for manifest, resource, file, and dex pac
 - Tencent Video exposes `PreDownloadSettingActivity` and `VBOfflineService`, pointing to a split between user-visible offline policy and background task execution.
 - Youku exposes `DownloadHomeActivity`, `CacheSeriesActivity`, and preload receivers, reinforcing that episode-level caching and preloading need clear labels before full task management exists.
 - ZFBML implementation direction: every player cache entry should explain whether the current route can be cached and why. Media3-compatible HLS/DASH/MP4 streams can enter the offline queue, WebView/DRM routes should surface their block reason, and BT routes should be described as handled by the torrent edge-cache path.
+- Updated cache direction: the Profile/offline surface should show Media3 cacheability, BT edge-cache, WebView/sniffing blockers, and advanced-download runtime status as normal user-facing cache strategy instead of static placeholder cards.
 
 ## Source Library And Route Strategy Findings
 
@@ -83,3 +84,5 @@ This pass adds a detail playback readiness summary. `DetailPlaybackReadinessUiSt
 This pass upgrades the category browse surface. `CategoryBrowseUiState` now centralizes category coverage, top rating, heat, source, list title, and empty/fallback copy, so category pages present a normal video-app channel summary instead of a loose list plus ad hoc metrics.
 
 This pass upgrades the source library surface. `SourceLibraryUiState` now centralizes online, BT fallback, cacheable, WebView sniffing, strategy-card, and source-card state, keeping route/source policy explainable without spreading provider logic through the Compose tree.
+
+This pass upgrades the offline cache surface. `CacheLibraryUiState` now centralizes Media3 cacheable sources, BT edge-cache sources, WebView/sniffing blockers, advanced-download runtime status, and cache capability cards so Profile and cache pages share one user-facing cache strategy model.

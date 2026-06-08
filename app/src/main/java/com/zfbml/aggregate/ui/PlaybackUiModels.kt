@@ -208,6 +208,26 @@ internal data class SourceLibraryUiState(
     val emptySubtitle: String,
 )
 
+internal data class CacheCapabilityUiState(
+    val id: String,
+    val title: String,
+    val value: String,
+    val subtitle: String,
+    val tone: SourceLibraryTone,
+)
+
+internal data class CacheLibraryUiState(
+    val headline: String,
+    val summary: String,
+    val cacheableSourceCount: Int,
+    val media3SourceCount: Int,
+    val btSourceCount: Int,
+    val webBlockedSourceCount: Int,
+    val advancedEngineAvailable: Boolean,
+    val chips: List<SourceLibraryChipUiState>,
+    val capabilities: List<CacheCapabilityUiState>,
+)
+
 internal data class PlayerOverlayState(
     val title: String,
     val episodeTitle: String,
@@ -1003,6 +1023,98 @@ internal fun buildSourceLibraryUiState(manifests: List<SourceManifest>): SourceL
         },
         emptyTitle = "暂无可展示来源",
         emptySubtitle = "接入在线源、BT 资源站或规则源后，这里会显示线路能力和兜底策略。",
+    )
+}
+
+internal fun buildCacheLibraryUiState(
+    manifests: List<SourceManifest>,
+    advancedEngineAvailable: Boolean = false,
+): CacheLibraryUiState {
+    val media3SourceCount = manifests.count { manifest ->
+        val cacheCapable = manifest.supportsDownload || SourceCapability.DOWNLOAD in manifest.capabilities
+        val nativeStream = SourceCapability.STREAM in manifest.capabilities &&
+            SourceCapability.BITTORRENT !in manifest.capabilities &&
+            SourceCapability.WEBVIEW_SNIFF !in manifest.capabilities &&
+            !manifest.requiresWebView
+        cacheCapable && nativeStream
+    }
+    val btSourceCount = manifests.count { SourceCapability.BITTORRENT in it.capabilities }
+    val webBlockedSourceCount = manifests.count {
+        it.requiresWebView || SourceCapability.WEBVIEW_SNIFF in it.capabilities
+    }
+    val cacheableSourceCount = media3SourceCount + btSourceCount
+    val headline = if (cacheableSourceCount > 0) {
+        "离线片库已接入 $cacheableSourceCount 个缓存来源"
+    } else {
+        "离线片库待接入可缓存来源"
+    }
+    val summary = when {
+        cacheableSourceCount == 0 -> "HLS / DASH / MP4 或 BT 来源接入后，这里会展示离线、预缓存和边下边播能力。"
+        media3SourceCount > 0 && btSourceCount > 0 -> "在线播放可进 Media3 离线队列，BT 资源走边下边播缓存；WebView/DRM 线路会显示阻断原因。"
+        media3SourceCount > 0 -> "HLS / DASH / MP4 线路可进入 Media3 离线队列，适合提前缓存后离线观看。"
+        else -> "当前以 BT 边下边播缓存为主，Media3 离线队列等待在线可缓存源补齐。"
+    }
+    val chips = buildList {
+        add(SourceLibraryChipUiState("${cacheableSourceCount} 可缓存", SourceLibraryTone.Cache))
+        add(SourceLibraryChipUiState("${media3SourceCount} Media3", SourceLibraryTone.Online))
+        if (btSourceCount > 0) add(SourceLibraryChipUiState("${btSourceCount} BT", SourceLibraryTone.Backup))
+        if (webBlockedSourceCount > 0) add(SourceLibraryChipUiState("${webBlockedSourceCount} 阻断", SourceLibraryTone.Web))
+    }
+    return CacheLibraryUiState(
+        headline = headline,
+        summary = summary,
+        cacheableSourceCount = cacheableSourceCount,
+        media3SourceCount = media3SourceCount,
+        btSourceCount = btSourceCount,
+        webBlockedSourceCount = webBlockedSourceCount,
+        advancedEngineAvailable = advancedEngineAvailable,
+        chips = chips,
+        capabilities = listOf(
+            CacheCapabilityUiState(
+                id = "media3",
+                title = "在线视频缓存",
+                value = if (media3SourceCount > 0) "${media3SourceCount} 源" else "待接",
+                subtitle = if (media3SourceCount > 0) {
+                    "HLS / DASH / MP4 可进入 Media3 离线队列"
+                } else {
+                    "等待可缓存的原生在线线路"
+                },
+                tone = SourceLibraryTone.Online,
+            ),
+            CacheCapabilityUiState(
+                id = "bt",
+                title = "边下边播",
+                value = if (btSourceCount > 0) "${btSourceCount} 源" else "待源",
+                subtitle = if (btSourceCount > 0) {
+                    "BT 资源由本地边下边播缓存路径接管"
+                } else {
+                    "暂无 BT 备用缓存来源"
+                },
+                tone = SourceLibraryTone.Backup,
+            ),
+            CacheCapabilityUiState(
+                id = "blocked",
+                title = "不可缓存线路",
+                value = if (webBlockedSourceCount > 0) "${webBlockedSourceCount} 源" else "无阻断",
+                subtitle = if (webBlockedSourceCount > 0) {
+                    "WebView / 嗅探类线路需要在线播放或切源"
+                } else {
+                    "当前来源未声明网页兜底阻断"
+                },
+                tone = if (webBlockedSourceCount > 0) SourceLibraryTone.Web else SourceLibraryTone.Muted,
+            ),
+            CacheCapabilityUiState(
+                id = "advanced",
+                title = "批量离线",
+                value = if (advancedEngineAvailable) "可用" else "待接",
+                subtitle = if (advancedEngineAvailable) {
+                    "高级下载运行时已可接管复杂任务"
+                } else {
+                    "剧集、字幕和多清晰度批量任务等待高级运行时"
+                },
+                tone = if (advancedEngineAvailable) SourceLibraryTone.Cache else SourceLibraryTone.Muted,
+            ),
+        ),
     )
 }
 

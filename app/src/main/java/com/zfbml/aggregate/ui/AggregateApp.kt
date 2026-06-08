@@ -141,7 +141,6 @@ import com.zfbml.aggregate.source.MediaDetail
 import com.zfbml.aggregate.source.MediaStream
 import com.zfbml.aggregate.source.RouteCandidate
 import com.zfbml.aggregate.source.SearchResult
-import com.zfbml.aggregate.source.SourceCapability
 import com.zfbml.aggregate.source.StreamProtocol
 import com.zfbml.aggregate.source.SourceSearchReport
 import com.zfbml.aggregate.source.catalog.BangumiCalendarRepository
@@ -2227,7 +2226,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.45")
+                setRequestProperty("User-Agent", "ZFBML/0.5.46")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2670,38 +2669,22 @@ private fun sourceLibraryToneColor(tone: SourceLibraryTone): Color {
 }
 
 @Composable
-private fun CacheScreen() {
+private fun CacheScreen(graph: AppGraph) {
+    val cacheState = remember(graph.sourceRegistry.manifests) {
+        buildCacheLibraryUiState(
+            manifests = graph.sourceRegistry.manifests,
+            advancedEngineAvailable = graph.advancedDownloadProvider.isAvailable(),
+        )
+    }
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         item {
-            Text("\u79BB\u7EBF\u7247\u5E93", style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold)
-            Text("\u7EE7\u7EED\u770B\u3001\u9884\u7F13\u51B2\u3001\u4E0B\u8F7D\u540E\u79BB\u7EBF\u64AD\u653E", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+            CacheLibraryHero(state = cacheState)
         }
-        item {
-            StatusPanel(
-                title = "\u5728\u7EBF\u89C6\u9891\u7F13\u5B58",
-                subtitle = "HLS / DASH / MP4 \u53EF\u7528\u65F6\u81EA\u52A8\u8FDB\u5165\u79BB\u7EBF\u961F\u5217",
-                value = "\u53EF\u64AD",
-                accent = AnimeAccentCyan,
-            )
-        }
-        item {
-            StatusPanel(
-                title = "\u8FB9\u7F13\u51B2\u8FB9\u64AD",
-                subtitle = "\u4E3A\u957F\u89C6\u9891\u9884\u7559\u7684\u540E\u53F0\u7F13\u51B2\u80FD\u529B",
-                value = "\u8C03\u8BD5",
-                accent = AnimeAccentPink,
-            )
-        }
-        item {
-            StatusPanel(
-                title = "\u6279\u91CF\u79BB\u7EBF",
-                subtitle = "\u5267\u96C6\u3001\u5B57\u5E55\u548C\u591A\u6E05\u6670\u5EA6\u4EFB\u52A1\u7BA1\u7406",
-                value = "\u5F85\u63A5",
-                accent = AnimeAccentAmber,
-            )
+        items(cacheState.capabilities, key = { it.id }) { capability ->
+            CacheCapabilityPanel(capability = capability)
         }
     }
 }
@@ -2710,8 +2693,11 @@ private fun CacheScreen() {
 private fun SettingsScreen(graph: AppGraph) {
     val sourceCount = graph.sourceRegistry.manifests.size
     val danmakuCount = graph.danmakuRegistry.profiles.size
-    val cacheableSourceCount = graph.sourceRegistry.manifests.count {
-        it.supportsDownload || SourceCapability.DOWNLOAD in it.capabilities
+    val cacheState = remember(graph.sourceRegistry.manifests) {
+        buildCacheLibraryUiState(
+            manifests = graph.sourceRegistry.manifests,
+            advancedEngineAvailable = graph.advancedDownloadProvider.isAvailable(),
+        )
     }
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(24.dp),
@@ -2719,7 +2705,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.5.45",
+                version = "0.5.46",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )
@@ -2730,13 +2716,23 @@ private fun SettingsScreen(graph: AppGraph) {
                     ProfileQuickCard("追番记录", "继续看入口", Icons.Filled.PlayArrow, AnimeAccentPink)
                 }
                 item {
-                    ProfileQuickCard("离线缓存", "${cacheableSourceCount} 源可缓存", Icons.Filled.CloudDownload, AnimeAccentCyan)
+                    ProfileQuickCard("离线缓存", "${cacheState.cacheableSourceCount} 源可缓存", Icons.Filled.CloudDownload, AnimeAccentCyan)
                 }
                 item {
                     ProfileQuickCard("弹幕设置", "${danmakuCount} 平台样式", Icons.Filled.ClosedCaption, AnimeAccentViolet)
                 }
                 item {
                     ProfileQuickCard("线路管理", "${sourceCount} 个来源", Icons.Filled.VideoLibrary, AnimeAccentAmber)
+                }
+            }
+        }
+        item {
+            CacheLibraryHero(state = cacheState)
+        }
+        item {
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                items(cacheState.capabilities, key = { it.id }) { capability ->
+                    CacheCapabilityMiniCard(capability = capability)
                 }
             }
         }
@@ -2756,7 +2752,7 @@ private fun SettingsScreen(graph: AppGraph) {
             ProfileSettingRow(
                 title = "离线缓存",
                 subtitle = "HLS / DASH / MP4 走 Media3 队列，BT 由边下边播引擎接管",
-                value = "${cacheableSourceCount} 源",
+                value = "${cacheState.cacheableSourceCount} 源",
                 icon = Icons.Filled.CloudDownload,
                 accent = AnimeAccentGreen,
             )
@@ -2778,6 +2774,71 @@ private fun SettingsScreen(graph: AppGraph) {
                 icon = Icons.Filled.VideoLibrary,
                 accent = AnimeAccentPink,
             )
+        }
+    }
+}
+
+@Composable
+private fun CacheLibraryHero(
+    state: CacheLibraryUiState,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth().focusable(),
+        color = AnimePanel,
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, AnimeBorder),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier.size(58.dp).clip(RoundedCornerShape(8.dp)).background(AnimeAccentGreen.copy(alpha = 0.16f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.CloudDownload, contentDescription = null, tint = AnimeAccentGreen, modifier = Modifier.size(28.dp))
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                Text(state.headline, style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold)
+                Text(state.summary, style = MaterialTheme.typography.bodyMedium, color = AnimeMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                    items(state.chips) { chip ->
+                        RouteStatusBadge(chip.label, sourceLibraryToneColor(chip.tone))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CacheCapabilityPanel(capability: CacheCapabilityUiState) {
+    StatusPanel(
+        title = capability.title,
+        subtitle = capability.subtitle,
+        value = capability.value,
+        accent = sourceLibraryToneColor(capability.tone),
+    )
+}
+
+@Composable
+private fun CacheCapabilityMiniCard(capability: CacheCapabilityUiState) {
+    val accent = sourceLibraryToneColor(capability.tone)
+    Card(
+        modifier = Modifier.width(154.dp).height(96.dp).focusable(),
+        colors = CardDefaults.cardColors(containerColor = AnimePanel),
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.28f)),
+        shape = RoundedCornerShape(8.dp),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize().padding(12.dp),
+            verticalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(capability.title, style = MaterialTheme.typography.labelMedium, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(capability.value, style = MaterialTheme.typography.titleLarge, color = accent, fontWeight = FontWeight.Bold, maxLines = 1)
+            Text(capability.subtitle, style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.72f), maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }

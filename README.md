@@ -25,6 +25,23 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.46
+
+中文：
+- 离线缓存新增 `CacheLibraryUiState`，统一计算 Media3 可缓存源、BT 边下边播源、WebView/嗅探阻断源和高级下载运行时状态。
+- “我的”页新增离线片库摘要和缓存能力卡，离线缓存入口现在展示真实可缓存来源数量、Media3 队列、BT 缓存和不可缓存原因。
+- 旧 `CacheScreen` 改为复用同一份缓存状态模型，避免独立缓存页和个人页文案分叉。
+- 新增单元测试覆盖 Media3、BT、WebView 阻断、高级运行时和空缓存来源状态。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.46`。
+
+English:
+
+- Offline cache now has `CacheLibraryUiState`, centralizing Media3-cacheable sources, BT edge-cache sources, WebView/sniffing blockers, and advanced-download runtime state.
+- The Profile page now shows an offline-library summary and cache capability cards with real cacheable source count, Media3 queue, BT cache path, and non-cacheable reasons.
+- The legacy `CacheScreen` reuses the same cache state model, keeping standalone cache and profile copy aligned.
+- Added unit coverage for Media3, BT, WebView blockers, advanced runtime, and empty cache-source states.
+- App version labels, request user agents, and README notes are now updated to `0.5.46`.
+
 ### v0.5.45
 
 中文：
