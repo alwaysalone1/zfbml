@@ -3,6 +3,11 @@ package com.zfbml.aggregate.ui
 import com.zfbml.aggregate.source.Episode
 import com.zfbml.aggregate.source.MediaStream
 import com.zfbml.aggregate.source.RouteCandidate
+import com.zfbml.aggregate.source.SearchResult
+import com.zfbml.aggregate.source.SourceCapability
+import com.zfbml.aggregate.source.SourceManifest
+import com.zfbml.aggregate.source.SourceSearchFailure
+import com.zfbml.aggregate.source.SourceSearchReport
 import com.zfbml.aggregate.source.StreamProtocol
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -495,6 +500,77 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun searchIndexUiStateSummarizesSourcesResultsAndFailures() {
+        val manifests = listOf(
+            manifest("bangumi-catalog", "Bangumi", setOf(SourceCapability.SEARCH, SourceCapability.DETAIL, SourceCapability.EPISODES)),
+            manifest("bt", "BT Source", setOf(SourceCapability.SEARCH, SourceCapability.STREAM, SourceCapability.BITTORRENT)),
+            manifest("direct-url", "Direct", setOf(SourceCapability.SEARCH, SourceCapability.STREAM)),
+        )
+        val results = listOf(
+            searchResult("bangumi-catalog", "Alpha"),
+            searchResult("bangumi-catalog", "Beta"),
+            searchResult("bt", "Gamma"),
+        )
+        val report = SourceSearchReport(
+            results = results,
+            failures = listOf(SourceSearchFailure("direct-url", "Direct", "timeout")),
+        )
+
+        val state = buildSearchIndexUiState(
+            manifests = manifests,
+            report = report,
+            results = results,
+        )
+
+        assertEquals(3, state.resultCount)
+        assertEquals(3, state.searchableSourceCount)
+        assertEquals(1, state.failedSourceCount)
+        assertEquals(SearchAllSourcesId, state.sourceFilters.first().id)
+        assertTrue(state.sourceFilters.first().selected)
+        assertTrue(state.headline.contains("\u547d\u4e2d 3"))
+        assertTrue(state.headline.contains("\u6e90\u5f02\u5e38"))
+
+        val bangumi = state.sourceFilters.first { it.id == "bangumi-catalog" }
+        val bt = state.sourceFilters.first { it.id == "bt" }
+        val direct = state.sourceFilters.first { it.id == "direct-url" }
+
+        assertEquals(2, bangumi.resultCount)
+        assertTrue(bt.capabilityLabel.contains("BT"))
+        assertTrue(direct.failed)
+        assertEquals("\u5f02\u5e38", direct.statusLabel)
+    }
+
+    @Test
+    fun searchIndexUiStateTracksSelectedSourceAndFiltersResults() {
+        val manifests = listOf(
+            manifest("bangumi-catalog", "Bangumi"),
+            manifest("bt", "BT Source", setOf(SourceCapability.SEARCH, SourceCapability.BITTORRENT)),
+        )
+        val results = listOf(
+            searchResult("bangumi-catalog", "Alpha"),
+            searchResult("bt", "Beta"),
+            searchResult("bt", "Gamma"),
+        )
+        val report = SourceSearchReport(results = results, failures = emptyList())
+
+        val state = buildSearchIndexUiState(
+            manifests = manifests,
+            report = report,
+            results = results,
+            selectedProviderId = "bt",
+        )
+        val filtered = searchResultsForProvider(results, state.selectedProviderId)
+
+        assertEquals("bt", state.selectedProviderId)
+        assertFalse(state.sourceFilters.first { it.id == SearchAllSourcesId }.selected)
+        assertTrue(state.sourceFilters.first { it.id == "bt" }.selected)
+        assertTrue(state.summary.contains("BT Source"))
+        assertEquals(listOf("Beta", "Gamma"), filtered.map { it.title })
+        assertEquals(results, searchResultsForProvider(results, null))
+        assertTrue(searchResultsForProvider(results, "missing").isEmpty())
+    }
+
+    @Test
     fun nextEpisodeForPlayerUsesPlaybackListOrder() {
         val episodes = listOf(
             episode(id = "ep-1", index = 1),
@@ -620,6 +696,28 @@ class PlaybackUiModelsTest {
         assertEquals("播放就绪", ready.playbackState)
         assertEquals("已就绪", ready.statusLabel)
         assertEquals("异常", failed.statusLabel)
+    }
+
+    private fun manifest(
+        id: String,
+        name: String,
+        capabilities: Set<SourceCapability> = setOf(SourceCapability.SEARCH),
+    ): SourceManifest {
+        return SourceManifest(
+            id = id,
+            name = name,
+            version = "1.0",
+            author = "test",
+            capabilities = capabilities,
+        )
+    }
+
+    private fun searchResult(providerId: String, title: String): SearchResult {
+        return SearchResult(
+            providerId = providerId,
+            title = title,
+            url = "zfbml://$providerId/$title",
+        )
     }
 
     private fun episode(id: String = "ep-1", index: Int = 1): Episode {

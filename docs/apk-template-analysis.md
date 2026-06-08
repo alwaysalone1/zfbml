@@ -30,6 +30,16 @@ Tooling: Android SDK `apkanalyzer.bat` for manifest, resource, file, and dex pac
 4. Borrow Tencent/Youku's preload mindset: source matching and next-episode route warming should be treated as a first-class playback surface, not hidden diagnostics.
 5. Keep source/route decisions explainable: users should see why the app recommends a route, when the next episode is warmed, and when fallback sources are being used.
 
+## Search, Index, And Overlay Findings
+
+- Bilibili exposes search as a platform surface, not a plain text box: its resource map includes search, bangumi, player, and danmaku preference surfaces that point to scoped discovery and visible playback decisions.
+- Dandanplay's manifest separates `SearchActivity`, `SearchAdvancedActivity`, anime detail, cache, and danmaku-source settings. For ZFBML this argues for making source scope and result source visible before the user opens detail.
+- Tencent Video and Youku both show large-app indexing patterns around search, preload, detail preloading, download/cache, and player services. The matching work should not be hidden as diagnostics; it should be summarized in normal UI.
+- ZFBML implementation direction: the search page should show searchable source count, failed sources, result count, and quick source filters. Result filtering should be a first-class index interaction, not a debug message.
+- Updated player direction: fullscreen controls, danmaku, route panels, and transient notices need explicit anti-obstruction rules so they do not cover the decisive video area or fight with each other.
+
 ## Current Implementation Focus
 
 This pass exposes route prefetching in the detail page. The app already warms nearby episodes through `SourceRegistry.prefetchRouteCandidates`; the UI now surfaces whether adjacent episodes are warming, warmed, queued, or waiting for fallback source coverage.
+
+The next pass after route prefetching adds visible search source coverage and per-source result filtering, based on the search/index findings above.

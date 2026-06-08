@@ -2081,7 +2081,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.38")
+                setRequestProperty("User-Agent", "ZFBML/0.5.39")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2186,6 +2186,15 @@ private fun SearchScreen(
     var loading by remember { mutableStateOf(false) }
     var searched by remember { mutableStateOf(false) }
     var searchMessage by remember { mutableStateOf<String?>(null) }
+    var searchReport by remember { mutableStateOf<SourceSearchReport?>(null) }
+    var selectedSearchProviderId by remember { mutableStateOf<String?>(null) }
+    val searchIndexUiState = buildSearchIndexUiState(
+        manifests = graph.sourceRegistry.manifests,
+        report = searchReport,
+        results = results,
+        selectedProviderId = selectedSearchProviderId,
+    )
+    val visibleResults = searchResultsForProvider(results, searchIndexUiState.selectedProviderId)
 
     fun runSearch(searchTerm: String = query) {
         val normalizedQuery = searchTerm.trim()
@@ -2194,14 +2203,19 @@ private fun SearchScreen(
         scope.launch {
             searched = true
             loading = true
+            results = emptyList()
             searchMessage = null
+            searchReport = null
+            selectedSearchProviderId = null
             runCatching { graph.sourceRegistry.searchAllWithReport(normalizedQuery) }
                 .onSuccess { report ->
                     results = report.results
+                    searchReport = report
                     searchMessage = report.statusMessage()
                 }
                 .onFailure { error ->
                     results = emptyList()
+                    searchReport = null
                     searchMessage = "\u641C\u7D22\u5931\u8D25: ${error.message ?: error::class.simpleName.orEmpty().ifBlank { "\u65E0\u8BE6\u7EC6\u9519\u8BEF" }}"
                 }
             loading = false
@@ -2243,6 +2257,16 @@ private fun SearchScreen(
                 )
             }
         }
+        if (searched || loading) {
+            item {
+                SearchIndexOverviewCard(
+                    state = searchIndexUiState,
+                    onSourceSelected = { sourceId ->
+                        selectedSearchProviderId = sourceId
+                    },
+                )
+            }
+        }
         item {
             ResultsHeader()
         }
@@ -2250,7 +2274,12 @@ private fun SearchScreen(
             loading = loading,
             searched = searched,
             searchMessage = searchMessage,
-            results = results,
+            results = visibleResults,
+            emptyMessage = if (searchIndexUiState.selectedProviderId != null && results.isNotEmpty() && visibleResults.isEmpty()) {
+                "\u5f53\u524d\u6765\u6e90\u6682\u65e0\u547d\u4e2d\uff0c\u53ef\u5207\u56de\u5168\u90e8\u7d22\u5f15\u6216\u6362\u4e00\u4e2a\u5173\u952e\u8bcd\u3002"
+            } else {
+                null
+            },
             onOpenDetail = onOpenDetail,
         )
     }
@@ -2572,7 +2601,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.5.38",
+                version = "0.5.39",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )
@@ -2836,6 +2865,150 @@ private fun SearchHintPanel() {
 }
 
 @Composable
+private fun SearchIndexOverviewCard(
+    state: SearchIndexUiState,
+    onSourceSelected: (String?) -> Unit,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = AnimePanel),
+        border = BorderStroke(1.dp, AnimeBorder),
+        shape = RoundedCornerShape(8.dp),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.Top,
+            ) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = state.headline,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        text = state.summary,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = AnimeMuted,
+                    )
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = state.resultCount.toString(),
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = AnimeAccentCyan,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(
+                        text = "\u7ed3\u679c",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = AnimeMuted,
+                    )
+                }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                SearchIndexMetric(
+                    label = "\u6765\u6e90",
+                    value = state.searchableSourceCount.toString(),
+                    accent = AnimeAccentCyan,
+                    modifier = Modifier.weight(1f),
+                )
+                SearchIndexMetric(
+                    label = "\u5f02\u5e38",
+                    value = state.failedSourceCount.toString(),
+                    accent = if (state.failedSourceCount > 0) AnimeAccentAmber else AnimeMuted,
+                    modifier = Modifier.weight(1f),
+                )
+                SearchIndexMetric(
+                    label = "\u7b5b\u9009",
+                    value = if (state.selectedProviderId == null) "\u5168\u90e8" else "1",
+                    accent = AnimeAccentPink,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(state.sourceFilters, key = { it.id }) { filter ->
+                    SearchSourceFilterButton(
+                        filter = filter,
+                        onClick = {
+                            onSourceSelected(if (filter.isAll) null else filter.id)
+                        },
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SearchIndexMetric(
+    label: String,
+    value: String,
+    accent: Color,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .border(BorderStroke(1.dp, AnimeBorder), RoundedCornerShape(8.dp))
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        Text(value, style = MaterialTheme.typography.titleMedium, color = accent, fontWeight = FontWeight.Bold, maxLines = 1)
+        Text(label, style = MaterialTheme.typography.labelSmall, color = AnimeMuted, maxLines = 1)
+    }
+}
+
+@Composable
+private fun SearchSourceFilterButton(
+    filter: SearchSourceFilterUiState,
+    onClick: () -> Unit,
+) {
+    val borderColor = when {
+        filter.selected -> AnimeAccentCyan
+        filter.failed -> AnimeAccentAmber.copy(alpha = 0.72f)
+        filter.resultCount > 0 -> AnimeAccentPink.copy(alpha = 0.58f)
+        else -> AnimeBorder
+    }
+    Surface(
+        modifier = Modifier
+            .widthIn(min = 122.dp, max = 188.dp)
+            .heightIn(min = 54.dp)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(8.dp),
+        color = if (filter.selected) AnimePanelSoft else Color.Transparent,
+        border = BorderStroke(1.dp, borderColor),
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(3.dp),
+        ) {
+            Text(
+                text = filter.name,
+                style = MaterialTheme.typography.labelLarge,
+                color = Color.White,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = "${filter.statusLabel} \u00b7 ${filter.capabilityLabel}",
+                style = MaterialTheme.typography.labelSmall,
+                color = if (filter.failed) AnimeAccentAmber else AnimeMuted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+@Composable
 private fun ResultsHeader() {
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
         Text("\u641c\u7d22\u7ed3\u679c", style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold)
@@ -2848,6 +3021,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.searchStatusItems(
     searched: Boolean,
     searchMessage: String?,
     results: List<SearchResult>,
+    emptyMessage: String? = null,
     onOpenDetail: (SearchResult) -> Unit,
 ) {
     if (loading) {
@@ -2863,7 +3037,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.searchStatusItems(
     if (results.isEmpty() && !loading) {
         if (searched) {
             item {
-                EmptySearchState()
+                EmptySearchState(message = emptyMessage)
             }
         } else {
             item {
@@ -2878,14 +3052,14 @@ private fun androidx.compose.foundation.lazy.LazyListScope.searchStatusItems(
 }
 
 @Composable
-private fun EmptySearchState() {
+private fun EmptySearchState(message: String? = null) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = AnimePanel),
         border = BorderStroke(1.dp, AnimeBorder),
     ) {
         Text(
-            text = "\u6ca1\u627e\u5230\u5408\u9002\u7ed3\u679c\uff0c\u53ef\u4ee5\u6362\u4e00\u4e2a\u756a\u540d\u3001\u522b\u540d\u6216\u5173\u952e\u8bcd\u518d\u8bd5\u3002",
+            text = message ?: "\u6ca1\u627e\u5230\u5408\u9002\u7ed3\u679c\uff0c\u53ef\u4ee5\u6362\u4e00\u4e2a\u756a\u540d\u3001\u522b\u540d\u6216\u5173\u952e\u8bcd\u518d\u8bd5\u3002",
             style = MaterialTheme.typography.bodyMedium,
             color = AnimeMuted,
             modifier = Modifier.padding(14.dp),

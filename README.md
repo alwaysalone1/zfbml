@@ -25,6 +25,24 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.39
+
+中文：
+
+- 搜索页新增“搜索索引”概览卡，展示可搜索来源数、异常来源数、结果数和当前筛选范围。
+- 搜索结果现在可按来源快速筛选，用户能直接看到 Bangumi、在线源、BT/RSS 或直连源各自命中情况。
+- APK 分析文档补充搜索/索引与播放器画面防遮挡方向，后续播放器浮层会围绕不遮挡关键画面继续优化。
+- 新增单元测试覆盖搜索索引 UI 状态、异常源摘要和按源过滤。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.39`。
+
+English:
+
+- The search page now includes a search-index overview with searchable source count, failed source count, result count, and current filter scope.
+- Search results can be filtered by source, making Bangumi, online, BT/RSS, and direct-link hits visible before opening detail.
+- APK analysis notes now include search/index guidance and a player anti-obstruction direction for future overlay work.
+- Added unit coverage for search-index UI state, failed-source summaries, and provider filtering.
+- App version labels, request user agents, and README notes are now updated to `0.5.39`.
+
 ### v0.5.38
 
 中文：

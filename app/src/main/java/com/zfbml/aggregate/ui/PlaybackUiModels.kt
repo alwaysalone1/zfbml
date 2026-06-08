@@ -3,6 +3,10 @@ package com.zfbml.aggregate.ui
 import com.zfbml.aggregate.source.Episode
 import com.zfbml.aggregate.source.MediaStream
 import com.zfbml.aggregate.source.RouteCandidate
+import com.zfbml.aggregate.source.SearchResult
+import com.zfbml.aggregate.source.SourceCapability
+import com.zfbml.aggregate.source.SourceManifest
+import com.zfbml.aggregate.source.SourceSearchReport
 import com.zfbml.aggregate.source.StreamProtocol
 
 internal enum class RouteLoadStatus {
@@ -63,6 +67,38 @@ internal data class RoutePrefetchUiState(
 ) {
     val hasActivePrefetch: Boolean = items.any { it.status == RoutePrefetchStatus.Warming }
 }
+
+internal const val SearchAllSourcesId = "__all_search_sources__"
+
+internal data class SearchSourceFilterUiState(
+    val id: String,
+    val name: String,
+    val resultCount: Int,
+    val failed: Boolean,
+    val message: String?,
+    val capabilityLabel: String,
+    val selected: Boolean,
+    val isAll: Boolean = false,
+) {
+    val statusLabel: String
+        get() = when {
+            isAll -> "\u5168\u90e8"
+            failed && resultCount > 0 -> "\u90e8\u5206\u5f02\u5e38"
+            failed -> "\u5f02\u5e38"
+            resultCount > 0 -> "\u547d\u4e2d $resultCount"
+            else -> "\u5df2\u7d22\u5f15"
+        }
+}
+
+internal data class SearchIndexUiState(
+    val headline: String,
+    val summary: String,
+    val resultCount: Int,
+    val searchableSourceCount: Int,
+    val failedSourceCount: Int,
+    val selectedProviderId: String?,
+    val sourceFilters: List<SearchSourceFilterUiState>,
+)
 
 internal data class PlayerOverlayState(
     val title: String,
@@ -504,6 +540,91 @@ internal fun buildRoutePrefetchUiState(
     return RoutePrefetchUiState(items = items, headline = headline, summary = summary)
 }
 
+internal fun buildSearchIndexUiState(
+    manifests: List<SourceManifest>,
+    report: SourceSearchReport?,
+    results: List<SearchResult>,
+    selectedProviderId: String? = null,
+): SearchIndexUiState {
+    val searchableManifests = manifests.filter { SourceCapability.SEARCH in it.capabilities }
+    val resultCounts = results.groupingBy { it.providerId }.eachCount()
+    val failuresByProvider = report?.failures?.associateBy { it.providerId }.orEmpty()
+    val manifestById = manifests.associateBy { it.id }
+    val providerIds = (searchableManifests.map { it.id } + resultCounts.keys + failuresByProvider.keys).distinct()
+    val selectedId = selectedProviderId?.takeIf { it in providerIds }
+    val failedCount = failuresByProvider.size
+    val totalResults = results.size
+    val selectedName = selectedId?.let { id ->
+        manifestById[id]?.name ?: providerDisplayIdForSearch(id)
+    }
+    val headline = when {
+        report == null -> "\u641c\u7d22\u7d22\u5f15\u5df2\u5c31\u7eea"
+        totalResults > 0 && failedCount > 0 -> "\u547d\u4e2d $totalResults \u4e2a\u7ed3\u679c\uff0c$failedCount \u4e2a\u6e90\u5f02\u5e38"
+        totalResults > 0 -> "\u547d\u4e2d $totalResults \u4e2a\u7ed3\u679c"
+        failedCount > 0 -> "\u6682\u65e0\u547d\u4e2d\uff0c$failedCount \u4e2a\u6e90\u5f02\u5e38"
+        else -> "\u6682\u65e0\u547d\u4e2d"
+    }
+    val summary = when {
+        selectedId != null -> {
+            val count = resultCounts[selectedId] ?: 0
+            val suffix = failuresByProvider[selectedId]
+                ?.let { "\uff0c\u8be5\u6e90\u5f02\u5e38: ${it.message}" }
+                .orEmpty()
+            "${selectedName ?: providerDisplayIdForSearch(selectedId)} \u00b7 $count \u4e2a\u7ed3\u679c$suffix"
+        }
+        report == null -> "\u5df2\u63a5\u5165 ${searchableManifests.size} \u4e2a\u53ef\u641c\u7d22\u6765\u6e90\uff0c\u641c\u7d22\u540e\u53ef\u6309\u6765\u6e90\u7b5b\u9009\u3002"
+        totalResults > 0 -> "\u53ef\u6309\u6765\u6e90\u7f29\u5c0f\u7d22\u5f15\u8303\u56f4\uff0c\u8be6\u60c5\u9875\u4f1a\u7ee7\u7eed\u5339\u914d\u6700\u4f18\u7ebf\u8def\u3002"
+        else -> "\u53ef\u6362\u756a\u540d\u3001\u522b\u540d\u6216\u5173\u952e\u8bcd\uff1b\u5f02\u5e38\u6e90\u4f1a\u5728\u4e0b\u65b9\u6807\u51fa\u3002"
+    }
+    val allFilter = SearchSourceFilterUiState(
+        id = SearchAllSourcesId,
+        name = "\u5168\u90e8\u7d22\u5f15",
+        resultCount = totalResults,
+        failed = failedCount > 0,
+        message = null,
+        capabilityLabel = "${searchableManifests.size} \u6e90",
+        selected = selectedId == null,
+        isAll = true,
+    )
+    val sourceFilters = providerIds.map { providerId ->
+        val manifest = manifestById[providerId]
+        val failure = failuresByProvider[providerId]
+        SearchSourceFilterUiState(
+            id = providerId,
+            name = manifest?.name ?: providerDisplayIdForSearch(providerId),
+            resultCount = resultCounts[providerId] ?: 0,
+            failed = failure != null,
+            message = failure?.message,
+            capabilityLabel = manifest?.searchCapabilityLabel().orEmpty().ifBlank { "\u7d22\u5f15" },
+            selected = selectedId == providerId,
+        )
+    }.sortedWith(
+        compareByDescending<SearchSourceFilterUiState> { it.selected }
+            .thenByDescending { it.resultCount }
+            .thenBy { it.failed }
+            .thenBy { it.name },
+    )
+
+    return SearchIndexUiState(
+        headline = headline,
+        summary = summary,
+        resultCount = totalResults,
+        searchableSourceCount = searchableManifests.size,
+        failedSourceCount = failedCount,
+        selectedProviderId = selectedId,
+        sourceFilters = listOf(allFilter) + sourceFilters,
+    )
+}
+
+internal fun searchResultsForProvider(
+    results: List<SearchResult>,
+    selectedProviderId: String?,
+): List<SearchResult> {
+    return selectedProviderId
+        ?.let { providerId -> results.filter { it.providerId == providerId } }
+        ?: results
+}
+
 internal fun nextEpisodeForPlayer(
     episodes: List<Episode>,
     currentEpisode: Episode,
@@ -772,6 +893,22 @@ private fun playerStatusLabelForUi(playbackState: String, notice: String?, error
         playbackState.isNotBlank() -> playbackState
         else -> "自动"
     }
+}
+
+private fun SourceManifest.searchCapabilityLabel(): String {
+    val labels = listOfNotNull(
+        "\u7d22\u5f15",
+        if (SourceCapability.STREAM in capabilities) "\u64ad\u653e" else null,
+        if (SourceCapability.BITTORRENT in capabilities) "BT" else null,
+        if (SourceCapability.WEBVIEW_SNIFF in capabilities) "\u55c5\u63a2" else null,
+        if (supportsDownload || SourceCapability.DOWNLOAD in capabilities) "\u7f13\u5b58" else null,
+        if (SourceCapability.EPISODES in capabilities) "\u9009\u96c6" else null,
+    )
+    return labels.distinct().take(3).joinToString(" \u00b7 ")
+}
+
+private fun providerDisplayIdForSearch(providerId: String): String {
+    return providerId.replace('-', ' ').replaceFirstChar { it.uppercase() }
 }
 
 internal fun StreamProtocol.uiProtocolName(): String {
