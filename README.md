@@ -25,6 +25,22 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.4.5
+
+中文：
+
+- 双击播放区域 seek 的反馈改为分侧显示：左半区双击在左侧展示后退提示，右半区双击在右侧展示快进提示。
+- 横屏按钮快进/快退仍保持居中反馈，避免按钮操作和手势操作的视觉语义混在一起。
+- 反馈 pill 新增方向图标，继续复用统一 seek 目标计算和边界策略。
+- App 内版本号、请求 UA 和 README 同步到 `0.4.5`。
+
+English:
+
+- Double-tap seek feedback now appears on the tapped side: left-half double taps show rewind feedback on the left, and right-half double taps show forward feedback on the right.
+- Fullscreen button seek feedback remains centered so button actions and gesture actions keep distinct visual meaning.
+- The feedback pill now includes direction icons while continuing to reuse the shared seek target and clamping policy.
+- App version labels, request user agents, and README notes are now updated to `0.4.5`.
+
 ### v0.4.4
 
 中文：

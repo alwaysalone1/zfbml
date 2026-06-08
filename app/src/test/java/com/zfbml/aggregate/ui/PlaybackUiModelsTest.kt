@@ -329,6 +329,14 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun playerSeekFeedbackPlacementSeparatesGestureFromButtonSeek() {
+        assertEquals(PlayerSeekFeedbackPlacement.Center, playerSeekFeedbackPlacement(deltaMs = -10_000L, fromGesture = false))
+        assertEquals(PlayerSeekFeedbackPlacement.Start, playerSeekFeedbackPlacement(deltaMs = -10_000L, fromGesture = true))
+        assertEquals(PlayerSeekFeedbackPlacement.End, playerSeekFeedbackPlacement(deltaMs = 10_000L, fromGesture = true))
+        assertEquals(PlayerSeekFeedbackPlacement.Center, playerSeekFeedbackPlacement(deltaMs = 0L, fromGesture = true))
+    }
+
+    @Test
     fun playerOverlayStateUsesShortStatusLabels() {
         val candidate = route("hls", StreamProtocol.HLS, 900, quality = "1080p")
         val playing = buildPlayerOverlayState(

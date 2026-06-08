@@ -1851,7 +1851,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.4.4")
+                setRequestProperty("User-Agent", "ZFBML/0.4.5")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2342,7 +2342,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.4.4",
+                version = "0.4.5",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )
@@ -4157,6 +4157,7 @@ private fun PlayerScreen(
     var playbackPositionMs by remember(currentStream.id) { mutableStateOf(0L) }
     var playbackDurationMs by remember(currentStream.id) { mutableStateOf(0L) }
     var seekFeedbackText by remember(currentStream.id) { mutableStateOf<String?>(null) }
+    var seekFeedbackPlacement by remember(currentStream.id) { mutableStateOf(PlayerSeekFeedbackPlacement.Center) }
     var seekFeedbackSerial by remember(currentStream.id) { mutableIntStateOf(0) }
     val profile = remember {
         DanmakuProfile(
@@ -4208,7 +4209,7 @@ private fun PlayerScreen(
         revealControls()
     }
 
-    fun seekBy(deltaMs: Long) {
+    fun seekBy(deltaMs: Long, fromGesture: Boolean = false) {
         revealControls()
         val duration = normalizePlaybackDurationMs(engine.player.duration)
         val currentPosition = engine.currentPositionMs()
@@ -4220,6 +4221,7 @@ private fun PlayerScreen(
         engine.player.seekTo(target)
         val direction = if (deltaMs >= 0L) "快进" else "后退"
         seekFeedbackText = "$direction ${kotlin.math.abs(deltaMs) / 1000L} 秒 · ${formatPlaybackTime(target)}"
+        seekFeedbackPlacement = playerSeekFeedbackPlacement(deltaMs, fromGesture)
         seekFeedbackSerial += 1
     }
 
@@ -4503,7 +4505,7 @@ private fun PlayerScreen(
                                     playerDoubleTapSeekDeltaMs(
                                         tapX = tapOffset.x,
                                         surfaceWidthPx = size.width,
-                                    )?.let(::seekBy)
+                                    )?.let { deltaMs -> seekBy(deltaMs, fromGesture = true) }
                                 }
                             },
                         )
@@ -4579,11 +4581,15 @@ private fun PlayerScreen(
                 enter = fadeIn(),
                 exit = fadeOut(),
                 modifier = Modifier
-                    .align(Alignment.Center)
+                    .align(seekFeedbackPlacement.feedbackAlignment())
+                    .padding(horizontal = if (seekFeedbackPlacement == PlayerSeekFeedbackPlacement.Center) 0.dp else 28.dp)
                     .offset(y = if (compact) 74.dp else 96.dp)
                     .zIndex(4.6f),
             ) {
-                PlayerSeekFeedbackPill(text = seekFeedbackText.orEmpty())
+                PlayerSeekFeedbackPill(
+                    text = seekFeedbackText.orEmpty(),
+                    placement = seekFeedbackPlacement,
+                )
             }
             AnimatedVisibility(
                 visible = controlsVisible && activePanel == null && !controlsLocked,
@@ -5484,21 +5490,51 @@ private fun PlayerCenterControls(
 @Composable
 private fun PlayerSeekFeedbackPill(
     text: String,
+    placement: PlayerSeekFeedbackPlacement,
     modifier: Modifier = Modifier,
 ) {
-    Text(
-        text = text,
-        style = MaterialTheme.typography.labelLarge,
-        color = Color.White,
-        fontWeight = FontWeight.Bold,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
+    Row(
         modifier = modifier
             .clip(RoundedCornerShape(8.dp))
             .background(Color.Black.copy(alpha = 0.58f))
             .border(1.dp, AnimeAccentPink.copy(alpha = 0.32f), RoundedCornerShape(8.dp))
             .padding(horizontal = 12.dp, vertical = 7.dp),
-    )
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(7.dp),
+    ) {
+        placement.feedbackIcon()?.let { icon ->
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = AnimeAccentPink,
+                modifier = Modifier.size(18.dp),
+            )
+        }
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelLarge,
+            color = Color.White,
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+private fun PlayerSeekFeedbackPlacement.feedbackAlignment(): Alignment {
+    return when (this) {
+        PlayerSeekFeedbackPlacement.Center -> Alignment.Center
+        PlayerSeekFeedbackPlacement.Start -> Alignment.CenterStart
+        PlayerSeekFeedbackPlacement.End -> Alignment.CenterEnd
+    }
+}
+
+private fun PlayerSeekFeedbackPlacement.feedbackIcon(): ImageVector? {
+    return when (this) {
+        PlayerSeekFeedbackPlacement.Center -> null
+        PlayerSeekFeedbackPlacement.Start -> Icons.Filled.Replay10
+        PlayerSeekFeedbackPlacement.End -> Icons.Filled.Forward10
+    }
 }
 
 @Composable

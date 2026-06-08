@@ -43,6 +43,12 @@ internal data class PlayerOverlayState(
     val error: String?,
 )
 
+internal enum class PlayerSeekFeedbackPlacement {
+    Center,
+    Start,
+    End,
+}
+
 internal data class RoutePanelUiState(
     val recommendedRoute: RouteCandidate?,
     val selectedRoute: RouteCandidate?,
@@ -306,6 +312,17 @@ internal fun playerDoubleTapSeekDeltaMs(
 ): Long? {
     if (surfaceWidthPx <= 0 || stepMs <= 0L) return null
     return if (tapX < surfaceWidthPx / 2f) -stepMs else stepMs
+}
+
+internal fun playerSeekFeedbackPlacement(
+    deltaMs: Long,
+    fromGesture: Boolean,
+): PlayerSeekFeedbackPlacement {
+    return when {
+        !fromGesture || deltaMs == 0L -> PlayerSeekFeedbackPlacement.Center
+        deltaMs < 0L -> PlayerSeekFeedbackPlacement.Start
+        else -> PlayerSeekFeedbackPlacement.End
+    }
 }
 
 internal fun recommendedSourceIdForRoutes(
