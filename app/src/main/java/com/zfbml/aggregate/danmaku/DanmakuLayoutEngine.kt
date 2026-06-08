@@ -129,7 +129,8 @@ internal data class ScheduledDanmakuEntry(
     val startX: Float,
     val endX: Float,
     val y: Float,
-    val screenWidthPx: Float,
+    val viewportStartX: Float,
+    val viewportEndX: Float,
     val metrics: DanmakuTextMetrics,
 )
 
@@ -137,7 +138,7 @@ private fun ScheduledDanmakuEntry.isVisibleAt(playbackMs: Double): Boolean {
     val elapsed = playbackMs - startMs
     if (elapsed < 0.0 || elapsed > activeWindowMs) return false
     val x = xAt(playbackMs)
-    return x + metrics.widthPx >= 0f && x <= screenWidthPx
+    return x + metrics.widthPx >= viewportStartX && x <= viewportEndX
 }
 
 private fun ScheduledDanmakuEntry.xAt(playbackMs: Double): Float {
@@ -162,6 +163,25 @@ private fun DanmakuMode.hasFixedFade(): Boolean {
     return this == DanmakuMode.Top || this == DanmakuMode.Bottom || this == DanmakuMode.Advanced
 }
 
+private fun DanmakuSafeArea.coerceWithin(widthPx: Float, heightPx: Float): DanmakuSafeArea {
+    val safeWidth = widthPx.coerceAtLeast(1f)
+    val safeHeight = heightPx.coerceAtLeast(1f)
+    val top = topInsetPx.coerceFiniteAtLeast(0f).coerceAtMost(safeHeight - 1f)
+    val bottom = bottomInsetPx.coerceFiniteAtLeast(0f).coerceAtMost(safeHeight - top - 1f)
+    val start = startInsetPx.coerceFiniteAtLeast(0f).coerceAtMost(safeWidth - 1f)
+    val end = endInsetPx.coerceFiniteAtLeast(0f).coerceAtMost(safeWidth - start - 1f)
+    return DanmakuSafeArea(
+        topInsetPx = top,
+        bottomInsetPx = bottom,
+        startInsetPx = start,
+        endInsetPx = end,
+    )
+}
+
+private fun Float.coerceFiniteAtLeast(minimumValue: Float): Float {
+    return if (isFinite()) coerceAtLeast(minimumValue) else minimumValue
+}
+
 class DanmakuLayoutEngine {
     fun layout(
         items: List<DanmakuItem>,
@@ -170,6 +190,7 @@ class DanmakuLayoutEngine {
         heightPx: Float,
         profile: DanmakuProfile,
         settings: DanmakuSettings,
+        safeArea: DanmakuSafeArea = DanmakuSafeArea(),
         measureText: ((DanmakuItem) -> DanmakuTextMetrics)? = null,
     ): List<RenderedDanmaku> {
         return prepare(
@@ -178,6 +199,7 @@ class DanmakuLayoutEngine {
             heightPx = heightPx,
             profile = profile,
             settings = settings,
+            safeArea = safeArea,
             measureText = measureText,
         ).render(playbackMs, settings.alpha)
     }
@@ -188,9 +210,15 @@ class DanmakuLayoutEngine {
         heightPx: Float,
         profile: DanmakuProfile,
         settings: DanmakuSettings,
+        safeArea: DanmakuSafeArea = DanmakuSafeArea(),
         measureText: ((DanmakuItem) -> DanmakuTextMetrics)? = null,
     ): PreparedDanmakuLayout {
         if (!settings.enabled || widthPx <= 0f || heightPx <= 0f) return PreparedDanmakuLayout.Empty
+        val boundedSafeArea = safeArea.coerceWithin(widthPx, heightPx)
+        val safeWidthPx = (widthPx - boundedSafeArea.startInsetPx - boundedSafeArea.endInsetPx).coerceAtLeast(1f)
+        val safeHeightPx = (heightPx - boundedSafeArea.topInsetPx - boundedSafeArea.bottomInsetPx).coerceAtLeast(1f)
+        val safeStartX = boundedSafeArea.startInsetPx
+        val safeEndX = boundedSafeArea.startInsetPx + safeWidthPx
         val measured = items
             .asSequence()
             .filter { item -> settings.blockedWords.none { item.text.contains(it, ignoreCase = true) } }
@@ -212,8 +240,8 @@ class DanmakuLayoutEngine {
 
         val lineHeight = measured.maxOf { it.metrics.lineHeightPx }
             .coerceAtLeast(18f)
-            .coerceAtMost(heightPx)
-        val physicalTracks = max(1, (heightPx / lineHeight).toInt())
+            .coerceAtMost(safeHeightPx)
+        val physicalTracks = max(1, (safeHeightPx / lineHeight).toInt())
         val densityLimit = max(1, (profile.maxTracks * settings.density.coerceIn(0.5f, 1.5f)).roundToInt())
         val totalTracks = physicalTracks.coerceAtMost(densityLimit)
         val hasTop = measured.any { it.item.mode == DanmakuMode.Top }
@@ -237,7 +265,7 @@ class DanmakuLayoutEngine {
                         slots = movingSlots,
                         direction = MovingDirection.RightToLeft,
                         startMs = item.timeMs,
-                        screenWidthPx = widthPx,
+                        screenWidthPx = safeWidthPx,
                         textWidthPx = metrics.widthPx,
                         durationMs = entry.durationMs,
                         gapPx = gapPx,
@@ -245,9 +273,9 @@ class DanmakuLayoutEngine {
                         val globalLane = movingStartLane + lane
                         ScheduledDanmaku(
                             lane = globalLane,
-                            startX = widthPx,
-                            endX = -metrics.widthPx,
-                            y = baselineForLane(globalLane, lineHeight, metrics),
+                            startX = safeEndX,
+                            endX = safeStartX - metrics.widthPx,
+                            y = boundedSafeArea.topInsetPx + baselineForLane(globalLane, lineHeight, metrics),
                         )
                     }
                 }
@@ -256,7 +284,7 @@ class DanmakuLayoutEngine {
                         slots = movingSlots,
                         direction = MovingDirection.LeftToRight,
                         startMs = item.timeMs,
-                        screenWidthPx = widthPx,
+                        screenWidthPx = safeWidthPx,
                         textWidthPx = metrics.widthPx,
                         durationMs = entry.durationMs,
                         gapPx = gapPx,
@@ -264,39 +292,40 @@ class DanmakuLayoutEngine {
                         val globalLane = movingStartLane + lane
                         ScheduledDanmaku(
                             lane = globalLane,
-                            startX = -metrics.widthPx,
-                            endX = widthPx,
-                            y = baselineForLane(globalLane, lineHeight, metrics),
+                            startX = safeStartX - metrics.widthPx,
+                            endX = safeEndX,
+                            y = boundedSafeArea.topInsetPx + baselineForLane(globalLane, lineHeight, metrics),
                         )
                     }
                 }
                 DanmakuMode.Top -> allocateFixedLane(topSlots, item.timeMs, entry.durationMs)?.let { lane ->
-                    val x = (widthPx - metrics.widthPx) / 2f
+                    val x = safeStartX + (safeWidthPx - metrics.widthPx) / 2f
                     ScheduledDanmaku(
                         lane = lane,
                         startX = x,
                         endX = x,
-                        y = baselineForLane(lane, lineHeight, metrics),
+                        y = boundedSafeArea.topInsetPx + baselineForLane(lane, lineHeight, metrics),
                     )
                 }
                 DanmakuMode.Bottom -> allocateFixedLane(bottomSlots, item.timeMs, entry.durationMs)?.let { lane ->
                     val globalLane = totalTracks - 1 - lane
-                    val x = (widthPx - metrics.widthPx) / 2f
+                    val x = safeStartX + (safeWidthPx - metrics.widthPx) / 2f
                     ScheduledDanmaku(
                         lane = globalLane,
                         startX = x,
                         endX = x,
-                        y = bottomBaselineForLane(lane, heightPx, lineHeight, metrics),
+                        y = boundedSafeArea.topInsetPx + bottomBaselineForLane(lane, safeHeightPx, lineHeight, metrics),
                     )
                 }
                 DanmakuMode.Advanced -> {
                     val position = item.position
-                    val x = position?.let { it.x * widthPx } ?: ((widthPx - metrics.widthPx) / 2f)
+                    val x = position?.let { safeStartX + it.x * safeWidthPx } ?: (safeStartX + (safeWidthPx - metrics.widthPx) / 2f)
                     ScheduledDanmaku(
                         lane = 0,
                         startX = x,
                         endX = x,
-                        y = position?.let { it.y * heightPx } ?: baselineForLane(0, lineHeight, metrics),
+                        y = position?.let { boundedSafeArea.topInsetPx + it.y * safeHeightPx }
+                            ?: (boundedSafeArea.topInsetPx + baselineForLane(0, lineHeight, metrics)),
                     )
                 }
                 DanmakuMode.Script -> null
@@ -311,7 +340,8 @@ class DanmakuLayoutEngine {
                     lane = scheduled.lane,
                     startX = scheduled.startX,
                     endX = scheduled.endX,
-                    screenWidthPx = widthPx,
+                    viewportStartX = safeStartX,
+                    viewportEndX = safeEndX,
                     metrics = metrics,
                 )
             }

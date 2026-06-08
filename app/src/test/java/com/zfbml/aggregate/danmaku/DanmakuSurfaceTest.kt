@@ -99,4 +99,34 @@ class DanmakuSurfaceTest {
 
         assertEquals(2, buildCount)
     }
+
+    @Test
+    fun layoutCacheInvalidatesWhenSafeAreaChanges() {
+        val cache = DanmakuSurfaceLayoutCache()
+        val profile = DanmakuProfile(DanmakuPlatform.Local)
+        val settings = DanmakuSettings()
+        val items = listOf(DanmakuItem(1_000, "safe", DanmakuMode.Scroll, platform = DanmakuPlatform.Local))
+        var buildCount = 0
+
+        fun cachedLayoutFor(safeArea: DanmakuSafeArea) {
+            cache.layoutFor(
+                items = items,
+                widthPx = 1_920f,
+                heightPx = 1_080f,
+                profile = profile,
+                settings = settings,
+                densityKey = 1f,
+                safeArea = safeArea,
+            ) {
+                buildCount += 1
+                PreparedDanmakuLayout.Empty
+            }
+        }
+
+        cachedLayoutFor(DanmakuSafeArea())
+        cachedLayoutFor(DanmakuSafeArea())
+        cachedLayoutFor(DanmakuSafeArea(topInsetPx = 80f, bottomInsetPx = 140f))
+
+        assertEquals(2, buildCount)
+    }
 }

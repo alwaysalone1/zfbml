@@ -25,6 +25,24 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.40
+
+中文：
+
+- 弹幕渲染新增 `DanmakuSafeArea`，布局引擎会按顶部、底部、左侧和右侧安全区重新分配轨道，避免弹幕压到播放器浮层。
+- 播放器根据横屏/竖屏、控制条显隐、锁定状态、右侧 Dock、播放面板和错误/切源通知动态计算弹幕安全区。
+- `DanmakuSurface` 的布局缓存纳入安全区变化，控制条或面板状态切换时会重新 prepare 弹幕布局。
+- 新增单元测试覆盖弹幕安全区坐标、Surface 缓存失效和播放器防遮挡策略。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.40`。
+
+English:
+
+- Danmaku rendering now supports `DanmakuSafeArea`, so the layout engine allocates tracks inside top, bottom, start, and end safe zones instead of the full video rectangle.
+- The player derives danmaku safe areas from portrait/landscape mode, visible controls, lock state, the side dock, option panels, and route/error notices.
+- `DanmakuSurface` now includes safe-area changes in its layout cache key, forcing a new prepared layout when overlays change.
+- Added unit coverage for safe-area coordinates, Surface cache invalidation, and the player anti-obstruction policy.
+- App version labels, request user agents, and README notes are now updated to `0.5.40`.
+
 ### v0.5.39
 
 中文：

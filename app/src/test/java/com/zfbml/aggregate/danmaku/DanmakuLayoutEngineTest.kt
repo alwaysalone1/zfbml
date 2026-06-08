@@ -93,6 +93,42 @@ class DanmakuLayoutEngineTest {
     }
 
     @Test
+    fun safeAreaKeepsDanmakuAwayFromPlayerOverlays() {
+        val items = listOf(
+            DanmakuItem(1_000L, "top", DanmakuMode.Top, platform = DanmakuPlatform.Local),
+            DanmakuItem(1_000L, "bottom", DanmakuMode.Bottom, platform = DanmakuPlatform.Local),
+            DanmakuItem(1_000L, "advanced", DanmakuMode.Advanced, position = DanmakuPosition(0.5f, 0.5f, 4_500L), platform = DanmakuPlatform.Local),
+        )
+
+        val rendered = DanmakuLayoutEngine().layout(
+            items = items,
+            playbackMs = 1_500,
+            widthPx = 1_920f,
+            heightPx = 1_080f,
+            profile = DanmakuProfile(DanmakuPlatform.Local, supportsAdvanced = true),
+            settings = DanmakuSettings(),
+            safeArea = DanmakuSafeArea(
+                topInsetPx = 90f,
+                bottomInsetPx = 180f,
+                startInsetPx = 120f,
+                endInsetPx = 360f,
+            ),
+            measureText = { DanmakuTextMetrics(textSizePx = 64f, widthPx = 220f, lineHeightPx = 84f, baselineOffsetPx = 66f) },
+        )
+
+        val safeTop = 90f
+        val safeBottom = 1_080f - 180f
+        val safeStart = 120f
+        val safeEnd = 1_920f - 360f
+
+        assertEquals(3, rendered.size)
+        assertTrue(rendered.all { it.y in safeTop..safeBottom })
+        assertTrue(rendered.all { it.x >= safeStart && it.x + it.widthPx <= safeEnd })
+        assertTrue(rendered.first { it.item.text == "top" }.y >= safeTop)
+        assertTrue(rendered.first { it.item.text == "bottom" }.y <= safeBottom)
+    }
+
+    @Test
     fun dropsScrollingDanmakuWhenNoLaneCanAvoidCollision() {
         val items = (0 until 5).map { index ->
             DanmakuItem(

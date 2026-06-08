@@ -56,6 +56,13 @@ data class DanmakuSettings(
     val blockedWords: Set<String> = emptySet(),
 )
 
+data class DanmakuSafeArea(
+    val topInsetPx: Float = 0f,
+    val bottomInsetPx: Float = 0f,
+    val startInsetPx: Float = 0f,
+    val endInsetPx: Float = 0f,
+)
+
 data class DanmakuMatch(
     val providerId: String,
     val platform: DanmakuPlatform,

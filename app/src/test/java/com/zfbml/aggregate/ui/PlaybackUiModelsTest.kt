@@ -609,6 +609,53 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun playerDanmakuSafeAreaTracksControlsPanelsAndLockState() {
+        val hidden = buildPlayerDanmakuSafeAreaUiState(
+            compact = false,
+            controlsVisible = false,
+            controlsLocked = false,
+            panelOpen = false,
+        )
+        val fullscreenControls = buildPlayerDanmakuSafeAreaUiState(
+            compact = false,
+            controlsVisible = true,
+            controlsLocked = false,
+            panelOpen = false,
+        )
+        val fullscreenPanel = buildPlayerDanmakuSafeAreaUiState(
+            compact = false,
+            controlsVisible = true,
+            controlsLocked = false,
+            panelOpen = true,
+            noticeVisible = true,
+        )
+        val locked = buildPlayerDanmakuSafeAreaUiState(
+            compact = false,
+            controlsVisible = false,
+            controlsLocked = true,
+            panelOpen = false,
+        )
+        val compact = buildPlayerDanmakuSafeAreaUiState(
+            compact = true,
+            controlsVisible = true,
+            controlsLocked = false,
+            panelOpen = false,
+            noticeVisible = true,
+        )
+
+        assertEquals(8, hidden.topInsetDp)
+        assertEquals(8, hidden.bottomInsetDp)
+        assertEquals(84, fullscreenControls.endInsetDp)
+        assertEquals(72, fullscreenControls.startInsetDp)
+        assertTrue(fullscreenPanel.endInsetDp > fullscreenControls.endInsetDp)
+        assertTrue(fullscreenPanel.bottomInsetDp > hidden.bottomInsetDp)
+        assertEquals(72, locked.startInsetDp)
+        assertEquals(0, locked.endInsetDp)
+        assertEquals(0, compact.endInsetDp)
+        assertTrue(compact.bottomInsetDp > hidden.bottomInsetDp)
+    }
+
+    @Test
     fun playerSeekTargetClampsToKnownDurationAndStart() {
         assertEquals(
             0L,

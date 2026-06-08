@@ -43,3 +43,5 @@ Tooling: Android SDK `apkanalyzer.bat` for manifest, resource, file, and dex pac
 This pass exposes route prefetching in the detail page. The app already warms nearby episodes through `SourceRegistry.prefetchRouteCandidates`; the UI now surfaces whether adjacent episodes are warming, warmed, queued, or waiting for fallback source coverage.
 
 The next pass after route prefetching adds visible search source coverage and per-source result filtering, based on the search/index findings above.
+
+This pass adds player anti-obstruction support for danmaku. `DanmakuSafeArea` lets the layout engine reserve top, bottom, start, and end zones, and the player now derives those zones from visible controls, fullscreen side dock, option panels, lock state, and route/error notices.

@@ -27,6 +27,7 @@ fun DanmakuSurface(
     isPlaying: Boolean,
     playbackSpeed: Float,
     modifier: Modifier = Modifier,
+    safeArea: DanmakuSafeArea = DanmakuSafeArea(),
 ) {
     val layoutEngine = remember { DanmakuLayoutEngine() }
     val layoutCache = remember { DanmakuSurfaceLayoutCache() }
@@ -82,6 +83,7 @@ fun DanmakuSurface(
             profile = profile,
             settings = settings,
             densityKey = density.density,
+            safeArea = safeArea,
         ) {
             layoutEngine.prepare(
                 items = items,
@@ -89,6 +91,7 @@ fun DanmakuSurface(
                 heightPx = size.height,
                 profile = profile,
                 settings = settings,
+                safeArea = safeArea,
             ) { item ->
                 val textSizePx = with(density) {
                     (item.fontSizeSp * profile.fontScale * settings.fontScale).sp.toPx()
@@ -213,6 +216,7 @@ internal class DanmakuSurfaceLayoutCache {
     private var profile: DanmakuProfile? = null
     private var settings: DanmakuLayoutSettingsKey? = null
     private var densityKey: Float = -1f
+    private var safeArea: DanmakuSafeArea = DanmakuSafeArea()
     private var layout: PreparedDanmakuLayout = PreparedDanmakuLayout.Empty
 
     fun layoutFor(
@@ -222,6 +226,7 @@ internal class DanmakuSurfaceLayoutCache {
         profile: DanmakuProfile,
         settings: DanmakuSettings,
         densityKey: Float,
+        safeArea: DanmakuSafeArea = DanmakuSafeArea(),
         build: () -> PreparedDanmakuLayout,
     ): PreparedDanmakuLayout {
         val settingsKey = DanmakuLayoutSettingsKey(settings)
@@ -233,7 +238,8 @@ internal class DanmakuSurfaceLayoutCache {
             this.heightPx != heightPx ||
             this.profile != profile ||
             this.settings != settingsKey ||
-            this.densityKey != densityKey
+            this.densityKey != densityKey ||
+            this.safeArea != safeArea
         ) {
             this.items = items
             this.widthPx = widthPx
@@ -241,6 +247,7 @@ internal class DanmakuSurfaceLayoutCache {
             this.profile = profile
             this.settings = settingsKey
             this.densityKey = densityKey
+            this.safeArea = safeArea
             layout = build()
         } else if (previousItems !== items) {
             this.items = items

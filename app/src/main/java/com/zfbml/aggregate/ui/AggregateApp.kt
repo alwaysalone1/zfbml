@@ -119,6 +119,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -130,6 +131,7 @@ import com.zfbml.aggregate.AppGraph
 import com.zfbml.aggregate.danmaku.DanmakuItem
 import com.zfbml.aggregate.danmaku.DanmakuPlatform
 import com.zfbml.aggregate.danmaku.DanmakuProfile
+import com.zfbml.aggregate.danmaku.DanmakuSafeArea
 import com.zfbml.aggregate.danmaku.DanmakuSettings
 import com.zfbml.aggregate.danmaku.DanmakuSurface
 import com.zfbml.aggregate.player.ExoPlayerEngine
@@ -2081,7 +2083,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.39")
+                setRequestProperty("User-Agent", "ZFBML/0.5.40")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2601,7 +2603,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.5.39",
+                version = "0.5.40",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )
@@ -5013,16 +5015,21 @@ private fun PlayerScreen(
 
     @Composable
     fun VideoStage(modifier: Modifier, compact: Boolean) {
-        val danmakuTopPadding = if (controlsVisible) {
-            if (compact) 36.dp else 52.dp
-        } else {
-            6.dp
-        }
-        val danmakuBottomPadding = when {
-            !controlsVisible -> 6.dp
-            activePanel != null -> if (compact) 18.dp else 210.dp
-            compact -> 76.dp
-            else -> 118.dp
+        val currentDensity = LocalDensity.current
+        val safeAreaState = buildPlayerDanmakuSafeAreaUiState(
+            compact = compact,
+            controlsVisible = controlsVisible,
+            controlsLocked = controlsLocked,
+            panelOpen = activePanel != null,
+            noticeVisible = routeNotice != null || effectiveErrorMessage != null,
+        )
+        val danmakuSafeArea = with(currentDensity) {
+            DanmakuSafeArea(
+                topInsetPx = safeAreaState.topInsetDp.dp.toPx(),
+                bottomInsetPx = safeAreaState.bottomInsetDp.dp.toPx(),
+                startInsetPx = safeAreaState.startInsetDp.dp.toPx(),
+                endInsetPx = safeAreaState.endInsetDp.dp.toPx(),
+            )
         }
         Box(modifier.background(Color.Black)) {
             if (currentStream.protocol == StreamProtocol.BITTORRENT && torrentPlaybackUrl == null) {
@@ -5062,11 +5069,11 @@ private fun PlayerScreen(
                 ),
                 isPlaying = state.isPlaying,
                 playbackSpeed = playbackSpeed,
+                safeArea = danmakuSafeArea,
                 modifier = Modifier
                     .align(Alignment.Center)
                     .fillMaxWidth()
-                    .aspectRatio(16f / 9f)
-                    .padding(top = danmakuTopPadding, bottom = danmakuBottomPadding),
+                    .aspectRatio(16f / 9f),
             )
             Box(
                 modifier = Modifier

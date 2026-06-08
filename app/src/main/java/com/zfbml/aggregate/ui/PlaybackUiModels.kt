@@ -112,6 +112,13 @@ internal data class PlayerOverlayState(
     val error: String?,
 )
 
+internal data class PlayerDanmakuSafeAreaUiState(
+    val topInsetDp: Int,
+    val bottomInsetDp: Int,
+    val startInsetDp: Int,
+    val endInsetDp: Int,
+)
+
 internal enum class PlayerSeekFeedbackPlacement {
     Center,
     Start,
@@ -646,6 +653,44 @@ internal fun playerProgressPollDelayMs(
         controlsVisible -> 300L
         else -> 500L
     }
+}
+
+internal fun buildPlayerDanmakuSafeAreaUiState(
+    compact: Boolean,
+    controlsVisible: Boolean,
+    controlsLocked: Boolean,
+    panelOpen: Boolean,
+    noticeVisible: Boolean = false,
+): PlayerDanmakuSafeAreaUiState {
+    val visibleControls = controlsVisible && !controlsLocked
+    val topInset = when {
+        !visibleControls -> 8
+        compact -> 40
+        else -> 58
+    }
+    val bottomInset = when {
+        !visibleControls -> 8
+        panelOpen && compact -> 22
+        panelOpen -> 112
+        compact -> if (noticeVisible) 112 else 86
+        else -> if (noticeVisible) 162 else 128
+    }
+    val startInset = when {
+        !compact && controlsLocked -> 72
+        !compact && visibleControls && !panelOpen -> 72
+        else -> 0
+    }
+    val endInset = when {
+        compact || controlsLocked || !visibleControls -> 0
+        panelOpen -> 414
+        else -> 84
+    }
+    return PlayerDanmakuSafeAreaUiState(
+        topInsetDp = topInset,
+        bottomInsetDp = bottomInset,
+        startInsetDp = startInset,
+        endInsetDp = endInset,
+    )
 }
 
 internal fun playerSeekTargetMs(
