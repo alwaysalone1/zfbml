@@ -12,6 +12,47 @@ import org.junit.Test
 
 class SourceRegistryTest {
     @Test
+    fun detailLoadingCachesResult() = runTest {
+        val provider = CountingProvider()
+        val registry = SourceRegistry(listOf(provider))
+        val result = result("1")
+
+        val first = registry.loadDetail(result)
+        val second = registry.loadDetail(result)
+
+        assertEquals(first, second)
+        assertEquals(1, provider.detailCount.get())
+    }
+
+    @Test
+    fun detailLoadingCoalescesConcurrentCalls() = runTest {
+        val provider = CountingProvider(detailDelayMs = 50)
+        val registry = SourceRegistry(listOf(provider))
+        val result = result("2")
+
+        val results = List(5) {
+            async { registry.loadDetail(result) }
+        }.awaitAll()
+
+        assertEquals(1, results.distinct().size)
+        assertEquals(1, provider.detailCount.get())
+    }
+
+    @Test
+    fun failedDetailLoadingIsNotCached() = runTest {
+        val provider = FlakyProvider()
+        val registry = SourceRegistry(listOf(provider))
+        val result = result("3")
+
+        val first = runCatching { registry.loadDetail(result) }
+        val second = registry.loadDetail(result)
+
+        assertEquals(true, first.isFailure)
+        assertEquals("Title 3", second.title)
+        assertEquals(2, provider.detailCount.get())
+    }
+
+    @Test
     fun routeCandidateResolutionCachesEpisode() = runTest {
         val provider = CountingProvider()
         val registry = SourceRegistry(listOf(provider))
@@ -104,6 +145,15 @@ class SourceRegistryTest {
         assertEquals(1, provider.resolveCount.get())
     }
 
+    private fun result(id: String): SearchResult {
+        return SearchResult(
+            providerId = "counting",
+            title = "Title $id",
+            url = "counting://detail/$id",
+            raw = mapOf("subjectId" to "subject-$id"),
+        )
+    }
+
     private fun episode(id: String): Episode {
         return Episode(
             providerId = "counting",
@@ -120,7 +170,9 @@ class SourceRegistryTest {
 
     private class CountingProvider(
         private val delayMs: Long = 0L,
+        private val detailDelayMs: Long = 0L,
     ) : SourceProvider {
+        val detailCount = AtomicInteger(0)
         val resolveCount = AtomicInteger(0)
 
         override val manifest = SourceManifest(
@@ -134,7 +186,14 @@ class SourceRegistryTest {
         override suspend fun search(query: String): List<SearchResult> = emptyList()
 
         override suspend fun loadDetail(result: SearchResult): MediaDetail {
-            return MediaDetail(providerId = manifest.id, title = result.title, url = result.url)
+            val count = detailCount.incrementAndGet()
+            if (detailDelayMs > 0) delay(detailDelayMs)
+            return MediaDetail(
+                providerId = manifest.id,
+                title = result.title,
+                url = result.url,
+                summary = "detail-$count",
+            )
         }
 
         override suspend fun resolveStreams(episode: Episode): List<MediaStream> {
@@ -154,6 +213,7 @@ class SourceRegistryTest {
     }
 
     private class FlakyProvider : SourceProvider {
+        val detailCount = AtomicInteger(0)
         val resolveCount = AtomicInteger(0)
 
         override val manifest = SourceManifest(
@@ -167,6 +227,9 @@ class SourceRegistryTest {
         override suspend fun search(query: String): List<SearchResult> = emptyList()
 
         override suspend fun loadDetail(result: SearchResult): MediaDetail {
+            if (detailCount.incrementAndGet() == 1) {
+                error("temporary detail failure")
+            }
             return MediaDetail(providerId = manifest.id, title = result.title, url = result.url)
         }
 

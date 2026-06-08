@@ -25,6 +25,22 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.5
+
+中文：
+
+- 详情页加载现在通过 `SourceRegistry` 复用成功的 `MediaDetail` 结果，返回同一个番剧详情时不再重复触发源解析。
+- 同一个条目的并发详情请求会合并为一次 provider 调用，降低快速进入/返回详情页时的等待和闪烁。
+- 详情加载失败不会写入缓存，下一次进入仍会重新尝试，避免临时网络失败污染后续状态。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.5`。
+
+English:
+
+- Detail loading now reuses successful `MediaDetail` results through `SourceRegistry`, avoiding repeated source parsing when returning to the same title.
+- Concurrent detail requests for the same item are coalesced into one provider call to reduce waits and flicker during quick detail navigation.
+- Failed detail loads are not cached, so later attempts can retry instead of preserving transient network failures.
+- App version labels, request user agents, and README notes are now updated to `0.5.5`.
+
 ### v0.5.4
 
 中文：

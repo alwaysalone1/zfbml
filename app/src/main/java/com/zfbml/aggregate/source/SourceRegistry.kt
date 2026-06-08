@@ -11,8 +11,12 @@ import kotlinx.coroutines.withTimeout
 class SourceRegistry(
     providers: List<SourceProvider>,
     private val routeCacheSize: Int = DEFAULT_ROUTE_CACHE_SIZE,
+    private val detailCacheSize: Int = DEFAULT_DETAIL_CACHE_SIZE,
 ) {
     private val providersById = providers.associateBy { it.manifest.id }
+    private val detailCacheLock = Mutex()
+    private val detailCache = LinkedHashMap<DetailCacheKey, MediaDetail>(16, 0.75f, true)
+    private val inFlightDetailRequests = mutableMapOf<DetailCacheKey, Deferred<MediaDetail>>()
     private val routeCacheLock = Mutex()
     private val routeCandidateCache = LinkedHashMap<RouteCacheKey, List<RouteCandidate>>(16, 0.75f, true)
     private val inFlightRouteRequests = mutableMapOf<RouteCacheKey, Deferred<List<RouteCandidate>>>()
@@ -60,6 +64,44 @@ class SourceRegistry(
     }
 
     suspend fun loadDetail(result: SearchResult): MediaDetail {
+        val cacheKey = result.detailCacheKey()
+        return coroutineScope {
+            var createdRequest = false
+            val request = detailCacheLock.withLock {
+                detailCache[cacheKey]?.let { return@coroutineScope it }
+                inFlightDetailRequests[cacheKey] ?: async {
+                    loadDetailUncached(result)
+                }.also { deferred ->
+                    inFlightDetailRequests[cacheKey] = deferred
+                    createdRequest = true
+                }
+            }
+
+            try {
+                val detail = request.await()
+                if (createdRequest) {
+                    detailCacheLock.withLock {
+                        if (inFlightDetailRequests[cacheKey] === request) {
+                            inFlightDetailRequests.remove(cacheKey)
+                        }
+                        cacheDetail(cacheKey, detail)
+                    }
+                }
+                detail
+            } catch (error: Throwable) {
+                if (createdRequest) {
+                    detailCacheLock.withLock {
+                        if (inFlightDetailRequests[cacheKey] === request) {
+                            inFlightDetailRequests.remove(cacheKey)
+                        }
+                    }
+                }
+                throw error
+            }
+        }
+    }
+
+    private suspend fun loadDetailUncached(result: SearchResult): MediaDetail {
         val provider = requireNotNull(provider(result.providerId)) {
             "No provider registered for ${result.providerId}"
         }
@@ -202,6 +244,29 @@ class SourceRegistry(
         }
     }
 
+    private fun cacheDetail(key: DetailCacheKey, detail: MediaDetail) {
+        if (detailCacheSize <= 0) return
+        detailCache[key] = detail
+        while (detailCache.size > detailCacheSize) {
+            val iterator = detailCache.entries.iterator()
+            if (!iterator.hasNext()) break
+            iterator.next()
+            iterator.remove()
+        }
+    }
+
+    private fun SearchResult.detailCacheKey(): DetailCacheKey {
+        return DetailCacheKey(
+            providerId = providerId,
+            title = title,
+            url = url,
+            subjectId = raw["subjectId"],
+            sourceId = raw["sourceId"],
+            onlineSourceId = raw["onlineSourceId"],
+            detailUrl = raw["detailUrl"],
+        )
+    }
+
     private fun Episode.routeCacheKey(): RouteCacheKey {
         return RouteCacheKey(
             providerId = providerId,
@@ -214,10 +279,21 @@ class SourceRegistry(
     }
 
     private companion object {
+        const val DEFAULT_DETAIL_CACHE_SIZE = 64
         const val DEFAULT_ROUTE_CACHE_SIZE = 96
         const val SEARCH_PROVIDER_TIMEOUT_MS = 15_000L
     }
 }
+
+private data class DetailCacheKey(
+    val providerId: String,
+    val title: String,
+    val url: String,
+    val subjectId: String?,
+    val sourceId: String?,
+    val onlineSourceId: String?,
+    val detailUrl: String?,
+)
 
 private data class RouteCacheKey(
     val providerId: String,
