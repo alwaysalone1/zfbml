@@ -217,4 +217,43 @@ class DanmakuLayoutEngineTest {
         assertTrue(rendered.take(3).all { it.alpha < 0.8f })
         assertEquals(0.8f, rendered.takeLast(2).minOf { it.alpha }, 0.001f)
     }
+
+    @Test
+    fun fixedDanmakuFadesInAndOutWithoutAffectingScrollAlpha() {
+        val items = listOf(
+            DanmakuItem(
+                timeMs = 1_000L,
+                text = "fixed",
+                mode = DanmakuMode.Top,
+                platform = DanmakuPlatform.Local,
+            ),
+            DanmakuItem(
+                timeMs = 1_000L,
+                text = "scroll",
+                mode = DanmakuMode.Scroll,
+                platform = DanmakuPlatform.Local,
+            ),
+        )
+
+        val prepared = DanmakuLayoutEngine().prepare(
+            items = items,
+            widthPx = 1_920f,
+            heightPx = 1_080f,
+            profile = DanmakuProfile(
+                platform = DanmakuPlatform.Local,
+                topDurationMs = 1_000L,
+            ),
+            settings = DanmakuSettings(),
+            measureText = { DanmakuTextMetrics(textSizePx = 64f, widthPx = 220f, lineHeightPx = 84f, baselineOffsetPx = 66f) },
+        )
+
+        val fadeInFrame = prepared.render(playbackMs = 1_050.0, alpha = 0.8f)
+        val fullFrame = prepared.render(playbackMs = 1_500.0, alpha = 0.8f)
+        val fadeOutFrame = prepared.render(playbackMs = 1_950.0, alpha = 0.8f)
+
+        assertTrue(fadeInFrame.first { it.item.text == "fixed" }.alpha < 0.4f)
+        assertEquals(0.8f, fullFrame.first { it.item.text == "fixed" }.alpha, 0.001f)
+        assertTrue(fadeOutFrame.first { it.item.text == "fixed" }.alpha < 0.4f)
+        assertEquals(0.8f, fadeInFrame.first { it.item.text == "scroll" }.alpha, 0.001f)
+    }
 }

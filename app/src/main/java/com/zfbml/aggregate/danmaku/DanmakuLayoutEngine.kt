@@ -79,13 +79,15 @@ internal class PreparedDanmakuLayout internal constructor(
             val entry = entries[index]
             if (!entry.isVisibleAt(playbackMs)) continue
             visibleOrdinal += 1
-            val entryAlpha = if (fadeCount > 0 && index < fullAlphaStartIndex) {
+            val overflowAlpha = if (fadeCount > 0 && index < fullAlphaStartIndex) {
                 val rankFromNewest = visibleCount - visibleOrdinal
                 val overflowFromNewest = rankFromNewest - maxActiveItems
                 alpha * ((fadeCount - overflowFromNewest).toFloat() / (fadeCount + 1).toFloat())
             } else {
                 alpha
             }
+            val entryAlpha = entry.alphaAt(playbackMs, overflowAlpha)
+            if (entryAlpha <= 0f) continue
             block(entry, entry.xAt(playbackMs), entryAlpha)
         }
     }
@@ -116,6 +118,7 @@ internal class PreparedDanmakuLayout internal constructor(
 }
 
 private const val OverflowFadeItemCount = 4
+private const val FixedDanmakuFadeMs = 180L
 
 internal data class ScheduledDanmakuEntry(
     val item: DanmakuItem,
@@ -141,6 +144,22 @@ private fun ScheduledDanmakuEntry.xAt(playbackMs: Double): Float {
     val elapsed = playbackMs - startMs
     val progress = (elapsed / durationMs.toDouble()).coerceIn(0.0, 1.0)
     return (startX + (endX - startX) * progress).toFloat()
+}
+
+private fun ScheduledDanmakuEntry.alphaAt(playbackMs: Double, baseAlpha: Float): Float {
+    if (!item.mode.hasFixedFade()) return baseAlpha
+    if (durationMs <= 0L) return 0f
+    val elapsed = playbackMs - startMs
+    val fadeMs = min(FixedDanmakuFadeMs.toDouble(), durationMs.toDouble() / 2.0)
+    if (fadeMs <= 0.0) return baseAlpha
+    val fadeIn = elapsed / fadeMs
+    val fadeOut = (durationMs - elapsed) / fadeMs
+    val fade = min(fadeIn, fadeOut).coerceIn(0.0, 1.0)
+    return baseAlpha * fade.toFloat()
+}
+
+private fun DanmakuMode.hasFixedFade(): Boolean {
+    return this == DanmakuMode.Top || this == DanmakuMode.Bottom || this == DanmakuMode.Advanced
 }
 
 class DanmakuLayoutEngine {

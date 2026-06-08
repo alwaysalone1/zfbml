@@ -1851,7 +1851,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.4.8")
+                setRequestProperty("User-Agent", "ZFBML/0.4.9")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2342,7 +2342,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.4.8",
+                version = "0.4.9",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )

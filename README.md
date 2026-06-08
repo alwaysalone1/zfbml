@@ -25,6 +25,22 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.4.9
+
+中文：
+
+- 顶部、底部和高级定位弹幕新增短淡入/淡出，减少固定弹幕到点直接出现或消失造成的视觉突兀。
+- 滚动弹幕仍保持原有线性位移和透明度，不影响滚动速度、轨道避让和高密度淡出策略。
+- 新增布局引擎单测覆盖固定弹幕淡入淡出，并确认滚动弹幕透明度不受影响。
+- App 内版本号、请求 UA 和 README 同步到 `0.4.9`。
+
+English:
+
+- Top, bottom, and advanced positioned danmaku now use a short fade-in/out to avoid abrupt fixed-comment appearance and disappearance.
+- Scrolling danmaku keeps its original linear motion and alpha behavior, preserving speed, lane collision handling, and dense-overflow fading.
+- Added layout-engine coverage for fixed-comment fading while confirming scrolling comment alpha remains unchanged.
+- App version labels, request user agents, and README notes are now updated to `0.4.9`.
+
 ### v0.4.8
 
 中文：
