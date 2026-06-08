@@ -111,7 +111,7 @@ fun DanmakuSurface(
     }
 }
 
-private class DanmakuSurfaceLayoutCache {
+internal class DanmakuSurfaceLayoutCache {
     private var items: List<DanmakuItem>? = null
     private var widthPx: Float = -1f
     private var heightPx: Float = -1f
@@ -130,8 +130,10 @@ private class DanmakuSurfaceLayoutCache {
         build: () -> PreparedDanmakuLayout,
     ): PreparedDanmakuLayout {
         val settingsKey = DanmakuLayoutSettingsKey(settings)
+        val previousItems = this.items
+        val hasSameItems = previousItems != null && (previousItems === items || previousItems == items)
         if (
-            this.items !== items ||
+            !hasSameItems ||
             this.widthPx != widthPx ||
             this.heightPx != heightPx ||
             this.profile != profile ||
@@ -145,6 +147,8 @@ private class DanmakuSurfaceLayoutCache {
             this.settings = settingsKey
             this.densityKey = densityKey
             layout = build()
+        } else if (previousItems !== items) {
+            this.items = items
         }
         return layout
     }

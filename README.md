@@ -25,6 +25,21 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.3
+
+中文：
+- 弹幕 Surface 布局缓存现在会复用内容相同的新列表，避免父层刷新同一条弹幕时间线时重复测量和排布。
+- 这能减少播放中因弹幕列表实例替换导致的大量布局重建，降低滚动弹幕的偶发卡顿风险。
+- 新增单测覆盖相同内容列表复用缓存、内容变化仍重建缓存。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.3`。
+
+English:
+
+- The danmaku surface layout cache now reuses refreshed lists with equal content, avoiding repeated measurement and scheduling for the same timeline.
+- This reduces the chance of playback stutter caused by full danmaku layout rebuilds when parent state replaces the list instance.
+- Added unit coverage proving equal-content lists reuse the cache while real content changes still rebuild it.
+- App version labels, request user agents, and README notes are now updated to `0.5.3`.
+
 ### v0.5.2
 
 中文：
