@@ -191,7 +191,6 @@ class DanmakuLayoutEngine {
         measureText: ((DanmakuItem) -> DanmakuTextMetrics)? = null,
     ): PreparedDanmakuLayout {
         if (!settings.enabled || widthPx <= 0f || heightPx <= 0f) return PreparedDanmakuLayout.Empty
-        val maxActiveItems = max(1, (profile.maxItemsPerMinute * settings.density.coerceAtLeast(0.25f)).roundToInt())
         val measured = items
             .asSequence()
             .filter { item -> settings.blockedWords.none { item.text.contains(it, ignoreCase = true) } }
@@ -317,10 +316,15 @@ class DanmakuLayoutEngine {
                 )
             }
         }
+        val maxActiveWindowMs = scheduledEntries.maxOfOrNull { it.activeWindowMs } ?: 0L
         return PreparedDanmakuLayout(
             entries = scheduledEntries,
-            maxActiveItems = maxActiveItems,
-            maxActiveWindowMs = scheduledEntries.maxOfOrNull { it.activeWindowMs } ?: 0L,
+            maxActiveItems = danmakuActiveItemLimit(
+                maxItemsPerMinute = profile.maxItemsPerMinute,
+                density = settings.density,
+                activeWindowMs = maxActiveWindowMs,
+            ),
+            maxActiveWindowMs = maxActiveWindowMs,
         )
     }
 
@@ -468,3 +472,15 @@ class DanmakuLayoutEngine {
         }
     }
 }
+
+internal fun danmakuActiveItemLimit(
+    maxItemsPerMinute: Int,
+    density: Float,
+    activeWindowMs: Long,
+): Int {
+    val boundedDensity = density.coerceAtLeast(0.25f)
+    val boundedWindowMinutes = activeWindowMs.coerceAtLeast(1L).toDouble() / MILLIS_PER_MINUTE
+    return max(1, (maxItemsPerMinute.coerceAtLeast(1) * boundedDensity * boundedWindowMinutes).roundToInt())
+}
+
+private const val MILLIS_PER_MINUTE = 60_000.0

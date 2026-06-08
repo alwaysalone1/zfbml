@@ -6,6 +6,22 @@ import org.junit.Test
 
 class DanmakuLayoutEngineTest {
     @Test
+    fun activeItemLimitScalesWithVisibleWindow() {
+        assertEquals(
+            100,
+            danmakuActiveItemLimit(maxItemsPerMinute = 600, density = 1f, activeWindowMs = 10_000L),
+        )
+        assertEquals(
+            50,
+            danmakuActiveItemLimit(maxItemsPerMinute = 600, density = 0.5f, activeWindowMs = 10_000L),
+        )
+        assertEquals(
+            1,
+            danmakuActiveItemLimit(maxItemsPerMinute = 2, density = 1f, activeWindowMs = 8_500L),
+        )
+    }
+
+    @Test
     fun layoutsActiveDanmakuOnly() {
         val items = listOf(
             DanmakuItem(1_000, "active", DanmakuMode.Scroll, platform = DanmakuPlatform.Local),
@@ -188,6 +204,49 @@ class DanmakuLayoutEngineTest {
     }
 
     @Test
+    fun densePreparedLayoutCapsRenderedItemsByVisibleWindow() {
+        val items = (0 until 300).map { index ->
+            DanmakuItem(
+                timeMs = 1_000L + index,
+                text = "dense-$index",
+                mode = DanmakuMode.Advanced,
+                position = DanmakuPosition(x = 0.5f, y = 0.2f, durationMs = 10_000L),
+                platform = DanmakuPlatform.Local,
+            )
+        }
+
+        val prepared = DanmakuLayoutEngine().prepare(
+            items = items,
+            widthPx = 1_920f,
+            heightPx = 1_080f,
+            profile = DanmakuProfile(
+                platform = DanmakuPlatform.Local,
+                maxItemsPerMinute = 600,
+            ),
+            settings = DanmakuSettings(),
+            measureText = {
+                DanmakuTextMetrics(
+                    textSizePx = 64f,
+                    widthPx = 220f,
+                    lineHeightPx = 84f,
+                    baselineOffsetPx = 66f,
+                )
+            },
+        )
+
+        val rendered = prepared.render(playbackMs = 1_500.0, alpha = 0.8f)
+        val expectedFullAlphaLimit = danmakuActiveItemLimit(
+            maxItemsPerMinute = 600,
+            density = 1f,
+            activeWindowMs = 10_500L,
+        )
+
+        assertEquals(expectedFullAlphaLimit + 4, rendered.size)
+        assertEquals("dense-${300 - rendered.size}", rendered.first().item.text)
+        assertEquals("dense-299", rendered.last().item.text)
+    }
+
+    @Test
     fun overflowVisibleDanmakuFadesInsteadOfHardDropping() {
         val items = (0 until 5).map { index ->
             DanmakuItem(
@@ -214,8 +273,8 @@ class DanmakuLayoutEngineTest {
         val rendered = prepared.render(playbackMs = 1_100.0, alpha = 0.8f)
 
         assertEquals(5, rendered.size)
-        assertTrue(rendered.take(3).all { it.alpha < 0.8f })
-        assertEquals(0.8f, rendered.takeLast(2).minOf { it.alpha }, 0.001f)
+        assertTrue(rendered.take(4).all { it.alpha < 0.8f })
+        assertEquals(0.8f, rendered.last().alpha, 0.001f)
     }
 
     @Test

@@ -25,6 +25,22 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.6
+
+中文：
+
+- 弹幕渲染的 `maxItemsPerMinute` 现在会按当前可见窗口折算活动弹幕上限，避免把一分钟级别的密度直接当成每帧绘制上限。
+- 高密度时间段会优先保留较新的可见弹幕，并对超出活动上限的边缘弹幕做淡出，降低 Canvas 每帧绘制压力和掉帧风险。
+- 新增单元测试覆盖活动弹幕上限折算、高密度排期裁剪和溢出淡出行为。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.6`。
+
+English:
+
+- Danmaku rendering now converts `maxItemsPerMinute` into an active-item limit for the current visible window instead of treating the per-minute density as a per-frame draw cap.
+- Dense bursts keep the newest visible danmaku first and fade overflow items near the cap, reducing Canvas draw pressure and frame-drop risk.
+- Added unit coverage for active-item limit scaling, dense schedule clipping, and overflow fading.
+- App version labels, request user agents, and README notes are now updated to `0.5.6`.
+
 ### v0.5.5
 
 中文：
