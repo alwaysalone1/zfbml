@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.20
+
+中文：
+
+- 全屏播放器左侧锁定入口改为状态化图标按钮，锁定与解锁状态更直观，并减少横屏画面里的文字占位。
+- 锁定后仍保留常驻解锁入口，避免控制层被隐藏后需要额外手势才能恢复。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.20`。
+
+English:
+
+- The fullscreen player's left-side lock control is now a stateful icon button, making locked/unlocked states clearer while reducing text footprint over the landscape video.
+- A persistent unlock affordance remains visible after locking so controls can be restored without relying on extra gestures.
+- App version labels, request user agents, and README notes are now updated to `0.5.20`.
+
 ### v0.5.19
 
 中文：

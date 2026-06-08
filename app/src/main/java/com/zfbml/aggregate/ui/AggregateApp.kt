@@ -63,6 +63,8 @@ import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.FullscreenExit
 import androidx.compose.material.icons.filled.HighQuality
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Pause
@@ -2030,7 +2032,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.19")
+                setRequestProperty("User-Agent", "ZFBML/0.5.20")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2521,7 +2523,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.5.19",
+                version = "0.5.20",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )
@@ -6146,19 +6148,18 @@ private fun PlayerFullscreenLockButton(
 ) {
     TextButton(
         onClick = onClick,
-        modifier = Modifier.width(52.dp).height(40.dp).focusable(),
+        modifier = Modifier.width(44.dp).height(44.dp).focusable(),
         shape = RoundedCornerShape(999.dp),
         colors = ButtonDefaults.textButtonColors(
-            containerColor = if (locked) AnimeAccentPink.copy(alpha = 0.28f) else Color.Black.copy(alpha = 0.42f),
+            containerColor = if (locked) AnimeAccentPink.copy(alpha = 0.24f) else Color.Black.copy(alpha = 0.42f),
             contentColor = if (locked) AnimeAccentPink else Color.White.copy(alpha = 0.88f),
         ),
         contentPadding = PaddingValues(0.dp),
     ) {
-        Text(
-            text = if (locked) "解锁" else "锁定",
-            style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.Bold,
-            maxLines = 1,
+        Icon(
+            imageVector = if (locked) Icons.Filled.LockOpen else Icons.Filled.Lock,
+            contentDescription = if (locked) "解锁控制" else "锁定控制",
+            modifier = Modifier.size(21.dp),
         )
     }
 }
