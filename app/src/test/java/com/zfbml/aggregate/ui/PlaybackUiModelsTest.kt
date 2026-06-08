@@ -10,6 +10,7 @@ import com.zfbml.aggregate.source.SourceManifest
 import com.zfbml.aggregate.source.SourceSearchFailure
 import com.zfbml.aggregate.source.SourceSearchReport
 import com.zfbml.aggregate.source.StreamProtocol
+import com.zfbml.aggregate.source.catalog.BangumiCategory
 import com.zfbml.aggregate.source.catalog.BangumiScheduleDay
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -687,6 +688,69 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun categoryBrowseUiStateSummarizesCoverageRatingHeatAndSource() {
+        val category = category(id = "hot", title = "\u70ed\u95e8")
+        val items = listOf(
+            searchResult(
+                providerId = "bangumi-catalog",
+                title = "Alpha",
+                raw = mapOf("rating" to "8.8", "doing" to "1200"),
+            ),
+            searchResult(
+                providerId = "bangumi-catalog",
+                title = "Beta",
+                raw = mapOf("rating" to "8.1", "collect" to "3500"),
+            ),
+        )
+
+        val state = buildCategoryBrowseUiState(category = category, items = items)
+
+        assertTrue(state.hasItems)
+        assertEquals("\u70ed\u95e8\u5df2\u7d22\u5f15 2 \u90e8", state.headline)
+        assertEquals("2", state.itemCountValue)
+        assertEquals("\u5206\u7c7b\u6761\u76ee", state.itemCountLabel)
+        assertEquals("8.8", state.topRatingValue)
+        assertEquals("3500", state.heatValue)
+        assertEquals("Bangumi", state.sourceValue)
+        assertEquals("\u7cbe\u9009\u70ed\u64ad\u70ed\u95e8", state.listTitle)
+        assertEquals("\u5168\u90e8 2", state.listAction)
+        assertTrue(state.summary.contains("\u6700\u9ad8\u8bc4\u5206 8.8"))
+    }
+
+    @Test
+    fun categoryBrowseUiStateExplainsFallbackEmptyAndErrors() {
+        val category = category(id = "movie", title = "\u5267\u573a\u7248")
+        val fallback = listOf(searchResult(providerId = "direct-url", title = "Fallback"))
+
+        val fallbackState = buildCategoryBrowseUiState(
+            category = category,
+            items = emptyList(),
+            fallback = fallback,
+        )
+        val emptyState = buildCategoryBrowseUiState(
+            category = category,
+            items = emptyList(),
+        )
+        val errorState = buildCategoryBrowseUiState(
+            category = category,
+            items = emptyList(),
+            error = "HTTP 500",
+        )
+
+        assertFalse(fallbackState.hasItems)
+        assertEquals("\u5267\u573a\u7248\u5c55\u793a\u515c\u5e95\u63a8\u8350", fallbackState.headline)
+        assertEquals("1", fallbackState.itemCountValue)
+        assertEquals("\u515c\u5e95\u63a8\u8350", fallbackState.itemCountLabel)
+        assertEquals("\u76f4\u94fe", fallbackState.sourceValue)
+        assertTrue(fallbackState.summary.contains("\u515c\u5e95"))
+        assertFalse(emptyState.hasItems)
+        assertEquals("--", emptyState.itemCountValue)
+        assertTrue(emptyState.emptySubtitle.contains("\u641c\u7d22\u756a\u540d"))
+        assertEquals("\u5267\u573a\u7248\u52a0\u8f7d\u5f02\u5e38", errorState.headline)
+        assertTrue(errorState.summary.contains("HTTP 500"))
+    }
+
+    @Test
     fun nextEpisodeForPlayerUsesPlaybackListOrder() {
         val episodes = listOf(
             episode(id = "ep-1", index = 1),
@@ -934,11 +998,25 @@ class PlaybackUiModelsTest {
         )
     }
 
-    private fun searchResult(providerId: String, title: String): SearchResult {
+    private fun category(id: String, title: String): BangumiCategory {
+        return BangumiCategory(
+            id = id,
+            title = title,
+            subtitle = "test",
+            badge = "T",
+        )
+    }
+
+    private fun searchResult(
+        providerId: String,
+        title: String,
+        raw: Map<String, String> = emptyMap(),
+    ): SearchResult {
         return SearchResult(
             providerId = providerId,
             title = title,
             url = "zfbml://$providerId/$title",
+            raw = raw,
         )
     }
 

@@ -44,6 +44,7 @@ Tooling: Android SDK `apkanalyzer.bat` for manifest, resource, file, and dex pac
 - Bilibili's bangumi and player resource split suggests a normal video-app hierarchy: recommendation, calendar, category browse, detail, then player.
 - Tencent Video and Youku both expose preload/detail infrastructure around browsing, so schedule and category surfaces should summarize readiness and next actions before users open detail.
 - ZFBML implementation direction: the home calendar should show today, selected day, weekly coverage, and next update as one digest surface. Weekday chips should be stable and count-bearing, so the schedule feels like a product surface instead of a debug list from the Bangumi API.
+- Updated browse direction: category pages should expose index coverage, top rating, heat, source, and fallback state as normal browsing signals, mirroring large video apps where a channel page explains what it can show before the user drills into detail.
 
 ## Detail And Playback Decision Findings
 
@@ -72,3 +73,5 @@ This pass also unifies the player cache action model. Fullscreen controls, the M
 This pass upgrades the home schedule surface. `HomeScheduleUiState` now centralizes today count, weekly coverage, selected-day content, next update, and fallback text, and the expanded calendar shows that digest before weekday chips and anime rows.
 
 This pass adds a detail playback readiness summary. `DetailPlaybackReadinessUiState` now condenses route recommendation, online coverage, BT fallback, and cache capability for the detail hero, keeping the normal watch path clear while preserving diagnostics in route panels.
+
+This pass upgrades the category browse surface. `CategoryBrowseUiState` now centralizes category coverage, top rating, heat, source, list title, and empty/fallback copy, so category pages present a normal video-app channel summary instead of a loose list plus ad hoc metrics.

@@ -1340,9 +1340,22 @@ private fun CategoryFeedPage(
     onOpenDetail: (SearchResult) -> Unit,
 ) {
     val items = result?.items.orEmpty()
+    val browseState = remember(category, items, fallback, loading, error) {
+        buildCategoryBrowseUiState(
+            category = category,
+            items = items,
+            fallback = fallback,
+            loading = loading,
+            error = error,
+        )
+    }
     val feedSelection = splitSpotlightFeed(items, fallback = fallback, spotlightCount = 5)
     val heroItems = feedSelection.spotlight
-    val listItems = if (items.isEmpty()) emptyList() else feedSelection.remainder
+    val listItems = if (items.isEmpty()) {
+        emptyList()
+    } else {
+        feedSelection.remainder.ifEmpty { items.distinctBy { it.stableMediaKey() } }
+    }
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 18.dp, vertical = 12.dp),
@@ -1356,7 +1369,7 @@ private fun CategoryFeedPage(
             )
         }
         item {
-            CategoryInsightStrip(category = category, items = items)
+            CategoryInsightStrip(state = browseState)
         }
         if (loading) {
             item {
@@ -1376,16 +1389,16 @@ private fun CategoryFeedPage(
         }
         item {
             SectionHeader(
-                title = "\u7cbe\u9009\u70ed\u64ad\u65b0\u756a",
-                action = if (listItems.isNotEmpty()) "\u5168\u90e8 ${listItems.size}" else "",
+                title = browseState.listTitle,
+                action = browseState.listAction,
                 onAction = {},
             )
         }
         if (listItems.isEmpty() && !loading) {
             item {
                 ScheduleStatusPanel(
-                    title = "\u6682\u65e0\u53ef\u5c55\u793a\u6761\u76ee",
-                    subtitle = "\u53ef\u4ee5\u5207\u5230\u5176\u4ed6\u5206\u7c7b\uff0c\u6216\u76f4\u63a5\u641c\u7d22\u756a\u540d\u3002",
+                    title = browseState.emptyTitle,
+                    subtitle = browseState.emptySubtitle,
                 )
             }
         } else {
@@ -1647,13 +1660,39 @@ private fun PosterRail(items: List<SearchResult>, onOpenDetail: (SearchResult) -
 }
 
 @Composable
-private fun CategoryInsightStrip(category: BangumiCategory, items: List<SearchResult>) {
-    val topRating = items.mapNotNull { it.raw["rating"]?.toDoubleOrNull() }.maxOrNull()
-    val watching = items.mapNotNull { it.raw["doing"]?.toIntOrNull() }.maxOrNull()
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-        InsightTile(category.badge, category.subtitle, categoryAccent(category.id), Modifier.weight(1f))
-        InsightTile(topRating?.let { "%.1f".format(it) } ?: "--", "\u6700\u9ad8\u8bc4\u5206", AnimeAccentGreen, Modifier.weight(1f))
-        InsightTile(watching?.toString() ?: "--", "\u5728\u770b\u70ed\u5ea6", AnimeAccentCyan, Modifier.weight(1f))
+private fun CategoryInsightStrip(state: CategoryBrowseUiState) {
+    Column(verticalArrangement = Arrangement.spacedBy(9.dp), modifier = Modifier.fillMaxWidth()) {
+        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Text(
+                text = state.headline,
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.White,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                text = state.summary,
+                style = MaterialTheme.typography.bodySmall,
+                color = AnimeMuted,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            item {
+                InsightTile(state.itemCountValue, state.itemCountLabel, AnimeAccentPink, Modifier.width(128.dp))
+            }
+            item {
+                InsightTile(state.topRatingValue, state.topRatingLabel, AnimeAccentGreen, Modifier.width(128.dp))
+            }
+            item {
+                InsightTile(state.heatValue, state.heatLabel, AnimeAccentCyan, Modifier.width(128.dp))
+            }
+            item {
+                InsightTile(state.sourceValue, state.sourceLabel, AnimeAccentAmber, Modifier.width(128.dp))
+            }
+        }
     }
 }
 
@@ -2189,7 +2228,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.43")
+                setRequestProperty("User-Agent", "ZFBML/0.5.44")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2712,7 +2751,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.5.43",
+                version = "0.5.44",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )

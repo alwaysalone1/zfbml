@@ -9,6 +9,7 @@ import com.zfbml.aggregate.source.SourceCapability
 import com.zfbml.aggregate.source.SourceManifest
 import com.zfbml.aggregate.source.SourceSearchReport
 import com.zfbml.aggregate.source.StreamProtocol
+import com.zfbml.aggregate.source.catalog.BangumiCategory
 import com.zfbml.aggregate.source.catalog.BangumiScheduleDay
 
 internal enum class RouteLoadStatus {
@@ -136,6 +137,24 @@ internal data class HomeScheduleUiState(
     val todayCount: Int,
     val weekCount: Int,
     val nextUpdateLabel: String,
+)
+
+internal data class CategoryBrowseUiState(
+    val headline: String,
+    val summary: String,
+    val itemCountValue: String,
+    val itemCountLabel: String,
+    val topRatingValue: String,
+    val topRatingLabel: String,
+    val heatValue: String,
+    val heatLabel: String,
+    val sourceValue: String,
+    val sourceLabel: String,
+    val listTitle: String,
+    val listAction: String,
+    val emptyTitle: String,
+    val emptySubtitle: String,
+    val hasItems: Boolean,
 )
 
 internal data class PlayerOverlayState(
@@ -794,6 +813,74 @@ internal fun buildHomeScheduleUiState(
     )
 }
 
+internal fun buildCategoryBrowseUiState(
+    category: BangumiCategory,
+    items: List<SearchResult>,
+    fallback: List<SearchResult> = emptyList(),
+    loading: Boolean = false,
+    error: String? = null,
+): CategoryBrowseUiState {
+    val fallbackVisible = items.isEmpty() && fallback.isNotEmpty()
+    val metricItems = items.ifEmpty { fallback }
+    val topRating = metricItems.mapNotNull { it.raw["rating"]?.toDoubleOrNull() }.maxOrNull()
+    val highestHeat = metricItems.maxOfOrNull { result ->
+        listOfNotNull(
+            result.raw["doing"]?.toIntOrNull(),
+            result.raw["collect"]?.toIntOrNull(),
+            result.raw["wish"]?.toIntOrNull(),
+        ).maxOrNull() ?: 0
+    } ?: 0
+    val sourceIds = metricItems.map { it.providerId }.distinct()
+    val sourceValue = when (sourceIds.size) {
+        0 -> "\u5f85\u540c\u6b65"
+        1 -> providerDisplayIdForBrowse(sourceIds.single())
+        else -> "${sourceIds.size} \u6e90"
+    }
+    val itemCountValue = when {
+        items.isNotEmpty() -> items.size.toString()
+        fallbackVisible -> fallback.size.toString()
+        else -> "--"
+    }
+    val itemCountLabel = if (fallbackVisible) "\u515c\u5e95\u63a8\u8350" else "\u5206\u7c7b\u6761\u76ee"
+    val topRatingValue = topRating?.let { "%.1f".format(it) } ?: "--"
+    val heatValue = highestHeat.takeIf { it > 0 }?.compactBrowseCount() ?: "--"
+    val headline = when {
+        !error.isNullOrBlank() -> "${category.title}\u52a0\u8f7d\u5f02\u5e38"
+        loading && items.isEmpty() -> "\u6b63\u5728\u540c\u6b65${category.title}"
+        items.isNotEmpty() -> "${category.title}\u5df2\u7d22\u5f15 ${items.size} \u90e8"
+        fallbackVisible -> "${category.title}\u5c55\u793a\u515c\u5e95\u63a8\u8350"
+        else -> "${category.title}\u6682\u65e0\u6761\u76ee"
+    }
+    val summary = when {
+        !error.isNullOrBlank() -> "\u5206\u7c7b\u699c\u5355\u6682\u4e0d\u53ef\u7528\uff1a$error"
+        items.isNotEmpty() -> "\u6309\u8bc4\u5206\u3001\u5728\u770b\u548c\u6536\u85cf\u70ed\u5ea6\u7ec4\u7ec7\uff0c\u6700\u9ad8\u8bc4\u5206 $topRatingValue\uff0c\u6700\u9ad8\u70ed\u5ea6 $heatValue\u3002"
+        fallbackVisible -> "Bangumi \u5206\u7c7b\u6682\u672a\u8fd4\u56de\uff0c\u5148\u7528\u9996\u9875\u63a8\u8350\u515c\u5e95\uff0c\u4fdd\u6301\u53ef\u6d4f\u89c8\u3002"
+        loading -> "Bangumi \u5206\u7c7b\u699c\u5355\u540c\u6b65\u4e2d\uff0c\u5b8c\u6210\u540e\u4f1a\u8865\u5168\u8bc4\u5206\u548c\u70ed\u5ea6\u6307\u6807\u3002"
+        else -> "\u53ef\u5207\u6362\u5230\u5176\u4ed6\u5206\u7c7b\uff0c\u6216\u76f4\u63a5\u641c\u7d22\u756a\u540d\u8fdb\u5165\u8be6\u60c5\u3002"
+    }
+    return CategoryBrowseUiState(
+        headline = headline,
+        summary = summary,
+        itemCountValue = itemCountValue,
+        itemCountLabel = itemCountLabel,
+        topRatingValue = topRatingValue,
+        topRatingLabel = "\u6700\u9ad8\u8bc4\u5206",
+        heatValue = heatValue,
+        heatLabel = "\u6700\u9ad8\u70ed\u5ea6",
+        sourceValue = sourceValue,
+        sourceLabel = "\u6570\u636e\u6765\u6e90",
+        listTitle = if (category.id == "recommend") "\u7cbe\u9009\u63a8\u8350" else "\u7cbe\u9009\u70ed\u64ad${category.title}",
+        listAction = if (items.isNotEmpty()) "\u5168\u90e8 ${items.size}" else "",
+        emptyTitle = if (fallbackVisible) "\u5206\u7c7b\u6682\u65e0\u547d\u4e2d" else "\u6682\u65e0\u53ef\u5c55\u793a\u6761\u76ee",
+        emptySubtitle = if (fallbackVisible) {
+            "\u4e0a\u65b9\u5df2\u4f7f\u7528\u9996\u9875\u63a8\u8350\u515c\u5e95\uff0c\u53ef\u5207\u6362\u5206\u7c7b\u6216\u76f4\u63a5\u641c\u7d22\u3002"
+        } else {
+            "\u53ef\u4ee5\u5207\u5230\u5176\u4ed6\u5206\u7c7b\uff0c\u6216\u76f4\u63a5\u641c\u7d22\u756a\u540d\u3002"
+        },
+        hasItems = items.isNotEmpty(),
+    )
+}
+
 internal fun nextEpisodeForPlayer(
     episodes: List<Episode>,
     currentEpisode: Episode,
@@ -1189,6 +1276,22 @@ private fun Int.floorMod(divisor: Int): Int {
 
 private fun providerDisplayIdForSearch(providerId: String): String {
     return providerId.replace('-', ' ').replaceFirstChar { it.uppercase() }
+}
+
+private fun providerDisplayIdForBrowse(providerId: String): String {
+    return when (providerId.lowercase()) {
+        "bangumi-catalog" -> "Bangumi"
+        "direct-url", "direct" -> "\u76f4\u94fe"
+        "mikan", "dmhy", "nyaa", "acg-rip", "bangumi-moe", "bt" -> "BT"
+        else -> providerDisplayIdForSearch(providerId)
+    }
+}
+
+private fun Int.compactBrowseCount(): String {
+    if (this < 10_000) return toString()
+    val whole = this / 10_000
+    val tenth = (this % 10_000) / 1_000
+    return if (tenth > 0) "$whole.${tenth}\u4e07" else "$whole\u4e07"
 }
 
 internal fun StreamProtocol.uiProtocolName(): String {

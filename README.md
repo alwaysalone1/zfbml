@@ -25,6 +25,23 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.44
+
+中文：
+- 浏览/分类页新增 `CategoryBrowseUiState`，统一计算分类覆盖量、最高评分、最高热度、数据来源、列表标题和空状态文案。
+- 分类页信息条改为模型驱动，先展示分类索引摘要，再用稳定指标卡呈现条目数、评分、热度和来源。
+- 分类接口无结果时会明确展示首页推荐兜底状态，避免用户看到空列表却不知道是否还可继续浏览。
+- 新增单元测试覆盖分类命中、兜底推荐、空态和错误摘要。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.44`。
+
+English:
+
+- Browse/category pages now use `CategoryBrowseUiState` to centralize category coverage, top rating, heat, source, list title, and empty-state copy.
+- The category insight strip is model-driven, showing an index summary plus stable metric tiles for count, rating, heat, and source.
+- Empty category responses now explain when home recommendations are being used as a fallback instead of presenting an unexplained blank list.
+- Added unit coverage for category hits, fallback recommendations, empty states, and error summaries.
+- App version labels, request user agents, and README notes are now updated to `0.5.44`.
+
 ### v0.5.43
 
 中文：
