@@ -6,6 +6,8 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class SourceRegistryTest {
@@ -71,6 +73,23 @@ class SourceRegistryTest {
         registry.resolveRouteCandidates(episode)
 
         assertEquals(true, prefetched)
+        assertEquals(1, provider.resolveCount.get())
+    }
+
+    @Test
+    fun peekRouteCandidatesReturnsWarmCacheOnly() = runTest {
+        val provider = CountingProvider()
+        val registry = SourceRegistry(listOf(provider))
+        val episode = episode("6")
+
+        assertNull(registry.peekRouteCandidates(episode))
+
+        val prefetched = registry.prefetchRouteCandidates(episode)
+        val cached = registry.peekRouteCandidates(episode)
+
+        assertEquals(true, prefetched)
+        assertNotNull(cached)
+        assertEquals("ep-6-hls", cached!!.single().stream.id)
         assertEquals(1, provider.resolveCount.get())
     }
 

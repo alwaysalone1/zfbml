@@ -1851,7 +1851,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.4.9")
+                setRequestProperty("User-Agent", "ZFBML/0.5.0")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2342,7 +2342,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.4.9",
+                version = "0.5.0",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )
@@ -2811,15 +2811,28 @@ private fun DetailScreen(
     var routesExpanded by remember(result) { mutableStateOf(false) }
 
     fun loadRoutesFor(episode: Episode, autoPlay: Boolean = false) {
+        val cachedRoutes = graph.sourceRegistry.peekRouteCandidates(episode)
+            ?.let { sortRoutesForUi(it) }
         selectedEpisode = episode
-        routes = emptyList()
+        routes = cachedRoutes ?: emptyList()
         routesError = null
-        routeSourceFilter = null
+        routeSourceFilter = cachedRoutes?.let { recommendedSourceIdForRoutes(it) }
         routesExpanded = false
-        routesLoading = true
+        routesLoading = cachedRoutes == null
+        if (cachedRoutes != null) {
+            if (autoPlay) {
+                val media = detail
+                val firstRoute = cachedRoutes.firstOrNull()
+                if (media != null && firstRoute != null) {
+                    onPlay(media, episode, firstRoute.stream, cachedRoutes)
+                }
+            }
+            return
+        }
         scope.launch {
             runCatching { graph.sourceRegistry.resolveRouteCandidates(episode) }
                 .onSuccess { candidates ->
+                    if (selectedEpisode?.id != episode.id) return@onSuccess
                     val sortedCandidates = sortRoutesForUi(candidates)
                     routes = sortedCandidates
                     routeSourceFilter = recommendedSourceIdForRoutes(sortedCandidates)
@@ -2832,9 +2845,12 @@ private fun DetailScreen(
                     }
                 }
                 .onFailure { failure ->
+                    if (selectedEpisode?.id != episode.id) return@onFailure
                     routesError = failure.message ?: failure::class.simpleName.orEmpty().ifBlank { "\u672a\u77e5\u9519\u8bef" }
                 }
-            routesLoading = false
+            if (selectedEpisode?.id == episode.id) {
+                routesLoading = false
+            }
         }
     }
 
@@ -4382,42 +4398,51 @@ private fun PlayerScreen(
     fun selectEpisode(target: Episode) {
         if (target.id == currentEpisode.id || episodeLoadingId != null) return
         revealControls()
-        routeNotice = "正在加载 ${target.title} 的播放源..."
-        episodeLoadingId = target.id
         val previousSourceId = currentRoute?.sourceId
         val previousProviderId = currentStream.providerId
+
+        fun applyEpisodeRoutes(candidates: List<RouteCandidate>) {
+            val sortedCandidates = sortRoutesForUi(candidates)
+            val preferredRoute = preferredRouteForNextEpisode(
+                routes = sortedCandidates,
+                currentSourceId = previousSourceId,
+                currentProviderId = previousProviderId,
+            )
+            if (preferredRoute != null) {
+                currentEpisode = target
+                playerRoutes = sortedCandidates
+                failedStreamIds = emptySet()
+                val episodeLabel = target.index?.let { "第 $it 集" } ?: target.title
+                val routeLabel = preferredRoute.routeName.orEmpty()
+                    .ifBlank { preferredRoute.quality.orEmpty() }
+                    .ifBlank { preferredRoute.protocol.displayName() }
+                val keptSource = preferredRoute.sourceId == previousSourceId ||
+                    preferredRoute.stream.providerId == previousProviderId
+                routeNotice = if (keptSource) {
+                    "已切到 $episodeLabel · 沿用 $routeLabel"
+                } else {
+                    "已切到 $episodeLabel · 原播放源不可用，改用 $routeLabel"
+                }
+                activePanel = null
+                revealControls()
+                currentStream = preferredRoute.stream
+            } else {
+                routeNotice = "${target.title} 暂时没有可用播放源"
+            }
+        }
+
+        val cachedRoutes = graph.sourceRegistry.peekRouteCandidates(target)
+        if (cachedRoutes != null) {
+            applyEpisodeRoutes(cachedRoutes)
+            return
+        }
+
+        routeNotice = "正在加载 ${target.title} 的播放源..."
+        episodeLoadingId = target.id
         scope.launch {
             val result = runCatching { graph.sourceRegistry.resolveRouteCandidates(target) }
             result
-                .onSuccess { candidates ->
-                    val sortedCandidates = sortRoutesForUi(candidates)
-                    val preferredRoute = preferredRouteForNextEpisode(
-                        routes = sortedCandidates,
-                        currentSourceId = previousSourceId,
-                        currentProviderId = previousProviderId,
-                    )
-                    if (preferredRoute != null) {
-                        currentEpisode = target
-                        playerRoutes = sortedCandidates
-                        failedStreamIds = emptySet()
-                        val episodeLabel = target.index?.let { "第 $it 集" } ?: target.title
-                        val routeLabel = preferredRoute.routeName.orEmpty()
-                            .ifBlank { preferredRoute.quality.orEmpty() }
-                            .ifBlank { preferredRoute.protocol.displayName() }
-                        val keptSource = preferredRoute.sourceId == previousSourceId ||
-                            preferredRoute.stream.providerId == previousProviderId
-                        routeNotice = if (keptSource) {
-                            "已切到 $episodeLabel · 沿用 $routeLabel"
-                        } else {
-                            "已切到 $episodeLabel · 原播放源不可用，改用 $routeLabel"
-                        }
-                        activePanel = null
-                        revealControls()
-                        currentStream = preferredRoute.stream
-                    } else {
-                        routeNotice = "${target.title} 暂时没有可用播放源"
-                    }
-                }
+                .onSuccess { candidates -> applyEpisodeRoutes(candidates) }
                 .onFailure { failure ->
                     routeNotice = "选集加载失败：${failure.message ?: failure::class.simpleName.orEmpty().ifBlank { "未知错误" }}"
                 }

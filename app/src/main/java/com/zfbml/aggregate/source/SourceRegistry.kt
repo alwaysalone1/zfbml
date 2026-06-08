@@ -112,6 +112,16 @@ class SourceRegistry(
         }
     }
 
+    fun peekRouteCandidates(episode: Episode): List<RouteCandidate>? {
+        val cacheKey = episode.routeCacheKey()
+        if (!routeCacheLock.tryLock()) return null
+        return try {
+            routeCandidateCache[cacheKey]?.toList()
+        } finally {
+            routeCacheLock.unlock()
+        }
+    }
+
     suspend fun prefetchRouteCandidates(episode: Episode): Boolean {
         return runCatching {
             resolveRouteCandidates(episode)

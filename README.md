@@ -25,6 +25,21 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.0
+
+中文：
+- 线路预取缓存现在可以被详情页和播放器选集即时复用，命中缓存时不再先清空线路列表或显示加载态。
+- 详情页切换剧集时会忽略已过期的慢解析结果，避免旧剧集线路覆盖用户后续选择。
+- 播放器选集沿用原有推荐源/同源优先逻辑，但相邻集已预热时可直接切换到可播线路。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.0`。
+
+English:
+
+- Route prefetch cache can now be reused immediately by the detail page and in-player episode picker, avoiding unnecessary empty/loading flashes on cache hits.
+- Detail episode switching now ignores stale slow route-resolution results so old episode routes cannot overwrite a later user selection.
+- In-player episode switching keeps the existing preferred-source behavior while moving directly to a playable route when adjacent episodes are already warmed.
+- App version labels, request user agents, and README notes are now updated to `0.5.0`.
+
 ### v0.4.9
 
 中文：
