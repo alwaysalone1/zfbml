@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.delay
 
 @Composable
 fun DanmakuSurface(
@@ -38,9 +39,17 @@ fun DanmakuSurface(
     val density = LocalDensity.current
     var frameTimeNs by remember { mutableLongStateOf(0L) }
 
-    LaunchedEffect(settings.enabled) {
-        while (settings.enabled) {
+    LaunchedEffect(settings.enabled, items.isNotEmpty(), isPlaying) {
+        val frameDelayMs = danmakuFrameDelayMs(
+            enabled = settings.enabled,
+            hasItems = items.isNotEmpty(),
+            isPlaying = isPlaying,
+        ) ?: return@LaunchedEffect
+        while (true) {
             frameTimeNs = withFrameNanos { it }
+            if (frameDelayMs > 0L) {
+                delay(frameDelayMs)
+            }
         }
     }
     LaunchedEffect(items, profile, settings.enabled, settings.density, settings.fontScale, settings.blockedWords) {
@@ -169,3 +178,14 @@ private fun Long.withAlpha(alpha: Float): Int {
     val a = (alpha * 255).toInt().coerceIn(0, 255)
     return (a shl 24) or (toInt() and 0x00FFFFFF)
 }
+
+internal fun danmakuFrameDelayMs(
+    enabled: Boolean,
+    hasItems: Boolean,
+    isPlaying: Boolean,
+): Long? {
+    if (!enabled || !hasItems) return null
+    return if (isPlaying) 0L else PausedFrameDelayMs
+}
+
+private const val PausedFrameDelayMs = 250L

@@ -25,6 +25,22 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.4.1
+
+中文：
+
+- 弹幕帧调度改为按状态运行：播放中保持逐帧刷新，暂停/缓冲时降为低频刷新，无弹幕或关闭弹幕时不再持续跑帧循环。
+- 降低无弹幕、暂停和缓冲场景下的主线程无效刷新，为播放器控制层和系统动画留下更多余量。
+- 新增单测覆盖弹幕帧调度策略，避免后续改动重新引入空弹幕满帧刷新。
+- App 内版本号、请求 UA 和 README 同步到 `0.4.1`。
+
+English:
+
+- Danmaku frame scheduling now follows playback state: full-rate while playing, low-rate while paused/buffering, and stopped when danmaku is disabled or empty.
+- This reduces unnecessary main-thread redraw pressure in empty, paused, and buffering states, leaving more room for player controls and system animations.
+- Added unit coverage for the danmaku frame scheduling policy so empty timelines do not regress to full-rate refresh.
+- App version labels, request user agents, and README notes are now updated to `0.4.1`.
+
 ### v0.4.0
 
 中文：
