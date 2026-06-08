@@ -67,6 +67,12 @@ Tooling: Android SDK `apkanalyzer.bat` for manifest, resource, file, and dex pac
 - Bilibili, Tencent Video, and Youku all expose large player/source ecosystems through normal preference, preload, offline, and player-service surfaces instead of asking users to reason about provider internals.
 - ZFBML implementation direction: the source library should summarize online-first playback, BT fallback, cache eligibility, and WebView sniffing as a strategy surface, then list source capabilities and domains for inspection.
 
+## Profile And Settings Findings
+
+- Dandanplay's cache manager and danmaku-source settings show that anime utilities still need a user-facing place for operational features once detail/player flows are clear.
+- Bilibili, Tencent Video, and Youku all keep playback, cache, danmaku, and source preferences discoverable from user/profile or settings surfaces rather than scattering them through debug-only pages.
+- ZFBML implementation direction: the Profile page should summarize current app readiness, quick actions, cache ability, danmaku coverage, and source strategy from shared state models, so it feels like a video-app user center instead of a static settings list.
+
 ## Current Implementation Focus
 
 This pass exposes route prefetching in the detail page. The app already warms nearby episodes through `SourceRegistry.prefetchRouteCandidates`; the UI now surfaces whether adjacent episodes are warming, warmed, queued, or waiting for fallback source coverage.
@@ -86,3 +92,5 @@ This pass upgrades the category browse surface. `CategoryBrowseUiState` now cent
 This pass upgrades the source library surface. `SourceLibraryUiState` now centralizes online, BT fallback, cacheable, WebView sniffing, strategy-card, and source-card state, keeping route/source policy explainable without spreading provider logic through the Compose tree.
 
 This pass upgrades the offline cache surface. `CacheLibraryUiState` now centralizes Media3 cacheable sources, BT edge-cache sources, WebView/sniffing blockers, advanced-download runtime status, and cache capability cards so Profile and cache pages share one user-facing cache strategy model.
+
+This pass upgrades the Profile surface. `ProfileCenterUiState` now centralizes the user-center hero, quick actions, status chips, and playback settings so Profile copy follows real source, danmaku, and cache capability instead of static Compose text.

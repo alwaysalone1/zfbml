@@ -889,6 +889,64 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun profileCenterUiStateSummarizesQuickActionsAndSettings() {
+        val cacheState = buildCacheLibraryUiState(
+            manifests = listOf(
+                manifest(
+                    id = "hls",
+                    name = "HLS",
+                    capabilities = setOf(SourceCapability.SEARCH, SourceCapability.STREAM, SourceCapability.DOWNLOAD),
+                    supportsDownload = true,
+                ),
+                manifest(
+                    id = "bt",
+                    name = "BT",
+                    capabilities = setOf(SourceCapability.SEARCH, SourceCapability.STREAM, SourceCapability.BITTORRENT),
+                ),
+            ),
+        )
+
+        val state = buildProfileCenterUiState(
+            version = "0.5.47",
+            sourceCount = 4,
+            danmakuCount = 3,
+            cacheState = cacheState,
+        )
+
+        assertEquals("0.5.47", state.version)
+        assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
+        assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
+        assertEquals(4, state.sourceCount)
+        assertEquals(3, state.danmakuCount)
+        assertEquals(2, state.cacheableSourceCount)
+        assertTrue(state.chips.any { it.label == "v0.5.47" })
+        assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
+        assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
+        assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
+        assertEquals("Media3", state.settings.first { it.id == "core" }.value)
+        assertEquals("2 \u6e90", state.settings.first { it.id == "cache" }.value)
+        assertEquals("3 \u5e73\u53f0", state.settings.first { it.id == "danmaku" }.value)
+    }
+
+    @Test
+    fun profileCenterUiStateExplainsMissingSources() {
+        val cacheState = buildCacheLibraryUiState(emptyList())
+
+        val state = buildProfileCenterUiState(
+            version = "0.5.47",
+            sourceCount = 0,
+            danmakuCount = 0,
+            cacheState = cacheState,
+        )
+
+        assertEquals(0, state.sourceCount)
+        assertEquals(0, state.cacheableSourceCount)
+        assertTrue(state.summary.contains("\u5148\u63a5\u5165\u6765\u6e90"))
+        assertEquals("0 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
+        assertEquals("0 \u6765\u6e90", state.settings.first { it.id == "sources" }.value)
+    }
+
+    @Test
     fun nextEpisodeForPlayerUsesPlaybackListOrder() {
         val episodes = listOf(
             episode(id = "ep-1", index = 1),

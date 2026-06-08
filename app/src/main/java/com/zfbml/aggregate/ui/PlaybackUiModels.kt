@@ -228,6 +228,33 @@ internal data class CacheLibraryUiState(
     val capabilities: List<CacheCapabilityUiState>,
 )
 
+internal data class ProfileQuickActionUiState(
+    val id: String,
+    val title: String,
+    val subtitle: String,
+    val tone: SourceLibraryTone,
+)
+
+internal data class ProfileSettingUiState(
+    val id: String,
+    val title: String,
+    val subtitle: String,
+    val value: String,
+    val tone: SourceLibraryTone,
+)
+
+internal data class ProfileCenterUiState(
+    val version: String,
+    val headline: String,
+    val summary: String,
+    val sourceCount: Int,
+    val danmakuCount: Int,
+    val cacheableSourceCount: Int,
+    val chips: List<SourceLibraryChipUiState>,
+    val quickActions: List<ProfileQuickActionUiState>,
+    val settings: List<ProfileSettingUiState>,
+)
+
 internal data class PlayerOverlayState(
     val title: String,
     val episodeTitle: String,
@@ -1113,6 +1140,89 @@ internal fun buildCacheLibraryUiState(
                     "剧集、字幕和多清晰度批量任务等待高级运行时"
                 },
                 tone = if (advancedEngineAvailable) SourceLibraryTone.Cache else SourceLibraryTone.Muted,
+            ),
+        ),
+    )
+}
+
+internal fun buildProfileCenterUiState(
+    version: String,
+    sourceCount: Int,
+    danmakuCount: Int,
+    cacheState: CacheLibraryUiState,
+): ProfileCenterUiState {
+    val summary = when {
+        sourceCount == 0 -> "先接入来源后，这里会汇总追番、缓存、弹幕和播放源能力。"
+        cacheState.cacheableSourceCount > 0 -> "继续看、缓存、弹幕和线路都收在这里；${cacheState.cacheableSourceCount} 个来源已具备缓存能力。"
+        else -> "继续看、弹幕和线路已归拢；离线缓存等待可缓存来源补齐。"
+    }
+    return ProfileCenterUiState(
+        version = version,
+        headline = "我的追番中心",
+        summary = summary,
+        sourceCount = sourceCount,
+        danmakuCount = danmakuCount,
+        cacheableSourceCount = cacheState.cacheableSourceCount,
+        chips = listOf(
+            SourceLibraryChipUiState("v$version", SourceLibraryTone.Primary),
+            SourceLibraryChipUiState("${sourceCount} 来源", SourceLibraryTone.Online),
+            SourceLibraryChipUiState("${danmakuCount} 弹幕平台", SourceLibraryTone.Web),
+            SourceLibraryChipUiState("${cacheState.cacheableSourceCount} 可缓存", SourceLibraryTone.Cache),
+        ),
+        quickActions = listOf(
+            ProfileQuickActionUiState(
+                id = "continue",
+                title = "追番记录",
+                subtitle = "继续看入口",
+                tone = SourceLibraryTone.Primary,
+            ),
+            ProfileQuickActionUiState(
+                id = "cache",
+                title = "离线缓存",
+                subtitle = "${cacheState.cacheableSourceCount} 源可缓存",
+                tone = SourceLibraryTone.Cache,
+            ),
+            ProfileQuickActionUiState(
+                id = "danmaku",
+                title = "弹幕设置",
+                subtitle = "${danmakuCount} 平台样式",
+                tone = SourceLibraryTone.Web,
+            ),
+            ProfileQuickActionUiState(
+                id = "sources",
+                title = "线路管理",
+                subtitle = "${sourceCount} 个来源",
+                tone = SourceLibraryTone.Backup,
+            ),
+        ),
+        settings = listOf(
+            ProfileSettingUiState(
+                id = "core",
+                title = "播放内核",
+                subtitle = "在线播放默认走 Media3，疑难格式后续再接入兜底内核",
+                value = "Media3",
+                tone = SourceLibraryTone.Online,
+            ),
+            ProfileSettingUiState(
+                id = "cache",
+                title = "离线缓存",
+                subtitle = "HLS / DASH / MP4 走 Media3 队列，BT 由边下边播引擎接管",
+                value = "${cacheState.cacheableSourceCount} 源",
+                tone = SourceLibraryTone.Cache,
+            ),
+            ProfileSettingUiState(
+                id = "danmaku",
+                title = "弹幕样式",
+                subtitle = "B站 / 腾讯 / 爱奇艺 / 优酷样式持续补齐",
+                value = "${danmakuCount} 平台",
+                tone = SourceLibraryTone.Web,
+            ),
+            ProfileSettingUiState(
+                id = "sources",
+                title = "播放源策略",
+                subtitle = "自动最佳优先，手动换源保留给卡顿和失效场景",
+                value = "${sourceCount} 来源",
+                tone = SourceLibraryTone.Primary,
             ),
         ),
     )

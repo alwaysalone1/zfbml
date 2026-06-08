@@ -2226,7 +2226,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.46")
+                setRequestProperty("User-Agent", "ZFBML/0.5.47")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2699,30 +2699,25 @@ private fun SettingsScreen(graph: AppGraph) {
             advancedEngineAvailable = graph.advancedDownloadProvider.isAvailable(),
         )
     }
+    val profileState = remember(sourceCount, danmakuCount, cacheState) {
+        buildProfileCenterUiState(
+            version = "0.5.47",
+            sourceCount = sourceCount,
+            danmakuCount = danmakuCount,
+            cacheState = cacheState,
+        )
+    }
     LazyColumn(
         modifier = Modifier.fillMaxSize().padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item {
-            ProfileHeroCard(
-                version = "0.5.46",
-                sourceCount = sourceCount,
-                danmakuCount = danmakuCount,
-            )
+            ProfileHeroCard(state = profileState)
         }
         item {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                item {
-                    ProfileQuickCard("追番记录", "继续看入口", Icons.Filled.PlayArrow, AnimeAccentPink)
-                }
-                item {
-                    ProfileQuickCard("离线缓存", "${cacheState.cacheableSourceCount} 源可缓存", Icons.Filled.CloudDownload, AnimeAccentCyan)
-                }
-                item {
-                    ProfileQuickCard("弹幕设置", "${danmakuCount} 平台样式", Icons.Filled.ClosedCaption, AnimeAccentViolet)
-                }
-                item {
-                    ProfileQuickCard("线路管理", "${sourceCount} 个来源", Icons.Filled.VideoLibrary, AnimeAccentAmber)
+                items(profileState.quickActions, key = { it.id }) { action ->
+                    ProfileQuickCard(action = action)
                 }
             }
         }
@@ -2739,41 +2734,8 @@ private fun SettingsScreen(graph: AppGraph) {
         item {
             Text("播放体验", style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold)
         }
-        item {
-            ProfileSettingRow(
-                title = "播放内核",
-                subtitle = "在线播放默认走 Media3，疑难格式后续再接入兜底内核",
-                value = "Media3",
-                icon = Icons.Filled.PlayArrow,
-                accent = AnimeAccentCyan,
-            )
-        }
-        item {
-            ProfileSettingRow(
-                title = "离线缓存",
-                subtitle = "HLS / DASH / MP4 走 Media3 队列，BT 由边下边播引擎接管",
-                value = "${cacheState.cacheableSourceCount} 源",
-                icon = Icons.Filled.CloudDownload,
-                accent = AnimeAccentGreen,
-            )
-        }
-        item {
-            ProfileSettingRow(
-                title = "弹幕样式",
-                subtitle = "B站 / 腾讯 / 爱奇艺 / 优酷样式持续补齐",
-                value = "${danmakuCount} 平台",
-                icon = Icons.Filled.ClosedCaption,
-                accent = AnimeAccentViolet,
-            )
-        }
-        item {
-            ProfileSettingRow(
-                title = "播放源策略",
-                subtitle = "自动最佳优先，手动换源保留给卡顿和失效场景",
-                value = "${sourceCount} 来源",
-                icon = Icons.Filled.VideoLibrary,
-                accent = AnimeAccentPink,
-            )
+        items(profileState.settings, key = { it.id }) { setting ->
+            ProfileSettingRow(setting = setting)
         }
     }
 }
@@ -2845,9 +2807,7 @@ private fun CacheCapabilityMiniCard(capability: CacheCapabilityUiState) {
 
 @Composable
 private fun ProfileHeroCard(
-    version: String,
-    sourceCount: Int,
-    danmakuCount: Int,
+    state: ProfileCenterUiState,
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth().focusable(),
@@ -2862,12 +2822,12 @@ private fun ProfileHeroCard(
         ) {
             BrandMark(modifier = Modifier.size(66.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                Text("我的追番中心", style = MaterialTheme.typography.headlineSmall, color = Color.White, fontWeight = FontWeight.Bold)
-                Text("继续看、缓存、弹幕和线路都收在这里，普通用户不用面对调试入口。", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+                Text(state.headline, style = MaterialTheme.typography.headlineSmall, color = Color.White, fontWeight = FontWeight.Bold)
+                Text(state.summary, style = MaterialTheme.typography.bodyMedium, color = AnimeMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                    item { RouteStatusBadge("v$version", AnimeAccentPink) }
-                    item { RouteStatusBadge("${sourceCount} 来源", AnimeAccentCyan) }
-                    item { RouteStatusBadge("${danmakuCount} 弹幕平台", AnimeAccentViolet) }
+                    items(state.chips) { chip ->
+                        RouteStatusBadge(chip.label, sourceLibraryToneColor(chip.tone))
+                    }
                 }
             }
         }
@@ -2876,11 +2836,9 @@ private fun ProfileHeroCard(
 
 @Composable
 private fun ProfileQuickCard(
-    title: String,
-    subtitle: String,
-    icon: ImageVector,
-    accent: Color,
+    action: ProfileQuickActionUiState,
 ) {
+    val accent = sourceLibraryToneColor(action.tone)
     Card(
         modifier = Modifier.width(136.dp).height(92.dp).focusable(),
         colors = CardDefaults.cardColors(containerColor = AnimePanel),
@@ -2891,21 +2849,18 @@ private fun ProfileQuickCard(
             modifier = Modifier.fillMaxSize().padding(12.dp),
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
-            Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(22.dp))
-            Text(title, style = MaterialTheme.typography.titleSmall, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1)
-            Text(subtitle, style = MaterialTheme.typography.labelSmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Icon(profileEntryIcon(action.id), contentDescription = null, tint = accent, modifier = Modifier.size(22.dp))
+            Text(action.title, style = MaterialTheme.typography.titleSmall, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1)
+            Text(action.subtitle, style = MaterialTheme.typography.labelSmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }
 
 @Composable
 private fun ProfileSettingRow(
-    title: String,
-    subtitle: String,
-    value: String,
-    icon: ImageVector,
-    accent: Color,
+    setting: ProfileSettingUiState,
 ) {
+    val accent = sourceLibraryToneColor(setting.tone)
     Card(
         modifier = Modifier.fillMaxWidth().focusable(),
         colors = CardDefaults.cardColors(containerColor = AnimePanel),
@@ -2921,14 +2876,23 @@ private fun ProfileSettingRow(
                 modifier = Modifier.size(38.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.16f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(20.dp))
+                Icon(profileEntryIcon(setting.id), contentDescription = null, tint = accent, modifier = Modifier.size(20.dp))
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(title, style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.SemiBold)
-                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(setting.title, style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.SemiBold)
+                Text(setting.subtitle, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
-            Text(value, style = MaterialTheme.typography.labelLarge, color = accent, fontWeight = FontWeight.Bold, maxLines = 1)
+            Text(setting.value, style = MaterialTheme.typography.labelLarge, color = accent, fontWeight = FontWeight.Bold, maxLines = 1)
         }
+    }
+}
+
+private fun profileEntryIcon(id: String): ImageVector {
+    return when (id) {
+        "cache" -> Icons.Filled.CloudDownload
+        "danmaku" -> Icons.Filled.ClosedCaption
+        "sources" -> Icons.Filled.VideoLibrary
+        else -> Icons.Filled.PlayArrow
     }
 }
 

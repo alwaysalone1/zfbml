@@ -25,6 +25,23 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.47
+
+中文：
+- “我的”页新增 `ProfileCenterUiState`，统一生成个人中心 Hero、版本/来源/弹幕/缓存标签、快捷入口和播放体验设置行。
+- 个人中心快捷卡和设置行改为模型驱动，继续看、离线缓存、弹幕设置、线路管理与缓存/来源状态保持同一套文案。
+- 个人中心摘要会根据来源数量和可缓存来源数量调整，避免无来源或无缓存能力时仍显示静态成功文案。
+- 新增单元测试覆盖有来源/可缓存状态和无来源状态下的个人中心摘要、快捷入口和设置行。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.47`。
+
+English:
+
+- The Profile page now has `ProfileCenterUiState` to generate the hero, version/source/danmaku/cache chips, quick actions, and playback setting rows.
+- Profile quick cards and setting rows are model-driven, keeping Continue, Offline Cache, Danmaku, and Source Management copy aligned with cache/source state.
+- Profile summary now adapts to source count and cacheable source count instead of showing static success copy when sources or cache capability are missing.
+- Added unit coverage for populated/cacheable and empty-source profile summaries, quick actions, and setting rows.
+- App version labels, request user agents, and README notes are now updated to `0.5.47`.
+
 ### v0.5.46
 
 中文：
