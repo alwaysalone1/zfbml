@@ -58,20 +58,35 @@ internal class PreparedDanmakuLayout internal constructor(
         if (firstIndex >= endIndex) return
 
         var visibleCount = 0
-        var startIndex = endIndex
+        var fullAlphaStartIndex = endIndex
+        var fadeStartIndex = endIndex
+        val maxVisibleWithFade = maxActiveItems + OverflowFadeItemCount
         for (index in endIndex - 1 downTo firstIndex) {
             val entry = entries[index]
             if (entry.isVisibleAt(playbackMs)) {
-                startIndex = index
                 visibleCount += 1
-                if (visibleCount >= maxActiveItems) break
+                if (visibleCount <= maxActiveItems) {
+                    fullAlphaStartIndex = index
+                }
+                fadeStartIndex = index
+                if (visibleCount >= maxVisibleWithFade) break
             }
         }
 
-        for (index in startIndex until endIndex) {
+        val fadeCount = (visibleCount - maxActiveItems).coerceIn(0, OverflowFadeItemCount)
+        var visibleOrdinal = 0
+        for (index in fadeStartIndex until endIndex) {
             val entry = entries[index]
             if (!entry.isVisibleAt(playbackMs)) continue
-            block(entry, entry.xAt(playbackMs), alpha)
+            visibleOrdinal += 1
+            val entryAlpha = if (fadeCount > 0 && index < fullAlphaStartIndex) {
+                val rankFromNewest = visibleCount - visibleOrdinal
+                val overflowFromNewest = rankFromNewest - maxActiveItems
+                alpha * ((fadeCount - overflowFromNewest).toFloat() / (fadeCount + 1).toFloat())
+            } else {
+                alpha
+            }
+            block(entry, entry.xAt(playbackMs), entryAlpha)
         }
     }
 
@@ -99,6 +114,8 @@ internal class PreparedDanmakuLayout internal constructor(
         val Empty = PreparedDanmakuLayout(emptyList(), 1, 0L)
     }
 }
+
+private const val OverflowFadeItemCount = 4
 
 internal data class ScheduledDanmakuEntry(
     val item: DanmakuItem,

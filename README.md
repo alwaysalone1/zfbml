@@ -25,6 +25,22 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.4.7
+
+中文：
+
+- 弹幕高密度渲染不再对预算外旧弹幕直接硬切，而是保留少量溢出弹幕并逐级降低透明度。
+- 这样新弹幕挤入时旧弹幕会先淡出再离场，减少同屏密度变化带来的突兀消失和视觉顿挫。
+- 新增布局引擎单测覆盖溢出弹幕淡出策略，保证最新弹幕保持完整可读性。
+- App 内版本号、请求 UA 和 README 同步到 `0.4.7`。
+
+English:
+
+- Dense danmaku rendering no longer hard-drops older over-budget entries; a small overflow window now remains visible with stepped-down alpha.
+- Older comments fade before leaving when newer comments enter, reducing abrupt disappearances and visual stutter during dense timelines.
+- Added layout-engine coverage for the overflow fade policy while keeping the newest comments fully readable.
+- App version labels, request user agents, and README notes are now updated to `0.4.7`.
+
 ### v0.4.6
 
 中文：

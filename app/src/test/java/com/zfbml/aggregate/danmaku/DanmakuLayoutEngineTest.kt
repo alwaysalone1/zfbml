@@ -186,4 +186,35 @@ class DanmakuLayoutEngineTest {
 
         assertEquals(rendered.map { it.item.text to it.x }, traversed)
     }
+
+    @Test
+    fun overflowVisibleDanmakuFadesInsteadOfHardDropping() {
+        val items = (0 until 5).map { index ->
+            DanmakuItem(
+                timeMs = 1_000L,
+                text = "overflow-$index",
+                mode = DanmakuMode.Scroll,
+                platform = DanmakuPlatform.Local,
+            )
+        }
+
+        val prepared = DanmakuLayoutEngine().prepare(
+            items = items,
+            widthPx = 1_920f,
+            heightPx = 1_080f,
+            profile = DanmakuProfile(
+                platform = DanmakuPlatform.Local,
+                maxTracks = 8,
+                maxItemsPerMinute = 2,
+            ),
+            settings = DanmakuSettings(),
+            measureText = { DanmakuTextMetrics(textSizePx = 64f, widthPx = 220f, lineHeightPx = 84f, baselineOffsetPx = 66f) },
+        )
+
+        val rendered = prepared.render(playbackMs = 1_100.0, alpha = 0.8f)
+
+        assertEquals(5, rendered.size)
+        assertTrue(rendered.take(3).all { it.alpha < 0.8f })
+        assertEquals(0.8f, rendered.takeLast(2).minOf { it.alpha }, 0.001f)
+    }
 }
