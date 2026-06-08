@@ -37,14 +37,28 @@ internal class DanmakuPlaybackClock(
         val seekedBack = previousSample != null && sampled < previousSample - seekToleranceMs
         val clockChanged = isPlaying != lastPlaying || abs(speed - lastSpeed) > 0.001
 
+        val previousOutput = lastOutputPlaybackMs
         var predicted = when {
-            anchorFrameNs == Long.MIN_VALUE || frameTimeNs < anchorFrameNs || clockChanged || seekedBack -> {
+            anchorFrameNs == Long.MIN_VALUE || frameTimeNs < anchorFrameNs || seekedBack -> {
                 syncTo(sampled, frameTimeNs, isPlaying, speed)
                 sampled
             }
+            clockChanged -> {
+                val continuousPlaybackMs = if (isPlaying || lastPlaying) {
+                    previousOutput?.let { max(it, sampled) } ?: sampled
+                } else {
+                    sampled
+                }
+                syncTo(continuousPlaybackMs, frameTimeNs, isPlaying, speed)
+                continuousPlaybackMs
+            }
             !isPlaying -> {
-                if (sampleChanged) syncTo(sampled, frameTimeNs, isPlaying, speed)
-                sampled
+                if (sampleChanged) {
+                    syncTo(sampled, frameTimeNs, isPlaying, speed)
+                    sampled
+                } else {
+                    anchorPlaybackMs
+                }
             }
             else -> {
                 val elapsedMs = (frameTimeNs - anchorFrameNs).coerceAtLeast(0L) / NANOS_PER_MS
@@ -68,8 +82,8 @@ internal class DanmakuPlaybackClock(
         }
 
         if (isPlaying && !seekedBack) {
-            lastOutputPlaybackMs?.let { previousOutput ->
-                predicted = max(predicted, previousOutput)
+            previousOutput?.let { output ->
+                predicted = max(predicted, output)
             }
         }
 

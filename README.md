@@ -25,6 +25,21 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.4
+
+中文：
+- 弹幕播放时钟在倍速变化、播放/暂停切换时改用连续输出位置作为新锚点，避免直接回落到滞后播放器采样值。
+- 暂停瞬间如果播放器采样尚未刷新，弹幕会停在最后预测位置，不再先后退再停住。
+- 新增单测覆盖倍速切换后持续前进、暂停时保持最后预测位置，继续压低滚动弹幕的顿挫风险。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.4`。
+
+English:
+
+- The danmaku playback clock now re-anchors speed and play/pause transitions from the continuous output position instead of snapping to a lagging player sample.
+- When pausing before the player sample refreshes, danmaku now freezes at the last predicted position instead of stepping backward first.
+- Added unit coverage for continued motion after speed changes and stable pause anchoring to further reduce visible scrolling stutter.
+- App version labels, request user agents, and README notes are now updated to `0.5.4`.
+
 ### v0.5.3
 
 中文：

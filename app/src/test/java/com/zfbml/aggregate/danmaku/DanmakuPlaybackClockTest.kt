@@ -100,4 +100,61 @@ class DanmakuPlaybackClockTest {
         assertTrue(jittered >= beforeJitter)
         assertTrue(jittered in 5_016.0..5_034.0)
     }
+
+    @Test
+    fun speedChangeKeepsClockContinuousAndAdvancing() {
+        val clock = DanmakuPlaybackClock()
+
+        clock.positionMs(sampledPlaybackMs = 2_000, frameTimeNs = 0, isPlaying = true, playbackSpeed = 1f)
+        val beforeSpeedChange = clock.positionMs(
+            sampledPlaybackMs = 2_000,
+            frameTimeNs = 100_000_000,
+            isPlaying = true,
+            playbackSpeed = 1f,
+        )
+        val changedSpeed = clock.positionMs(
+            sampledPlaybackMs = 2_000,
+            frameTimeNs = 116_000_000,
+            isPlaying = true,
+            playbackSpeed = 2f,
+        )
+        val afterSpeedChange = clock.positionMs(
+            sampledPlaybackMs = 2_000,
+            frameTimeNs = 132_000_000,
+            isPlaying = true,
+            playbackSpeed = 2f,
+        )
+
+        assertTrue(changedSpeed >= beforeSpeedChange)
+        assertTrue(afterSpeedChange > changedSpeed)
+        assertTrue(afterSpeedChange in 2_130.0..2_134.5)
+    }
+
+    @Test
+    fun pausingKeepsLastPredictedPositionWhenSampleLags() {
+        val clock = DanmakuPlaybackClock()
+
+        clock.positionMs(sampledPlaybackMs = 3_000, frameTimeNs = 0, isPlaying = true, playbackSpeed = 1f)
+        val beforePause = clock.positionMs(
+            sampledPlaybackMs = 3_000,
+            frameTimeNs = 100_000_000,
+            isPlaying = true,
+            playbackSpeed = 1f,
+        )
+        val paused = clock.positionMs(
+            sampledPlaybackMs = 3_000,
+            frameTimeNs = 116_000_000,
+            isPlaying = false,
+            playbackSpeed = 1f,
+        )
+        val stillPaused = clock.positionMs(
+            sampledPlaybackMs = 3_000,
+            frameTimeNs = 350_000_000,
+            isPlaying = false,
+            playbackSpeed = 1f,
+        )
+
+        assertTrue(paused >= beforePause)
+        assertEquals(paused, stillPaused, 0.01)
+    }
 }
