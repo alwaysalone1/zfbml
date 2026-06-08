@@ -39,7 +39,7 @@ fun DanmakuSurface(
     }
     val currentPlaybackMsProvider by rememberUpdatedState(playbackMsProvider)
     val density = LocalDensity.current
-    var frameTimeNs by remember { mutableLongStateOf(0L) }
+    var frameTimeNs by remember { mutableLongStateOf(DanmakuFrameTimeUnsetNs) }
     var sampledPlaybackMs by remember { mutableLongStateOf(playbackMsProvider().coerceAtLeast(0L)) }
 
     LaunchedEffect(settings.enabled, items.isNotEmpty(), isPlaying) {
@@ -62,20 +62,25 @@ fun DanmakuSurface(
             isPlaying = isPlaying,
         ) ?: return@LaunchedEffect
         while (true) {
-            sampledPlaybackMs = currentPlaybackMsProvider().coerceAtLeast(0L)
+            val nextPlaybackMs = currentPlaybackMsProvider().coerceAtLeast(0L)
+            if (nextPlaybackMs != sampledPlaybackMs) {
+                sampledPlaybackMs = nextPlaybackMs
+            }
             delay(sampleDelayMs)
         }
     }
     LaunchedEffect(items, profile, settings.enabled, settings.density, settings.fontScale, settings.blockedWords) {
         sampledPlaybackMs = currentPlaybackMsProvider().coerceAtLeast(0L)
+        frameTimeNs = DanmakuFrameTimeUnsetNs
         playbackClock.reset()
     }
 
     Canvas(modifier = modifier) {
-        frameTimeNs
+        val currentFrameTimeNs = frameTimeNs
+        if (!danmakuFrameTimeReady(currentFrameTimeNs)) return@Canvas
         val playbackMs = playbackClock.positionMs(
             sampledPlaybackMs = sampledPlaybackMs,
-            frameTimeNs = frameTimeNs,
+            frameTimeNs = currentFrameTimeNs,
             isPlaying = isPlaying,
             playbackSpeed = playbackSpeed,
         )
@@ -221,6 +226,9 @@ internal fun danmakuPlaybackSampleDelayMs(
     return if (isPlaying) PlayingPlaybackSampleDelayMs else PausedFrameDelayMs
 }
 
-private const val PlayingPlaybackSampleDelayMs = 48L
+internal fun danmakuFrameTimeReady(frameTimeNs: Long): Boolean = frameTimeNs != DanmakuFrameTimeUnsetNs
+
+internal const val DanmakuFrameTimeUnsetNs = Long.MIN_VALUE
+private const val PlayingPlaybackSampleDelayMs = 32L
 private const val PausedFrameDelayMs = 250L
 private const val DanmakuStrokeAlpha = 0.8f

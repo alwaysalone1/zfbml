@@ -25,6 +25,24 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.25
+
+中文：
+
+- 弹幕 Surface 在拿到真实 `withFrameNanos` 时间戳之前不再启动预测播放时钟，避免首帧误用 `0` 作为帧锚点后产生大幅跳动。
+- 播放中的弹幕播放位置采样从 48ms 收紧到 32ms，降低预测时钟需要软校正的幅度。
+- 采样循环现在只在播放位置实际变化时写入状态，减少弹幕层无意义的重组触发。
+- 新增单元测试覆盖未就绪帧时间判定和新的 32ms 采样节奏。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.25`。
+
+English:
+
+- The danmaku surface no longer starts the predictive playback clock until a real `withFrameNanos` timestamp is available, preventing a first-frame `0` anchor from causing a large jump.
+- Playing playback-position sampling now runs every 32ms instead of 48ms, reducing the correction span needed by the predictive clock.
+- The sampling loop now writes state only when the sampled playback position actually changes, reducing unnecessary danmaku-layer recomposition triggers.
+- Added unit coverage for frame-time readiness and the new 32ms sampling cadence.
+- App version labels, request user agents, and README notes are now updated to `0.5.25`.
+
 ### v0.5.24
 
 中文：
