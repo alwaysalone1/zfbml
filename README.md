@@ -25,6 +25,22 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.33
+
+中文：
+
+- 横屏全屏播放器底部新增 10 秒快退 / 快进快捷簇，补齐全屏常用播放控制入口。
+- 快捷跳转复用现有 seekBy、边界裁剪和反馈浮层，点击后直接显示时间跳转反馈。
+- 竖屏未全屏控制保持精简，只保留进度线、弹幕入口和全屏按钮。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.33`。
+
+English:
+
+- The landscape fullscreen player now adds a bottom 10-second rewind/forward quick-control cluster for a more complete fullscreen control surface.
+- Quick seeks reuse the existing seekBy flow, boundary clamping, and feedback overlay, so taps immediately show seek feedback.
+- Portrait non-fullscreen controls stay compact with only the progress line, danmaku entry, and fullscreen button.
+- App version labels, request user agents, and README notes are now updated to `0.5.33`.
+
 ### v0.5.32
 
 中文：

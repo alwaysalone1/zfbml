@@ -2033,7 +2033,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.32")
+                setRequestProperty("User-Agent", "ZFBML/0.5.33")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2524,7 +2524,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.5.32",
+                version = "0.5.33",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )
@@ -4836,6 +4836,14 @@ private fun PlayerScreen(
                         revealControls()
                         engine.player.seekTo(it)
                     },
+                    onSeekBackward = {
+                        revealControls()
+                        seekBy(-10_000L)
+                    },
+                    onSeekForward = {
+                        revealControls()
+                        seekBy(10_000L)
+                    },
                     onShowPanel = { panel ->
                         revealControls()
                         activePanel = panel
@@ -5796,6 +5804,8 @@ private fun PlayerBottomControls(
     hasPlaybackIssue: Boolean,
     canSelectNextRoute: Boolean,
     onSeek: (Long) -> Unit,
+    onSeekBackward: () -> Unit,
+    onSeekForward: () -> Unit,
     onShowPanel: (PlayerPanel) -> Unit,
     onEnterFullscreen: () -> Unit,
     onNextEpisode: () -> Unit,
@@ -5922,6 +5932,8 @@ private fun PlayerBottomControls(
                 hasPlaybackIssue = hasPlaybackIssue,
                 canSelectNextRoute = canSelectNextRoute,
                 onToggleDanmaku = onToggleDanmaku,
+                onSeekBackward = onSeekBackward,
+                onSeekForward = onSeekForward,
                 onShowPanel = onShowPanel,
                 onNextEpisode = onNextEpisode,
                 onOffline = onOffline,
@@ -6298,6 +6310,8 @@ private fun PlayerFullscreenControlRow(
     hasPlaybackIssue: Boolean,
     canSelectNextRoute: Boolean,
     onToggleDanmaku: () -> Unit,
+    onSeekBackward: () -> Unit,
+    onSeekForward: () -> Unit,
     onShowPanel: (PlayerPanel) -> Unit,
     onNextEpisode: () -> Unit,
     onOffline: () -> Unit,
@@ -6328,7 +6342,11 @@ private fun PlayerFullscreenControlRow(
                 danmakuEnabled = danmakuEnabled,
                 onToggleDanmaku = onToggleDanmaku,
                 onOpenDanmakuSettings = { onShowPanel(PlayerPanel.Danmaku) },
-                modifier = Modifier.weight(0.92f),
+                modifier = Modifier.weight(0.78f),
+            )
+            PlayerFullscreenSeekCluster(
+                onSeekBackward = onSeekBackward,
+                onSeekForward = onSeekForward,
             )
             PlayerActionBar(
                 quality = quality,
@@ -6346,7 +6364,7 @@ private fun PlayerFullscreenControlRow(
                 onOffline = onOffline,
                 onRetryRoute = onRetryRoute,
                 onNextRoute = onNextRoute,
-                modifier = Modifier.weight(2.2f),
+                modifier = Modifier.weight(2.34f),
             )
         }
     }
@@ -6461,6 +6479,58 @@ private fun PlayerDanmakuInputBar(
                 maxLines = 1,
             )
         }
+    }
+}
+
+@Composable
+private fun PlayerFullscreenSeekCluster(
+    onSeekBackward: () -> Unit,
+    onSeekForward: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .height(36.dp)
+            .clip(RoundedCornerShape(999.dp))
+            .background(Color.Black.copy(alpha = 0.30f))
+            .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(999.dp)),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        PlayerFullscreenSeekButton(
+            icon = Icons.Filled.Replay10,
+            contentDescription = "后退 10 秒",
+            onClick = onSeekBackward,
+        )
+        Box(
+            modifier = Modifier
+                .width(1.dp)
+                .height(18.dp)
+                .background(Color.White.copy(alpha = 0.10f)),
+        )
+        PlayerFullscreenSeekButton(
+            icon = Icons.Filled.Forward10,
+            contentDescription = "快进 10 秒",
+            onClick = onSeekForward,
+        )
+    }
+}
+
+@Composable
+private fun PlayerFullscreenSeekButton(
+    icon: ImageVector,
+    contentDescription: String,
+    onClick: () -> Unit,
+) {
+    IconButton(
+        onClick = onClick,
+        modifier = Modifier.size(width = 42.dp, height = 36.dp).focusable(),
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            tint = Color.White.copy(alpha = 0.84f),
+            modifier = Modifier.size(18.dp),
+        )
     }
 }
 
