@@ -1960,7 +1960,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.12")
+                setRequestProperty("User-Agent", "ZFBML/0.5.13")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2451,7 +2451,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.5.12",
+                version = "0.5.13",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )
@@ -4374,7 +4374,7 @@ private fun PlayerScreen(
     LaunchedEffect(playbackSpeed) {
         engine.player.setPlaybackSpeed(playbackSpeed)
     }
-    LaunchedEffect(currentStream.id, currentEpisode.id) {
+    LaunchedEffect(currentStream.id) {
         revealControls()
         if (currentStream.protocol == StreamProtocol.BITTORRENT) {
             graph.torrentEngine.prepare(currentStream)
@@ -4382,8 +4382,9 @@ private fun PlayerScreen(
             graph.torrentEngine.release()
             engine.prepare(currentStream)
         }
-        val match = graph.danmakuRegistry.matchAll(detail, currentEpisode).firstOrNull()
-        danmakuItems = match?.let { graph.danmakuRegistry.provider(it.providerId)?.fetchTimeline(it) }.orEmpty()
+    }
+    LaunchedEffect(detail.providerId, detail.url, currentEpisode.providerId, currentEpisode.id) {
+        danmakuItems = graph.danmakuRegistry.fetchBestTimeline(detail, currentEpisode)
     }
     LaunchedEffect(currentEpisode.id, detail.episodes, playerRoutes) {
         if (playerRoutes.isEmpty()) return@LaunchedEffect

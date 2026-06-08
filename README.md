@@ -25,6 +25,21 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.13
+
+中文：
+- 播放器弹幕加载现在只跟当前剧集绑定，切换同一集的清晰度/线路不会重新匹配并拉取同一份弹幕时间轴。
+- `DanmakuRegistry` 新增最佳弹幕时间轴缓存和并发请求合并，同一集重复进入或并发请求会复用已拉取的非空时间轴。
+- 空时间轴不写入缓存，避免临时无结果把后续可恢复的弹幕请求固定成空结果。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.13`。
+
+English:
+
+- Player danmaku loading is now tied only to the current episode, so switching quality/routes within the same episode no longer rematches and refetches the same timeline.
+- `DanmakuRegistry` now caches the best non-empty timeline and coalesces concurrent requests, allowing repeated or concurrent loads for the same episode to reuse the fetched timeline.
+- Empty timelines are not cached, preventing transient no-result responses from locking future recoverable danmaku requests to an empty state.
+- App version labels, request user agents, and README notes are now updated to `0.5.13`.
+
 ### v0.5.12
 
 中文：

@@ -4,7 +4,12 @@ import com.zfbml.aggregate.source.Episode
 import com.zfbml.aggregate.source.MediaDetail
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
@@ -74,8 +79,12 @@ class YoukuDanmakuProvider(httpClient: OkHttpClient) : WebDanmakuProvider(
 
 class DanmakuRegistry(
     providers: List<DanmakuProvider>,
+    private val timelineCacheSize: Int = DEFAULT_TIMELINE_CACHE_SIZE,
 ) {
     private val byId = providers.associateBy { it.id }
+    private val timelineCacheLock = Mutex()
+    private val timelineCache = LinkedHashMap<DanmakuTimelineCacheKey, List<DanmakuItem>>(16, 0.75f, true)
+    private val inFlightTimelineRequests = mutableMapOf<DanmakuTimelineCacheKey, Deferred<List<DanmakuItem>>>()
     val profiles: List<DanmakuProfile> = providers.map { it.profile }
 
     fun provider(id: String): DanmakuProvider? = byId[id]
@@ -84,6 +93,94 @@ class DanmakuRegistry(
         return byId.values.flatMap { provider ->
             runCatching { provider.match(detail, episode) }.getOrDefault(emptyList())
         }.sortedByDescending { it.score }
+    }
+
+    suspend fun fetchBestTimeline(detail: MediaDetail, episode: Episode): List<DanmakuItem> {
+        val cacheKey = DanmakuTimelineCacheKey.from(detail, episode)
+        return coroutineScope {
+            var createdRequest = false
+            val request = timelineCacheLock.withLock {
+                timelineCache[cacheKey]?.let { return@coroutineScope it }
+                inFlightTimelineRequests[cacheKey] ?: async {
+                    fetchBestTimelineUncached(detail, episode)
+                }.also { deferred ->
+                    inFlightTimelineRequests[cacheKey] = deferred
+                    createdRequest = true
+                }
+            }
+
+            try {
+                val timeline = request.await()
+                if (createdRequest) {
+                    timelineCacheLock.withLock {
+                        if (inFlightTimelineRequests[cacheKey] === request) {
+                            inFlightTimelineRequests.remove(cacheKey)
+                        }
+                        if (timeline.isNotEmpty()) {
+                            cacheTimeline(cacheKey, timeline)
+                        }
+                    }
+                }
+                timeline
+            } catch (error: Throwable) {
+                if (createdRequest) {
+                    timelineCacheLock.withLock {
+                        if (inFlightTimelineRequests[cacheKey] === request) {
+                            inFlightTimelineRequests.remove(cacheKey)
+                        }
+                    }
+                }
+                throw error
+            }
+        }
+    }
+
+    private suspend fun fetchBestTimelineUncached(detail: MediaDetail, episode: Episode): List<DanmakuItem> {
+        val match = matchAll(detail, episode).firstOrNull() ?: return emptyList()
+        return provider(match.providerId)?.fetchTimeline(match).orEmpty()
+    }
+
+    private fun cacheTimeline(key: DanmakuTimelineCacheKey, timeline: List<DanmakuItem>) {
+        if (timelineCacheSize <= 0) return
+        timelineCache[key] = timeline
+        while (timelineCache.size > timelineCacheSize) {
+            val iterator = timelineCache.entries.iterator()
+            if (!iterator.hasNext()) break
+            iterator.next()
+            iterator.remove()
+        }
+    }
+
+    private companion object {
+        const val DEFAULT_TIMELINE_CACHE_SIZE = 48
+    }
+}
+
+private data class DanmakuTimelineCacheKey(
+    val detailProviderId: String,
+    val detailTitle: String,
+    val detailUrl: String,
+    val episodeProviderId: String,
+    val episodeId: String,
+    val episodeUrl: String,
+    val episodeIndex: Int?,
+    val subjectId: String?,
+    val episodeRemoteId: String?,
+) {
+    companion object {
+        fun from(detail: MediaDetail, episode: Episode): DanmakuTimelineCacheKey {
+            return DanmakuTimelineCacheKey(
+                detailProviderId = detail.providerId,
+                detailTitle = detail.title,
+                detailUrl = detail.url,
+                episodeProviderId = episode.providerId,
+                episodeId = episode.id,
+                episodeUrl = episode.url,
+                episodeIndex = episode.index,
+                subjectId = episode.raw["subjectId"],
+                episodeRemoteId = episode.raw["episodeId"],
+            )
+        }
     }
 }
 
