@@ -45,6 +45,13 @@ Tooling: Android SDK `apkanalyzer.bat` for manifest, resource, file, and dex pac
 - Tencent Video and Youku both expose preload/detail infrastructure around browsing, so schedule and category surfaces should summarize readiness and next actions before users open detail.
 - ZFBML implementation direction: the home calendar should show today, selected day, weekly coverage, and next update as one digest surface. Weekday chips should be stable and count-bearing, so the schedule feels like a product surface instead of a debug list from the Bangumi API.
 
+## Detail And Playback Decision Findings
+
+- Dandanplay separates anime detail and player activities, which supports a detail surface that explains playback readiness before entering the full player.
+- Tencent Video and Youku both expose dedicated detail/player/preload components, suggesting that detail should summarize route readiness, cache/preload state, and fallback policy before the user taps play.
+- Bilibili's player resource split reinforces keeping route diagnostics in panels while showing only user-facing readiness and action labels on the normal detail path.
+- ZFBML implementation direction: the detail hero should show a compact readiness summary that reuses route recommendation and cache policy data. Users should see online readiness, BT fallback, cache availability, and the recommended action without opening a diagnostic route list.
+
 ## Cache And Offline Findings
 
 - Dandanplay has a dedicated `CacheManagerActivity`, which supports treating cache as a normal anime workflow rather than a hidden download implementation detail.
@@ -63,3 +70,5 @@ This pass adds player anti-obstruction support for danmaku. `DanmakuSafeArea` le
 This pass also unifies the player cache action model. Fullscreen controls, the More panel, and the Profile cache card now share source/route cacheability signals so users can see when Media3 offline caching is available, when WebView or DRM blocks caching, and when BT is handled by the torrent engine.
 
 This pass upgrades the home schedule surface. `HomeScheduleUiState` now centralizes today count, weekly coverage, selected-day content, next update, and fallback text, and the expanded calendar shows that digest before weekday chips and anime rows.
+
+This pass adds a detail playback readiness summary. `DetailPlaybackReadinessUiState` now condenses route recommendation, online coverage, BT fallback, and cache capability for the detail hero, keeping the normal watch path clear while preserving diagnostics in route panels.

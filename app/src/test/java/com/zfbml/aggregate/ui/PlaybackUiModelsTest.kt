@@ -179,6 +179,67 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun detailPlaybackReadinessSummarizesReadyOnlineRouteAndCache() {
+        val hls = route("hls", StreamProtocol.HLS, 900, quality = "1080p", sourceName = "Online")
+        val state = buildRouteUiState(
+            selectedEpisode = episode(),
+            routes = listOf(hls),
+            loading = false,
+            error = null,
+        )
+
+        val readiness = buildDetailPlaybackReadinessUiState(state)
+
+        assertTrue(readiness.canPlay)
+        assertTrue(readiness.cacheEnabled)
+        assertEquals("\u64ad\u653e\u5c31\u7eea", readiness.headline)
+        assertEquals("\u64ad\u653e\u63a8\u8350", readiness.primaryActionLabel)
+        assertEquals("1 \u5728\u7ebf", readiness.onlineLabel)
+        assertEquals("\u5907\u7528\u5f85\u547d", readiness.backupLabel)
+        assertEquals("\u53ef\u79bb\u7ebf", readiness.cacheLabel)
+        assertTrue(readiness.summary.contains("Online"))
+    }
+
+    @Test
+    fun detailPlaybackReadinessExplainsBtAndNonPlayableStates() {
+        val btState = buildRouteUiState(
+            selectedEpisode = episode(),
+            routes = listOf(route("bt", StreamProtocol.BITTORRENT, 700, quality = "1080p")),
+            loading = false,
+            error = null,
+        )
+        val webOnlyState = buildRouteUiState(
+            selectedEpisode = episode(),
+            routes = listOf(route("web", StreamProtocol.WEBVIEW_ONLY, 900, quality = "1080p")),
+            loading = false,
+            error = null,
+        )
+        val loadingState = buildRouteUiState(
+            selectedEpisode = episode(),
+            routes = emptyList(),
+            loading = true,
+            error = null,
+        )
+
+        val bt = buildDetailPlaybackReadinessUiState(btState)
+        val webOnly = buildDetailPlaybackReadinessUiState(webOnlyState)
+        val loading = buildDetailPlaybackReadinessUiState(loadingState)
+
+        assertTrue(bt.canPlay)
+        assertFalse(bt.cacheEnabled)
+        assertEquals("\u8fb9\u4e0b\u8fb9\u64ad", bt.primaryActionLabel)
+        assertEquals("1 BT", bt.backupLabel)
+        assertEquals("\u8fb9\u4e0b\u8fb9\u64ad", bt.cacheLabel)
+        assertFalse(webOnly.canPlay)
+        assertEquals("\u6682\u65e0\u53ef\u64ad\u7ebf\u8def", webOnly.headline)
+        assertEquals("\u7b49\u5f85\u8865\u6e90", webOnly.primaryActionLabel)
+        assertFalse(loading.canPlay)
+        assertEquals("\u6b63\u5728\u5339\u914d\u64ad\u653e\u6e90", loading.headline)
+        assertEquals("\u5339\u914d\u4e2d", loading.primaryActionLabel)
+        assertEquals("\u4f18\u5148\u5339\u914d", loading.onlineLabel)
+    }
+
+    @Test
     fun autoplayRouteSkipsWebViewOnlyEvenWhenItScoresHighest() {
         val webView = route("webview", StreamProtocol.WEBVIEW_ONLY, 8_000, quality = "1080p")
         val playable = route("hls", StreamProtocol.HLS, 100, quality = "720p")

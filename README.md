@@ -25,6 +25,23 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.43
+
+中文：
+- 详情页新增 `DetailPlaybackReadinessUiState`，把推荐线路、在线源、BT 备用和缓存能力汇总成播放就绪状态。
+- 详情 Hero 的首播决策下方新增播放就绪摘要条，用户打开详情即可看到是否能播、推荐动作和缓存状态。
+- 播放就绪摘要复用已有线路推荐与缓存动作模型，避免详情页、播放器和缓存入口各说各话。
+- 新增单元测试覆盖 HLS 可缓存、BT 边下边播、WebView-only 不可播和线路匹配中等详情页状态。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.43`。
+
+English:
+
+- The detail page now has a `DetailPlaybackReadinessUiState` that summarizes recommended route, online source, BT fallback, and cache capability.
+- The detail hero shows a playback-readiness strip below the first-play decision, so users can see readiness, action, and cache status before entering the player.
+- The readiness strip reuses existing route recommendation and cache-action models to keep detail, player, and cache wording aligned.
+- Added unit coverage for HLS cacheable, BT edge-cache, WebView-only blocked, and route-matching detail states.
+- App version labels, request user agents, and README notes are now updated to `0.5.43`.
+
 ### v0.5.42
 
 中文：

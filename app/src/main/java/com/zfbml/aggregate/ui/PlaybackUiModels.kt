@@ -49,6 +49,19 @@ internal data class RouteLoadingStepUiState(
     val active: Boolean,
 )
 
+internal data class DetailPlaybackReadinessUiState(
+    val headline: String,
+    val summary: String,
+    val primaryActionLabel: String,
+    val routeLabel: String,
+    val onlineLabel: String,
+    val backupLabel: String,
+    val cacheLabel: String,
+    val cacheReason: String,
+    val canPlay: Boolean,
+    val cacheEnabled: Boolean,
+)
+
 internal enum class RoutePrefetchStatus {
     Queued,
     Warming,
@@ -310,6 +323,62 @@ internal fun buildRouteUiState(
         recommendationTitle = recommendationTitle,
         recommendationDetail = recommendationDetail,
         recommendationReason = recommendationReason,
+    )
+}
+
+internal fun buildDetailPlaybackReadinessUiState(
+    state: RouteUiState,
+): DetailPlaybackReadinessUiState {
+    val cacheAction = state.bestRoute?.stream?.let(::buildPlayerCacheActionUiState)
+    val headline = when (state.status) {
+        RouteLoadStatus.Ready -> "\u64ad\u653e\u5c31\u7eea"
+        RouteLoadStatus.Loading -> "\u6b63\u5728\u5339\u914d\u64ad\u653e\u6e90"
+        RouteLoadStatus.Failed -> "\u64ad\u653e\u6e90\u5f02\u5e38"
+        RouteLoadStatus.Empty -> "\u6682\u65e0\u53ef\u64ad\u7ebf\u8def"
+        RouteLoadStatus.Idle -> "\u9009\u96c6\u540e\u81ea\u52a8\u51c6\u5907"
+    }
+    val summary = when (state.status) {
+        RouteLoadStatus.Ready -> {
+            val route = state.bestRoute
+            listOfNotNull(
+                state.recommendationTitle.takeIf { it.isNotBlank() },
+                state.recommendationReason.takeIf { it.isNotBlank() },
+                route?.let { playerQualityLabelForUi(it.stream, it) },
+            ).distinct().joinToString(" \u00b7 ")
+        }
+        RouteLoadStatus.Loading -> "\u4f18\u5148\u5339\u914d\u5728\u7ebf\u64ad\u653e\uff0c\u5fc5\u8981\u65f6\u542f\u7528 BT \u5907\u7528\u7ebf\u8def\u3002"
+        RouteLoadStatus.Failed -> state.detail.ifBlank { "\u53ef\u91cd\u8bd5\u6216\u5207\u6362\u5176\u4ed6\u5267\u96c6\u3002" }
+        RouteLoadStatus.Empty -> "\u5f53\u524d\u96c6\u6682\u65e0 HLS / MP4 / BT \u53ef\u64ad\u7ebf\u8def\uff0c\u53ef\u5207\u6362\u5267\u96c6\u6216\u7a0d\u540e\u91cd\u8bd5\u3002"
+        RouteLoadStatus.Idle -> "\u8fdb\u5165\u8be6\u60c5\u540e\u4f1a\u81ea\u52a8\u4e3a\u9996\u96c6\u51c6\u5907\u6700\u4f18\u64ad\u653e\u7ebf\u8def\u3002"
+    }
+    val primaryActionLabel = when (state.status) {
+        RouteLoadStatus.Ready -> if (state.bestRoute?.protocol == StreamProtocol.BITTORRENT) "\u8fb9\u4e0b\u8fb9\u64ad" else "\u64ad\u653e\u63a8\u8350"
+        RouteLoadStatus.Loading -> "\u5339\u914d\u4e2d"
+        RouteLoadStatus.Failed -> "\u67e5\u770b\u5f02\u5e38"
+        RouteLoadStatus.Empty -> "\u7b49\u5f85\u8865\u6e90"
+        RouteLoadStatus.Idle -> "\u81ea\u52a8\u51c6\u5907"
+    }
+    val onlineLabel = when {
+        state.onlineCount > 0 -> "${state.onlineCount} \u5728\u7ebf"
+        state.status == RouteLoadStatus.Loading -> "\u4f18\u5148\u5339\u914d"
+        else -> "\u6682\u65e0\u5728\u7ebf"
+    }
+    val backupLabel = when {
+        state.btCount > 0 -> "${state.btCount} BT"
+        state.status == RouteLoadStatus.Loading -> "\u5907\u7528\u5f85\u547d"
+        else -> "\u5907\u7528\u5f85\u547d"
+    }
+    return DetailPlaybackReadinessUiState(
+        headline = headline,
+        summary = summary,
+        primaryActionLabel = primaryActionLabel,
+        routeLabel = state.sourceCoverageLabel,
+        onlineLabel = onlineLabel,
+        backupLabel = backupLabel,
+        cacheLabel = cacheAction?.value ?: "\u5f85\u7ebf\u8def",
+        cacheReason = cacheAction?.reason ?: "\u64ad\u653e\u6e90\u5c31\u7eea\u540e\u5224\u65ad\u7f13\u5b58\u80fd\u529b",
+        canPlay = state.canPlay,
+        cacheEnabled = cacheAction?.enabled == true,
     )
 }
 

@@ -2189,7 +2189,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.42")
+                setRequestProperty("User-Agent", "ZFBML/0.5.43")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2712,7 +2712,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.5.42",
+                version = "0.5.43",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )
@@ -3416,6 +3416,7 @@ private fun DetailScreen(
         selectedSourceId = routeSourceFilter,
         loadedFromCache = routesFromCache,
     )
+    val detailPlaybackReadiness = buildDetailPlaybackReadinessUiState(routeUiState)
     val routePrefetchUiState = detail?.let { media ->
         buildRoutePrefetchUiState(
             episodes = media.episodes,
@@ -3500,6 +3501,7 @@ private fun DetailScreen(
                     media = media,
                     selectedEpisode = selectedEpisode,
                     routeUiState = routeUiState,
+                    playbackReadiness = detailPlaybackReadiness,
                     onPlay = {
                         val episode = selectedEpisode ?: media.episodes.firstOrNull()
                         if (episode != null) {
@@ -3605,6 +3607,7 @@ private fun DetailHero(
     media: MediaDetail,
     selectedEpisode: Episode?,
     routeUiState: RouteUiState,
+    playbackReadiness: DetailPlaybackReadinessUiState,
     onPlay: () -> Unit,
     onToggleRoutes: () -> Unit,
     modifier: Modifier = Modifier,
@@ -3679,6 +3682,7 @@ private fun DetailHero(
                 state = routeUiState,
                 selectedEpisode = selectedEpisode,
             )
+            DetailPlaybackReadinessStrip(state = playbackReadiness)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -3864,6 +3868,67 @@ private fun DetailFirstPlayStrip(
             }
             if (state.routeCount > 1) {
                 item { DetailDecisionChip("可切换", state.sourceCoverageLabel, AnimeAccentViolet) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun DetailPlaybackReadinessStrip(state: DetailPlaybackReadinessUiState) {
+    val accent = when {
+        state.canPlay -> AnimeAccentGreen
+        state.primaryActionLabel.contains("\u5339\u914d") -> AnimeAccentCyan
+        else -> AnimeAccentAmber
+    }
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color.Black.copy(alpha = 0.24f))
+            .border(1.dp, accent.copy(alpha = 0.20f), RoundedCornerShape(8.dp))
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(8.dp)
+                    .clip(CircleShape)
+                    .background(accent),
+            )
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    text = state.headline,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = state.summary,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = AnimeMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            RouteStatusBadge(state.primaryActionLabel, accent)
+        }
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(7.dp), modifier = Modifier.fillMaxWidth()) {
+            item { DetailDecisionChip("\u7ebf\u8def", state.routeLabel, AnimeAccentCyan) }
+            item { DetailDecisionChip("\u5728\u7ebf", state.onlineLabel, AnimeAccentGreen) }
+            item { DetailDecisionChip("\u5907\u7528", state.backupLabel, AnimeAccentAmber) }
+            item {
+                DetailDecisionChip(
+                    "\u7f13\u5b58",
+                    state.cacheLabel,
+                    if (state.cacheEnabled) AnimeAccentPink else AnimeMuted,
+                )
             }
         }
     }
