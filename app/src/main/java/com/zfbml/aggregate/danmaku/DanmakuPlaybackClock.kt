@@ -8,6 +8,8 @@ internal class DanmakuPlaybackClock(
     private val softSyncToleranceMs: Double = 24.0,
     private val seekToleranceMs: Double = 260.0,
     private val maxSoftCorrectionMs: Double = 6.0,
+    private val maxCatchUpCorrectionMs: Double = 24.0,
+    private val forwardSeekToleranceMs: Double = 2_000.0,
 ) {
     private var anchorPlaybackMs = 0.0
     private var anchorFrameNs = Long.MIN_VALUE
@@ -36,7 +38,7 @@ internal class DanmakuPlaybackClock(
         val previousSample = lastSampledPlaybackMs
         val sampleChanged = previousSample == null || sampled != previousSample
         val seekedBack = previousSample != null && sampled < previousSample - seekToleranceMs
-        val seekedForward = previousSample != null && sampled > previousSample + hardSyncToleranceMs
+        val seekedForward = previousSample != null && sampled > previousSample + forwardSeekToleranceMs
         val clockChanged = isPlaying != lastPlaying || abs(speed - lastSpeed) > 0.001
 
         val previousOutput = lastOutputPlaybackMs
@@ -71,9 +73,15 @@ internal class DanmakuPlaybackClock(
         if (isPlaying && sampleChanged && !seekedBack && !seekedForward) {
             val driftMs = sampled - predicted
             when {
-                driftMs > hardSyncToleranceMs -> {
+                driftMs > forwardSeekToleranceMs -> {
                     syncTo(sampled, frameTimeNs, isPlaying, speed)
                     predicted = sampled
+                }
+                driftMs > hardSyncToleranceMs -> {
+                    val correctionMs = (driftMs * SOFT_CORRECTION_RATIO)
+                        .coerceIn(maxSoftCorrectionMs, maxCatchUpCorrectionMs)
+                    anchorPlaybackMs += correctionMs
+                    predicted += correctionMs
                 }
                 abs(driftMs) > softSyncToleranceMs -> {
                     val correctionMs = (driftMs * SOFT_CORRECTION_RATIO)

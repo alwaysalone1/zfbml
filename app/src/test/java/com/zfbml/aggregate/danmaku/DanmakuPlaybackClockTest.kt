@@ -168,18 +168,40 @@ class DanmakuPlaybackClockTest {
     }
 
     @Test
+    fun forwardSampleSpikeIsSmoothedBeforeSeekThreshold() {
+        val clock = DanmakuPlaybackClock()
+
+        clock.positionMs(sampledPlaybackMs = 5_000, frameTimeNs = 0, isPlaying = true, playbackSpeed = 1f)
+        val beforeSpike = clock.positionMs(
+            sampledPlaybackMs = 5_016,
+            frameTimeNs = 16_000_000,
+            isPlaying = true,
+            playbackSpeed = 1f,
+        )
+        val smoothed = clock.positionMs(
+            sampledPlaybackMs = 6_200,
+            frameTimeNs = 32_000_000,
+            isPlaying = true,
+            playbackSpeed = 1f,
+        )
+
+        assertTrue(smoothed > beforeSpike)
+        assertTrue(smoothed in 5_050.0..5_070.0)
+    }
+
+    @Test
     fun obviousForwardSeekHardSyncsImmediately() {
         val clock = DanmakuPlaybackClock()
 
         clock.positionMs(sampledPlaybackMs = 2_000, frameTimeNs = 0, isPlaying = true, playbackSpeed = 1f)
         val seeked = clock.positionMs(
-            sampledPlaybackMs = 3_000,
+            sampledPlaybackMs = 5_000,
             frameTimeNs = 16_000_000,
             isPlaying = true,
             playbackSpeed = 1f,
         )
 
-        assertEquals(3_000.0, seeked, 0.01)
+        assertEquals(5_000.0, seeked, 0.01)
     }
 
     @Test

@@ -25,6 +25,24 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.35
+
+中文：
+
+- 弹幕播放时钟新增前向采样尖峰平滑策略，避免播放器短时位置采样跳变直接造成弹幕坐标瞬移。
+- 明确的大跨度快进 / seek 仍会立即硬同步，保证用户主动跳转后弹幕位置准确。
+- 大幅但未达 seek 阈值的前向漂移会以更快的软修正追赶，减少卡顿感同时避免长时间滞后。
+- 新增单元测试覆盖前向采样尖峰平滑和明确 seek 硬同步边界。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.35`。
+
+English:
+
+- The danmaku playback clock now smooths forward sample spikes so short player-position jumps do not directly teleport rendered danmaku.
+- Clear large seek/fast-forward jumps still hard-sync immediately, keeping danmaku aligned after intentional user jumps.
+- Large forward drift below the seek threshold now catches up with a faster soft correction, reducing stutter without lingering far behind.
+- Added unit coverage for forward sample-spike smoothing and explicit seek hard-sync boundaries.
+- App version labels, request user agents, and README notes are now updated to `0.5.35`.
+
 ### v0.5.34
 
 中文：
