@@ -9,6 +9,7 @@ import com.zfbml.aggregate.source.SourceCapability
 import com.zfbml.aggregate.source.SourceManifest
 import com.zfbml.aggregate.source.SourceSearchReport
 import com.zfbml.aggregate.source.StreamProtocol
+import com.zfbml.aggregate.source.catalog.BangumiScheduleDay
 
 internal enum class RouteLoadStatus {
     Idle,
@@ -99,6 +100,29 @@ internal data class SearchIndexUiState(
     val failedSourceCount: Int,
     val selectedProviderId: String?,
     val sourceFilters: List<SearchSourceFilterUiState>,
+)
+
+internal data class ScheduleDayChipUiState(
+    val weekdayId: Int,
+    val label: String,
+    val count: Int,
+    val selected: Boolean,
+    val today: Boolean,
+)
+
+internal data class HomeScheduleUiState(
+    val selectedDay: BangumiScheduleDay?,
+    val selectedItems: List<SearchResult>,
+    val dayChips: List<ScheduleDayChipUiState>,
+    val headline: String,
+    val summary: String,
+    val selectedDayTitle: String,
+    val selectedDayAction: String,
+    val emptyTitle: String,
+    val emptySubtitle: String,
+    val todayCount: Int,
+    val weekCount: Int,
+    val nextUpdateLabel: String,
 )
 
 internal data class PlayerOverlayState(
@@ -641,6 +665,66 @@ internal fun searchResultsForProvider(
         ?: results
 }
 
+internal fun buildHomeScheduleUiState(
+    schedule: List<BangumiScheduleDay>,
+    selectedDayId: Int,
+    currentDayId: Int,
+): HomeScheduleUiState {
+    val selectedDay = schedule.firstOrNull { it.weekdayId == selectedDayId }
+        ?: schedule.firstOrNull { it.weekdayId == currentDayId }
+        ?: schedule.firstOrNull { it.items.isNotEmpty() }
+        ?: schedule.firstOrNull()
+    val selectedItems = selectedDay?.items.orEmpty()
+    val todayCount = schedule.firstOrNull { it.weekdayId == currentDayId }?.items.orEmpty().size
+    val weekCount = schedule.sumOf { it.items.size }
+    val nextUpdateDay = schedule.firstActiveScheduleDayFrom(currentDayId)
+    val nextUpdateLabel = when {
+        nextUpdateDay == null -> "\u5f85\u540c\u6b65"
+        nextUpdateDay.weekdayId == currentDayId -> "\u4eca\u65e5 ${nextUpdateDay.items.size} \u90e8"
+        else -> "${compactScheduleWeekdayLabel(nextUpdateDay.weekdayCn, nextUpdateDay.weekdayId)} ${nextUpdateDay.items.size} \u90e8"
+    }
+    val dayChips = schedule.map { day ->
+        ScheduleDayChipUiState(
+            weekdayId = day.weekdayId,
+            label = compactScheduleWeekdayLabel(day.weekdayCn, day.weekdayId),
+            count = day.items.size,
+            selected = day.weekdayId == selectedDay?.weekdayId,
+            today = day.weekdayId == currentDayId,
+        )
+    }
+    val selectedDayName = selectedDay?.weekdayCn ?: "\u8ffd\u756a\u65e5\u5386"
+    val selectedDayAction = if (selectedItems.isNotEmpty()) {
+        "${selectedItems.size} \u90e8"
+    } else {
+        ""
+    }
+    val headline = when {
+        weekCount == 0 -> "\u65b0\u756a\u65f6\u95f4\u8868\u5f85\u540c\u6b65"
+        selectedDay?.weekdayId == currentDayId && selectedItems.isNotEmpty() -> "\u4eca\u65e5\u66f4\u65b0 ${selectedItems.size} \u90e8"
+        selectedItems.isNotEmpty() -> "$selectedDayName\u66f4\u65b0 ${selectedItems.size} \u90e8"
+        else -> "$selectedDayName\u6682\u65e0\u653e\u9001"
+    }
+    val summary = when {
+        weekCount == 0 -> "\u540c\u6b65 Bangumi \u6bcf\u65e5\u653e\u9001\u540e\uff0c\u8fd9\u91cc\u4f1a\u663e\u793a\u4eca\u65e5\u3001\u672c\u5468\u548c\u4e0b\u4e00\u6279\u66f4\u65b0\u3002"
+        selectedItems.isNotEmpty() -> "\u672c\u5468\u5df2\u7d22\u5f15 $weekCount \u90e8\u653e\u9001\uff0c\u4e0b\u4e00\u6279\u66f4\u65b0\uff1a$nextUpdateLabel\u3002"
+        else -> "\u672c\u5468\u5df2\u7d22\u5f15 $weekCount \u90e8\u653e\u9001\uff0c\u53ef\u5207\u6362\u5230\u5176\u4ed6\u65e5\u671f\u7ee7\u7eed\u770b\u3002"
+    }
+    return HomeScheduleUiState(
+        selectedDay = selectedDay,
+        selectedItems = selectedItems,
+        dayChips = dayChips,
+        headline = headline,
+        summary = summary,
+        selectedDayTitle = selectedDayName,
+        selectedDayAction = selectedDayAction,
+        emptyTitle = "\u6682\u65e0\u5f53\u65e5\u653e\u9001\u6570\u636e",
+        emptySubtitle = "\u53ef\u4ee5\u5207\u6362\u5176\u4ed6\u65e5\u671f\uff0c\u6216\u76f4\u63a5\u641c\u7d22\u756a\u540d\u3002",
+        todayCount = todayCount,
+        weekCount = weekCount,
+        nextUpdateLabel = nextUpdateLabel,
+    )
+}
+
 internal fun nextEpisodeForPlayer(
     episodes: List<Episode>,
     currentEpisode: Episode,
@@ -1013,6 +1097,25 @@ private fun SourceManifest.searchCapabilityLabel(): String {
         if (SourceCapability.EPISODES in capabilities) "\u9009\u96c6" else null,
     )
     return labels.distinct().take(3).joinToString(" \u00b7 ")
+}
+
+private fun List<BangumiScheduleDay>.firstActiveScheduleDayFrom(currentDayId: Int): BangumiScheduleDay? {
+    val orderedWeekdays = (0 until 7).map { offset ->
+        ((currentDayId - 1 + offset).floorMod(7)) + 1
+    }
+    return orderedWeekdays.firstNotNullOfOrNull { weekdayId ->
+        firstOrNull { it.weekdayId == weekdayId && it.items.isNotEmpty() }
+    }
+}
+
+private fun compactScheduleWeekdayLabel(weekdayCn: String, weekdayId: Int): String {
+    return weekdayCn
+        .removePrefix("\u661f\u671f")
+        .ifBlank { weekdayId.toString() }
+}
+
+private fun Int.floorMod(divisor: Int): Int {
+    return ((this % divisor) + divisor) % divisor
 }
 
 private fun providerDisplayIdForSearch(providerId: String): String {

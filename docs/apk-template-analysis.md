@@ -38,6 +38,13 @@ Tooling: Android SDK `apkanalyzer.bat` for manifest, resource, file, and dex pac
 - ZFBML implementation direction: the search page should show searchable source count, failed sources, result count, and quick source filters. Result filtering should be a first-class index interaction, not a debug message.
 - Updated player direction: fullscreen controls, danmaku, route panels, and transient notices need explicit anti-obstruction rules so they do not cover the decisive video area or fight with each other.
 
+## Browse And Schedule Findings
+
+- Animeko's small Compose shell argues for keeping discovery fast and low-friction: the first tab should explain what to watch today without forcing users into source diagnostics.
+- Bilibili's bangumi and player resource split suggests a normal video-app hierarchy: recommendation, calendar, category browse, detail, then player.
+- Tencent Video and Youku both expose preload/detail infrastructure around browsing, so schedule and category surfaces should summarize readiness and next actions before users open detail.
+- ZFBML implementation direction: the home calendar should show today, selected day, weekly coverage, and next update as one digest surface. Weekday chips should be stable and count-bearing, so the schedule feels like a product surface instead of a debug list from the Bangumi API.
+
 ## Cache And Offline Findings
 
 - Dandanplay has a dedicated `CacheManagerActivity`, which supports treating cache as a normal anime workflow rather than a hidden download implementation detail.
@@ -54,3 +61,5 @@ The next pass after route prefetching adds visible search source coverage and pe
 This pass adds player anti-obstruction support for danmaku. `DanmakuSafeArea` lets the layout engine reserve top, bottom, start, and end zones, and the player now derives those zones from visible controls, fullscreen side dock, option panels, lock state, and route/error notices.
 
 This pass also unifies the player cache action model. Fullscreen controls, the More panel, and the Profile cache card now share source/route cacheability signals so users can see when Media3 offline caching is available, when WebView or DRM blocks caching, and when BT is handled by the torrent engine.
+
+This pass upgrades the home schedule surface. `HomeScheduleUiState` now centralizes today count, weekly coverage, selected-day content, next update, and fallback text, and the expanded calendar shows that digest before weekday chips and anime rows.

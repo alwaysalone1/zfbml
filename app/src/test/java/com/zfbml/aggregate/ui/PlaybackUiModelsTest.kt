@@ -10,6 +10,7 @@ import com.zfbml.aggregate.source.SourceManifest
 import com.zfbml.aggregate.source.SourceSearchFailure
 import com.zfbml.aggregate.source.SourceSearchReport
 import com.zfbml.aggregate.source.StreamProtocol
+import com.zfbml.aggregate.source.catalog.BangumiScheduleDay
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -572,6 +573,59 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun homeScheduleUiStateSummarizesSelectedTodayAndWeek() {
+        val days = listOf(
+            scheduleDay(1, "\u661f\u671f\u4e00", listOf(searchResult("bangumi-catalog", "Alpha"), searchResult("bangumi-catalog", "Beta"))),
+            scheduleDay(2, "\u661f\u671f\u4e8c", listOf(searchResult("bangumi-catalog", "Gamma"))),
+            scheduleDay(3, "\u661f\u671f\u4e09", emptyList()),
+        )
+
+        val state = buildHomeScheduleUiState(
+            schedule = days,
+            selectedDayId = 2,
+            currentDayId = 1,
+        )
+
+        assertEquals(2, state.todayCount)
+        assertEquals(3, state.weekCount)
+        assertEquals("\u4eca\u65e5 2 \u90e8", state.nextUpdateLabel)
+        assertEquals(1, state.selectedItems.size)
+        assertEquals("\u661f\u671f\u4e8c", state.selectedDayTitle)
+        assertEquals("1 \u90e8", state.selectedDayAction)
+        assertTrue(state.headline.contains("\u661f\u671f\u4e8c"))
+        assertTrue(state.summary.contains("\u672c\u5468\u5df2\u7d22\u5f15 3"))
+        assertTrue(state.dayChips.first { it.weekdayId == 1 }.today)
+        assertTrue(state.dayChips.first { it.weekdayId == 2 }.selected)
+        assertEquals("\u4e8c", state.dayChips.first { it.weekdayId == 2 }.label)
+    }
+
+    @Test
+    fun homeScheduleUiStateFallsBackToCurrentDayAndExplainsEmptySchedule() {
+        val currentDayFallback = buildHomeScheduleUiState(
+            schedule = listOf(
+                scheduleDay(4, "\u661f\u671f\u56db", listOf(searchResult("bangumi-catalog", "Delta"))),
+                scheduleDay(5, "\u661f\u671f\u4e94", emptyList()),
+            ),
+            selectedDayId = 99,
+            currentDayId = 4,
+        )
+        val empty = buildHomeScheduleUiState(
+            schedule = emptyList(),
+            selectedDayId = 1,
+            currentDayId = 1,
+        )
+
+        assertEquals(4, currentDayFallback.selectedDay?.weekdayId)
+        assertEquals(1, currentDayFallback.todayCount)
+        assertEquals("\u4eca\u65e5\u66f4\u65b0 1 \u90e8", currentDayFallback.headline)
+        assertEquals(0, empty.todayCount)
+        assertEquals(0, empty.weekCount)
+        assertEquals("\u5f85\u540c\u6b65", empty.nextUpdateLabel)
+        assertEquals("\u8ffd\u756a\u65e5\u5386", empty.selectedDayTitle)
+        assertTrue(empty.summary.contains("Bangumi"))
+    }
+
+    @Test
     fun nextEpisodeForPlayerUsesPlaybackListOrder() {
         val episodes = listOf(
             episode(id = "ep-1", index = 1),
@@ -824,6 +878,19 @@ class PlaybackUiModelsTest {
             providerId = providerId,
             title = title,
             url = "zfbml://$providerId/$title",
+        )
+    }
+
+    private fun scheduleDay(
+        weekdayId: Int,
+        weekdayCn: String,
+        items: List<SearchResult>,
+    ): BangumiScheduleDay {
+        return BangumiScheduleDay(
+            weekdayId = weekdayId,
+            weekdayCn = weekdayCn,
+            weekdayEn = "",
+            items = items,
         )
     }
 

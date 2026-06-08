@@ -1205,8 +1205,15 @@ private fun HomeFeedPage(
     onShuffleGuess: () -> Unit,
     onOpenDetail: (SearchResult) -> Unit,
 ) {
-    val selectedDay = schedule.firstOrNull { it.weekdayId == selectedDayId }
-    val selectedItems = selectedDay?.items.orEmpty()
+    val currentDayId = remember { BangumiCalendarRepository.currentBangumiWeekdayId() }
+    val scheduleUiState = remember(schedule, selectedDayId, currentDayId) {
+        buildHomeScheduleUiState(
+            schedule = schedule,
+            selectedDayId = selectedDayId,
+            currentDayId = currentDayId,
+        )
+    }
+    val selectedItems = scheduleUiState.selectedItems
     val feedSelection = splitSpotlightFeed(featured, spotlightCount = 5)
     val remainder = feedSelection.remainder.ifEmpty { featured.distinctBy { it.stableMediaKey() } }
     val continueItem = selectedItems.firstOrNull()
@@ -1228,7 +1235,7 @@ private fun HomeFeedPage(
         item {
             HomeWatchHub(
                 continueItem = continueItem,
-                todayCount = selectedItems.size,
+                todayCount = scheduleUiState.todayCount,
                 recommendationCount = remainder.size.coerceAtLeast(feedSelection.spotlight.size),
                 onContinue = { continueItem?.let(onOpenDetail) },
                 onCalendar = onToggleCalendar,
@@ -1245,9 +1252,20 @@ private fun HomeFeedPage(
         }
         if (calendarExpanded) {
             item {
+                ScheduleDigestCard(
+                    state = scheduleUiState,
+                    loading = scheduleLoading,
+                    error = scheduleError,
+                )
+            }
+            item {
                 ScheduleDaySelector(
-                    days = schedule,
-                    selectedDayId = selectedDayId,
+                    dayChips = scheduleUiState.dayChips.ifEmpty {
+                        fallbackScheduleDayChips(
+                            selectedDayId = selectedDayId,
+                            currentDayId = currentDayId,
+                        )
+                    },
                     onSelected = onDaySelected,
                 )
             }
@@ -1269,16 +1287,16 @@ private fun HomeFeedPage(
             }
             item {
                 SectionHeader(
-                    title = selectedDay?.weekdayCn ?: "\u8ffd\u756a\u65e5\u5386",
-                    action = if (selectedItems.isNotEmpty()) "${selectedItems.size} \u90e8" else "",
+                    title = scheduleUiState.selectedDayTitle,
+                    action = scheduleUiState.selectedDayAction,
                     onAction = {},
                 )
             }
             if (selectedItems.isEmpty() && !scheduleLoading) {
                 item {
                     ScheduleStatusPanel(
-                        title = "\u6682\u65e0\u5f53\u65e5\u653e\u9001\u6570\u636e",
-                        subtitle = "\u53ef\u4ee5\u5207\u6362\u5176\u4ed6\u65e5\u671f\uff0c\u6216\u76f4\u63a5\u641c\u7d22\u756a\u540d\u3002",
+                        title = scheduleUiState.emptyTitle,
+                        subtitle = scheduleUiState.emptySubtitle,
                     )
                 }
             } else {
@@ -1872,29 +1890,102 @@ private fun ScheduleHeroBanner(result: SearchResult, dayLabel: String, onClick: 
 }
 
 @Composable
+private fun ScheduleDigestCard(
+    state: HomeScheduleUiState,
+    loading: Boolean,
+    error: String?,
+) {
+    val accent = when {
+        error != null -> MaterialTheme.colorScheme.error
+        loading -> AnimeAccentAmber
+        else -> AnimeAccentCyan
+    }
+    Surface(
+        modifier = Modifier.fillMaxWidth().focusable(),
+        color = AnimePanel,
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.28f)),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(38.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(accent.copy(alpha = 0.16f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    if (loading) {
+                        CircularProgressIndicator(color = accent, strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
+                    } else {
+                        Icon(Icons.Filled.Bookmarks, contentDescription = null, tint = accent, modifier = Modifier.size(20.dp))
+                    }
+                }
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text(
+                        text = if (error != null) "\u65f6\u95f4\u8868\u540c\u6b65\u5f02\u5e38" else state.headline,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        text = error ?: state.summary,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = AnimeMuted,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                item { RouteStatusBadge("\u4eca\u65e5 ${state.todayCount}", AnimeAccentPink) }
+                item { RouteStatusBadge("\u672c\u5468 ${state.weekCount}", AnimeAccentCyan) }
+                item { RouteStatusBadge("\u4e0b\u4e00\u6279 ${state.nextUpdateLabel}", AnimeAccentAmber) }
+            }
+        }
+    }
+}
+
+@Composable
 private fun ScheduleDaySelector(
-    days: List<BangumiScheduleDay>,
-    selectedDayId: Int,
+    dayChips: List<ScheduleDayChipUiState>,
     onSelected: (Int) -> Unit,
 ) {
-    val visibleDays = days.ifEmpty { fallbackScheduleDays() }
     LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        items(visibleDays) { day ->
-            val selected = day.weekdayId == selectedDayId
+        items(dayChips) { day ->
             Card(
                 onClick = { onSelected(day.weekdayId) },
                 modifier = Modifier.width(76.dp).height(50.dp).focusable(),
                 shape = RoundedCornerShape(8.dp),
-                colors = CardDefaults.cardColors(containerColor = if (selected) AnimePanelSoft else AnimePanel),
-                border = BorderStroke(1.dp, if (selected) AnimeAccentCyan else AnimeBorder),
+                colors = CardDefaults.cardColors(containerColor = if (day.selected) AnimePanelSoft else AnimePanel),
+                border = BorderStroke(1.dp, if (day.selected) AnimeAccentCyan else AnimeBorder),
             ) {
                 Column(
                     modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp, vertical = 6.dp),
                     verticalArrangement = Arrangement.SpaceBetween,
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text(day.weekdayCn.removePrefix("\u661f\u671f"), style = MaterialTheme.typography.labelLarge, color = Color.White, maxLines = 1)
-                    Text("${day.items.size}", style = MaterialTheme.typography.bodySmall, color = if (selected) AnimeAccentCyan else AnimeMuted, maxLines = 1)
+                    Row(horizontalArrangement = Arrangement.spacedBy(3.dp), verticalAlignment = Alignment.CenterVertically) {
+                        if (day.today) {
+                            Box(
+                                modifier = Modifier
+                                    .size(5.dp)
+                                    .clip(CircleShape)
+                                    .background(AnimeAccentPink),
+                            )
+                        }
+                        Text(day.label, style = MaterialTheme.typography.labelLarge, color = Color.White, maxLines = 1)
+                    }
+                    Text("${day.count}", style = MaterialTheme.typography.bodySmall, color = if (day.selected) AnimeAccentCyan else AnimeMuted, maxLines = 1)
                 }
             }
         }
@@ -1971,6 +2062,21 @@ private fun fallbackScheduleDays(): List<BangumiScheduleDay> {
             weekdayCn = name,
             weekdayEn = "",
             items = emptyList(),
+        )
+    }
+}
+
+private fun fallbackScheduleDayChips(
+    selectedDayId: Int,
+    currentDayId: Int,
+): List<ScheduleDayChipUiState> {
+    return fallbackScheduleDays().map { day ->
+        ScheduleDayChipUiState(
+            weekdayId = day.weekdayId,
+            label = day.weekdayCn.removePrefix("\u661f\u671f"),
+            count = 0,
+            selected = day.weekdayId == selectedDayId,
+            today = day.weekdayId == currentDayId,
         )
     }
 }
@@ -2083,7 +2189,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.41")
+                setRequestProperty("User-Agent", "ZFBML/0.5.42")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2606,7 +2712,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.5.41",
+                version = "0.5.42",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )

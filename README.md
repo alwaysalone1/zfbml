@@ -25,6 +25,23 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.42
+
+中文：
+- 首页追番时间表新增 `HomeScheduleUiState`，统一计算今日更新、本周放送、选中日、下一批更新和空状态文案。
+- 日历展开态新增周放送摘要卡，先展示今日数量、本周覆盖和下一批更新，再进入星期切换和条目列表。
+- 星期切换按钮改为模型驱动，支持今日标记、选中态和每日电视动画数量，接口未返回时保持稳定 fallback。
+- 新增单元测试覆盖选中日摘要、今日计数、本周总量、下一批更新和空日历状态。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.42`。
+
+English:
+
+- The home schedule now has a `HomeScheduleUiState` that centralizes today count, weekly count, selected day, next update, and empty-state text.
+- The expanded calendar adds a weekly schedule digest before the weekday selector and anime list.
+- Weekday chips are now model-driven, with today markers, selected state, and per-day counts while preserving a stable fallback before network data arrives.
+- Added unit coverage for selected-day summaries, today count, weekly totals, next update, and empty schedule state.
+- App version labels, request user agents, and README notes are now updated to `0.5.42`.
+
 ### v0.5.41
 
 中文：
