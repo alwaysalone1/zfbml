@@ -25,6 +25,22 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.3.9
+
+中文：
+
+- 详情页在当前剧集线路匹配成功后，会后台预取相邻剧集线路，优先下一集，再回补上一集。
+- 播放页切入当前集后同样会预取相邻剧集，用户在选集面板切到下一集时更容易命中上一版的线路缓存。
+- `SourceRegistry` 新增安全预取接口，预取成功会暖缓存，预取失败只返回 `false`，不影响当前播放和 UI 状态。
+- 新增单测覆盖预取缓存、预取失败语义，以及相邻剧集预取顺序。
+
+English:
+
+- The detail page now prefetches adjacent episode routes after the current episode resolves successfully, prioritizing the next episode before the previous one.
+- The player also prefetches adjacent episode routes for the current episode, making episode-panel switches more likely to hit the route cache.
+- `SourceRegistry` now exposes a safe prefetch API: successful prefetches warm the cache, while failures return `false` without affecting current playback or UI state.
+- Added tests for prefetch cache warming, prefetch failure semantics, and adjacent episode ordering.
+
 ### v0.3.8
 
 中文：

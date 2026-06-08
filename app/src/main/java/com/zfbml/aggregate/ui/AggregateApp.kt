@@ -1832,7 +1832,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.3.8")
+                setRequestProperty("User-Agent", "ZFBML/0.3.9")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2323,7 +2323,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.3.8",
+                version = "0.3.9",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )
@@ -2845,6 +2845,14 @@ private fun DetailScreen(
         error = routesError,
         selectedSourceId = routeSourceFilter,
     )
+    LaunchedEffect(detail?.url, selectedEpisode?.id, routesLoading, routesError, routes) {
+        val media = detail ?: return@LaunchedEffect
+        val episode = selectedEpisode ?: return@LaunchedEffect
+        if (routesLoading || routesError != null || routes.isEmpty()) return@LaunchedEffect
+        routePrefetchWindow(media.episodes, episode).forEach { prefetchEpisode ->
+            graph.sourceRegistry.prefetchRouteCandidates(prefetchEpisode)
+        }
+    }
 
     LazyColumn(
         modifier = Modifier.fillMaxSize().background(AnimeBackground),
@@ -4192,6 +4200,12 @@ private fun PlayerScreen(
         }
         val match = graph.danmakuRegistry.matchAll(detail, currentEpisode).firstOrNull()
         danmakuItems = match?.let { graph.danmakuRegistry.provider(it.providerId)?.fetchTimeline(it) }.orEmpty()
+    }
+    LaunchedEffect(currentEpisode.id, detail.episodes, playerRoutes) {
+        if (playerRoutes.isEmpty()) return@LaunchedEffect
+        routePrefetchWindow(detail.episodes, currentEpisode).forEach { prefetchEpisode ->
+            graph.sourceRegistry.prefetchRouteCandidates(prefetchEpisode)
+        }
     }
     LaunchedEffect(currentStream.id, torrentPlaybackUrl) {
         if (currentStream.protocol == StreamProtocol.BITTORRENT && torrentPlaybackUrl != null) {

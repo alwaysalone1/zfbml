@@ -61,6 +61,30 @@ class SourceRegistryTest {
         assertEquals(2, provider.resolveCount.get())
     }
 
+    @Test
+    fun prefetchRouteCandidatesWarmsCache() = runTest {
+        val provider = CountingProvider()
+        val registry = SourceRegistry(listOf(provider))
+        val episode = episode("4")
+
+        val prefetched = registry.prefetchRouteCandidates(episode)
+        registry.resolveRouteCandidates(episode)
+
+        assertEquals(true, prefetched)
+        assertEquals(1, provider.resolveCount.get())
+    }
+
+    @Test
+    fun prefetchRouteCandidatesReturnsFalseForFailures() = runTest {
+        val provider = AlwaysFailingProvider()
+        val registry = SourceRegistry(listOf(provider))
+
+        val prefetched = registry.prefetchRouteCandidates(episode("5"))
+
+        assertEquals(false, prefetched)
+        assertEquals(1, provider.resolveCount.get())
+    }
+
     private fun episode(id: String): Episode {
         return Episode(
             providerId = "counting",
@@ -141,6 +165,29 @@ class SourceRegistryTest {
                     sourceScore = 100,
                 ),
             )
+        }
+    }
+
+    private class AlwaysFailingProvider : SourceProvider {
+        val resolveCount = AtomicInteger(0)
+
+        override val manifest = SourceManifest(
+            id = "counting",
+            name = "Always Failing Provider",
+            version = "1",
+            author = "test",
+            capabilities = setOf(SourceCapability.SEARCH, SourceCapability.DETAIL, SourceCapability.EPISODES, SourceCapability.STREAM),
+        )
+
+        override suspend fun search(query: String): List<SearchResult> = emptyList()
+
+        override suspend fun loadDetail(result: SearchResult): MediaDetail {
+            return MediaDetail(providerId = manifest.id, title = result.title, url = result.url)
+        }
+
+        override suspend fun resolveStreams(episode: Episode): List<MediaStream> {
+            resolveCount.incrementAndGet()
+            error("source failure")
         }
     }
 }

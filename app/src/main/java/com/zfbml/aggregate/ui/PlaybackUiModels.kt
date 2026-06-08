@@ -252,6 +252,26 @@ internal fun preferredRouteForNextEpisode(
     } ?: playableRoutes.first()
 }
 
+internal fun routePrefetchWindow(
+    episodes: List<Episode>,
+    currentEpisode: Episode,
+    maxCount: Int = 2,
+): List<Episode> {
+    if (maxCount <= 0 || episodes.size <= 1) return emptyList()
+    val currentIndex = episodes.indexOfFirst { it.id == currentEpisode.id }
+    if (currentIndex < 0) return emptyList()
+
+    val result = mutableListOf<Episode>()
+    var distance = 1
+    while (result.size < maxCount && (currentIndex + distance < episodes.size || currentIndex - distance >= 0)) {
+        episodes.getOrNull(currentIndex + distance)?.let { result.add(it) }
+        if (result.size >= maxCount) break
+        episodes.getOrNull(currentIndex - distance)?.let { result.add(it) }
+        distance += 1
+    }
+    return result
+}
+
 internal fun recommendedSourceIdForRoutes(
     routes: List<RouteCandidate>,
     failedStreamIds: Set<String> = emptySet(),

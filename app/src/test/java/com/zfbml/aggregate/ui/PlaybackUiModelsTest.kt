@@ -267,6 +267,19 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun routePrefetchWindowPrioritizesNextThenPreviousEpisode() {
+        val episodes = (1..5).map { episode(id = "ep-$it", index = it) }
+
+        val middle = routePrefetchWindow(episodes, episodes[2], maxCount = 3)
+        val first = routePrefetchWindow(episodes, episodes[0], maxCount = 2)
+        val last = routePrefetchWindow(episodes, episodes[4], maxCount = 2)
+
+        assertEquals(listOf("ep-4", "ep-2", "ep-5"), middle.map { it.id })
+        assertEquals(listOf("ep-2", "ep-3"), first.map { it.id })
+        assertEquals(listOf("ep-4", "ep-3"), last.map { it.id })
+    }
+
+    @Test
     fun playerOverlayStateUsesShortStatusLabels() {
         val candidate = route("hls", StreamProtocol.HLS, 900, quality = "1080p")
         val playing = buildPlayerOverlayState(
@@ -317,13 +330,13 @@ class PlaybackUiModelsTest {
         assertEquals("异常", failed.statusLabel)
     }
 
-    private fun episode(): Episode {
+    private fun episode(id: String = "ep-1", index: Int = 1): Episode {
         return Episode(
             providerId = "bangumi-catalog",
-            id = "ep-1",
-            title = "第 1 集",
-            url = "bangumi://subject/1/episode/1",
-            index = 1,
+            id = id,
+            title = "第 $index 集",
+            url = "bangumi://subject/1/episode/$index",
+            index = index,
         )
     }
 

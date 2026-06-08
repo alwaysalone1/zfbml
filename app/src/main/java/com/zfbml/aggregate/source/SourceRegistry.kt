@@ -112,6 +112,12 @@ class SourceRegistry(
         }
     }
 
+    suspend fun prefetchRouteCandidates(episode: Episode): Boolean {
+        return runCatching {
+            resolveRouteCandidates(episode)
+        }.isSuccess
+    }
+
     private suspend fun resolveRouteCandidatesUncached(episode: Episode): List<RouteCandidate> {
         return resolveStreams(episode)
             .map { stream -> stream.toRouteCandidate(episode) }
