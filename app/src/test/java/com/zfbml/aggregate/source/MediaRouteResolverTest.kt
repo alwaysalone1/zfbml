@@ -152,6 +152,29 @@ class MediaRouteResolverTest {
         assertTrue(provider.maxConcurrentDetails.get() > 1)
     }
 
+    @Test
+    fun resolverSearchesAliasesConcurrentlyWithinProvider() = runTest {
+        val provider = SlowAliasSearchProvider()
+        val request = MediaFetchRequest.fromEpisode(
+            Episode(
+                providerId = "bangumi-catalog",
+                id = "catalog-1",
+                title = "Episode 1",
+                url = "bangumi://subject/1/episode/1",
+                index = 1,
+                raw = mapOf(
+                    "subjectNameCn" to "测试番剧",
+                    "subjectAliases" to "测试番剧 别名一|测试番剧 别名二|测试番剧 别名三",
+                ),
+            ),
+        )
+
+        val routes = MediaRouteResolver(listOf(provider), providerTimeoutMs = 1_000L).resolve(request)
+
+        assertEquals(4, routes.size)
+        assertTrue(provider.maxConcurrentSearches.get() > 1)
+    }
+
     private class FakeRouteProvider : SourceProvider {
         override val manifest = SourceManifest(
             id = "fake",
@@ -328,6 +351,71 @@ class MediaRouteResolverTest {
             while (true) {
                 val currentMax = maxConcurrentDetails.get()
                 if (active <= currentMax || maxConcurrentDetails.compareAndSet(currentMax, active)) return
+            }
+        }
+    }
+
+    private class SlowAliasSearchProvider : SourceProvider {
+        private val activeSearches = AtomicInteger(0)
+        val maxConcurrentSearches = AtomicInteger(0)
+
+        override val manifest = SourceManifest(
+            id = "slow-alias",
+            name = "Slow Alias Source",
+            version = "1",
+            author = "test",
+            capabilities = setOf(SourceCapability.SEARCH, SourceCapability.DETAIL, SourceCapability.STREAM),
+        )
+
+        override suspend fun search(query: String): List<SearchResult> {
+            val active = activeSearches.incrementAndGet()
+            updateMaxConcurrentSearches(active)
+            delay(50)
+            activeSearches.decrementAndGet()
+            return listOf(
+                SearchResult(
+                    providerId = manifest.id,
+                    title = query,
+                    url = "slow-alias://result/${query.hashCode()}",
+                    raw = mapOf("mediaKind" to "online"),
+                ),
+            )
+        }
+
+        override suspend fun loadDetail(result: SearchResult): MediaDetail {
+            return MediaDetail(
+                providerId = manifest.id,
+                title = result.title,
+                url = result.url,
+                episodes = listOf(
+                    Episode(
+                        providerId = manifest.id,
+                        id = "slow-alias-ep-${result.url.substringAfterLast('/')}",
+                        title = result.title,
+                        url = "${result.url}/stream",
+                        index = 1,
+                    ),
+                ),
+            )
+        }
+
+        override suspend fun resolveStreams(episode: Episode): List<MediaStream> {
+            return listOf(
+                MediaStream(
+                    id = episode.id,
+                    providerId = manifest.id,
+                    url = "${episode.url}.m3u8",
+                    protocol = StreamProtocol.HLS,
+                    quality = "1080p",
+                    sourceScore = 60,
+                ),
+            )
+        }
+
+        private fun updateMaxConcurrentSearches(active: Int) {
+            while (true) {
+                val currentMax = maxConcurrentSearches.get()
+                if (active <= currentMax || maxConcurrentSearches.compareAndSet(currentMax, active)) return
             }
         }
     }

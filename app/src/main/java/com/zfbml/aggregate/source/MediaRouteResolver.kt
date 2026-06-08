@@ -21,18 +21,22 @@ class MediaRouteResolver(
             }
             .map { provider ->
                 async {
-                    aliases.flatMap { alias ->
-                        withTimeoutOrNull(providerTimeoutMs) {
-                            runCatching { provider.search(alias) }.getOrDefault(emptyList())
-                        }.orEmpty().map { result ->
-                            SearchHit(
-                                provider = provider,
-                                result = result,
-                                alias = alias,
-                                score = scoreResult(result, request, alias),
-                            )
+                    aliases.map { alias ->
+                        async {
+                            withTimeoutOrNull(providerTimeoutMs) {
+                                runCatching { provider.search(alias) }.getOrDefault(emptyList())
+                            }.orEmpty().map { result ->
+                                SearchHit(
+                                    provider = provider,
+                                    result = result,
+                                    alias = alias,
+                                    score = scoreResult(result, request, alias),
+                                )
+                            }
                         }
                     }
+                        .awaitAll()
+                        .flatten()
                 }
             }
             .awaitAll()

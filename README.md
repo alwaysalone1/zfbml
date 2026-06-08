@@ -25,6 +25,22 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.9
+
+中文：
+
+- 同一个播放源内部的多别名搜索现在会并发执行，中文名、别名、原名不再按顺序逐个等待。
+- 线路匹配在多别名场景下的首轮搜索耗时更接近最慢别名，而不是所有别名请求耗时累加。
+- 新增单元测试验证同一 provider 内别名搜索会并发启动，继续降低详情页和播放器等待推荐线路的时间。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.9`。
+
+English:
+
+- Alias searches within the same playback source now run concurrently, so Chinese titles, aliases, and original names no longer wait one after another.
+- In multi-alias route matching, first-pass search time is closer to the slowest alias request instead of the sum of all alias requests.
+- Added unit coverage proving alias searches inside one provider start concurrently, further reducing detail/player wait time for recommended routes.
+- App version labels, request user agents, and README notes are now updated to `0.5.9`.
+
 ### v0.5.8
 
 中文：
