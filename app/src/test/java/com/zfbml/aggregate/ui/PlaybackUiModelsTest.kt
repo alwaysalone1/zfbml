@@ -108,6 +108,25 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun autoplayRouteSkipsWebViewOnlyEvenWhenItScoresHighest() {
+        val webView = route("webview", StreamProtocol.WEBVIEW_ONLY, 8_000, quality = "1080p")
+        val playable = route("hls", StreamProtocol.HLS, 100, quality = "720p")
+
+        val route = firstPlayableRouteForAutoplay(listOf(webView, playable))
+
+        assertEquals("hls", route?.stream?.id)
+    }
+
+    @Test
+    fun autoplayRouteReturnsNullWhenOnlyWebViewOnlyRoutesExist() {
+        val webView = route("webview", StreamProtocol.WEBVIEW_ONLY, 8_000, quality = "1080p")
+
+        val route = firstPlayableRouteForAutoplay(listOf(webView))
+
+        assertEquals(null, route)
+    }
+
+    @Test
     fun nextPlayableRouteSkipsCurrentFailedAndWebViewOnly() {
         val current = route("current", StreamProtocol.HLS, 900, quality = "1080p")
         val webView = route("webview", StreamProtocol.WEBVIEW_ONLY, 2_000, quality = "1080p")

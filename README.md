@@ -25,6 +25,22 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.23
+
+中文：
+
+- 详情页“立即观看/匹配播放源”的自动播放入口现在统一使用可直接播放线路选择，避免缓存或异步解析命中 WebView-only 网页兜底时误进入播放页。
+- `RouteUiState`、推荐源和播放器线路面板复用同一个自动可播规则，让“自动最佳”的展示和实际开播线路保持一致。
+- 新增单元测试覆盖高分 WebView-only 线路不会被自动播放，以及仅有网页兜底时自动播放返回空。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.23`。
+
+English:
+
+- Detail-page autoplay for "watch now / match source" now uses a shared directly-playable route selector, avoiding accidental playback entry when cached or resolved routes only provide WebView-only fallbacks.
+- `RouteUiState`, recommended sources, and the player route panel now share the same autoplay-eligible route rule so the displayed "auto best" source matches the route that actually starts.
+- Added unit coverage for skipping high-scoring WebView-only routes during autoplay and returning no autoplay route when only web fallbacks exist.
+- App version labels, request user agents, and README notes are now updated to `0.5.23`.
+
 ### v0.5.22
 
 中文：

@@ -104,10 +104,7 @@ internal fun buildRouteUiState(
 ): RouteUiState {
     val sortedRoutes = sortRoutesForUi(routes, failedStreamIds)
     val visibleRoutes = sortedRoutes.filter { selectedSourceId == null || it.sourceId == selectedSourceId }
-    val bestRoute = sortedRoutes.firstOrNull { route ->
-        route.stream.id !in failedStreamIds &&
-            route.stream.protocol != StreamProtocol.WEBVIEW_ONLY
-    }
+    val bestRoute = firstPlayableRouteForAutoplay(routes, failedStreamIds)
     val onlineCount = routes.count { it.protocol != StreamProtocol.BITTORRENT && it.protocol != StreamProtocol.WEBVIEW_ONLY }
     val btCount = routes.count { it.protocol == StreamProtocol.BITTORRENT }
     val status = when {
@@ -273,6 +270,18 @@ internal fun sortRoutesForUi(
     )
 }
 
+internal fun firstPlayableRouteForAutoplay(
+    routes: List<RouteCandidate>,
+    failedStreamIds: Set<String> = emptySet(),
+): RouteCandidate? {
+    return sortRoutesForUi(routes, failedStreamIds)
+        .distinctBy { it.stream.id }
+        .firstOrNull { route ->
+            route.stream.id !in failedStreamIds &&
+                route.stream.protocol != StreamProtocol.WEBVIEW_ONLY
+        }
+}
+
 internal fun nextPlayableRoute(
     routes: List<RouteCandidate>,
     currentStreamId: String,
@@ -384,12 +393,7 @@ internal fun recommendedSourceIdForRoutes(
     routes: List<RouteCandidate>,
     failedStreamIds: Set<String> = emptySet(),
 ): String? {
-    return sortRoutesForUi(routes, failedStreamIds)
-        .firstOrNull { route ->
-            route.stream.id !in failedStreamIds &&
-                route.stream.protocol != StreamProtocol.WEBVIEW_ONLY
-        }
-        ?.sourceId
+    return firstPlayableRouteForAutoplay(routes, failedStreamIds)?.sourceId
 }
 
 internal fun buildRoutePanelUiState(
@@ -397,16 +401,12 @@ internal fun buildRoutePanelUiState(
     selectedStreamId: String,
     failedStreamIds: Set<String> = emptySet(),
 ): RoutePanelUiState {
-    val sortedRoutes = sortRoutesForUi(routes, failedStreamIds).distinctBy { it.stream.id }
     val availableRoutes = routes.filter { route ->
         route.stream.id !in failedStreamIds &&
             route.stream.protocol != StreamProtocol.WEBVIEW_ONLY
     }
     return RoutePanelUiState(
-        recommendedRoute = sortedRoutes.firstOrNull { route ->
-            route.stream.id !in failedStreamIds &&
-                route.stream.protocol != StreamProtocol.WEBVIEW_ONLY
-        },
+        recommendedRoute = firstPlayableRouteForAutoplay(routes, failedStreamIds),
         selectedRoute = routes.firstOrNull { it.stream.id == selectedStreamId },
         totalCount = routes.size,
         availableCount = availableRoutes.size,
