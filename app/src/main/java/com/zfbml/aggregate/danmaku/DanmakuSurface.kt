@@ -40,8 +40,8 @@ fun DanmakuSurface(
     }
     val currentPlaybackMsProvider by rememberUpdatedState(playbackMsProvider)
     val density = LocalDensity.current
-    var frameTimeNs by remember { mutableLongStateOf(DanmakuFrameTimeUnsetNs) }
-    var sampledPlaybackMs by remember { mutableLongStateOf(playbackMsProvider().coerceAtLeast(0L)) }
+    val frameSnapshot = remember { DanmakuFrameSnapshot(playbackMsProvider().coerceAtLeast(0L)) }
+    var frameTick by remember { mutableLongStateOf(0L) }
 
     LaunchedEffect(settings.enabled, items.isNotEmpty(), isPlaying) {
         val frameDelayMs = danmakuFrameDelayMs(
@@ -51,27 +51,26 @@ fun DanmakuSurface(
         ) ?: return@LaunchedEffect
         while (true) {
             val nextFrameTimeNs = withFrameNanos { it }
-            val nextPlaybackMs = currentPlaybackMsProvider().coerceAtLeast(0L)
-            if (nextPlaybackMs != sampledPlaybackMs) {
-                sampledPlaybackMs = nextPlaybackMs
-            }
-            frameTimeNs = nextFrameTimeNs
+            frameTick = frameSnapshot.capture(
+                frameTimeNs = nextFrameTimeNs,
+                sampledPlaybackMs = currentPlaybackMsProvider(),
+            )
             if (frameDelayMs > 0L) {
                 delay(frameDelayMs)
             }
         }
     }
     LaunchedEffect(items, profile, settings.enabled, settings.density, settings.fontScale, settings.blockedWords) {
-        sampledPlaybackMs = currentPlaybackMsProvider().coerceAtLeast(0L)
-        frameTimeNs = DanmakuFrameTimeUnsetNs
+        frameTick = frameSnapshot.reset(currentPlaybackMsProvider())
         playbackClock.reset()
     }
 
     Canvas(modifier = modifier) {
-        val currentFrameTimeNs = frameTimeNs
-        if (!danmakuFrameTimeReady(currentFrameTimeNs)) return@Canvas
+        val currentFrameTick = frameTick
+        val currentFrameTimeNs = frameSnapshot.frameTimeNs
+        if (currentFrameTick == 0L || !danmakuFrameTimeReady(currentFrameTimeNs)) return@Canvas
         val playbackMs = playbackClock.positionMs(
-            sampledPlaybackMs = sampledPlaybackMs,
+            sampledPlaybackMs = frameSnapshot.sampledPlaybackMs,
             frameTimeNs = currentFrameTimeNs,
             isPlaying = isPlaying,
             playbackSpeed = playbackSpeed,
@@ -126,6 +125,31 @@ fun DanmakuSurface(
                 native.drawText(entry.item.text, x, entry.y, fillPaint)
             }
         }
+    }
+}
+
+internal class DanmakuFrameSnapshot(initialPlaybackMs: Long) {
+    var sampledPlaybackMs: Long = initialPlaybackMs.coerceAtLeast(0L)
+        private set
+    var frameTimeNs: Long = DanmakuFrameTimeUnsetNs
+        private set
+    private var tick: Long = 0L
+
+    fun capture(frameTimeNs: Long, sampledPlaybackMs: Long): Long {
+        this.frameTimeNs = frameTimeNs
+        this.sampledPlaybackMs = sampledPlaybackMs.coerceAtLeast(0L)
+        return nextTick()
+    }
+
+    fun reset(sampledPlaybackMs: Long): Long {
+        this.frameTimeNs = DanmakuFrameTimeUnsetNs
+        this.sampledPlaybackMs = sampledPlaybackMs.coerceAtLeast(0L)
+        return nextTick()
+    }
+
+    private fun nextTick(): Long {
+        tick = if (tick == Long.MAX_VALUE) 1L else tick + 1L
+        return tick
     }
 }
 

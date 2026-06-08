@@ -44,6 +44,32 @@ class DanmakuSurfaceTest {
     }
 
     @Test
+    fun frameSnapshotUpdatesPlaybackAndFrameWithSingleTick() {
+        val snapshot = DanmakuFrameSnapshot(initialPlaybackMs = 1_000L)
+
+        val firstTick = snapshot.capture(frameTimeNs = 16_666_667L, sampledPlaybackMs = 1_016L)
+        val secondTick = snapshot.capture(frameTimeNs = 33_333_334L, sampledPlaybackMs = 1_033L)
+
+        assertEquals(1L, firstTick)
+        assertEquals(2L, secondTick)
+        assertEquals(33_333_334L, snapshot.frameTimeNs)
+        assertEquals(1_033L, snapshot.sampledPlaybackMs)
+    }
+
+    @Test
+    fun frameSnapshotResetClearsFrameReadinessAndTicks() {
+        val snapshot = DanmakuFrameSnapshot(initialPlaybackMs = 1_000L)
+
+        snapshot.capture(frameTimeNs = 16_666_667L, sampledPlaybackMs = 1_016L)
+        val resetTick = snapshot.reset(sampledPlaybackMs = 2_000L)
+
+        assertEquals(2L, resetTick)
+        assertEquals(DanmakuFrameTimeUnsetNs, snapshot.frameTimeNs)
+        assertEquals(2_000L, snapshot.sampledPlaybackMs)
+        assertEquals(false, danmakuFrameTimeReady(snapshot.frameTimeNs))
+    }
+
+    @Test
     fun layoutCacheReusesEqualItemListsAcrossRefreshes() {
         val cache = DanmakuSurfaceLayoutCache()
         val profile = DanmakuProfile(DanmakuPlatform.Local)

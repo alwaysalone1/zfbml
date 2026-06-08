@@ -25,6 +25,24 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.31
+
+中文：
+
+- 弹幕 Surface 帧循环收敛为单一 `frameTick` 驱动，播放器采样位置和帧时间改为同一个非 Compose state 快照更新。
+- 播放中每帧只触发一次弹幕绘制失效，减少双 state 写入带来的调度压力和潜在微顿。
+- reset 时会同步清空帧就绪状态，避免换集、换设置后复用上一帧时间戳。
+- 新增单元测试覆盖帧快照 capture/reset 行为。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.31`。
+
+English:
+
+- The danmaku Surface frame loop now uses a single `frameTick`, while playback samples and frame time are updated through one non-Compose-state snapshot.
+- Playback now invalidates danmaku drawing once per frame, reducing scheduling pressure and possible micro-stutter from double state writes.
+- Reset clears frame readiness so episode or setting changes cannot reuse a stale frame timestamp.
+- Added unit coverage for frame snapshot capture/reset behavior.
+- App version labels, request user agents, and README notes are now updated to `0.5.31`.
+
 ### v0.5.30
 
 中文：
