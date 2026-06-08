@@ -25,6 +25,21 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.12
+
+中文：
+- 弹幕层现在把播放器进度读取降为低频采样，播放中约每 96ms 采样一次，帧间位置继续用弹幕时钟按 `withFrameNanos` 平滑外推。
+- 弹幕绘制仍保持播放时满帧刷新，但不再每帧触碰播放器 position，减少 UI 线程固定开销并降低粗粒度播放器采样带来的抖动。
+- 关闭弹幕或没有弹幕内容时停止采样；暂停时降为 250ms 慢采样，继续支持暂停拖动后的状态更新。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.12`。
+
+English:
+
+- The danmaku layer now reads player position at a lower sampling rate: about every 96 ms while playing, with frame-to-frame motion still smoothly extrapolated by the danmaku clock using `withFrameNanos`.
+- Danmaku rendering still refreshes every frame during playback, but it no longer touches player position every frame, reducing fixed UI-thread work and jitter from coarse player samples.
+- Sampling stops when danmaku is disabled or empty; paused playback uses a slower 250 ms sample interval while still reflecting paused seek changes.
+- App version labels, request user agents, and README notes are now updated to `0.5.12`.
+
 ### v0.5.11
 
 中文：

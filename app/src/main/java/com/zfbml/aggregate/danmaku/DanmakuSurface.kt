@@ -8,6 +8,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
@@ -36,8 +37,10 @@ fun DanmakuSurface(
         style = Paint.Style.STROKE
         strokeJoin = Paint.Join.ROUND
     }
+    val currentPlaybackMsProvider by rememberUpdatedState(playbackMsProvider)
     val density = LocalDensity.current
     var frameTimeNs by remember { mutableLongStateOf(0L) }
+    var sampledPlaybackMs by remember { mutableLongStateOf(playbackMsProvider().coerceAtLeast(0L)) }
 
     LaunchedEffect(settings.enabled, items.isNotEmpty(), isPlaying) {
         val frameDelayMs = danmakuFrameDelayMs(
@@ -52,14 +55,26 @@ fun DanmakuSurface(
             }
         }
     }
+    LaunchedEffect(settings.enabled, items.isNotEmpty(), isPlaying) {
+        val sampleDelayMs = danmakuPlaybackSampleDelayMs(
+            enabled = settings.enabled,
+            hasItems = items.isNotEmpty(),
+            isPlaying = isPlaying,
+        ) ?: return@LaunchedEffect
+        while (true) {
+            sampledPlaybackMs = currentPlaybackMsProvider().coerceAtLeast(0L)
+            delay(sampleDelayMs)
+        }
+    }
     LaunchedEffect(items, profile, settings.enabled, settings.density, settings.fontScale, settings.blockedWords) {
+        sampledPlaybackMs = currentPlaybackMsProvider().coerceAtLeast(0L)
         playbackClock.reset()
     }
 
     Canvas(modifier = modifier) {
         frameTimeNs
         val playbackMs = playbackClock.positionMs(
-            sampledPlaybackMs = playbackMsProvider(),
+            sampledPlaybackMs = sampledPlaybackMs,
             frameTimeNs = frameTimeNs,
             isPlaying = isPlaying,
             playbackSpeed = playbackSpeed,
@@ -192,4 +207,14 @@ internal fun danmakuFrameDelayMs(
     return if (isPlaying) 0L else PausedFrameDelayMs
 }
 
+internal fun danmakuPlaybackSampleDelayMs(
+    enabled: Boolean,
+    hasItems: Boolean,
+    isPlaying: Boolean,
+): Long? {
+    if (!enabled || !hasItems) return null
+    return if (isPlaying) PlayingPlaybackSampleDelayMs else PausedFrameDelayMs
+}
+
+private const val PlayingPlaybackSampleDelayMs = 96L
 private const val PausedFrameDelayMs = 250L
