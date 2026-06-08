@@ -25,6 +25,22 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.4.0
+
+中文：
+
+- 更新应用图标视觉，强化“追番书签 + 播放入口 + 星轨导航”的二次元追番识别度。
+- 新增 Android 26+ adaptive icon 资源，保留旧版 vector fallback，并给启动器圆形图标配置同一品牌资源。
+- Compose 开屏品牌标同步为新版图标构图，启动动画中的 Logo、片单色带和进度轨视觉更加统一。
+- App 内版本号、请求 UA 和 README 同步到 `0.4.0`。
+
+English:
+
+- Refreshed the app icon around an anime-watchlist bookmark, play entry, and star-route navigation motif.
+- Added Android 26+ adaptive icon resources while keeping a vector fallback, and wired round launcher icons to the same brand asset.
+- The Compose splash brand mark now matches the new icon structure, aligning the logo, poster ribbon, and progress rail.
+- App version labels, request user agents, and README notes are now updated to `0.4.0`.
+
 ### v0.3.9
 
 中文：

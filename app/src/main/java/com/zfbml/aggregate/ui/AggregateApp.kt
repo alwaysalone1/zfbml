@@ -423,65 +423,81 @@ private val AnimeAccentGreen = Color(0xFF64D67B)
 @Composable
 private fun BrandMark(modifier: Modifier = Modifier) {
     Box(
-        modifier = modifier.background(AnimePanel, RoundedCornerShape(8.dp)),
+        modifier = modifier.background(Color(0xFF191B22), RoundedCornerShape(8.dp)),
         contentAlignment = Alignment.Center,
     ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(8.dp)
-                .background(Color(0xFF2B1A2A), RoundedCornerShape(8.dp)),
+                .padding(7.dp)
+                .background(Color(0xFF25242F), RoundedCornerShape(8.dp)),
         )
-        Row(Modifier.fillMaxSize().padding(8.dp)) {
+        Row(Modifier.fillMaxSize().padding(7.dp)) {
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .background(Color(0xFFFF6B9A), RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp)),
+                    .background(AnimeAccentPink, RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp)),
             )
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxHeight()
-                    .background(Color(0xFF4ED7F5), RoundedCornerShape(topEnd = 8.dp, bottomEnd = 8.dp)),
+                    .background(AnimeAccentCyan, RoundedCornerShape(topEnd = 8.dp, bottomEnd = 8.dp)),
             )
         }
         Box(
             modifier = Modifier
-                .width(30.dp)
-                .height(48.dp)
+                .width(24.dp)
+                .height(44.dp)
                 .align(Alignment.TopStart)
-                .padding(start = 16.dp)
-                .background(Color(0xFFFFC857), RoundedCornerShape(bottomStart = 6.dp, bottomEnd = 6.dp)),
+                .padding(start = 13.dp)
+                .background(AnimeAccentAmber, RoundedCornerShape(bottomStart = 6.dp, bottomEnd = 6.dp)),
         )
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(34.dp)
+                .height(32.dp)
                 .align(Alignment.BottomCenter)
-                .padding(horizontal = 8.dp)
-                .background(Color.Black.copy(alpha = 0.28f), RoundedCornerShape(bottomStart = 8.dp, bottomEnd = 8.dp)),
+                .padding(horizontal = 7.dp)
+                .background(Color.Black.copy(alpha = 0.32f), RoundedCornerShape(bottomStart = 8.dp, bottomEnd = 8.dp)),
         )
         Box(
             modifier = Modifier
-                .size(54.dp)
-                .background(Color.Black.copy(alpha = 0.24f), CircleShape),
+                .align(Alignment.BottomStart)
+                .padding(start = 26.dp, bottom = 20.dp)
+                .width(52.dp)
+                .height(4.dp)
+                .background(AnimeAccentCyan, RoundedCornerShape(999.dp)),
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .padding(start = 20.dp, bottom = 12.dp)
+                .width(31.dp)
+                .height(4.dp)
+                .background(Color.White.copy(alpha = 0.88f), RoundedCornerShape(999.dp)),
+        )
+        Box(
+            modifier = Modifier
+                .size(55.dp)
+                .background(Color.Black.copy(alpha = 0.28f), CircleShape),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(38.dp))
+            Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(40.dp))
         }
         Text(
-            text = "Z",
-            style = MaterialTheme.typography.titleLarge,
-            color = AnimeAccentCyan,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.align(Alignment.BottomStart).padding(start = 18.dp, bottom = 12.dp),
-        )
-        Text(
-            text = "\u2605",
+            text = "✦",
             style = MaterialTheme.typography.titleLarge,
             color = AnimeAccentAmber,
-            modifier = Modifier.align(Alignment.TopEnd).padding(end = 14.dp, top = 10.dp),
+            modifier = Modifier.align(Alignment.TopEnd).padding(end = 11.dp, top = 8.dp),
+        )
+        Text(
+            text = "Z",
+            style = MaterialTheme.typography.labelLarge,
+            color = AnimeAccentCyan,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.align(Alignment.BottomEnd).padding(end = 15.dp, bottom = 10.dp),
         )
     }
 }
@@ -1832,7 +1848,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.3.9")
+                setRequestProperty("User-Agent", "ZFBML/0.4.0")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2323,7 +2339,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.3.9",
+                version = "0.4.0",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )
