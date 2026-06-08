@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.22
+
+中文：
+
+- 弹幕预测时钟的单帧软校正上限从 12ms 收窄到 6ms，降低播放器采样漂移被修正时产生的可见像素跳动。
+- 新增单测覆盖大漂移样本下的单帧校正范围，避免后续改动把弹幕滚动重新变成突兀跳动。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.22`。
+
+English:
+
+- The danmaku predictive clock now caps one-frame soft correction at 6ms instead of 12ms, reducing visible pixel jumps when sampled playback drift is corrected.
+- Added unit coverage for the one-frame correction cap under large sample drift so future changes do not reintroduce abrupt danmaku jumps.
+- App version labels, request user agents, and README notes are now updated to `0.5.22`.
+
 ### v0.5.21
 
 中文：

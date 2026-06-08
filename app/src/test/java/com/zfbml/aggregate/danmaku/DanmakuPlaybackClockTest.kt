@@ -124,6 +124,21 @@ class DanmakuPlaybackClockTest {
     }
 
     @Test
+    fun softCorrectionCapsSingleFrameJump() {
+        val clock = DanmakuPlaybackClock()
+
+        clock.positionMs(sampledPlaybackMs = 5_000, frameTimeNs = 0, isPlaying = true, playbackSpeed = 1f)
+        val corrected = clock.positionMs(
+            sampledPlaybackMs = 5_400,
+            frameTimeNs = 16_000_000,
+            isPlaying = true,
+            playbackSpeed = 1f,
+        )
+
+        assertTrue(corrected in 5_021.0..5_023.0)
+    }
+
+    @Test
     fun obviousForwardSeekHardSyncsImmediately() {
         val clock = DanmakuPlaybackClock()
 

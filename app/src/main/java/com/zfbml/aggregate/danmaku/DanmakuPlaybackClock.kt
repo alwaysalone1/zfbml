@@ -7,7 +7,7 @@ internal class DanmakuPlaybackClock(
     private val hardSyncToleranceMs: Double = 700.0,
     private val softSyncToleranceMs: Double = 24.0,
     private val seekToleranceMs: Double = 260.0,
-    private val maxSoftCorrectionMs: Double = 12.0,
+    private val maxSoftCorrectionMs: Double = 6.0,
 ) {
     private var anchorPlaybackMs = 0.0
     private var anchorFrameNs = Long.MIN_VALUE
