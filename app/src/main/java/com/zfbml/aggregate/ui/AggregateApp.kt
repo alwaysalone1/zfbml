@@ -2033,7 +2033,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.28")
+                setRequestProperty("User-Agent", "ZFBML/0.5.29")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2524,7 +2524,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.5.28",
+                version = "0.5.29",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )
@@ -3335,8 +3335,8 @@ private fun DetailRouteEntryButton(
         RouteLoadStatus.Idle -> "手动换源"
     }
     val value = when {
-        state.routeCount > 1 -> "${state.routeCount} 线可切"
         state.sourceCount > 1 -> "${state.sourceCount} 个来源"
+        state.routeCount > 1 -> "${state.routeCount} 线可切"
         state.canPlay -> state.recommendationTitle
         state.status == RouteLoadStatus.Loading -> "优先在线"
         state.status == RouteLoadStatus.Failed -> "查看原因"
@@ -3662,13 +3662,6 @@ private fun RouteSourceFocusRow(state: RouteUiState, accent: Color) {
         RouteLoadStatus.Idle -> "待选择"
         RouteLoadStatus.Ready -> "自动"
     }
-    val qualityValue = route?.let { playerQualityLabel(it) } ?: when (state.status) {
-        RouteLoadStatus.Loading -> "在线播放"
-        RouteLoadStatus.Failed -> "重试"
-        RouteLoadStatus.Empty -> "换集"
-        RouteLoadStatus.Idle -> "自动"
-        RouteLoadStatus.Ready -> "自动"
-    }
     val protocolValue = route?.protocol?.displayName() ?: when (state.status) {
         RouteLoadStatus.Loading -> "HLS/MP4"
         RouteLoadStatus.Failed -> "重试"
@@ -3682,7 +3675,7 @@ private fun RouteSourceFocusRow(state: RouteUiState, accent: Color) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         RouteSourceFocusChip("推荐源", sourceValue, accent, Modifier.weight(1f))
-        RouteSourceFocusChip("清晰度", qualityValue, AnimeAccentCyan, Modifier.weight(1f))
+        RouteSourceFocusChip("来源覆盖", state.sourceCoverageLabel, AnimeAccentCyan, Modifier.weight(1f))
         RouteSourceFocusChip("播放方式", protocolValue, AnimeAccentAmber, Modifier.weight(1f))
     }
 }

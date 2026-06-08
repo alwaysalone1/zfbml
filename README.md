@@ -25,6 +25,24 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.29
+
+中文：
+
+- 详情页播放源状态新增“来源覆盖”摘要，优先展示多来源/多线路覆盖情况。
+- 播放源加载步骤从单纯线路数升级为“来源数 · 线路数”，用户能更快判断是否已有可切换备选。
+- 详情页线路入口在多来源时优先显示来源数量，减少只看到线路总数但不知道是否跨源的歧义。
+- 新增单元测试覆盖来源覆盖摘要和加载步骤统计。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.29`。
+
+English:
+
+- The detail route status now exposes a source-coverage summary, prioritizing multi-source/multi-route visibility.
+- Route loading steps now report source and route counts instead of only route counts, making fallback availability clearer.
+- The detail route entry prioritizes source count when multiple sources are available, reducing ambiguity in source switching.
+- Added unit coverage for source-coverage summaries and loading-step counts.
+- App version labels, request user agents, and README notes are now updated to `0.5.29`.
+
 ### v0.5.28
 
 中文：

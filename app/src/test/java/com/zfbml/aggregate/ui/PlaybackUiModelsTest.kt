@@ -73,8 +73,8 @@ class PlaybackUiModelsTest {
 
     @Test
     fun routeUiStateLoadingStepsSummarizeResolvedSources() {
-        val hls = route("hls", StreamProtocol.HLS, 450, quality = "720p")
-        val bt = route("bt", StreamProtocol.BITTORRENT, 900, quality = "1080p")
+        val hls = route("hls", StreamProtocol.HLS, 450, quality = "720p", sourceId = "online", sourceName = "Online")
+        val bt = route("bt", StreamProtocol.BITTORRENT, 900, quality = "1080p", sourceId = "bt", sourceName = "BT")
 
         val ready = buildRouteUiState(
             selectedEpisode = episode(),
@@ -86,8 +86,27 @@ class PlaybackUiModelsTest {
         assertEquals(RouteLoadStatus.Ready, ready.status)
         assertTrue(ready.loadingSteps[1].active)
         assertTrue(ready.loadingSteps[2].active)
-        assertEquals("1 条", ready.loadingSteps[1].value)
-        assertEquals("1 条", ready.loadingSteps[2].value)
+        assertEquals("1线", ready.loadingSteps[1].value)
+        assertEquals("1线", ready.loadingSteps[2].value)
+        assertEquals("2源 · 2线", ready.sourceCoverageLabel)
+    }
+
+    @Test
+    fun routeUiStateSummarizesOnlineSourceCoverage() {
+        val first = route("hls-a", StreamProtocol.HLS, 600, quality = "1080p", sourceId = "online-a", sourceName = "Online A")
+        val second = route("hls-b", StreamProtocol.HLS, 400, quality = "720p", sourceId = "online-b", sourceName = "Online B")
+
+        val state = buildRouteUiState(
+            selectedEpisode = episode(),
+            routes = listOf(first, second),
+            loading = false,
+            error = null,
+        )
+
+        assertEquals(2, state.sourceCount)
+        assertEquals(2, state.onlineSourceCount)
+        assertEquals("2源 · 2线", state.sourceCoverageLabel)
+        assertEquals("2源 · 2线", state.loadingSteps[1].value)
     }
 
     @Test

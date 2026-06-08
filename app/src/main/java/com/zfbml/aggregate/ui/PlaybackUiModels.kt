@@ -22,7 +22,10 @@ internal data class RouteUiState(
     val routeCount: Int,
     val onlineCount: Int,
     val btCount: Int,
+    val onlineSourceCount: Int,
+    val btSourceCount: Int,
     val sourceCount: Int,
+    val sourceCoverageLabel: String,
     val failedCount: Int,
     val message: String,
     val detail: String,
@@ -105,8 +108,13 @@ internal fun buildRouteUiState(
     val sortedRoutes = sortRoutesForUi(routes, failedStreamIds)
     val visibleRoutes = sortedRoutes.filter { selectedSourceId == null || it.sourceId == selectedSourceId }
     val bestRoute = firstPlayableRouteForAutoplay(routes, failedStreamIds)
-    val onlineCount = routes.count { it.protocol != StreamProtocol.BITTORRENT && it.protocol != StreamProtocol.WEBVIEW_ONLY }
-    val btCount = routes.count { it.protocol == StreamProtocol.BITTORRENT }
+    val onlineRoutes = routes.filter { it.protocol != StreamProtocol.BITTORRENT && it.protocol != StreamProtocol.WEBVIEW_ONLY }
+    val btRoutes = routes.filter { it.protocol == StreamProtocol.BITTORRENT }
+    val onlineCount = onlineRoutes.size
+    val btCount = btRoutes.size
+    val onlineSourceCount = onlineRoutes.map { it.sourceId }.distinct().size
+    val btSourceCount = btRoutes.map { it.sourceId }.distinct().size
+    val sourceCount = routes.map { it.sourceId }.distinct().size
     val status = when {
         loading -> RouteLoadStatus.Loading
         bestRoute != null -> RouteLoadStatus.Ready
@@ -162,11 +170,23 @@ internal fun buildRouteUiState(
             episodeTitle = episodeTitle,
             onlineCount = onlineCount,
             btCount = btCount,
+            onlineSourceCount = onlineSourceCount,
+            btSourceCount = btSourceCount,
         ),
         routeCount = routes.size,
         onlineCount = onlineCount,
         btCount = btCount,
-        sourceCount = routes.map { it.sourceId }.distinct().size,
+        onlineSourceCount = onlineSourceCount,
+        btSourceCount = btSourceCount,
+        sourceCount = sourceCount,
+        sourceCoverageLabel = routeSourceCoverageLabel(
+            status = status,
+            routeCount = routes.size,
+            sourceCount = sourceCount,
+            onlineCount = onlineCount,
+            onlineSourceCount = onlineSourceCount,
+            btCount = btCount,
+        ),
         failedCount = failedStreamIds.size,
         message = message,
         detail = detail,
@@ -180,6 +200,8 @@ internal fun buildRouteLoadingSteps(
     episodeTitle: String,
     onlineCount: Int,
     btCount: Int,
+    onlineSourceCount: Int = 0,
+    btSourceCount: Int = 0,
 ): List<RouteLoadingStepUiState> {
     val hasSelectedEpisode = status != RouteLoadStatus.Idle
     val matching = status == RouteLoadStatus.Loading
@@ -192,7 +214,7 @@ internal fun buildRouteLoadingSteps(
         RouteLoadingStepUiState(
             title = "在线源",
             value = when {
-                onlineCount > 0 -> "${onlineCount} 条"
+                onlineCount > 0 -> routeSourceCountLabel(onlineSourceCount, onlineCount)
                 matching -> "优先匹配"
                 status == RouteLoadStatus.Failed -> "未命中"
                 else -> "待匹配"
@@ -202,7 +224,7 @@ internal fun buildRouteLoadingSteps(
         RouteLoadingStepUiState(
             title = "备用源",
             value = when {
-                btCount > 0 -> "${btCount} 条"
+                btCount > 0 -> routeSourceCountLabel(btSourceCount, btCount)
                 matching -> "必要时启用"
                 status == RouteLoadStatus.Failed -> "可重试"
                 else -> "兜底"
@@ -210,6 +232,34 @@ internal fun buildRouteLoadingSteps(
             active = matching || btCount > 0 || status == RouteLoadStatus.Failed,
         ),
     )
+}
+
+internal fun routeSourceCoverageLabel(
+    status: RouteLoadStatus,
+    routeCount: Int,
+    sourceCount: Int,
+    onlineCount: Int,
+    onlineSourceCount: Int,
+    btCount: Int,
+): String {
+    return when {
+        sourceCount > 1 -> "${sourceCount}源 · ${routeCount}线"
+        onlineSourceCount > 1 -> "${onlineSourceCount}在线源"
+        onlineCount > 0 && btCount > 0 -> "在线+备用"
+        onlineCount > 1 -> "${onlineCount}在线"
+        routeCount > 1 -> "${routeCount}线"
+        routeCount == 1 -> "单源可播"
+        status == RouteLoadStatus.Loading -> "匹配中"
+        else -> "待匹配"
+    }
+}
+
+private fun routeSourceCountLabel(sourceCount: Int, routeCount: Int): String {
+    return if (sourceCount > 1) {
+        "${sourceCount}源 · ${routeCount}线"
+    } else {
+        "${routeCount}线"
+    }
 }
 
 internal fun buildRouteSourceGroups(
