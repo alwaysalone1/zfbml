@@ -1,5 +1,7 @@
 package com.zfbml.aggregate.source
 
+import java.util.concurrent.atomic.AtomicInteger
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -127,6 +129,29 @@ class MediaRouteResolverTest {
         assertEquals("大闹天宫", routes.first().title)
     }
 
+    @Test
+    fun resolverLoadsRouteHitsConcurrently() = runTest {
+        val provider = SlowDetailProvider()
+        val request = MediaFetchRequest.fromEpisode(
+            Episode(
+                providerId = "bangumi-catalog",
+                id = "catalog-1",
+                title = "Episode 1",
+                url = "bangumi://subject/1/episode/1",
+                index = 1,
+                raw = mapOf(
+                    "subjectNameCn" to "Test Anime",
+                    "subjectName" to "Test JP",
+                ),
+            ),
+        )
+
+        val routes = MediaRouteResolver(listOf(provider), providerTimeoutMs = 1_000L).resolve(request)
+
+        assertEquals(3, routes.size)
+        assertTrue(provider.maxConcurrentDetails.get() > 1)
+    }
+
     private class FakeRouteProvider : SourceProvider {
         override val manifest = SourceManifest(
             id = "fake",
@@ -238,6 +263,72 @@ class MediaRouteResolverTest {
                     sourceScore = 60,
                 ),
             )
+        }
+    }
+
+    private class SlowDetailProvider : SourceProvider {
+        private val activeDetails = AtomicInteger(0)
+        val maxConcurrentDetails = AtomicInteger(0)
+
+        override val manifest = SourceManifest(
+            id = "slow-detail",
+            name = "Slow Detail Source",
+            version = "1",
+            author = "test",
+            capabilities = setOf(SourceCapability.SEARCH, SourceCapability.DETAIL, SourceCapability.STREAM),
+        )
+
+        override suspend fun search(query: String): List<SearchResult> {
+            return listOf("alpha", "beta", "gamma").map { source ->
+                SearchResult(
+                    providerId = manifest.id,
+                    title = "$query $source",
+                    url = "slow://result/$source",
+                    raw = mapOf("mediaKind" to "online"),
+                )
+            }
+        }
+
+        override suspend fun loadDetail(result: SearchResult): MediaDetail {
+            val active = activeDetails.incrementAndGet()
+            updateMaxConcurrentDetails(active)
+            delay(50)
+            activeDetails.decrementAndGet()
+            val source = result.url.substringAfterLast('/')
+            return MediaDetail(
+                providerId = manifest.id,
+                title = result.title,
+                url = result.url,
+                episodes = listOf(
+                    Episode(
+                        providerId = manifest.id,
+                        id = "slow-ep-$source",
+                        title = result.title,
+                        url = "${result.url}/stream",
+                        index = 1,
+                    ),
+                ),
+            )
+        }
+
+        override suspend fun resolveStreams(episode: Episode): List<MediaStream> {
+            return listOf(
+                MediaStream(
+                    id = episode.id,
+                    providerId = manifest.id,
+                    url = "${episode.url}.m3u8",
+                    protocol = StreamProtocol.HLS,
+                    quality = "1080p",
+                    sourceScore = 60,
+                ),
+            )
+        }
+
+        private fun updateMaxConcurrentDetails(active: Int) {
+            while (true) {
+                val currentMax = maxConcurrentDetails.get()
+                if (active <= currentMax || maxConcurrentDetails.compareAndSet(currentMax, active)) return
+            }
         }
     }
 

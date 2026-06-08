@@ -65,12 +65,16 @@ class MediaRouteResolver(
     private suspend fun resolveHits(
         hits: List<SearchHit>,
         request: MediaFetchRequest,
-    ): List<RouteCandidate> {
-        return hits.flatMap { hit ->
-            withTimeoutOrNull(providerTimeoutMs) {
-                resolveHit(hit, request)
-            }.orEmpty()
+    ): List<RouteCandidate> = coroutineScope {
+        hits.map { hit ->
+            async {
+                withTimeoutOrNull(providerTimeoutMs) {
+                    resolveHit(hit, request)
+                }.orEmpty()
             }
+        }
+            .awaitAll()
+            .flatten()
             .distinctBy { "${it.sourceId}|${it.stream.url}" }
             .sortedWith(routeComparator())
             .take(MAX_ROUTES)

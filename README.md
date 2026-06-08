@@ -25,6 +25,22 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.8
+
+中文：
+
+- 线路解析现在会并发处理同一批搜索命中的候选源，多个 `loadDetail + resolveStreams` 不再逐个串行等待。
+- 在线源命中较多时，详情页和播放器等待推荐线路的时间会更接近最慢候选源，而不是所有候选源耗时累加。
+- 新增单元测试验证候选线路详情解析会并发执行，防止后续退回串行解析。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.8`。
+
+English:
+
+- Route resolution now processes matched candidate sources concurrently, so multiple `loadDetail + resolveStreams` chains no longer wait one by one.
+- When many online candidates are found, detail/player route wait time is closer to the slowest candidate instead of the sum of all candidates.
+- Added unit coverage proving candidate route detail loading runs concurrently to prevent regressions back to serial resolution.
+- App version labels, request user agents, and README notes are now updated to `0.5.8`.
+
 ### v0.5.7
 
 中文：
