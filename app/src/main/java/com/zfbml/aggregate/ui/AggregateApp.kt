@@ -20,6 +20,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Arrangement
@@ -118,6 +119,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.zfbml.aggregate.AppGraph
@@ -1849,7 +1851,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.4.3")
+                setRequestProperty("User-Agent", "ZFBML/0.4.4")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2340,7 +2342,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.4.3",
+                version = "0.4.4",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )
@@ -4491,11 +4493,20 @@ private fun PlayerScreen(
                     .matchParentSize()
                     .zIndex(3.5f)
                     .background(Color.Black.copy(alpha = 0.001f))
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                    ) {
-                        toggleControls()
+                    .pointerInput(currentStream.id, controlsLocked, activePanel != null) {
+                        detectTapGestures(
+                            onTap = {
+                                toggleControls()
+                            },
+                            onDoubleTap = { tapOffset ->
+                                if (!controlsLocked && activePanel == null) {
+                                    playerDoubleTapSeekDeltaMs(
+                                        tapX = tapOffset.x,
+                                        surfaceWidthPx = size.width,
+                                    )?.let(::seekBy)
+                                }
+                            },
+                        )
                     },
             )
             PlayerEdgeProgress(

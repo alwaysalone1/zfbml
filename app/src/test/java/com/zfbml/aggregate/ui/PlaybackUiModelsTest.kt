@@ -320,6 +320,15 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun playerDoubleTapSeekDeltaUsesTapSide() {
+        assertEquals(-10_000L, playerDoubleTapSeekDeltaMs(tapX = 120f, surfaceWidthPx = 400))
+        assertEquals(10_000L, playerDoubleTapSeekDeltaMs(tapX = 280f, surfaceWidthPx = 400))
+        assertEquals(15_000L, playerDoubleTapSeekDeltaMs(tapX = 280f, surfaceWidthPx = 400, stepMs = 15_000L))
+        assertEquals(null, playerDoubleTapSeekDeltaMs(tapX = 120f, surfaceWidthPx = 0))
+        assertEquals(null, playerDoubleTapSeekDeltaMs(tapX = 120f, surfaceWidthPx = 400, stepMs = 0L))
+    }
+
+    @Test
     fun playerOverlayStateUsesShortStatusLabels() {
         val candidate = route("hls", StreamProtocol.HLS, 900, quality = "1080p")
         val playing = buildPlayerOverlayState(

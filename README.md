@@ -25,6 +25,22 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.4.4
+
+中文：
+
+- 播放区域新增双击左右半区快退/快进 10 秒，单击仍保持显示或隐藏控制层，竖屏不增加常驻复杂按钮。
+- 双击 seek 复用上一版的统一目标计算和操作反馈，左半区后退、右半区快进，并继续遵守片头/片尾边界。
+- 新增单测覆盖双击区域到 seek 方向的映射，后续接手势动画时可保持行为稳定。
+- App 内版本号、请求 UA 和 README 同步到 `0.4.4`。
+
+English:
+
+- The video surface now supports double-tapping the left or right half to seek backward or forward by 10 seconds, while single tap still toggles controls.
+- Double-tap seeking reuses the shared seek target policy and feedback pill from the previous release, including start/end clamping.
+- Added unit coverage for mapping double-tap regions to seek direction so future gesture animation work keeps the behavior stable.
+- App version labels, request user agents, and README notes are now updated to `0.4.4`.
+
 ### v0.4.3
 
 中文：

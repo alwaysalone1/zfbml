@@ -299,6 +299,15 @@ internal fun playerSeekTargetMs(
     }
 }
 
+internal fun playerDoubleTapSeekDeltaMs(
+    tapX: Float,
+    surfaceWidthPx: Int,
+    stepMs: Long = 10_000L,
+): Long? {
+    if (surfaceWidthPx <= 0 || stepMs <= 0L) return null
+    return if (tapX < surfaceWidthPx / 2f) -stepMs else stepMs
+}
+
 internal fun recommendedSourceIdForRoutes(
     routes: List<RouteCandidate>,
     failedStreamIds: Set<String> = emptySet(),
