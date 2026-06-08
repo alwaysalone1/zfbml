@@ -286,6 +286,19 @@ internal fun playerProgressPollDelayMs(
     }
 }
 
+internal fun playerSeekTargetMs(
+    currentPositionMs: Long,
+    deltaMs: Long,
+    durationMs: Long,
+): Long {
+    val targetMs = currentPositionMs + deltaMs
+    return if (durationMs > 0L) {
+        targetMs.coerceIn(0L, durationMs)
+    } else {
+        targetMs.coerceAtLeast(0L)
+    }
+}
+
 internal fun recommendedSourceIdForRoutes(
     routes: List<RouteCandidate>,
     failedStreamIds: Set<String> = emptySet(),

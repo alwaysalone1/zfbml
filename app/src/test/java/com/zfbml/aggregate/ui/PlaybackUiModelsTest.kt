@@ -304,6 +304,22 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun playerSeekTargetClampsToKnownDurationAndStart() {
+        assertEquals(
+            0L,
+            playerSeekTargetMs(currentPositionMs = 5_000L, deltaMs = -10_000L, durationMs = 120_000L),
+        )
+        assertEquals(
+            120_000L,
+            playerSeekTargetMs(currentPositionMs = 115_000L, deltaMs = 10_000L, durationMs = 120_000L),
+        )
+        assertEquals(
+            42_000L,
+            playerSeekTargetMs(currentPositionMs = 32_000L, deltaMs = 10_000L, durationMs = 0L),
+        )
+    }
+
+    @Test
     fun playerOverlayStateUsesShortStatusLabels() {
         val candidate = route("hls", StreamProtocol.HLS, 900, quality = "1080p")
         val playing = buildPlayerOverlayState(

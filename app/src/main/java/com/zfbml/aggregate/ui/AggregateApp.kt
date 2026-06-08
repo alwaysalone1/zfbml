@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -1848,7 +1849,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.4.2")
+                setRequestProperty("User-Agent", "ZFBML/0.4.3")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2339,7 +2340,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.4.2",
+                version = "0.4.3",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )
@@ -4153,6 +4154,8 @@ private fun PlayerScreen(
     var controlsRevealSerial by remember(currentStream.id) { mutableIntStateOf(0) }
     var playbackPositionMs by remember(currentStream.id) { mutableStateOf(0L) }
     var playbackDurationMs by remember(currentStream.id) { mutableStateOf(0L) }
+    var seekFeedbackText by remember(currentStream.id) { mutableStateOf<String?>(null) }
+    var seekFeedbackSerial by remember(currentStream.id) { mutableIntStateOf(0) }
     val profile = remember {
         DanmakuProfile(
             platform = DanmakuPlatform.Bilibili,
@@ -4203,6 +4206,21 @@ private fun PlayerScreen(
         revealControls()
     }
 
+    fun seekBy(deltaMs: Long) {
+        revealControls()
+        val duration = normalizePlaybackDurationMs(engine.player.duration)
+        val currentPosition = engine.currentPositionMs()
+        val target = playerSeekTargetMs(
+            currentPositionMs = currentPosition,
+            deltaMs = deltaMs,
+            durationMs = duration,
+        )
+        engine.player.seekTo(target)
+        val direction = if (deltaMs >= 0L) "快进" else "后退"
+        seekFeedbackText = "$direction ${kotlin.math.abs(deltaMs) / 1000L} 秒 · ${formatPlaybackTime(target)}"
+        seekFeedbackSerial += 1
+    }
+
     LaunchedEffect(playbackSpeed) {
         engine.player.setPlaybackSpeed(playbackSpeed)
     }
@@ -4246,6 +4264,12 @@ private fun PlayerScreen(
                     panelOpen = activePanel != null,
                 ),
             )
+        }
+    }
+    LaunchedEffect(seekFeedbackSerial) {
+        if (seekFeedbackText != null) {
+            delay(850)
+            seekFeedbackText = null
         }
     }
     LaunchedEffect(controlsVisible) {
@@ -4524,8 +4548,7 @@ private fun PlayerScreen(
                     isPlaying = state.isPlaying,
                     compact = compact,
                     onSeekBackward = {
-                        revealControls()
-                        engine.player.seekTo((engine.currentPositionMs() - 10_000L).coerceAtLeast(0L))
+                        seekBy(-10_000L)
                     },
                     onTogglePlay = {
                         revealControls()
@@ -4536,12 +4559,20 @@ private fun PlayerScreen(
                         }
                     },
                     onSeekForward = {
-                        revealControls()
-                        val duration = normalizePlaybackDurationMs(engine.player.duration)
-                        val target = engine.currentPositionMs() + 10_000L
-                        engine.player.seekTo(if (duration > 0L) target.coerceAtMost(duration) else target)
+                        seekBy(10_000L)
                     },
                 )
+            }
+            AnimatedVisibility(
+                visible = seekFeedbackText != null && activePanel == null && !controlsLocked,
+                enter = fadeIn(),
+                exit = fadeOut(),
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .offset(y = if (compact) 74.dp else 96.dp)
+                    .zIndex(4.6f),
+            ) {
+                PlayerSeekFeedbackPill(text = seekFeedbackText.orEmpty())
             }
             AnimatedVisibility(
                 visible = controlsVisible && activePanel == null && !controlsLocked,
@@ -5437,6 +5468,26 @@ private fun PlayerCenterControls(
             )
         }
     }
+}
+
+@Composable
+private fun PlayerSeekFeedbackPill(
+    text: String,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelLarge,
+        color = Color.White,
+        fontWeight = FontWeight.Bold,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier = modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color.Black.copy(alpha = 0.58f))
+            .border(1.dp, AnimeAccentPink.copy(alpha = 0.32f), RoundedCornerShape(8.dp))
+            .padding(horizontal = 12.dp, vertical = 7.dp),
+    )
 }
 
 @Composable

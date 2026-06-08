@@ -25,6 +25,22 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.4.3
+
+中文：
+
+- 横屏播放器的快进/快退改为复用统一的 seek 目标计算，后退会停在片头，有可靠总时长时快进不会越过片尾。
+- 点击左右 10 秒按钮后新增短暂操作反馈，显示快进/后退方向和目标时间，减少全屏操作的不确定感。
+- 竖屏仍保持精简控制布局，不新增常驻快进/快退按钮，为后续双击手势复用同一套 seek 行为打基础。
+- App 内版本号、请求 UA 和 README 同步到 `0.4.3`。
+
+English:
+
+- Fullscreen skip forward/backward now reuses a single seek-target policy: backward seeks clamp to the start, and forward seeks clamp to the known duration.
+- Tapping the 10-second skip buttons now shows a brief operation feedback pill with the direction and target timestamp.
+- Portrait playback keeps the compact control layout without adding persistent skip buttons, while the shared seek behavior is ready for future double-tap gestures.
+- App version labels, request user agents, and README notes are now updated to `0.4.3`.
+
 ### v0.4.2
 
 中文：
