@@ -25,6 +25,23 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.37
+
+中文：
+- 线路推荐模型新增“推荐理由”，把自动最佳背后的协议、清晰度和综合评分依据暴露给详情页与播放页换源面板。
+- 详情页首播条现在会直接说明为什么推荐当前源，用户不用展开调试信息也能理解“自动最佳”的判断。
+- 播放页换源摘要改为显示推荐理由，手动换源时能更快区分在线播放、BT 备用和网页兜底线路。
+- 新增单元测试覆盖推荐理由、换源面板摘要和不同线路类型的解释。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.37`。
+
+English:
+
+- Route recommendation models now expose a reason string that explains the protocol, quality, and score signals behind the automatic best route.
+- The detail first-play strip now states why the current source is recommended, so users can trust the automatic choice without opening diagnostics.
+- The player route panel summary now surfaces the same recommendation reason, making online, BT fallback, and WebView fallback choices easier to scan.
+- Added unit coverage for recommendation reasons, route-panel summaries, and different route-type explanations.
+- App version labels, request user agents, and README notes are now updated to `0.5.37`.
+
 ### v0.5.36
 
 中文：

@@ -2081,7 +2081,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.36")
+                setRequestProperty("User-Agent", "ZFBML/0.5.37")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2572,7 +2572,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.5.36",
+                version = "0.5.37",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )
@@ -3451,7 +3451,7 @@ private fun DetailFirstPlayStrip(
     }
     val episodeLabel = selectedEpisode?.index?.let { "第 $it 集" } ?: state.selectedEpisodeTitle
     val decision = when (state.status) {
-        RouteLoadStatus.Ready -> "$episodeLabel · 推荐 ${state.recommendationTitle} · ${state.recommendationDetail}"
+        RouteLoadStatus.Ready -> "$episodeLabel \u00b7 ${state.recommendationReason} \u00b7 \u63a8\u8350 ${state.recommendationTitle}"
         RouteLoadStatus.Loading -> "$episodeLabel · 正在优先匹配在线播放"
         else -> state.detail
     }
@@ -3521,6 +3521,7 @@ private fun DetailFirstPlayStrip(
         LazyRow(horizontalArrangement = Arrangement.spacedBy(7.dp), modifier = Modifier.fillMaxWidth()) {
             item { DetailDecisionChip("当前集", episodeLabel, AnimeAccentPink) }
             item { DetailDecisionChip("推荐源", state.recommendationTitle, AnimeAccentCyan) }
+            item { DetailDecisionChip("\u63a8\u8350\u7406\u7531", state.recommendationReason, AnimeAccentGreen) }
             item { DetailDecisionChip("清晰度", qualityLabel, AnimeAccentAmber) }
             if (state.status != RouteLoadStatus.Idle) {
                 item { DetailDecisionChip("加载", state.loadOriginLabel, AnimeAccentGreen) }
@@ -3691,6 +3692,7 @@ private fun RouteRecommendationBand(
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Text(if (route == null) "播放源" else "推荐源", style = MaterialTheme.typography.labelMedium, color = accent, maxLines = 1)
             Text(state.recommendationTitle, style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(state.recommendationReason, style = MaterialTheme.typography.labelSmall, color = accent, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(state.recommendationDetail, style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.72f), maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
         if (state.canPlay) {
@@ -7791,10 +7793,10 @@ private fun RoutePanelSummaryCard(
                     Text(
                         if (detailedMode) {
                             state.recommendedRoute?.let { route ->
-                                "推荐 ${route.sourceName} · ${route.routeName.orEmpty().ifBlank { route.protocol.displayName() }}"
+                                "推荐 ${route.sourceName} · ${state.recommendationReason}"
                             } ?: "暂无推荐源"
                         } else {
-                            state.recommendedRoute?.let { "已按清晰度和稳定性排序，可直接观看或换源" } ?: "暂时没有推荐源"
+                            state.recommendedRoute?.let { state.recommendationReason } ?: "暂时没有推荐源"
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = AnimeMuted,

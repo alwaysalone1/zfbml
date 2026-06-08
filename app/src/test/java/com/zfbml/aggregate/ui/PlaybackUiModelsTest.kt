@@ -28,6 +28,8 @@ class PlaybackUiModelsTest {
         assertEquals(1, state.btCount)
         assertEquals("Provider", state.recommendationTitle)
         assertTrue(state.recommendationDetail.contains("720p"))
+        assertTrue(state.recommendationReason.contains("\u5728\u7ebf\u64ad\u653e\u4f18\u5148"))
+        assertTrue(state.recommendationReason.contains("720p"))
         assertTrue(state.canPlay)
     }
 
@@ -292,6 +294,22 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun routeRecommendationReasonExplainsProtocolQualityAndFallbackRole() {
+        val hls = route("hls", StreamProtocol.HLS, 400, quality = "1080p")
+        val bt = route("bt", StreamProtocol.BITTORRENT, 400, quality = "1080p")
+        val webView = route("web", StreamProtocol.WEBVIEW_ONLY, 400, quality = "720p")
+
+        val hlsReason = routeRecommendationReason(hls)
+        val btReason = routeRecommendationReason(bt)
+        val webReason = routeRecommendationReason(webView)
+
+        assertTrue(hlsReason.contains("\u5728\u7ebf\u64ad\u653e\u4f18\u5148"))
+        assertTrue(hlsReason.contains("1080p"))
+        assertTrue(btReason.contains("\u5907\u7528"))
+        assertTrue(webReason.contains("\u7f51\u9875\u55c5\u63a2"))
+    }
+
+    @Test
     fun routePanelUiStateSummarizesRecommendationAndFailures() {
         val failed = route("failed", StreamProtocol.HLS, 900, quality = "1080p")
         val bt = route("bt", StreamProtocol.BITTORRENT, 800, quality = "1080p")
@@ -304,6 +322,8 @@ class PlaybackUiModelsTest {
         )
 
         assertEquals("fallback", state.recommendedRoute?.stream?.id)
+        assertTrue(state.recommendationReason.contains("\u5728\u7ebf\u64ad\u653e\u4f18\u5148"))
+        assertTrue(state.recommendationReason.contains("720p"))
         assertEquals("failed", state.selectedRoute?.stream?.id)
         assertEquals(3, state.totalCount)
         assertEquals(2, state.availableCount)

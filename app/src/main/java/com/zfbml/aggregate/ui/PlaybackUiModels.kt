@@ -32,6 +32,7 @@ internal data class RouteUiState(
     val detail: String,
     val recommendationTitle: String,
     val recommendationDetail: String,
+    val recommendationReason: String,
 ) {
     val canPlay: Boolean = bestRoute != null
 }
@@ -68,6 +69,7 @@ internal data class RoutePanelUiState(
     val onlineCount: Int,
     val btCount: Int,
     val failedCount: Int,
+    val recommendationReason: String,
 )
 
 internal const val RouteAllSourcesId = "__all_sources__"
@@ -161,6 +163,13 @@ internal fun buildRouteUiState(
             route.protocol.uiProtocolName(),
         ).distinct().joinToString(" · ")
     } ?: detail
+    val recommendationReason = bestRoute?.let { routeRecommendationReason(it) } ?: when (status) {
+        RouteLoadStatus.Loading -> "\u6b63\u5728\u5339\u914d\u5728\u7ebf\u6e90"
+        RouteLoadStatus.Failed -> "\u52a0\u8f7d\u5931\u8d25\uff0c\u53ef\u91cd\u8bd5"
+        RouteLoadStatus.Empty -> "\u7b49\u5f85\u8865\u6e90"
+        RouteLoadStatus.Idle -> "\u9009\u96c6\u540e\u81ea\u52a8\u63a8\u8350"
+        RouteLoadStatus.Ready -> "\u6682\u65e0\u53ef\u64ad\u653e\u7ebf\u8def"
+    }
     val loadOriginLabel = when {
         status == RouteLoadStatus.Ready && loadedFromCache -> "预取命中"
         status == RouteLoadStatus.Ready -> "实时匹配"
@@ -203,6 +212,7 @@ internal fun buildRouteUiState(
         detail = detail,
         recommendationTitle = recommendationTitle,
         recommendationDetail = recommendationDetail,
+        recommendationReason = recommendationReason,
     )
 }
 
@@ -498,6 +508,29 @@ internal fun recommendedSourceIdForRoutes(
     return firstPlayableRouteForAutoplay(routes, failedStreamIds)?.sourceId
 }
 
+internal fun routeRecommendationReason(route: RouteCandidate?): String {
+    if (route == null) return "\u6682\u65e0\u53ef\u64ad\u653e\u7ebf\u8def"
+    val protocolReason = when (route.protocol) {
+        StreamProtocol.HLS,
+        StreamProtocol.DASH,
+        StreamProtocol.SMOOTH_STREAMING -> "\u5728\u7ebf\u64ad\u653e\u4f18\u5148"
+        StreamProtocol.PROGRESSIVE -> "\u76f4\u8fde\u64ad\u653e\u4f18\u5148"
+        StreamProtocol.BITTORRENT -> "\u5728\u7ebf\u6e90\u4e0d\u8db3\u65f6\u5907\u7528"
+        StreamProtocol.RTSP -> "\u5b9e\u65f6\u6d41\u5019\u9009"
+        StreamProtocol.WEBVIEW_ONLY -> "\u7f51\u9875\u55c5\u63a2\u515c\u5e95"
+        StreamProtocol.UNKNOWN -> "\u672a\u77e5\u534f\u8bae\u5019\u9009"
+    }
+    val qualityReason = routeDecisionQualityLabel(route)?.let { "\u6e05\u6670\u5ea6 $it" }
+    val scoreReason = if (route.score > 0 || route.stream.sourceScore > 0) {
+        "\u7efc\u5408\u8bc4\u5206\u9760\u524d"
+    } else {
+        null
+    }
+    return listOfNotNull(protocolReason, qualityReason, scoreReason)
+        .distinct()
+        .joinToString(" \u00b7 ")
+}
+
 internal fun buildRoutePanelUiState(
     routes: List<RouteCandidate>,
     selectedStreamId: String,
@@ -507,14 +540,16 @@ internal fun buildRoutePanelUiState(
         route.stream.id !in failedStreamIds &&
             route.stream.protocol != StreamProtocol.WEBVIEW_ONLY
     }
+    val recommendedRoute = firstPlayableRouteForAutoplay(routes, failedStreamIds)
     return RoutePanelUiState(
-        recommendedRoute = firstPlayableRouteForAutoplay(routes, failedStreamIds),
+        recommendedRoute = recommendedRoute,
         selectedRoute = routes.firstOrNull { it.stream.id == selectedStreamId },
         totalCount = routes.size,
         availableCount = availableRoutes.size,
         onlineCount = availableRoutes.count { it.protocol != StreamProtocol.BITTORRENT },
         btCount = availableRoutes.count { it.protocol == StreamProtocol.BITTORRENT },
         failedCount = failedStreamIds.count { failedId -> routes.any { it.stream.id == failedId } },
+        recommendationReason = routeRecommendationReason(recommendedRoute),
     )
 }
 
@@ -571,6 +606,20 @@ private fun routeUiScore(route: RouteCandidate, failedStreamIds: Set<String>): I
     }
     if (route.stream.id in failedStreamIds) score -= 2_000
     return score
+}
+
+private fun routeDecisionQualityLabel(route: RouteCandidate): String? {
+    val quality = listOfNotNull(route.quality, route.stream.quality, route.routeName)
+        .firstOrNull { it.isNotBlank() }
+        ?.lowercase()
+        ?: return null
+    return when {
+        "2160" in quality || "4k" in quality -> "4K"
+        "1080" in quality -> "1080p"
+        "720" in quality -> "720p"
+        "auto" in quality || "\u81ea\u52a8" in quality -> "\u81ea\u52a8"
+        else -> null
+    }
 }
 
 private fun playerSourceLabelForUi(stream: MediaStream, route: RouteCandidate?): String {
