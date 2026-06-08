@@ -111,12 +111,12 @@ fun DanmakuSurface(
         drawIntoCanvas { canvas ->
             val native = canvas.nativeCanvas
             strokePaint.strokeWidth = profile.strokeWidthPx
-            strokePaint.color = 0xCC000000.toInt()
             fillPaint.setShadowLayer(profile.shadowRadiusPx, 1f, 1f, 0x88000000.toInt())
             preparedLayout.forEachVisible(playbackMs, settings.alpha) { entry, x, entryAlpha ->
                 val metrics = entry.metrics
-                val color = entry.item.color.withAlpha(entryAlpha)
+                val color = danmakuFillColor(entry.item.color, entryAlpha)
                 strokePaint.textSize = metrics.textSizePx
+                strokePaint.color = danmakuStrokeColor(entryAlpha)
                 fillPaint.textSize = metrics.textSizePx
                 fillPaint.color = color
                 native.drawText(entry.item.text, x, entry.y, strokePaint)
@@ -193,9 +193,14 @@ private fun rememberTextPaint(): Paint {
     }
 }
 
-private fun Long.withAlpha(alpha: Float): Int {
+internal fun danmakuFillColor(color: Long, alpha: Float): Int {
     val a = (alpha * 255).toInt().coerceIn(0, 255)
-    return (a shl 24) or (toInt() and 0x00FFFFFF)
+    return (a shl 24) or (color.toInt() and 0x00FFFFFF)
+}
+
+internal fun danmakuStrokeColor(alpha: Float): Int {
+    val a = (alpha * DanmakuStrokeAlpha * 255).toInt().coerceIn(0, 255)
+    return a shl 24
 }
 
 internal fun danmakuFrameDelayMs(
@@ -218,3 +223,4 @@ internal fun danmakuPlaybackSampleDelayMs(
 
 private const val PlayingPlaybackSampleDelayMs = 96L
 private const val PausedFrameDelayMs = 250L
+private const val DanmakuStrokeAlpha = 0.8f

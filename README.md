@@ -25,6 +25,22 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.16
+
+中文：
+
+- 弹幕 Canvas 绘制现在让文字描边跟随同一条弹幕的透明度、固定弹幕淡入淡出和密度溢出淡化一起变化，避免正文已经变淡但黑边仍然过重的视觉噪点。
+- 描边保留 80% 的最大黑边强度，同时按条目 alpha 缩放，降低密集弹幕时的过强轮廓和闪烁感，让弹幕观感更接近主流视频 App 的稳定层次。
+- 新增单元测试覆盖填充色和描边色的 alpha 计算，防止后续回退到描边不随弹幕透明度变化。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.16`。
+
+English:
+
+- Danmaku Canvas rendering now applies each entry's alpha to the text stroke as well as the fill, including fixed danmaku fade and overflow density fade.
+- The stroke keeps an 80% maximum outline strength but scales with entry alpha, reducing heavy outlines and flicker in dense danmaku scenes.
+- Added unit coverage for fill and stroke alpha color calculation to prevent regressions where outlines stay opaque while danmaku text fades.
+- App version labels, request user agents, and README notes are now updated to `0.5.16`.
+
 ### v0.5.15
 
 中文：

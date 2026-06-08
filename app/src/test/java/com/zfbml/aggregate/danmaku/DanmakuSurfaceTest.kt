@@ -5,6 +5,26 @@ import org.junit.Test
 
 class DanmakuSurfaceTest {
     @Test
+    fun danmakuFillColorAppliesEntryAlphaToTextColor() {
+        val color = danmakuFillColor(0x00ABCDEF, alpha = 0.5f)
+
+        assertEquals(127, color ushr 24)
+        assertEquals(0x00ABCDEF, color and 0x00FFFFFF)
+    }
+
+    @Test
+    fun danmakuStrokeColorScalesWithEntryAlpha() {
+        val full = danmakuStrokeColor(alpha = 1f)
+        val faded = danmakuStrokeColor(alpha = 0.25f)
+        val hidden = danmakuStrokeColor(alpha = 0f)
+
+        assertEquals(204, full ushr 24)
+        assertEquals(51, faded ushr 24)
+        assertEquals(0, hidden ushr 24)
+        assertEquals(0x000000, faded and 0x00FFFFFF)
+    }
+
+    @Test
     fun frameDelayStopsWhenDisabledOrEmpty() {
         assertEquals(null, danmakuFrameDelayMs(enabled = false, hasItems = true, isPlaying = true))
         assertEquals(null, danmakuFrameDelayMs(enabled = true, hasItems = false, isPlaying = true))
