@@ -25,6 +25,21 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.15
+
+中文：
+- 横屏全屏播放器右侧 Dock 新增“清晰度”和“倍速”直达入口，和原有弹幕、选集、线路、更多一起组成更完整的全屏快捷操作区。
+- 竖屏未全屏控制层继续保持轻量：弹幕输入/开关和全屏入口为主，异常时才显示重试和换源，符合“竖屏精简、全屏全面”的层级。
+- 全屏用户现在不必移动到下方控制栏即可打开清晰度和倍速面板，横屏拇指操作更接近主流视频 App。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.15`。
+
+English:
+
+- The landscape fullscreen right-side dock now adds direct Quality and Speed entries, joining danmaku, episodes, routes, and more as a fuller fullscreen quick-action area.
+- Portrait non-fullscreen controls remain lightweight: danmaku input/toggle and fullscreen stay primary, with retry/route recovery shown only when playback has issues.
+- Fullscreen users can now open quality and speed panels without reaching for the bottom control bar, making landscape thumb operation closer to mainstream video apps.
+- App version labels, request user agents, and README notes are now updated to `0.5.15`.
+
 ### v0.5.14
 
 中文：

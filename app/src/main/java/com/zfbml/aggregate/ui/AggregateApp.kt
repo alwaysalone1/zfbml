@@ -1960,7 +1960,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.14")
+                setRequestProperty("User-Agent", "ZFBML/0.5.15")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2451,7 +2451,7 @@ private fun SettingsScreen(graph: AppGraph) {
     ) {
         item {
             ProfileHeroCard(
-                version = "0.5.14",
+                version = "0.5.15",
                 sourceCount = sourceCount,
                 danmakuCount = danmakuCount,
             )
@@ -6116,6 +6116,16 @@ private fun PlayerFullscreenSideDock(
             label = if (danmakuEnabled) "弹幕开" else "弹幕关",
             selected = danmakuEnabled,
             onClick = onToggleDanmaku,
+        )
+        PlayerFullscreenDockButton(
+            icon = Icons.Filled.HighQuality,
+            label = "清晰度",
+            onClick = { onShowPanel(PlayerPanel.Quality) },
+        )
+        PlayerFullscreenDockButton(
+            icon = Icons.Filled.Speed,
+            label = "倍速",
+            onClick = { onShowPanel(PlayerPanel.Speed) },
         )
         PlayerFullscreenDockButton(
             icon = Icons.AutoMirrored.Filled.PlaylistPlay,
