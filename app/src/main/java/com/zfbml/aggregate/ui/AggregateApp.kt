@@ -883,6 +883,7 @@ private fun MainTabContent(
             AppTab.Search -> SearchScreen(
                 graph = graph,
                 initialQuery = initialQuery,
+                scheduleUiState = scheduleUiState,
                 onOpenDetail = onOpenDetail,
             )
             AppTab.Sources -> SourcesScreen(graph = graph)
@@ -2329,7 +2330,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.49")
+                setRequestProperty("User-Agent", "ZFBML/0.5.50")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2422,10 +2423,19 @@ private fun featuredOnlineResults(): List<SearchResult> = listOf(
     ),
 )
 
+private fun defaultSearchKeywords(): List<String> = listOf(
+    "\u5b64\u72ec\u6447\u6eda",
+    "\u51e1\u4eba\u4fee\u4ed9\u4f20",
+    "\u9b3c\u706d\u4e4b\u5203",
+    "\u9b54\u6cd5\u5c11\u5973\u5c0f\u5706",
+    "\u590f\u76ee\u53cb\u4eba\u5e10",
+)
+
 @Composable
 private fun SearchScreen(
     graph: AppGraph,
     initialQuery: String?,
+    scheduleUiState: HomeScheduleUiState,
     onOpenDetail: (SearchResult) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
@@ -2442,6 +2452,13 @@ private fun SearchScreen(
         results = results,
         selectedProviderId = selectedSearchProviderId,
     )
+    val searchLandingUiState = remember(scheduleUiState, searchIndexUiState.searchableSourceCount) {
+        buildSearchLandingUiState(
+            scheduleState = scheduleUiState,
+            searchableSourceCount = searchIndexUiState.searchableSourceCount,
+            fallbackKeywords = defaultSearchKeywords(),
+        )
+    }
     val visibleResults = searchResultsForProvider(results, searchIndexUiState.selectedProviderId)
 
     fun runSearch(searchTerm: String = query) {
@@ -2485,12 +2502,13 @@ private fun SearchScreen(
     ) {
         item {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("\u627e\u756a", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Color.White)
-                Text("\u8f93\u5165\u756a\u540d\u6216\u7c98\u8d34\u64ad\u653e\u94fe\u63a5\uff0c\u5148\u8fdb\u8be6\u60c5\u9875\uff0c\u518d\u7531\u5e94\u7528\u81ea\u52a8\u5339\u914d\u6700\u5408\u9002\u7684\u64ad\u653e\u6e90\u3002", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+                Text(searchLandingUiState.headline, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Color.White)
+                Text(searchLandingUiState.summary, style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
             }
         }
         item {
             SearchControls(
+                state = searchLandingUiState,
                 query = query,
                 onQueryChange = { query = it },
                 onSearch = ::runSearch,
@@ -2500,7 +2518,8 @@ private fun SearchScreen(
         if (!searched && results.isEmpty()) {
             item {
                 SearchSuggestionStrip(
-                    suggestions = listOf("\u5b64\u72ec\u6447\u6eda", "\u51e1\u4eba\u4fee\u4ed9\u4f20", "\u9b3c\u706d\u4e4b\u5203", "\u9b54\u6cd5\u5c11\u5973\u5c0f\u5706", "\u590f\u76ee\u53cb\u4eba\u5e10"),
+                    title = searchLandingUiState.suggestionTitle,
+                    suggestions = searchLandingUiState.suggestions,
                     onSelected = { runSearch(it) },
                 )
             }
@@ -2804,7 +2823,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.49",
+            version = "0.5.50",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -3028,6 +3047,7 @@ private fun StatusPanel(
 
 @Composable
 private fun SearchControls(
+    state: SearchLandingUiState,
     query: String,
     onQueryChange: (String) -> Unit,
     onSearch: () -> Unit,
@@ -3048,8 +3068,8 @@ private fun SearchControls(
                     Icon(Icons.Filled.Search, contentDescription = null, tint = Color.White, modifier = Modifier.size(22.dp))
                 }
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text("\u5168\u7ad9\u627e\u756a", style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold)
-                    Text("\u652f\u6301\u756a\u540d\u3001\u5267\u540d\u548c\u76f4\u94fe", style = MaterialTheme.typography.bodySmall, color = AnimeMuted)
+                    Text(state.inputTitle, style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold)
+                    Text(state.inputSubtitle, style = MaterialTheme.typography.bodySmall, color = AnimeMuted)
                 }
             }
             OutlinedTextField(
@@ -3057,7 +3077,7 @@ private fun SearchControls(
                 onValueChange = onQueryChange,
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                label = { Text("\u8f93\u5165\u756a\u540d\u6216\u7c98\u8d34\u64ad\u653e\u94fe\u63a5") },
+                label = { Text(state.inputPlaceholder) },
             )
             Button(
                 modifier = Modifier
@@ -3077,27 +3097,36 @@ private fun SearchControls(
 
 @Composable
 private fun SearchSuggestionStrip(
-    suggestions: List<String>,
+    title: String,
+    suggestions: List<SearchSuggestionUiState>,
     onSelected: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(9.dp)) {
-        Text("\u5927\u5bb6\u5728\u627e", style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold)
+        Text(title, style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold)
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             items(suggestions) { suggestion ->
+                val accent = sourceLibraryToneColor(suggestion.tone)
                 TextButton(
-                    onClick = { onSelected(suggestion) },
-                    modifier = Modifier.height(36.dp).focusable(),
-                    shape = RoundedCornerShape(999.dp),
+                    onClick = { onSelected(suggestion.keyword) },
+                    modifier = Modifier.height(56.dp).widthIn(min = 132.dp, max = 210.dp).focusable(),
+                    shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.textButtonColors(
                         containerColor = Color.White.copy(alpha = 0.08f),
                         contentColor = Color.White,
                     ),
-                    contentPadding = PaddingValues(horizontal = 13.dp, vertical = 0.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                 ) {
-                    Icon(Icons.Filled.Search, contentDescription = null, tint = AnimeAccentCyan, modifier = Modifier.size(15.dp))
-                    Spacer(Modifier.width(6.dp))
-                    Text(suggestion, style = MaterialTheme.typography.labelMedium, maxLines = 1)
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Filled.Search, contentDescription = null, tint = accent, modifier = Modifier.size(15.dp))
+                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(suggestion.keyword, style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(suggestion.subtitle, style = MaterialTheme.typography.labelSmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        }
+                    }
                 }
             }
         }

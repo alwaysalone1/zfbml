@@ -116,6 +116,24 @@ internal data class SearchIndexUiState(
     val sourceFilters: List<SearchSourceFilterUiState>,
 )
 
+internal data class SearchSuggestionUiState(
+    val keyword: String,
+    val subtitle: String,
+    val tone: SourceLibraryTone,
+)
+
+internal data class SearchLandingUiState(
+    val headline: String,
+    val summary: String,
+    val inputTitle: String,
+    val inputSubtitle: String,
+    val inputPlaceholder: String,
+    val suggestionTitle: String,
+    val suggestions: List<SearchSuggestionUiState>,
+    val scheduleSuggestionCount: Int,
+    val searchableSourceCount: Int,
+)
+
 internal data class ScheduleDayChipUiState(
     val weekdayId: Int,
     val label: String,
@@ -865,6 +883,60 @@ internal fun searchResultsForProvider(
     return selectedProviderId
         ?.let { providerId -> results.filter { it.providerId == providerId } }
         ?: results
+}
+
+internal fun buildSearchLandingUiState(
+    scheduleState: HomeScheduleUiState,
+    searchableSourceCount: Int,
+    fallbackKeywords: List<String>,
+): SearchLandingUiState {
+    val searchable = searchableSourceCount.coerceAtLeast(0)
+    val scheduleSuggestions = scheduleState.selectedItems
+        .mapNotNull { result -> result.searchKeywordCandidate() }
+        .distinctBy { it.lowercase() }
+        .take(6)
+        .map { keyword ->
+            SearchSuggestionUiState(
+                keyword = keyword,
+                subtitle = if (scheduleState.selectedDayAction.isNotBlank()) {
+                    "${scheduleState.selectedDayTitle} · ${scheduleState.selectedDayAction}"
+                } else {
+                    scheduleState.selectedDayTitle
+                },
+                tone = SourceLibraryTone.Primary,
+            )
+        }
+    val fallbackSuggestions = fallbackKeywords
+        .map { it.trim() }
+        .filter { it.isNotBlank() }
+        .filterNot { keyword -> scheduleSuggestions.any { it.keyword.equals(keyword, ignoreCase = true) } }
+        .distinctBy { it.lowercase() }
+        .take((6 - scheduleSuggestions.size).coerceAtLeast(0))
+        .map { keyword ->
+            SearchSuggestionUiState(
+                keyword = keyword,
+                subtitle = "热门搜索",
+                tone = SourceLibraryTone.Online,
+            )
+        }
+    val suggestions = scheduleSuggestions + fallbackSuggestions
+    val scheduleCount = scheduleSuggestions.size
+    val summary = when {
+        searchable == 0 -> "搜索源待接入；可先从首页或频道浏览条目，接入来源后这里会显示可搜索范围。"
+        scheduleCount > 0 -> "${scheduleState.selectedDayTitle}已整理 $scheduleCount 个可搜条目，搜索后详情页会继续自动匹配播放线路。"
+        else -> "已接入 $searchable 个可搜索来源；输入番名、别名或播放链接后，可按来源缩小索引范围。"
+    }
+    return SearchLandingUiState(
+        headline = "找番",
+        summary = summary,
+        inputTitle = "全站找番",
+        inputSubtitle = if (searchable > 0) "$searchable 个索引源 · 先进详情再匹配线路" else "等待可搜索来源",
+        inputPlaceholder = "输入番名、别名或粘贴播放链接",
+        suggestionTitle = if (scheduleCount > 0) "日程可搜" else "大家在找",
+        suggestions = suggestions,
+        scheduleSuggestionCount = scheduleCount,
+        searchableSourceCount = searchable,
+    )
 }
 
 internal fun buildHomeScheduleUiState(
@@ -1688,6 +1760,18 @@ private fun SourceManifest.searchCapabilityLabel(): String {
         if (SourceCapability.EPISODES in capabilities) "\u9009\u96c6" else null,
     )
     return labels.distinct().take(3).joinToString(" \u00b7 ")
+}
+
+private fun SearchResult.searchKeywordCandidate(): String? {
+    val rawKeyword = listOf(
+        raw["subjectNameCn"],
+        raw["nameCn"],
+        raw["cn"],
+        raw["titleCn"],
+        raw["subjectName"],
+        raw["name"],
+    ).firstOrNull { !it.isNullOrBlank() }
+    return (rawKeyword ?: title).trim().takeIf { it.isNotBlank() }
 }
 
 private fun List<BangumiScheduleDay>.firstActiveScheduleDayFrom(currentDayId: Int): BangumiScheduleDay? {

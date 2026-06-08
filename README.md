@@ -25,6 +25,23 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.50
+
+中文：
+- 搜索页新增 `SearchLandingUiState` 和 `SearchSuggestionUiState`，把找番入口标题、说明、输入台文案和搜索建议统一模型化。
+- 搜索建议优先来自当前日程摘要里的番剧条目，再用热门关键词补足，避免“大家在找”只停留在静态 Compose 文案。
+- 搜索输入台现在会显示真实可搜索来源数量和“先进详情再匹配线路”的观看流程提示。
+- 新增单元测试覆盖日程条目优先、热门词去重兜底、无搜索源提示和建议语义色。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.50`。
+
+English:
+
+- Search now has `SearchLandingUiState` and `SearchSuggestionUiState`, centralizing the Find Anime headline, summary, input copy, and suggestion strip.
+- Search suggestions prefer anime titles from the current schedule digest, then fill from popular fallback keywords instead of being hard-coded Compose text only.
+- The search station now shows the real searchable-source count and the detail-first route-matching flow.
+- Added unit coverage for schedule-first suggestions, fallback de-duplication, missing-source copy, and suggestion tones.
+- App version labels, request user agents, and README notes are now updated to `0.5.50`.
+
 ### v0.5.49
 
 中文：

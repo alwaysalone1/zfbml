@@ -105,3 +105,5 @@ This pass upgrades the Profile surface. `ProfileCenterUiState` now centralizes t
 This pass upgrades the app shell navigation. `AppNavigationUiState` now centralizes top-level tab labels, status copy, selection state, and semantic tone, and the bottom bar / navigation rail surface recommendation, search-source, source-library, and cache-readiness status from shared models.
 
 This pass wires the app shell navigation to the real home schedule digest. `MainScaffold` now owns the weekly schedule load and shares one `HomeScheduleUiState` with both the Discover feed and top-level navigation, so the Discover tab can show the actual "today" update count once Bangumi schedule data is available.
+
+This pass upgrades the search landing surface. `SearchLandingUiState` turns the shared home schedule digest into first-class search suggestions, then fills with popular fallback keywords, so the search tab opens with data-backed anime entries and source-readiness copy before the user types.
