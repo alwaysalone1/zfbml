@@ -325,6 +325,10 @@ internal fun playerSeekFeedbackPlacement(
     }
 }
 
+internal fun playerSeekShouldRevealControls(fromGesture: Boolean): Boolean {
+    return !fromGesture
+}
+
 internal fun recommendedSourceIdForRoutes(
     routes: List<RouteCandidate>,
     failedStreamIds: Set<String> = emptySet(),

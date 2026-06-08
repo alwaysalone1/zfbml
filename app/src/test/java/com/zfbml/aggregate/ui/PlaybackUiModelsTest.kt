@@ -337,6 +337,12 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun playerSeekRevealPolicyKeepsGestureSeekLightweight() {
+        assertTrue(playerSeekShouldRevealControls(fromGesture = false))
+        assertFalse(playerSeekShouldRevealControls(fromGesture = true))
+    }
+
+    @Test
     fun playerOverlayStateUsesShortStatusLabels() {
         val candidate = route("hls", StreamProtocol.HLS, 900, quality = "1080p")
         val playing = buildPlayerOverlayState(

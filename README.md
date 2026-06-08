@@ -25,6 +25,22 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.4.6
+
+中文：
+
+- 双击播放区域 seek 改为轻量手势反馈，不再强制展开完整控制层，隐藏控制层时仍保持沉浸观看。
+- 横屏中心按钮快进/快退继续展开或续命控制层，和用户明确点击按钮的操作语义保持一致。
+- 新增 seek 控制层展开策略单测，避免后续手势改动破坏竖屏精简体验。
+- App 内版本号、请求 UA 和 README 同步到 `0.4.6`。
+
+English:
+
+- Double-tap seek now stays lightweight: it shows gesture feedback without forcing the full control layer open, preserving immersive playback when controls are hidden.
+- Fullscreen center skip buttons still reveal or keep controls alive, matching explicit button interaction semantics.
+- Added unit coverage for the seek reveal policy so future gesture changes do not regress the compact portrait experience.
+- App version labels, request user agents, and README notes are now updated to `0.4.6`.
+
 ### v0.4.5
 
 中文：
