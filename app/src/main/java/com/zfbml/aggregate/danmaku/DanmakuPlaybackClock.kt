@@ -1,6 +1,7 @@
 package com.zfbml.aggregate.danmaku
 
 import kotlin.math.abs
+import kotlin.math.max
 
 internal class DanmakuPlaybackClock(
     private val hardSyncToleranceMs: Double = 90.0,
@@ -10,6 +11,7 @@ internal class DanmakuPlaybackClock(
     private var anchorPlaybackMs = 0.0
     private var anchorFrameNs = Long.MIN_VALUE
     private var lastSampledPlaybackMs: Double? = null
+    private var lastOutputPlaybackMs: Double? = null
     private var lastPlaying = false
     private var lastSpeed = 1.0
 
@@ -17,6 +19,7 @@ internal class DanmakuPlaybackClock(
         anchorPlaybackMs = 0.0
         anchorFrameNs = Long.MIN_VALUE
         lastSampledPlaybackMs = null
+        lastOutputPlaybackMs = null
         lastPlaying = false
         lastSpeed = 1.0
     }
@@ -52,7 +55,7 @@ internal class DanmakuPlaybackClock(
         if (isPlaying && sampleChanged && !seekedBack) {
             val driftMs = sampled - predicted
             when {
-                abs(driftMs) > hardSyncToleranceMs -> {
+                driftMs > hardSyncToleranceMs -> {
                     syncTo(sampled, frameTimeNs, isPlaying, speed)
                     predicted = sampled
                 }
@@ -64,7 +67,14 @@ internal class DanmakuPlaybackClock(
             }
         }
 
+        if (isPlaying && !seekedBack) {
+            lastOutputPlaybackMs?.let { previousOutput ->
+                predicted = max(predicted, previousOutput)
+            }
+        }
+
         lastSampledPlaybackMs = sampled
+        lastOutputPlaybackMs = predicted
         lastPlaying = isPlaying
         lastSpeed = speed
         return predicted.coerceAtLeast(0.0)

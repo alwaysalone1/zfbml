@@ -25,6 +25,22 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.4.8
+
+中文：
+
+- 弹幕播放时钟增强抗采样抖动能力：播放器偶发的非 seek 向后采样不再触发硬同步。
+- 播放中弹幕时钟输出保持单调前进，避免弹幕因播放器位置小幅回跳而出现肉眼可见的倒退或顿挫。
+- 向前大漂移仍会快速同步，真实后退 seek 仍会立即重锚，兼顾稳定性和响应性。
+- App 内版本号、请求 UA 和 README 同步到 `0.4.8`。
+
+English:
+
+- The danmaku playback clock now resists transient backward player-sample jitter without hard-syncing to those noisy samples.
+- While playing, the danmaku clock output remains monotonic, preventing visible backward jumps or stutter from small player-position rollbacks.
+- Large forward drift still syncs quickly, and real backward seeks still re-anchor immediately.
+- App version labels, request user agents, and README notes are now updated to `0.4.8`.
+
 ### v0.4.7
 
 中文：

@@ -78,4 +78,26 @@ class DanmakuPlaybackClockTest {
         assertEquals(1_000.0, paused, 0.01)
         assertEquals(1_000.0, stillPaused, 0.01)
     }
+
+    @Test
+    fun transientBackwardSampleDoesNotMoveClockBackwardWhilePlaying() {
+        val clock = DanmakuPlaybackClock()
+
+        clock.positionMs(sampledPlaybackMs = 5_000, frameTimeNs = 0, isPlaying = true, playbackSpeed = 1f)
+        val beforeJitter = clock.positionMs(
+            sampledPlaybackMs = 5_016,
+            frameTimeNs = 16_000_000,
+            isPlaying = true,
+            playbackSpeed = 1f,
+        )
+        val jittered = clock.positionMs(
+            sampledPlaybackMs = 4_920,
+            frameTimeNs = 32_000_000,
+            isPlaying = true,
+            playbackSpeed = 1f,
+        )
+
+        assertTrue(jittered >= beforeJitter)
+        assertTrue(jittered in 5_016.0..5_034.0)
+    }
 }
