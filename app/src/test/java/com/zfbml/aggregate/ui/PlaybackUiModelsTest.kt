@@ -1309,19 +1309,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.68",
+            version = "0.5.69",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.68", state.version)
+        assertEquals("0.5.69", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.68" })
+        assertTrue(state.chips.any { it.label == "v0.5.69" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1335,7 +1335,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.68",
+            version = "0.5.69",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,
@@ -1827,6 +1827,74 @@ class PlaybackUiModelsTest {
         assertEquals("1080p", state.chips.first { it.label == "清晰度" }.value)
         assertEquals("1.5x", state.chips.first { it.label == "倍速" }.value)
         assertEquals(SourceLibraryTone.Cache, state.chips.first { it.label == "倍速" }.tone)
+    }
+
+    @Test
+    fun playerTopOverlayUiStateBuildsHeaderRouteAndStatusStrip() {
+        val overlay = PlayerOverlayState(
+            title = "标题",
+            episodeTitle = "第 3 集",
+            sourceLabel = "Animeko",
+            qualityLabel = "1080p",
+            routeLabel = "Animeko · HLS",
+            playbackState = "播放中",
+            statusLabel = "播放中",
+            notice = null,
+            error = null,
+        )
+
+        val state = buildPlayerTopOverlayUiState(
+            overlayState = overlay,
+            currentEpisode = episode(id = "ep-3", index = 3),
+            episodeCount = 12,
+            routeCount = 4,
+            routeCoverageLabel = "在线 3 · BT 1",
+            playbackSpeed = 1.25f,
+        )
+
+        assertEquals("标题", state.title)
+        assertEquals("第 3 集 · 播放中", state.subtitle)
+        assertNull(state.compactNotice)
+        assertEquals("Animeko · HLS", state.routeStatus.routeLabel)
+        assertEquals("3/12", state.statusStrip.chips.first { it.label == "本集" }.value)
+        assertEquals("1.25x", state.statusStrip.chips.first { it.label == "倍速" }.value)
+    }
+
+    @Test
+    fun playerTopOverlayUiStateNormalizesFallbackTitleAndNotice() {
+        val overlay = PlayerOverlayState(
+            title = "",
+            episodeTitle = "",
+            sourceLabel = "",
+            qualityLabel = "",
+            routeLabel = "",
+            playbackState = "",
+            statusLabel = "",
+            notice = "正在切换线路",
+            error = null,
+        )
+        val current = Episode(
+            providerId = "provider",
+            id = "special",
+            title = "",
+            url = "https://example.invalid/special",
+            index = null,
+        )
+
+        val state = buildPlayerTopOverlayUiState(
+            overlayState = overlay,
+            currentEpisode = current,
+            episodeCount = 1,
+            routeCount = 1,
+            routeCoverageLabel = "",
+            playbackSpeed = 1f,
+        )
+
+        assertEquals("正在播放", state.title)
+        assertEquals("当前集", state.subtitle)
+        assertEquals("正在切换线路", checkNotNull(state.compactNotice).message)
+        assertEquals("当前集", state.statusStrip.chips.first { it.label == "本集" }.value)
+        assertEquals("自动源", state.statusStrip.chips.first { it.label == "来源" }.value)
     }
 
     @Test

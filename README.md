@@ -25,6 +25,23 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.69
+
+中文：
+- 全屏播放器顶部信息条新增 `PlayerTopOverlayUiState`，统一生成标题、副标题、紧凑通知、线路状态和顶部状态 chips。
+- `PlayerTopOverlay` 不再在 Compose 内拼接 `episodeTitle · playbackState`，调用处也不再拼接 `3/12`、`第 3 集` 或 `当前集` 等集数值。
+- 顶部栏的紧凑提示、线路 pill 和状态条现在共享同一个模型入口，继续减少播放器控制层的重复状态组装。
+- 新增单元测试覆盖顶部栏标题/副标题、线路状态、`3/12` 集数 chip、倍速 chip，以及空标题和切源提示兜底。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.69`。
+
+English:
+
+- The fullscreen player top overlay now has `PlayerTopOverlayUiState` for title, subtitle, compact notice, route status, and top status chips.
+- `PlayerTopOverlay` no longer assembles `episodeTitle · playbackState` inside Compose, and the call site no longer assembles `3/12`, `第 3 集`, or `当前集` episode values.
+- The compact notice, route pill, and top status strip now share one model entry point, further reducing duplicated player-control state assembly.
+- Added unit coverage for top-overlay title/subtitle, route state, the `3/12` episode chip, speed chip, and blank title plus route-notice fallbacks.
+- App version labels, request user agents, and README notes are now updated to `0.5.69`.
+
 ### v0.5.68
 
 中文：

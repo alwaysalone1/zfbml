@@ -342,6 +342,14 @@ internal data class PlayerOverlayState(
     val error: String?,
 )
 
+internal data class PlayerTopOverlayUiState(
+    val title: String,
+    val subtitle: String,
+    val compactNotice: PlayerNoticeUiState?,
+    val routeStatus: PlayerRouteStatusUiState,
+    val statusStrip: PlayerTopStatusStripUiState,
+)
+
 internal data class PlayerTopStatusStripUiState(
     val chips: List<PlayerStatusChipUiState>,
 )
@@ -2341,6 +2349,57 @@ internal fun buildPlayerTopStatusStripUiState(
             ),
         ),
     )
+}
+
+internal fun buildPlayerTopOverlayUiState(
+    overlayState: PlayerOverlayState,
+    currentEpisode: Episode,
+    episodeCount: Int,
+    routeCount: Int,
+    routeCoverageLabel: String,
+    playbackSpeed: Float,
+): PlayerTopOverlayUiState {
+    val episodeValue = playerTopEpisodeValueForUi(
+        currentEpisode = currentEpisode,
+        episodeCount = episodeCount,
+        overlayEpisodeTitle = overlayState.episodeTitle,
+    )
+    val subtitle = listOf(
+        overlayState.episodeTitle.ifBlank { episodeValue },
+        overlayState.playbackState,
+    )
+        .filter { it.isNotBlank() }
+        .distinct()
+        .joinToString(" · ")
+        .ifBlank { "播放中" }
+    return PlayerTopOverlayUiState(
+        title = overlayState.title.ifBlank { "正在播放" },
+        subtitle = subtitle,
+        compactNotice = buildPlayerOverlayNoticeUiState(overlayState),
+        routeStatus = buildPlayerRouteStatusUiState(overlayState),
+        statusStrip = buildPlayerTopStatusStripUiState(
+            overlayState = overlayState,
+            episodeValue = episodeValue,
+            routeCount = routeCount,
+            routeCoverageLabel = routeCoverageLabel,
+            playbackSpeed = playbackSpeed,
+        ),
+    )
+}
+
+private fun playerTopEpisodeValueForUi(
+    currentEpisode: Episode,
+    episodeCount: Int,
+    overlayEpisodeTitle: String,
+): String {
+    val normalizedEpisodeCount = episodeCount.coerceAtLeast(0)
+    return when {
+        currentEpisode.index != null && normalizedEpisodeCount > 1 -> "${currentEpisode.index}/$normalizedEpisodeCount"
+        currentEpisode.index != null -> "第 ${currentEpisode.index} 集"
+        currentEpisode.title.isNotBlank() -> currentEpisode.title
+        overlayEpisodeTitle.isNotBlank() -> overlayEpisodeTitle
+        else -> "当前集"
+    }
 }
 
 internal fun buildPlayerFullscreenStatusStripUiState(

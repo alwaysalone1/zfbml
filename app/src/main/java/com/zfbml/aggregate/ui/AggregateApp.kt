@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.68")
+                setRequestProperty("User-Agent", "ZFBML/0.5.69")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2855,7 +2855,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.68",
+            version = "0.5.69",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -5535,9 +5535,8 @@ private fun PlayerScreen(
                     },
                     onExitFullscreen = ::exitFullscreen,
                     compact = compact,
-                    episodeValue = currentEpisode.index?.let { index ->
-                        if (detail.episodes.size > 1) "$index/${detail.episodes.size}" else "第 $index 集"
-                    } ?: currentEpisode.title.ifBlank { "当前集" },
+                    currentEpisode = currentEpisode,
+                    episodeCount = detail.episodes.size,
                     routeCount = routeOptions.size,
                     routeCoverageLabel = routeCoverageLabel,
                     playbackSpeed = playbackSpeed,
@@ -6179,17 +6178,22 @@ private fun PlayerTopOverlay(
     onOpenRoutePanel: () -> Unit,
     onExitFullscreen: () -> Unit,
     compact: Boolean,
-    episodeValue: String,
+    currentEpisode: Episode,
+    episodeCount: Int,
     routeCount: Int,
     routeCoverageLabel: String,
     playbackSpeed: Float,
     modifier: Modifier = Modifier,
 ) {
-    val compactNotice = remember(overlayState) {
-        buildPlayerOverlayNoticeUiState(overlayState)
-    }
-    val routeStatusState = remember(overlayState) {
-        buildPlayerRouteStatusUiState(overlayState)
+    val topOverlayState = remember(overlayState, currentEpisode, episodeCount, routeCount, routeCoverageLabel, playbackSpeed) {
+        buildPlayerTopOverlayUiState(
+            overlayState = overlayState,
+            currentEpisode = currentEpisode,
+            episodeCount = episodeCount,
+            routeCount = routeCount,
+            routeCoverageLabel = routeCoverageLabel,
+            playbackSpeed = playbackSpeed,
+        )
     }
     Column(
         modifier = modifier
@@ -6221,7 +6225,7 @@ private fun PlayerTopOverlay(
             )
             if (compact) {
                 Spacer(Modifier.weight(1f))
-                compactNotice?.let {
+                topOverlayState.compactNotice?.let {
                     PlayerCompactStatusPill(
                         state = it,
                     )
@@ -6229,7 +6233,7 @@ private fun PlayerTopOverlay(
             } else {
                 Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text(
-                        text = overlayState.title,
+                        text = topOverlayState.title,
                         style = MaterialTheme.typography.titleMedium,
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
@@ -6237,7 +6241,7 @@ private fun PlayerTopOverlay(
                         overflow = TextOverflow.Ellipsis,
                     )
                     Text(
-                        text = listOf(overlayState.episodeTitle, overlayState.playbackState).filter { it.isNotBlank() }.joinToString(" · "),
+                        text = topOverlayState.subtitle,
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.White.copy(alpha = 0.78f),
                         maxLines = 1,
@@ -6245,7 +6249,7 @@ private fun PlayerTopOverlay(
                     )
                 }
                 PlayerTopRouteStatus(
-                    state = routeStatusState,
+                    state = topOverlayState.routeStatus,
                     onClick = onOpenRoutePanel,
                     modifier = Modifier.widthIn(min = 142.dp, max = 210.dp),
                 )
@@ -6258,11 +6262,7 @@ private fun PlayerTopOverlay(
         }
         if (!compact) {
             PlayerTopStatusStrip(
-                overlayState = overlayState,
-                episodeValue = episodeValue,
-                routeCount = routeCount,
-                routeCoverageLabel = routeCoverageLabel,
-                playbackSpeed = playbackSpeed,
+                state = topOverlayState.statusStrip,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
@@ -6271,23 +6271,9 @@ private fun PlayerTopOverlay(
 
 @Composable
 private fun PlayerTopStatusStrip(
-    overlayState: PlayerOverlayState,
-    episodeValue: String,
-    routeCount: Int,
-    routeCoverageLabel: String,
-    playbackSpeed: Float,
+    state: PlayerTopStatusStripUiState,
     modifier: Modifier = Modifier,
 ) {
-    val state = remember(overlayState, episodeValue, routeCount, routeCoverageLabel, playbackSpeed) {
-        buildPlayerTopStatusStripUiState(
-            overlayState = overlayState,
-            episodeValue = episodeValue,
-            routeCount = routeCount,
-            routeCoverageLabel = routeCoverageLabel,
-            playbackSpeed = playbackSpeed,
-        )
-    }
-
     LazyRow(
         modifier = modifier.height(32.dp),
         horizontalArrangement = Arrangement.spacedBy(7.dp),
