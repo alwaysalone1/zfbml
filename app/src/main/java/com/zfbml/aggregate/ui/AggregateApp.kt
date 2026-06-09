@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.88")
+                setRequestProperty("User-Agent", "ZFBML/0.5.89")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2866,7 +2866,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.88",
+            version = "0.5.89",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -7792,23 +7792,23 @@ private fun playerMoreActionClick(
 
 @Composable
 private fun PlayerMoreActionTile(action: PlayerMoreAction, modifier: Modifier = Modifier) {
-    val selected = action.state.selected
-    val enabled = action.state.enabled
-    val border = if (selected) {
-        BorderStroke(1.dp, AnimeAccentCyan.copy(alpha = 0.62f))
+    val state = action.state
+    val accent = sourceLibraryToneColor(state.tone)
+    val border = if (state.highlighted) {
+        BorderStroke(1.dp, accent.copy(alpha = state.borderAlpha))
     } else {
-        BorderStroke(1.dp, Color.White.copy(alpha = 0.06f))
+        BorderStroke(1.dp, Color.White.copy(alpha = state.borderAlpha))
     }
-    val container = if (selected) {
-        AnimeAccentCyan.copy(alpha = 0.16f)
+    val container = if (state.prominent) {
+        accent.copy(alpha = state.containerAlpha)
     } else {
-        Color.White.copy(alpha = 0.08f)
+        Color.White.copy(alpha = state.containerAlpha)
     }
     Surface(
         modifier = modifier
             .height(58.dp)
-            .alpha(if (enabled) 1f else 0.42f)
-            .clickable(enabled = enabled, onClick = action.onClick),
+            .alpha(state.tileAlpha)
+            .clickable(enabled = state.actionEnabled, onClick = action.onClick),
         shape = RoundedCornerShape(8.dp),
         color = container,
         border = border,
@@ -7822,28 +7822,34 @@ private fun PlayerMoreActionTile(action: PlayerMoreAction, modifier: Modifier = 
                 modifier = Modifier
                     .size(30.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(if (selected) AnimeAccentCyan.copy(alpha = 0.18f) else Color.Black.copy(alpha = 0.22f)),
+                    .background(
+                        if (state.prominent) {
+                            accent.copy(alpha = state.iconContainerAlpha)
+                        } else {
+                            Color.Black.copy(alpha = state.iconContainerAlpha)
+                        },
+                    ),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = action.icon,
-                    contentDescription = action.state.title,
-                    tint = if (selected) AnimeAccentCyan else Color.White.copy(alpha = 0.88f),
+                    contentDescription = state.title,
+                    tint = if (state.prominent) accent.copy(alpha = state.iconAlpha) else Color.White.copy(alpha = state.iconAlpha),
                     modifier = Modifier.size(18.dp),
                 )
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
-                    text = action.state.title,
+                    text = state.title,
                     style = MaterialTheme.typography.labelLarge,
-                    color = Color.White,
+                    color = Color.White.copy(alpha = state.titleAlpha),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = action.state.subtitle,
+                    text = state.subtitle,
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color.White.copy(alpha = 0.56f),
+                    color = Color.White.copy(alpha = state.subtitleAlpha),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )

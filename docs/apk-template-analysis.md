@@ -183,3 +183,5 @@ This pass upgrades player quality and speed option presentation. `PlayerQualityO
 This pass upgrades danmaku settings toggle presentation. `PlayerDanmakuSettingsUiState` now owns the toggle action label, status badge, highlighted/prominent state, action enablement, and icon/text alpha so danmaku visibility and safe-area settings share the same model-driven row contract as other player panels.
 
 This pass upgrades danmaku slider presentation. `PlayerDanmakuSliderUiState` now owns density, alpha, and font-size slider titles, formatted values, clamped values, ranges, steps, and semantic tones so danmaku rendering controls are configured by the UI model instead of Compose-local constants.
+
+This pass upgrades player more-action tile presentation. `PlayerMoreActionUiState` now owns highlighted/prominent state, action enablement, tile alpha, container/border alpha, icon alpha, and text alpha so the player settings entry grid follows the same model-driven contract as quality, speed, episode, route, and danmaku controls.

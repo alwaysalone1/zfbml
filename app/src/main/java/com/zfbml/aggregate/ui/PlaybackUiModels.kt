@@ -753,6 +753,16 @@ internal data class PlayerMoreActionUiState(
     val subtitle: String,
     val enabled: Boolean,
     val selected: Boolean,
+    val highlighted: Boolean,
+    val prominent: Boolean,
+    val actionEnabled: Boolean,
+    val tileAlpha: Float,
+    val containerAlpha: Float,
+    val borderAlpha: Float,
+    val iconContainerAlpha: Float,
+    val iconAlpha: Float,
+    val titleAlpha: Float,
+    val subtitleAlpha: Float,
     val tone: SourceLibraryTone,
 )
 
@@ -2927,6 +2937,34 @@ internal fun buildPlayerMorePanelUiState(
         routeCount > 1 -> routeCoverageLabel.ifBlank { "$routeCount 条线路" }
         else -> "自动推荐"
     }
+    fun moreAction(
+        kind: PlayerMoreActionKind,
+        title: String,
+        subtitle: String,
+        enabled: Boolean = true,
+        selected: Boolean = false,
+        tone: SourceLibraryTone,
+    ): PlayerMoreActionUiState {
+        val emphasized = selected && enabled
+        return PlayerMoreActionUiState(
+            kind = kind,
+            title = title,
+            subtitle = subtitle,
+            enabled = enabled,
+            selected = selected,
+            highlighted = emphasized,
+            prominent = emphasized,
+            actionEnabled = enabled,
+            tileAlpha = if (enabled) 1f else 0.42f,
+            containerAlpha = if (emphasized) 0.16f else 0.08f,
+            borderAlpha = if (emphasized) 0.62f else 0.06f,
+            iconContainerAlpha = if (emphasized) 0.18f else 0.22f,
+            iconAlpha = if (emphasized) 1f else 0.88f,
+            titleAlpha = if (enabled) 1f else 0.52f,
+            subtitleAlpha = if (enabled) 0.56f else 0.38f,
+            tone = tone,
+        )
+    }
     return PlayerMorePanelUiState(
         summaryBadge = "当前设置",
         summaryPrimary = listOf("清晰度 $normalizedQuality", "倍速 $speedLabel").joinToString(" · "),
@@ -2936,7 +2974,7 @@ internal fun buildPlayerMorePanelUiState(
             "$normalizedEpisodeCount 集",
         ).joinToString(" · "),
         actions = listOf(
-            PlayerMoreActionUiState(
+            moreAction(
                 kind = PlayerMoreActionKind.Quality,
                 title = "清晰度",
                 subtitle = normalizedQuality,
@@ -2944,7 +2982,7 @@ internal fun buildPlayerMorePanelUiState(
                 selected = false,
                 tone = SourceLibraryTone.Primary,
             ),
-            PlayerMoreActionUiState(
+            moreAction(
                 kind = PlayerMoreActionKind.Speed,
                 title = "倍速",
                 subtitle = speedLabel,
@@ -2952,7 +2990,7 @@ internal fun buildPlayerMorePanelUiState(
                 selected = false,
                 tone = SourceLibraryTone.Online,
             ),
-            PlayerMoreActionUiState(
+            moreAction(
                 kind = PlayerMoreActionKind.Episode,
                 title = "选集",
                 subtitle = "共 $normalizedEpisodeCount 集",
@@ -2960,7 +2998,7 @@ internal fun buildPlayerMorePanelUiState(
                 selected = false,
                 tone = SourceLibraryTone.Backup,
             ),
-            PlayerMoreActionUiState(
+            moreAction(
                 kind = PlayerMoreActionKind.Route,
                 title = "换源",
                 subtitle = routeSummary,
@@ -2968,7 +3006,7 @@ internal fun buildPlayerMorePanelUiState(
                 selected = false,
                 tone = SourceLibraryTone.Online,
             ),
-            PlayerMoreActionUiState(
+            moreAction(
                 kind = PlayerMoreActionKind.Danmaku,
                 title = "弹幕",
                 subtitle = if (danmakuEnabled) "已开启" else "已关闭",
@@ -2976,7 +3014,7 @@ internal fun buildPlayerMorePanelUiState(
                 selected = danmakuEnabled,
                 tone = if (danmakuEnabled) SourceLibraryTone.Primary else SourceLibraryTone.Muted,
             ),
-            PlayerMoreActionUiState(
+            moreAction(
                 kind = PlayerMoreActionKind.Cache,
                 title = cacheAction.title,
                 subtitle = if (cacheAction.enabled) cacheAction.actionLabel else cacheAction.reason,

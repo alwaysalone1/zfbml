@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.89
+
+English:
+
+- Player more-panel actions now expose model-provided highlighted/prominent state, action enablement, tile alpha, container/border alpha, icon alpha, and text alpha through `PlayerMoreActionUiState`.
+- `PlayerMoreActionTile` now renders those model fields instead of deriving selected and disabled presentation locally in Compose.
+- Added unit coverage for selected, enabled, and disabled more-action tile presentation state.
+- App version labels, request user agents, and README notes are now updated to `0.5.89`.
+
 ### v0.5.88
 
 English:

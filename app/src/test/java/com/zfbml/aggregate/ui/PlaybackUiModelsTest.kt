@@ -1792,19 +1792,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.88",
+            version = "0.5.89",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.88", state.version)
+        assertEquals("0.5.89", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.88" })
+        assertTrue(state.chips.any { it.label == "v0.5.89" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1818,7 +1818,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.88",
+            version = "0.5.89",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,
@@ -2264,6 +2264,24 @@ class PlaybackUiModelsTest {
         assertEquals("已开启", state.actions.first { it.kind == PlayerMoreActionKind.Danmaku }.subtitle)
         assertEquals("缓存本集", state.actions.first { it.kind == PlayerMoreActionKind.Cache }.subtitle)
         assertEquals(SourceLibraryTone.Primary, state.actions.first { it.kind == PlayerMoreActionKind.Cache }.tone)
+        val danmaku = state.actions.first { it.kind == PlayerMoreActionKind.Danmaku }
+        assertTrue(danmaku.highlighted)
+        assertTrue(danmaku.prominent)
+        assertTrue(danmaku.actionEnabled)
+        assertEquals(1f, danmaku.tileAlpha)
+        assertEquals(0.16f, danmaku.containerAlpha)
+        assertEquals(0.62f, danmaku.borderAlpha)
+        assertEquals(0.18f, danmaku.iconContainerAlpha)
+        assertEquals(1f, danmaku.iconAlpha)
+        assertEquals(1f, danmaku.titleAlpha)
+        assertEquals(0.56f, danmaku.subtitleAlpha)
+        val cache = state.actions.first { it.kind == PlayerMoreActionKind.Cache }
+        assertFalse(cache.highlighted)
+        assertFalse(cache.prominent)
+        assertTrue(cache.actionEnabled)
+        assertEquals(0.08f, cache.containerAlpha)
+        assertEquals(0.06f, cache.borderAlpha)
+        assertEquals(0.88f, cache.iconAlpha)
     }
 
     @Test
@@ -2296,6 +2314,17 @@ class PlaybackUiModelsTest {
         assertFalse(state.actions.first { it.kind == PlayerMoreActionKind.Cache }.enabled)
         assertEquals("网页嗅探源需现场播放，暂不支持离线", state.actions.first { it.kind == PlayerMoreActionKind.Cache }.subtitle)
         assertEquals(SourceLibraryTone.Muted, state.actions.first { it.kind == PlayerMoreActionKind.Cache }.tone)
+        val disabledRoute = state.actions.first { it.kind == PlayerMoreActionKind.Route }
+        assertFalse(disabledRoute.highlighted)
+        assertFalse(disabledRoute.prominent)
+        assertFalse(disabledRoute.actionEnabled)
+        assertEquals(0.42f, disabledRoute.tileAlpha)
+        assertEquals(0.52f, disabledRoute.titleAlpha)
+        assertEquals(0.38f, disabledRoute.subtitleAlpha)
+        val disabledCache = state.actions.first { it.kind == PlayerMoreActionKind.Cache }
+        assertFalse(disabledCache.actionEnabled)
+        assertEquals(0.42f, disabledCache.tileAlpha)
+        assertEquals(0.38f, disabledCache.subtitleAlpha)
     }
 
     @Test
