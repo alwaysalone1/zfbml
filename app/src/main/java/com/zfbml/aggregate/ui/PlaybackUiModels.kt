@@ -783,7 +783,16 @@ internal data class RouteCandidateUiState(
     val badges: List<SourceLibraryChipUiState>,
     val selected: Boolean,
     val recommended: Boolean,
+    val failed: Boolean,
     val playable: Boolean,
+    val enabled: Boolean,
+    val prominent: Boolean,
+    val highlighted: Boolean,
+    val compactTitle: String,
+    val compactSubtitle: String,
+    val detailedTitle: String,
+    val detailedSubtitle: String,
+    val detailLine: String,
     val cacheLabel: String,
     val accentTone: SourceLibraryTone,
     val statusTone: SourceLibraryTone,
@@ -1464,13 +1473,19 @@ internal fun buildRouteCandidateUiState(
         add(SourceLibraryChipUiState(statusLabel, statusTone))
     }
     val cacheAction = buildPlayerCacheActionUiState(route.stream)
+    val primaryLabel = routePrimaryLabelForUi(route)
+    val detailLine = listOf(route.title, protocolLabel)
+        .filter { it.isNotBlank() }
+        .distinct()
+        .joinToString(" \u00b7 ")
+        .ifBlank { protocolLabel }
     return RouteCandidateUiState(
         streamId = route.stream.id,
         sourceId = route.sourceId,
         sourceName = route.sourceName,
         sourceInitial = route.sourceName.take(1).ifBlank { route.sourceId.take(1).uppercase() }.ifBlank { "源" },
         title = route.title,
-        primaryLabel = routePrimaryLabelForUi(route),
+        primaryLabel = primaryLabel,
         protocolLabel = protocolLabel,
         sizeLabel = route.sizeBytes?.let(::formatBytesForUi),
         statusLabel = statusLabel,
@@ -1478,7 +1493,16 @@ internal fun buildRouteCandidateUiState(
         badges = badges,
         selected = selected,
         recommended = recommended,
+        failed = failed,
         playable = playable,
+        enabled = playable || failed,
+        prominent = selected || recommended,
+        highlighted = selected || recommended || failed,
+        compactTitle = primaryLabel,
+        compactSubtitle = route.sourceName,
+        detailedTitle = route.sourceName,
+        detailedSubtitle = primaryLabel,
+        detailLine = detailLine,
         cacheLabel = cacheAction.value,
         accentTone = accentTone,
         statusTone = statusTone,

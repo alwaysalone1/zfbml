@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.83")
+                setRequestProperty("User-Agent", "ZFBML/0.5.84")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2866,7 +2866,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.83",
+            version = "0.5.84",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -8191,18 +8191,18 @@ private fun PlayerRouteOptionRow(
     )
     val accent = sourceLibraryToneColor(state.accentTone)
     val actionColor = sourceLibraryToneColor(state.actionTone)
-    val primaryTitle = if (detailedMode) state.sourceName else state.primaryLabel
-    val secondaryTitle = if (detailedMode) state.primaryLabel else state.sourceName
+    val primaryTitle = if (detailedMode) state.detailedTitle else state.compactTitle
+    val secondaryTitle = if (detailedMode) state.detailedSubtitle else state.compactSubtitle
     Card(
         onClick = onClick,
-        enabled = state.playable || failed,
+        enabled = state.enabled,
         modifier = Modifier.fillMaxWidth().focusable(),
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (state.selected || state.recommended) Color.White.copy(alpha = 0.08f) else Color.White.copy(alpha = 0.045f),
+            containerColor = if (state.prominent) Color.White.copy(alpha = 0.08f) else Color.White.copy(alpha = 0.045f),
             disabledContainerColor = Color.White.copy(alpha = 0.035f),
         ),
-        border = BorderStroke(1.dp, if (state.selected || state.recommended || failed) accent.copy(alpha = 0.85f) else Color.White.copy(alpha = 0.08f)),
+        border = BorderStroke(1.dp, if (state.highlighted) accent.copy(alpha = 0.85f) else Color.White.copy(alpha = 0.08f)),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(10.dp),
@@ -8236,7 +8236,7 @@ private fun PlayerRouteOptionRow(
                 )
                 if (detailedMode) {
                     Text(
-                        listOf(state.title, state.protocolLabel).joinToString(" · "),
+                        state.detailLine,
                         style = MaterialTheme.typography.bodySmall,
                         color = AnimeMuted,
                         maxLines = 1,

@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.84
+
+English:
+
+- `RouteCandidateUiState` now owns player-row enablement, prominent/highlighted row states, compact/detailed titles, subtitles, and detail line copy for route options.
+- `PlayerRouteOptionRow` now renders those model fields instead of deriving enabled state, highlighted borders, and compact/detailed titles in Compose.
+- Added unit coverage for route candidate enablement, row emphasis, highlight state, and compact/detailed title payloads.
+- App version labels, request user agents, and README notes are now updated to `0.5.84`.
+
 ### v0.5.83
 
 English:

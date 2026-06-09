@@ -746,6 +746,15 @@ class PlaybackUiModelsTest {
         assertEquals("推荐播放", state.actionLabel)
         assertEquals(listOf("推荐", "在线可播"), state.badges.map { it.label })
         assertEquals(listOf(SourceLibraryTone.Primary, SourceLibraryTone.Cache), state.badges.map { it.tone })
+        assertFalse(state.failed)
+        assertTrue(state.enabled)
+        assertTrue(state.prominent)
+        assertTrue(state.highlighted)
+        assertEquals("1080p", state.compactTitle)
+        assertEquals("Online", state.compactSubtitle)
+        assertEquals("Online", state.detailedTitle)
+        assertEquals("1080p", state.detailedSubtitle)
+        assertTrue(state.detailLine.contains("HLS"))
         assertFalse(state.selected)
         assertTrue(state.recommended)
         assertTrue(state.playable)
@@ -767,6 +776,9 @@ class PlaybackUiModelsTest {
         assertEquals(listOf("推荐", "当前"), state.badges.map { it.label })
         assertTrue(state.selected)
         assertTrue(state.recommended)
+        assertTrue(state.enabled)
+        assertTrue(state.prominent)
+        assertTrue(state.highlighted)
         assertEquals(SourceLibraryTone.Online, state.accentTone)
         assertEquals(SourceLibraryTone.Online, state.actionTone)
     }
@@ -789,11 +801,17 @@ class PlaybackUiModelsTest {
         assertEquals("网页兜底", web.actionLabel)
         assertEquals("嗅探", web.cacheLabel)
         assertFalse(web.playable)
+        assertFalse(web.enabled)
+        assertFalse(web.highlighted)
         assertEquals(SourceLibraryTone.Muted, web.accentTone)
         assertEquals("播放失败", failed.statusLabel)
         assertEquals("重试", failed.actionLabel)
         assertEquals(listOf("播放失败"), failed.badges.map { it.label })
         assertEquals(SourceLibraryTone.Web, failed.badges.single().tone)
+        assertTrue(failed.failed)
+        assertTrue(failed.enabled)
+        assertFalse(failed.prominent)
+        assertTrue(failed.highlighted)
         assertFalse(failed.playable)
         assertEquals(SourceLibraryTone.Web, failed.accentTone)
     }
@@ -1774,19 +1792,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.83",
+            version = "0.5.84",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.83", state.version)
+        assertEquals("0.5.84", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.83" })
+        assertTrue(state.chips.any { it.label == "v0.5.84" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1800,7 +1818,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.83",
+            version = "0.5.84",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,

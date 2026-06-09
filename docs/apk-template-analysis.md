@@ -173,3 +173,5 @@ This pass upgrades the detail route prefetch card. `RoutePrefetchUiState` and `R
 This pass upgrades the detail playback readiness strip. `DetailPlaybackReadinessUiState` now owns semantic tone, cache tone, and route/online/backup/cache readiness chips so the detail hero can present playback readiness and cache availability without deriving product copy or colors inside Compose.
 
 This pass upgrades route candidate badges. `RouteCandidateUiState` now owns recommended and status badge chips so detail route rows and player route rows present the same source/route state contract for recommended, current, failed, fallback, and online-playable routes.
+
+This pass upgrades route candidate row presentation. `RouteCandidateUiState` now owns player-row enablement, prominent/highlighted state, compact/detailed titles, subtitles, and detail-line copy so route option rows no longer derive visual emphasis or display titles inside Compose.
