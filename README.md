@@ -25,6 +25,23 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.63
+
+中文：
+- 播放器面板壳层新增 `PlayerPanelSheetUiState`、`PlayerPanelContextUiState`、`PlayerPanelTabUiState` 和 `PlayerPanelKind`，统一生成标题、副标题、当前播放上下文和快捷 tab。
+- 面板顶部上下文条改为消费模型字段，当前集、当前源、清晰度、倍速和播放状态不再在 Compose 中拼接。
+- 快捷 tab 的顺序、值、禁用态、当前选中态和弹幕高亮态由模型层统一管理，和更多设置、清晰度、倍速、换源、选集面板保持同一状态合同。
+- 新增单元测试覆盖播放源面板、多线路多集、弹幕开启、单线路、单集和空标题/空质量归一化。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.63`。
+
+English:
+
+- The player panel shell now has `PlayerPanelSheetUiState`, `PlayerPanelContextUiState`, `PlayerPanelTabUiState`, and `PlayerPanelKind` for headers, playback context, and quick tabs.
+- The panel context bar now renders model fields for episode, source, quality, speed, and playback status instead of composing them in Compose.
+- Quick-tab order, values, disabled state, selected state, and danmaku highlighting now come from the model layer, matching the specialized player panels.
+- Added unit coverage for route panels, multi-route/multi-episode playback, danmaku-on state, single-route/single-episode edges, and blank title/quality normalization.
+- App version labels, request user agents, and README notes are now updated to `0.5.63`.
+
 ### v0.5.62
 
 中文：

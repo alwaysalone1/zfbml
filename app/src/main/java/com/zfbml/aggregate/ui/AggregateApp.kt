@@ -586,6 +586,28 @@ private enum class PlayerPanel {
     Episode,
 }
 
+private fun PlayerPanel.asPlayerPanelKind(): PlayerPanelKind {
+    return when (this) {
+        PlayerPanel.More -> PlayerPanelKind.More
+        PlayerPanel.Danmaku -> PlayerPanelKind.Danmaku
+        PlayerPanel.Quality -> PlayerPanelKind.Quality
+        PlayerPanel.Speed -> PlayerPanelKind.Speed
+        PlayerPanel.Route -> PlayerPanelKind.Route
+        PlayerPanel.Episode -> PlayerPanelKind.Episode
+    }
+}
+
+private fun PlayerPanelKind.asPlayerPanel(): PlayerPanel {
+    return when (this) {
+        PlayerPanelKind.More -> PlayerPanel.More
+        PlayerPanelKind.Danmaku -> PlayerPanel.Danmaku
+        PlayerPanelKind.Quality -> PlayerPanel.Quality
+        PlayerPanelKind.Speed -> PlayerPanel.Speed
+        PlayerPanelKind.Route -> PlayerPanel.Route
+        PlayerPanelKind.Episode -> PlayerPanel.Episode
+    }
+}
+
 private tailrec fun Context.findActivity(): Activity? = when (this) {
     is Activity -> this
     is ContextWrapper -> baseContext.findActivity()
@@ -2330,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.62")
+                setRequestProperty("User-Agent", "ZFBML/0.5.63")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2823,7 +2845,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.62",
+            version = "0.5.63",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -7458,6 +7480,34 @@ private fun PlayerOptionPanel(
         val currentRoute = routeOptions.firstOrNull { route ->
             route.stream.id == currentStream.id || route.stream.url == currentStream.url
         }
+        val currentSourceLabel = currentRoute?.sourceName ?: currentStream.metadata["routeProviderName"] ?: currentStream.providerId
+        val currentQualityLabel = currentStream.quality.orEmpty().ifBlank { "自动" }
+        val selectedPanelKind = panel.asPlayerPanelKind()
+        val panelSheetState = remember(
+            selectedPanelKind,
+            detail.title,
+            currentEpisode.index,
+            currentSourceLabel,
+            currentQualityLabel,
+            playbackSpeed,
+            routeOptions.size,
+            routeCoverageLabel,
+            detail.episodes.size,
+            danmakuEnabled,
+        ) {
+            buildPlayerPanelSheetUiState(
+                selectedPanel = selectedPanelKind,
+                title = detail.title,
+                episodeIndex = currentEpisode.index,
+                sourceLabel = currentSourceLabel,
+                quality = currentQualityLabel,
+                playbackSpeed = playbackSpeed,
+                routeCount = routeOptions.size,
+                routeCoverageLabel = routeCoverageLabel,
+                episodeCount = detail.episodes.size,
+                danmakuEnabled = danmakuEnabled,
+            )
+        }
         val scrimAlpha = if (landscape) 0.14f else 0.32f
         val panelInteractionSource = remember { MutableInteractionSource() }
         val panelModifier = if (landscape) {
@@ -7503,25 +7553,17 @@ private fun PlayerOptionPanel(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 PlayerPanelHeader(
-                    title = playerPanelTitle(panel),
-                    subtitle = playerPanelSubtitle(panel),
+                    title = panelSheetState.title,
+                    subtitle = panelSheetState.subtitle,
                     onDismiss = onDismiss,
                 )
                 PlayerPanelContextBar(
-                    title = detail.title,
-                    episode = currentEpisode,
-                    sourceLabel = currentRoute?.sourceName ?: currentStream.metadata["routeProviderName"] ?: currentStream.providerId,
-                    quality = currentStream.quality.orEmpty().ifBlank { "自动" },
-                    playbackSpeed = playbackSpeed,
+                    state = panelSheetState.context,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 PlayerPanelQuickTabs(
-                    selectedPanel = panel,
-                    routeCount = routeOptions.size,
-                    routeCoverageLabel = routeCoverageLabel,
-                    episodeCount = detail.episodes.size,
-                    danmakuEnabled = danmakuEnabled,
-                    onSelected = onShowPanel,
+                    tabs = panelSheetState.tabs,
+                    onSelected = { kind -> onShowPanel(kind.asPlayerPanel()) },
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
@@ -7531,7 +7573,7 @@ private fun PlayerOptionPanel(
                             routeCoverageLabel = routeCoverageLabel,
                             episodeCount = detail.episodes.size,
                             routeLabel = currentRoute?.primaryRouteLabel() ?: currentStream.protocol.displayName(),
-                            quality = currentStream.quality.orEmpty().ifBlank { "自动" },
+                            quality = currentQualityLabel,
                             playbackSpeed = playbackSpeed,
                             danmakuEnabled = danmakuEnabled,
                             cacheActionState = cacheActionState,
@@ -7577,15 +7619,6 @@ private fun PlayerOptionPanel(
     }
 }
 
-private data class PlayerPanelTabSpec(
-    val panel: PlayerPanel,
-    val label: String,
-    val icon: ImageVector,
-    val value: String?,
-    val enabled: Boolean = true,
-    val selected: Boolean = false,
-)
-
 @Composable
 private fun PlayerPanelHeader(title: String, subtitle: String, onDismiss: () -> Unit) {
     Row(
@@ -7621,14 +7654,9 @@ private fun PlayerPanelHeader(title: String, subtitle: String, onDismiss: () -> 
 
 @Composable
 private fun PlayerPanelContextBar(
-    title: String,
-    episode: Episode,
-    sourceLabel: String,
-    quality: String,
-    playbackSpeed: Float,
+    state: PlayerPanelContextUiState,
     modifier: Modifier = Modifier,
 ) {
-    val episodeLabel = episode.index?.let { "第 $it 集" } ?: "当前集"
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(8.dp),
@@ -7648,7 +7676,7 @@ private fun PlayerPanelContextBar(
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(
-                    title,
+                    state.title,
                     style = MaterialTheme.typography.labelLarge,
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
@@ -7656,81 +7684,34 @@ private fun PlayerPanelContextBar(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    listOf(episodeLabel, sourceLabel.ifBlank { "自动源" }, quality, formatPlaybackSpeed(playbackSpeed)).joinToString(" · "),
+                    state.metadata,
                     style = MaterialTheme.typography.labelSmall,
                     color = AnimeMuted,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            RouteStatusBadge("播放中", AnimeAccentGreen)
+            RouteStatusBadge(state.statusLabel, AnimeAccentGreen)
         }
     }
 }
 
 @Composable
 private fun PlayerPanelQuickTabs(
-    selectedPanel: PlayerPanel,
-    routeCount: Int,
-    routeCoverageLabel: String,
-    episodeCount: Int,
-    danmakuEnabled: Boolean,
-    onSelected: (PlayerPanel) -> Unit,
+    tabs: List<PlayerPanelTabUiState>,
+    onSelected: (PlayerPanelKind) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val tabs = listOf(
-        PlayerPanelTabSpec(
-            panel = PlayerPanel.Quality,
-            label = "清晰度",
-            icon = Icons.Filled.HighQuality,
-            value = null,
-            enabled = routeCount > 0,
-        ),
-        PlayerPanelTabSpec(
-            panel = PlayerPanel.Speed,
-            label = "倍速",
-            icon = Icons.Filled.Speed,
-            value = null,
-        ),
-        PlayerPanelTabSpec(
-            panel = PlayerPanel.Route,
-            label = "换源",
-            icon = Icons.Filled.VideoLibrary,
-            value = routeCoverageLabel,
-            enabled = routeCount > 1,
-        ),
-        PlayerPanelTabSpec(
-            panel = PlayerPanel.Episode,
-            label = "选集",
-            icon = Icons.AutoMirrored.Filled.PlaylistPlay,
-            value = if (episodeCount > 1) "${episodeCount}集" else "单集",
-            enabled = episodeCount > 1,
-        ),
-        PlayerPanelTabSpec(
-            panel = PlayerPanel.Danmaku,
-            label = "弹幕",
-            icon = Icons.Filled.ClosedCaption,
-            value = if (danmakuEnabled) "开" else "关",
-            selected = danmakuEnabled,
-        ),
-        PlayerPanelTabSpec(
-            panel = PlayerPanel.More,
-            label = "设置",
-            icon = Icons.Filled.MoreVert,
-            value = null,
-        ),
-    )
     LazyRow(
         modifier = modifier.height(38.dp),
         horizontalArrangement = Arrangement.spacedBy(7.dp),
         contentPadding = PaddingValues(horizontal = 1.dp),
     ) {
-        items(tabs, key = { it.panel }) { tab ->
-            val selected = tab.panel == selectedPanel
+        items(tabs, key = { it.kind }) { tab ->
             PlayerPanelQuickTab(
                 tab = tab,
-                selected = selected,
-                onClick = { onSelected(tab.panel) },
+                icon = playerPanelTabIcon(tab.kind),
+                onClick = { onSelected(tab.kind) },
             )
         }
     }
@@ -7738,22 +7719,22 @@ private fun PlayerPanelQuickTabs(
 
 @Composable
 private fun PlayerPanelQuickTab(
-    tab: PlayerPanelTabSpec,
-    selected: Boolean,
+    tab: PlayerPanelTabUiState,
+    icon: ImageVector,
     onClick: () -> Unit,
 ) {
     val accent = when {
-        selected -> AnimeAccentPink
-        tab.selected -> AnimeAccentCyan
+        tab.selected -> AnimeAccentPink
+        tab.highlighted -> AnimeAccentCyan
         else -> Color.White.copy(alpha = 0.72f)
     }
     TextButton(
         onClick = onClick,
-        enabled = tab.enabled || selected,
+        enabled = tab.enabled || tab.selected,
         modifier = Modifier.width(86.dp).height(36.dp).focusable(),
         shape = RoundedCornerShape(999.dp),
         colors = ButtonDefaults.textButtonColors(
-            containerColor = if (selected) AnimeAccentPink.copy(alpha = 0.18f) else Color.White.copy(alpha = 0.06f),
+            containerColor = if (tab.selected) AnimeAccentPink.copy(alpha = 0.18f) else Color.White.copy(alpha = 0.06f),
             contentColor = accent,
             disabledContainerColor = Color.White.copy(alpha = 0.035f),
             disabledContentColor = Color.White.copy(alpha = 0.32f),
@@ -7765,7 +7746,7 @@ private fun PlayerPanelQuickTab(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            Icon(tab.icon, contentDescription = null, modifier = Modifier.size(15.dp))
+            Icon(icon, contentDescription = null, modifier = Modifier.size(15.dp))
             Text(
                 text = tab.label,
                 modifier = Modifier.weight(1f),
@@ -7778,7 +7759,7 @@ private fun PlayerPanelQuickTab(
                 Text(
                     text = it,
                     style = MaterialTheme.typography.labelSmall,
-                    color = accent.copy(alpha = if (tab.enabled || selected) 0.76f else 0.48f),
+                    color = accent.copy(alpha = if (tab.enabled || tab.selected) 0.76f else 0.48f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -7923,6 +7904,17 @@ private fun playerMoreActionIcon(kind: PlayerMoreActionKind): ImageVector {
         PlayerMoreActionKind.Route -> Icons.Filled.VideoLibrary
         PlayerMoreActionKind.Danmaku -> Icons.Filled.ClosedCaption
         PlayerMoreActionKind.Cache -> Icons.Filled.CloudDownload
+    }
+}
+
+private fun playerPanelTabIcon(kind: PlayerPanelKind): ImageVector {
+    return when (kind) {
+        PlayerPanelKind.Quality -> Icons.Filled.HighQuality
+        PlayerPanelKind.Speed -> Icons.Filled.Speed
+        PlayerPanelKind.Route -> Icons.Filled.VideoLibrary
+        PlayerPanelKind.Episode -> Icons.AutoMirrored.Filled.PlaylistPlay
+        PlayerPanelKind.Danmaku -> Icons.Filled.ClosedCaption
+        PlayerPanelKind.More -> Icons.Filled.MoreVert
     }
 }
 
@@ -8988,28 +8980,6 @@ private fun playerRouteLabel(stream: MediaStream, route: RouteCandidate?): Strin
         .filterNotNull()
         .joinToString(" · ")
         .ifBlank { stream.protocol.displayName() }
-}
-
-private fun playerPanelTitle(panel: PlayerPanel): String {
-    return when (panel) {
-        PlayerPanel.More -> "播放设置"
-        PlayerPanel.Danmaku -> "弹幕设置"
-        PlayerPanel.Quality -> "清晰度"
-        PlayerPanel.Speed -> "播放速度"
-        PlayerPanel.Route -> "播放源"
-        PlayerPanel.Episode -> "选集"
-    }
-}
-
-private fun playerPanelSubtitle(panel: PlayerPanel): String {
-    return when (panel) {
-        PlayerPanel.More -> "清晰度 · 倍速 · 选集 · 换源"
-        PlayerPanel.Danmaku -> "密度 · 透明度 · 字号"
-        PlayerPanel.Quality -> "当前可用质量"
-        PlayerPanel.Speed -> "0.5x 至 2.0x"
-        PlayerPanel.Route -> "推荐优先 · 手动换源"
-        PlayerPanel.Episode -> "合集进度 · 自动匹配"
-    }
 }
 
 private fun playerQualityLabel(route: RouteCandidate): String {

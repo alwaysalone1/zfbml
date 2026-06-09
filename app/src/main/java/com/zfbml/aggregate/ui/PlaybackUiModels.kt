@@ -415,6 +415,38 @@ internal data class PlayerMorePanelUiState(
     val actions: List<PlayerMoreActionUiState>,
 )
 
+internal data class PlayerPanelSheetUiState(
+    val title: String,
+    val subtitle: String,
+    val context: PlayerPanelContextUiState,
+    val tabs: List<PlayerPanelTabUiState>,
+)
+
+internal data class PlayerPanelContextUiState(
+    val title: String,
+    val metadata: String,
+    val statusLabel: String,
+)
+
+internal data class PlayerPanelTabUiState(
+    val kind: PlayerPanelKind,
+    val label: String,
+    val value: String?,
+    val enabled: Boolean,
+    val selected: Boolean,
+    val highlighted: Boolean,
+    val tone: SourceLibraryTone,
+)
+
+internal enum class PlayerPanelKind {
+    More,
+    Danmaku,
+    Quality,
+    Speed,
+    Route,
+    Episode,
+}
+
 internal data class PlayerMoreActionUiState(
     val kind: PlayerMoreActionKind,
     val title: String,
@@ -2086,6 +2118,116 @@ internal fun buildPlayerMorePanelUiState(
             ),
         ),
     )
+}
+
+internal fun buildPlayerPanelSheetUiState(
+    selectedPanel: PlayerPanelKind,
+    title: String,
+    episodeIndex: Int?,
+    sourceLabel: String,
+    quality: String,
+    playbackSpeed: Float,
+    routeCount: Int,
+    routeCoverageLabel: String,
+    episodeCount: Int,
+    danmakuEnabled: Boolean,
+): PlayerPanelSheetUiState {
+    val normalizedQuality = quality.ifBlank { "自动" }
+    val speedLabel = formatPlaybackSpeedForUi(playbackSpeed)
+    val normalizedSource = sourceLabel.ifBlank { "自动源" }
+    val normalizedEpisodeCount = episodeCount.coerceAtLeast(1)
+    val episodeLabel = episodeIndex?.let { "第 $it 集" } ?: "当前集"
+    val routeValue = when {
+        routeCount > 1 -> routeCoverageLabel.ifBlank { "$routeCount 条线路" }
+        else -> "自动"
+    }
+    return PlayerPanelSheetUiState(
+        title = selectedPanel.titleForUi(),
+        subtitle = selectedPanel.subtitleForUi(),
+        context = PlayerPanelContextUiState(
+            title = title.ifBlank { "正在播放" },
+            metadata = listOf(episodeLabel, normalizedSource, normalizedQuality, speedLabel).joinToString(" · "),
+            statusLabel = "播放中",
+        ),
+        tabs = listOf(
+            PlayerPanelTabUiState(
+                kind = PlayerPanelKind.Quality,
+                label = "清晰度",
+                value = null,
+                enabled = routeCount > 0,
+                selected = selectedPanel == PlayerPanelKind.Quality,
+                highlighted = false,
+                tone = SourceLibraryTone.Primary,
+            ),
+            PlayerPanelTabUiState(
+                kind = PlayerPanelKind.Speed,
+                label = "倍速",
+                value = null,
+                enabled = true,
+                selected = selectedPanel == PlayerPanelKind.Speed,
+                highlighted = false,
+                tone = SourceLibraryTone.Online,
+            ),
+            PlayerPanelTabUiState(
+                kind = PlayerPanelKind.Route,
+                label = "换源",
+                value = routeValue,
+                enabled = routeCount > 1,
+                selected = selectedPanel == PlayerPanelKind.Route,
+                highlighted = false,
+                tone = SourceLibraryTone.Online,
+            ),
+            PlayerPanelTabUiState(
+                kind = PlayerPanelKind.Episode,
+                label = "选集",
+                value = if (episodeCount > 1) "${normalizedEpisodeCount}集" else "单集",
+                enabled = episodeCount > 1,
+                selected = selectedPanel == PlayerPanelKind.Episode,
+                highlighted = false,
+                tone = SourceLibraryTone.Backup,
+            ),
+            PlayerPanelTabUiState(
+                kind = PlayerPanelKind.Danmaku,
+                label = "弹幕",
+                value = if (danmakuEnabled) "开" else "关",
+                enabled = true,
+                selected = selectedPanel == PlayerPanelKind.Danmaku,
+                highlighted = danmakuEnabled,
+                tone = if (danmakuEnabled) SourceLibraryTone.Primary else SourceLibraryTone.Muted,
+            ),
+            PlayerPanelTabUiState(
+                kind = PlayerPanelKind.More,
+                label = "设置",
+                value = null,
+                enabled = true,
+                selected = selectedPanel == PlayerPanelKind.More,
+                highlighted = false,
+                tone = SourceLibraryTone.Muted,
+            ),
+        ),
+    )
+}
+
+private fun PlayerPanelKind.titleForUi(): String {
+    return when (this) {
+        PlayerPanelKind.More -> "播放设置"
+        PlayerPanelKind.Danmaku -> "弹幕设置"
+        PlayerPanelKind.Quality -> "清晰度"
+        PlayerPanelKind.Speed -> "播放速度"
+        PlayerPanelKind.Route -> "播放源"
+        PlayerPanelKind.Episode -> "选集"
+    }
+}
+
+private fun PlayerPanelKind.subtitleForUi(): String {
+    return when (this) {
+        PlayerPanelKind.More -> "清晰度 · 倍速 · 选集 · 换源"
+        PlayerPanelKind.Danmaku -> "密度 · 透明度 · 字号"
+        PlayerPanelKind.Quality -> "当前可用质量"
+        PlayerPanelKind.Speed -> "0.5x 至 2.0x"
+        PlayerPanelKind.Route -> "推荐优先 · 手动换源"
+        PlayerPanelKind.Episode -> "合集进度 · 自动匹配"
+    }
 }
 
 internal fun formatPlaybackSpeedForUi(speed: Float): String {
