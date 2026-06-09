@@ -145,3 +145,5 @@ This pass upgrades the portrait watch info panel. `PortraitWatchInfoUiState` and
 This pass upgrades the portrait episode rail. `PortraitEpisodeRailUiState`, `PortraitEpisodeRailItemUiState`, and `PortraitEpisodeMoreActionUiState` now own visible episode windowing, compact episode labels, loading/disabled state, and the all-episodes entry so portrait playback episode switching no longer keeps player-state logic in Compose.
 
 This pass upgrades the fullscreen player top overlay. `PlayerTopOverlayUiState` now owns the top title, subtitle, compact notice, route status, and status chips so full-screen playback metadata follows the same unified model contract as the panel shell, action bar, notices, and portrait player surfaces.
+
+This pass upgrades the portrait playback recovery strip. `PortraitRecoveryActionsUiState` now owns retry and fallback-route action visibility, labels, enabled state, and semantic tones so portrait playback recovery shares action semantics with the fullscreen player action bar instead of hard-coding recovery buttons in Compose.

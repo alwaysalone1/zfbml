@@ -25,6 +25,23 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.70
+
+中文：
+- 竖屏播放异常恢复条新增 `PortraitRecoveryActionsUiState`，复用 `PlayerActionKind.Retry` 和 `PlayerActionKind.NextRoute` 生成重试与换源动作。
+- `PortraitWatchInfoPanel` 不再在 Compose 内硬编码 `重试当前`、`换个源`、可用态和颜色判断，UI 只负责图标、颜色映射和回调分发。
+- 竖屏恢复动作与全屏底部操作栏共享同一动作语义，播放异常时的重试优先、换源可用态和无更多源兜底更一致。
+- 新增单元测试覆盖无异常隐藏、异常时动作顺序、可换源状态、无更多线路禁用和 muted tone。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.70`。
+
+English:
+
+- The portrait playback recovery strip now has `PortraitRecoveryActionsUiState`, reusing `PlayerActionKind.Retry` and `PlayerActionKind.NextRoute` for retry and fallback-route actions.
+- `PortraitWatchInfoPanel` no longer hard-codes `重试当前`, `换个源`, availability, or color branching inside Compose; UI only maps icons, colors, and callbacks.
+- Portrait recovery actions now share action semantics with the fullscreen bottom action bar, keeping retry priority, fallback availability, and no-more-route fallback consistent.
+- Added unit coverage for hidden non-issue state, playback-issue action order, available fallback route, disabled no-more-route state, and muted tone.
+- App version labels, request user agents, and README notes are now updated to `0.5.70`.
+
 ### v0.5.69
 
 中文：

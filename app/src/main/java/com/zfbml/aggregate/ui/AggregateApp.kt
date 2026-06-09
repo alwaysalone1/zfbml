@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.69")
+                setRequestProperty("User-Agent", "ZFBML/0.5.70")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2855,7 +2855,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.69",
+            version = "0.5.70",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -5827,6 +5827,12 @@ private fun PortraitWatchInfoPanel(
             maxCount = 18,
         )
     }
+    val recoveryState = remember(hasPlaybackIssue, canSelectNextRoute) {
+        buildPortraitRecoveryActionsUiState(
+            hasPlaybackIssue = hasPlaybackIssue,
+            canSelectNextRoute = canSelectNextRoute,
+        )
+    }
     LazyColumn(
         modifier = modifier.fillMaxWidth().background(AnimeBackground),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 15.dp, bottom = 28.dp),
@@ -5937,24 +5943,18 @@ private fun PortraitWatchInfoPanel(
                             overflow = TextOverflow.Ellipsis,
                         )
                     }
-                    if (hasPlaybackIssue) {
+                    if (recoveryState.visible) {
                         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-                            TextButton(
-                                onClick = onRetryRoute,
-                                modifier = Modifier.weight(1f).height(38.dp).background(Color.White.copy(alpha = 0.06f), RoundedCornerShape(8.dp)),
-                            ) {
-                                Icon(Icons.Filled.Refresh, contentDescription = null, tint = AnimeAccentPink, modifier = Modifier.size(17.dp))
-                                Spacer(Modifier.width(6.dp))
-                                Text("重试当前", color = AnimeAccentPink)
-                            }
-                            TextButton(
-                                onClick = onNextRoute,
-                                enabled = canSelectNextRoute,
-                                modifier = Modifier.weight(1f).height(38.dp).background(Color.White.copy(alpha = 0.06f), RoundedCornerShape(8.dp)),
-                            ) {
-                                Icon(Icons.Filled.VideoLibrary, contentDescription = null, tint = if (canSelectNextRoute) AnimeAccentCyan else AnimeMuted, modifier = Modifier.size(17.dp))
-                                Spacer(Modifier.width(6.dp))
-                                Text("换个源", color = if (canSelectNextRoute) AnimeAccentCyan else AnimeMuted)
+                            recoveryState.actions.forEach { action ->
+                                PortraitRecoveryActionButton(
+                                    action = action,
+                                    onClick = when (action.kind) {
+                                        PlayerActionKind.Retry -> onRetryRoute
+                                        PlayerActionKind.NextRoute -> onNextRoute
+                                        else -> ({})
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                )
                             }
                         }
                     }
@@ -6037,6 +6037,24 @@ private fun PortraitWatchInfoPanel(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun PortraitRecoveryActionButton(
+    action: PlayerActionUiState,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val accent = sourceLibraryToneColor(action.tone)
+    TextButton(
+        onClick = onClick,
+        enabled = action.enabled,
+        modifier = modifier.height(38.dp).background(Color.White.copy(alpha = 0.06f), RoundedCornerShape(8.dp)),
+    ) {
+        Icon(playerActionIcon(action.kind), contentDescription = null, tint = accent, modifier = Modifier.size(17.dp))
+        Spacer(Modifier.width(6.dp))
+        Text(action.title, color = accent)
     }
 }
 

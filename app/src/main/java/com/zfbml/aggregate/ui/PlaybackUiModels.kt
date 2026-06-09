@@ -423,6 +423,11 @@ internal data class PortraitEpisodeMoreActionUiState(
     val count: Int,
 )
 
+internal data class PortraitRecoveryActionsUiState(
+    val visible: Boolean,
+    val actions: List<PlayerActionUiState>,
+)
+
 internal data class PlayerActionBarUiState(
     val actions: List<PlayerActionUiState>,
 )
@@ -2720,6 +2725,36 @@ private fun portraitEpisodeWindowForUi(
     if (currentIndex < 0) return episodes.take(maxCount)
     val start = (currentIndex - 4).coerceIn(0, episodes.size - maxCount)
     return episodes.subList(start, start + maxCount).toList()
+}
+
+internal fun buildPortraitRecoveryActionsUiState(
+    hasPlaybackIssue: Boolean,
+    canSelectNextRoute: Boolean,
+): PortraitRecoveryActionsUiState {
+    if (!hasPlaybackIssue) {
+        return PortraitRecoveryActionsUiState(visible = false, actions = emptyList())
+    }
+    return PortraitRecoveryActionsUiState(
+        visible = true,
+        actions = listOf(
+            PlayerActionUiState(
+                kind = PlayerActionKind.Retry,
+                title = "重试当前",
+                value = null,
+                selected = true,
+                enabled = true,
+                tone = SourceLibraryTone.Primary,
+            ),
+            PlayerActionUiState(
+                kind = PlayerActionKind.NextRoute,
+                title = "换个源",
+                value = if (canSelectNextRoute) "可切" else "无",
+                selected = false,
+                enabled = canSelectNextRoute,
+                tone = if (canSelectNextRoute) SourceLibraryTone.Online else SourceLibraryTone.Muted,
+            ),
+        ),
+    )
 }
 
 private fun playerSourceStatusValueForUi(

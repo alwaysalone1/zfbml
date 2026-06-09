@@ -1309,19 +1309,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.69",
+            version = "0.5.70",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.69", state.version)
+        assertEquals("0.5.70", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.69" })
+        assertTrue(state.chips.any { it.label == "v0.5.70" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1335,7 +1335,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.69",
+            version = "0.5.70",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,
@@ -2018,6 +2018,37 @@ class PlaybackUiModelsTest {
         assertEquals("单集", state.actions.first { it.kind == PlayerActionKind.Episode }.value)
         assertFalse(state.actions.first { it.kind == PlayerActionKind.Cache }.enabled)
         assertTrue(state.actions.first { it.kind == PlayerActionKind.More }.selected)
+    }
+
+    @Test
+    fun portraitRecoveryActionsUiStateOnlyShowsForPlaybackIssues() {
+        val hidden = buildPortraitRecoveryActionsUiState(
+            hasPlaybackIssue = false,
+            canSelectNextRoute = true,
+        )
+        val canFallback = buildPortraitRecoveryActionsUiState(
+            hasPlaybackIssue = true,
+            canSelectNextRoute = true,
+        )
+        val noFallback = buildPortraitRecoveryActionsUiState(
+            hasPlaybackIssue = true,
+            canSelectNextRoute = false,
+        )
+
+        assertFalse(hidden.visible)
+        assertTrue(hidden.actions.isEmpty())
+        assertTrue(canFallback.visible)
+        assertEquals(listOf(PlayerActionKind.Retry, PlayerActionKind.NextRoute), canFallback.actions.map { it.kind })
+        assertEquals("重试当前", canFallback.actions[0].title)
+        assertTrue(canFallback.actions[0].enabled)
+        assertEquals(SourceLibraryTone.Primary, canFallback.actions[0].tone)
+        assertEquals("换个源", canFallback.actions[1].title)
+        assertEquals("可切", canFallback.actions[1].value)
+        assertTrue(canFallback.actions[1].enabled)
+        assertEquals(SourceLibraryTone.Online, canFallback.actions[1].tone)
+        assertFalse(noFallback.actions[1].enabled)
+        assertEquals("无", noFallback.actions[1].value)
+        assertEquals(SourceLibraryTone.Muted, noFallback.actions[1].tone)
     }
 
     @Test
