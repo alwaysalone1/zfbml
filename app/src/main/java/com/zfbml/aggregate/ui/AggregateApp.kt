@@ -2330,7 +2330,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.54")
+                setRequestProperty("User-Agent", "ZFBML/0.5.55")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2823,7 +2823,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.54",
+            version = "0.5.55",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -5012,15 +5012,6 @@ private fun RoutePlayActionLabel(label: String, tone: SourceLibraryTone) {
 
 private fun RouteCandidate.primaryRouteLabel(): String {
     return routePrimaryLabelForUi(this)
-}
-
-private fun RouteCandidate.routeStatusLabel(): Pair<String, Color> {
-    return when (protocol) {
-        StreamProtocol.BITTORRENT -> "备用源" to AnimeAccentAmber
-        StreamProtocol.WEBVIEW_ONLY -> "仅网页" to AnimeMuted
-        StreamProtocol.HLS, StreamProtocol.DASH, StreamProtocol.PROGRESSIVE, StreamProtocol.SMOOTH_STREAMING -> "在线可播" to AnimeAccentGreen
-        else -> protocol.displayName() to AnimeAccentCyan
-    }
 }
 
 @Composable
@@ -8362,32 +8353,27 @@ private fun PlayerRouteOptionRow(
     detailedMode: Boolean,
     onClick: () -> Unit,
 ) {
-    val webOnly = route.protocol == StreamProtocol.WEBVIEW_ONLY
-    val accent = when {
-        failed -> MaterialTheme.colorScheme.error
-        selected -> AnimeAccentCyan
-        recommended -> AnimeAccentPink
-        route.protocol == StreamProtocol.BITTORRENT -> AnimeAccentAmber
-        webOnly -> AnimeMuted
-        else -> AnimeAccentGreen
-    }
-    val (statusLabel, statusColor) = when {
-        failed -> "已失败" to MaterialTheme.colorScheme.error
-        selected -> "当前" to AnimeAccentCyan
-        else -> route.routeStatusLabel()
-    }
-    val primaryTitle = if (detailedMode) route.sourceName else route.primaryRouteLabel()
-    val secondaryTitle = if (detailedMode) route.primaryRouteLabel() else route.sourceName
+    val state = buildRouteCandidateUiState(
+        route = route,
+        selected = selected,
+        recommended = recommended,
+        failed = failed,
+    )
+    val accent = sourceLibraryToneColor(state.accentTone)
+    val statusColor = sourceLibraryToneColor(state.statusTone)
+    val actionColor = sourceLibraryToneColor(state.actionTone)
+    val primaryTitle = if (detailedMode) state.sourceName else state.primaryLabel
+    val secondaryTitle = if (detailedMode) state.primaryLabel else state.sourceName
     Card(
         onClick = onClick,
-        enabled = !webOnly,
+        enabled = state.playable || failed,
         modifier = Modifier.fillMaxWidth().focusable(),
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (selected || recommended) Color.White.copy(alpha = 0.08f) else Color.White.copy(alpha = 0.045f),
+            containerColor = if (state.selected || state.recommended) Color.White.copy(alpha = 0.08f) else Color.White.copy(alpha = 0.045f),
             disabledContainerColor = Color.White.copy(alpha = 0.035f),
         ),
-        border = BorderStroke(1.dp, if (selected || recommended || failed) accent.copy(alpha = 0.85f) else Color.White.copy(alpha = 0.08f)),
+        border = BorderStroke(1.dp, if (state.selected || state.recommended || failed) accent.copy(alpha = 0.85f) else Color.White.copy(alpha = 0.08f)),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(10.dp),
@@ -8408,8 +8394,8 @@ private fun PlayerRouteOptionRow(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    if (recommended) RouteStatusBadge("推荐", AnimeAccentPink)
-                    RouteStatusBadge(statusLabel, statusColor)
+                    if (state.recommended) RouteStatusBadge("推荐", AnimeAccentPink)
+                    RouteStatusBadge(state.statusLabel, statusColor)
                 }
                 Text(
                     secondaryTitle,
@@ -8420,7 +8406,7 @@ private fun PlayerRouteOptionRow(
                 )
                 if (detailedMode) {
                     Text(
-                        listOfNotNull(route.title, route.protocol.displayName()).joinToString(" · "),
+                        listOf(state.title, state.protocolLabel).joinToString(" · "),
                         style = MaterialTheme.typography.bodySmall,
                         color = AnimeMuted,
                         maxLines = 1,
@@ -8430,16 +8416,10 @@ private fun PlayerRouteOptionRow(
             }
             Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(5.dp)) {
                 if (detailedMode) {
-                    Text(route.protocol.displayName(), style = MaterialTheme.typography.labelMedium, color = accent, maxLines = 1)
-                    route.sizeBytes?.let { Text(formatBytes(it), style = MaterialTheme.typography.labelSmall, color = AnimeMuted, maxLines = 1) }
+                    Text(state.protocolLabel, style = MaterialTheme.typography.labelMedium, color = accent, maxLines = 1)
+                    state.sizeLabel?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = AnimeMuted, maxLines = 1) }
                 }
-                PlayerRouteActionLabel(
-                    selected = selected,
-                    recommended = recommended,
-                    failed = failed,
-                    webOnly = webOnly,
-                    bt = route.protocol == StreamProtocol.BITTORRENT,
-                )
+                PlayerRouteActionLabel(label = state.actionLabel, color = actionColor)
             }
         }
     }
@@ -8447,20 +8427,9 @@ private fun PlayerRouteOptionRow(
 
 @Composable
 private fun PlayerRouteActionLabel(
-    selected: Boolean,
-    recommended: Boolean,
-    failed: Boolean,
-    webOnly: Boolean,
-    bt: Boolean,
+    label: String,
+    color: Color,
 ) {
-    val (label, color) = when {
-        failed -> "重试" to MaterialTheme.colorScheme.error
-        selected -> "播放中" to AnimeAccentCyan
-        webOnly -> "暂不可选" to AnimeMuted
-        bt -> "边下边播" to AnimeAccentAmber
-        recommended -> "使用推荐" to AnimeAccentPink
-        else -> "切换" to AnimeAccentGreen
-    }
     Row(
         modifier = Modifier
             .height(30.dp)

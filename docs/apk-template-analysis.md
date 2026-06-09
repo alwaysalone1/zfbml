@@ -115,3 +115,5 @@ This pass upgrades the search-to-detail handoff. `DetailEntryUiState` reuses sea
 This pass upgrades the detail episode selector summary. `DetailEpisodeSummaryUiState` now centralizes current episode, total count, route status, route origin, and source coverage chips so the detail page can explain episode changes and route matching with the same model-driven language as the playback readiness card.
 
 This pass upgrades detail route candidate cards. `RouteCandidateUiState` now centralizes source identity, protocol, primary quality label, file size, playback status, cache capability, and action copy so online, BT, WebView fallback, and failed routes can share one tested display contract before the player route panel reuses it.
+
+This pass reuses `RouteCandidateUiState` in the player route panel. The fullscreen route switcher now shares detail-page route semantics and adds selected-route priority, so "current", "recommended", failed, BT fallback, and WebView fallback states stay consistent across pre-play and in-player switching.

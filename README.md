@@ -25,6 +25,23 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.55
+
+中文：
+- 播放器换源面板复用 `RouteCandidateUiState`，和详情页候选线路卡共享来源、协议、质量、大小、状态和动作语义。
+- `RouteCandidateUiState` 新增当前播放状态，播放器线路行可直接显示“当前 / 播放中”，避免和推荐、失败、BT、WebView 状态分叉。
+- 播放器线路行移除本地状态拼接，改为按模型字段渲染筛选标题、状态徽标、协议和大小。
+- 新增单元测试覆盖当前播放线路与推荐线路重叠时的语义优先级。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.55`。
+
+English:
+
+- The player route panel now reuses `RouteCandidateUiState`, sharing source, protocol, quality, size, status, and action semantics with detail route cards.
+- `RouteCandidateUiState` now models the current playback route, allowing player rows to show "current / playing" without diverging from recommended, failed, BT, and WebView states.
+- Player route rows no longer assemble local status copy; they render filter titles, badges, protocol, and size from model fields.
+- Added unit coverage for current-playback semantics when the selected route is also recommended.
+- App version labels, request user agents, and README notes are now updated to `0.5.55`.
+
 ### v0.5.54
 
 中文：

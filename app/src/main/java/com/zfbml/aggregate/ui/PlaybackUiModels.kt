@@ -385,6 +385,7 @@ internal data class RouteCandidateUiState(
     val sizeLabel: String?,
     val statusLabel: String,
     val actionLabel: String,
+    val selected: Boolean,
     val recommended: Boolean,
     val playable: Boolean,
     val cacheLabel: String,
@@ -656,12 +657,14 @@ internal fun buildDetailEpisodeSummaryUiState(
 
 internal fun buildRouteCandidateUiState(
     route: RouteCandidate,
+    selected: Boolean = false,
     recommended: Boolean = false,
     failed: Boolean = false,
 ): RouteCandidateUiState {
     val protocolLabel = route.protocol.uiProtocolName()
     val playable = !failed && route.protocol != StreamProtocol.WEBVIEW_ONLY
     val accentTone = when {
+        selected -> SourceLibraryTone.Online
         recommended -> SourceLibraryTone.Primary
         failed -> SourceLibraryTone.Web
         route.protocol == StreamProtocol.BITTORRENT -> SourceLibraryTone.Backup
@@ -670,6 +673,7 @@ internal fun buildRouteCandidateUiState(
     }
     val statusTone = when {
         failed -> SourceLibraryTone.Web
+        selected -> SourceLibraryTone.Online
         route.protocol == StreamProtocol.BITTORRENT -> SourceLibraryTone.Backup
         route.protocol == StreamProtocol.WEBVIEW_ONLY -> SourceLibraryTone.Muted
         route.protocol in media3StreamingProtocols -> SourceLibraryTone.Cache
@@ -677,6 +681,7 @@ internal fun buildRouteCandidateUiState(
     }
     val statusLabel = when {
         failed -> "播放失败"
+        selected -> "当前"
         route.protocol == StreamProtocol.BITTORRENT -> "备用源"
         route.protocol == StreamProtocol.WEBVIEW_ONLY -> "仅网页"
         route.protocol in media3StreamingProtocols -> "在线可播"
@@ -684,12 +689,14 @@ internal fun buildRouteCandidateUiState(
     }
     val actionLabel = when {
         failed -> "重试"
+        selected -> "播放中"
         route.protocol == StreamProtocol.BITTORRENT -> "边下边播"
         route.protocol == StreamProtocol.WEBVIEW_ONLY -> "网页兜底"
         recommended -> "推荐播放"
         else -> "播放"
     }
     val actionTone = when {
+        selected -> SourceLibraryTone.Online
         recommended -> SourceLibraryTone.Primary
         failed -> SourceLibraryTone.Web
         route.protocol == StreamProtocol.BITTORRENT -> SourceLibraryTone.Backup
@@ -708,6 +715,7 @@ internal fun buildRouteCandidateUiState(
         sizeLabel = route.sizeBytes?.let(::formatBytesForUi),
         statusLabel = statusLabel,
         actionLabel = actionLabel,
+        selected = selected,
         recommended = recommended,
         playable = playable,
         cacheLabel = cacheAction.value,
