@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.87")
+                setRequestProperty("User-Agent", "ZFBML/0.5.88")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2866,7 +2866,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.87",
+            version = "0.5.88",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -7889,27 +7889,15 @@ private fun PlayerDanmakuSettingsPanel(
             onClick = onToggleDanmaku,
         )
         PlayerSliderSetting(
-            title = "密度",
-            valueText = state.densityLabel,
-            value = density.coerceIn(0.3f, 1f),
-            valueRange = 0.3f..1f,
-            steps = 2,
+            state = state.densitySlider,
             onValueChange = onDensityChange,
         )
         PlayerSliderSetting(
-            title = "透明度",
-            valueText = state.alphaLabel,
-            value = alpha.coerceIn(0.35f, 1f),
-            valueRange = 0.35f..1f,
-            steps = 12,
+            state = state.alphaSlider,
             onValueChange = onAlphaChange,
         )
         PlayerSliderSetting(
-            title = "字号",
-            valueText = state.fontScaleLabel,
-            value = fontScale.coerceIn(0.62f, 1.08f),
-            valueRange = 0.62f..1.08f,
-            steps = 8,
+            state = state.fontScaleSlider,
             onValueChange = onFontScaleChange,
         )
         Text(
@@ -8613,26 +8601,23 @@ private fun EpisodeActionLabel(
 
 @Composable
 private fun PlayerSliderSetting(
-    title: String,
-    valueText: String,
-    value: Float,
-    valueRange: ClosedFloatingPointRange<Float>,
-    steps: Int,
+    state: PlayerDanmakuSliderUiState,
     onValueChange: (Float) -> Unit,
 ) {
+    val accent = sourceLibraryToneColor(state.tone)
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text(title, style = MaterialTheme.typography.bodyMedium, color = Color.White, modifier = Modifier.weight(1f))
-            Text(valueText, style = MaterialTheme.typography.labelMedium, color = AnimeAccentCyan)
+            Text(state.title, style = MaterialTheme.typography.bodyMedium, color = Color.White, modifier = Modifier.weight(1f))
+            Text(state.valueText, style = MaterialTheme.typography.labelMedium, color = accent)
         }
         Slider(
-            value = value,
+            value = state.value,
             onValueChange = onValueChange,
-            valueRange = valueRange,
-            steps = steps,
+            valueRange = state.valueRange,
+            steps = state.steps,
             colors = SliderDefaults.colors(
-                thumbColor = AnimeAccentPink,
-                activeTrackColor = AnimeAccentPink,
+                thumbColor = accent,
+                activeTrackColor = accent,
                 inactiveTrackColor = Color.White.copy(alpha = 0.22f),
             ),
             modifier = Modifier.fillMaxWidth().height(30.dp),

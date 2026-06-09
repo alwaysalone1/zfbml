@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.88
+
+English:
+
+- Danmaku density, alpha, and font-size controls now use `PlayerDanmakuSliderUiState` for title, formatted value, clamped value, range, steps, and semantic tone.
+- `PlayerSliderSetting` now renders those slider models instead of receiving hard-coded danmaku slider configuration from Compose.
+- Added unit coverage for danmaku slider titles, ranges, steps, clamped values, and tones.
+- App version labels, request user agents, and README notes are now updated to `0.5.88`.
+
 ### v0.5.87
 
 English:

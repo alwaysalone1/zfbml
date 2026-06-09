@@ -644,10 +644,19 @@ internal data class PlayerDanmakuSettingsUiState(
     val toggleIconAlpha: Float,
     val toggleTitleAlpha: Float,
     val toggleSubtitleAlpha: Float,
-    val densityLabel: String,
-    val alphaLabel: String,
-    val fontScaleLabel: String,
+    val densitySlider: PlayerDanmakuSliderUiState,
+    val alphaSlider: PlayerDanmakuSliderUiState,
+    val fontScaleSlider: PlayerDanmakuSliderUiState,
     val safetySummary: String,
+    val tone: SourceLibraryTone,
+)
+
+internal data class PlayerDanmakuSliderUiState(
+    val title: String,
+    val valueText: String,
+    val value: Float,
+    val valueRange: ClosedFloatingPointRange<Float>,
+    val steps: Int,
     val tone: SourceLibraryTone,
 )
 
@@ -2770,9 +2779,30 @@ internal fun buildPlayerDanmakuSettingsUiState(
         toggleIconAlpha = if (enabled) 1f else 0.5f,
         toggleTitleAlpha = if (enabled) 0.94f else 0.76f,
         toggleSubtitleAlpha = if (enabled) 0.86f else 0.68f,
-        densityLabel = densityLabel,
-        alphaLabel = alphaLabel,
-        fontScaleLabel = fontScaleLabel,
+        densitySlider = PlayerDanmakuSliderUiState(
+            title = "密度",
+            valueText = densityLabel,
+            value = density.coerceIn(0.3f, 1f),
+            valueRange = 0.3f..1f,
+            steps = 2,
+            tone = SourceLibraryTone.Online,
+        ),
+        alphaSlider = PlayerDanmakuSliderUiState(
+            title = "透明度",
+            valueText = alphaLabel,
+            value = alpha.coerceIn(0.35f, 1f),
+            valueRange = 0.35f..1f,
+            steps = 12,
+            tone = SourceLibraryTone.Cache,
+        ),
+        fontScaleSlider = PlayerDanmakuSliderUiState(
+            title = "字号",
+            valueText = fontScaleLabel,
+            value = fontScale.coerceIn(0.62f, 1.08f),
+            valueRange = 0.62f..1.08f,
+            steps = 8,
+            tone = SourceLibraryTone.Backup,
+        ),
         safetySummary = safetySummary,
         tone = tone,
     )

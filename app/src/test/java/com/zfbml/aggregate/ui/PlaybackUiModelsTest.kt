@@ -1792,19 +1792,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.87",
+            version = "0.5.88",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.87", state.version)
+        assertEquals("0.5.88", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.87" })
+        assertTrue(state.chips.any { it.label == "v0.5.88" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1818,7 +1818,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.87",
+            version = "0.5.88",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,
@@ -2091,9 +2091,27 @@ class PlaybackUiModelsTest {
         assertEquals(1f, enabled.toggleIconAlpha)
         assertEquals(0.94f, enabled.toggleTitleAlpha)
         assertEquals(0.86f, enabled.toggleSubtitleAlpha)
-        assertEquals("60%", enabled.densityLabel)
-        assertEquals("76%", enabled.alphaLabel)
-        assertEquals("72%", enabled.fontScaleLabel)
+        assertEquals("密度", enabled.densitySlider.title)
+        assertEquals("60%", enabled.densitySlider.valueText)
+        assertEquals(0.62f, enabled.densitySlider.value)
+        assertEquals(0.3f, enabled.densitySlider.valueRange.start)
+        assertEquals(1f, enabled.densitySlider.valueRange.endInclusive)
+        assertEquals(2, enabled.densitySlider.steps)
+        assertEquals(SourceLibraryTone.Online, enabled.densitySlider.tone)
+        assertEquals("透明度", enabled.alphaSlider.title)
+        assertEquals("76%", enabled.alphaSlider.valueText)
+        assertEquals(0.76f, enabled.alphaSlider.value)
+        assertEquals(0.35f, enabled.alphaSlider.valueRange.start)
+        assertEquals(1f, enabled.alphaSlider.valueRange.endInclusive)
+        assertEquals(12, enabled.alphaSlider.steps)
+        assertEquals(SourceLibraryTone.Cache, enabled.alphaSlider.tone)
+        assertEquals("字号", enabled.fontScaleSlider.title)
+        assertEquals("72%", enabled.fontScaleSlider.valueText)
+        assertEquals(0.72f, enabled.fontScaleSlider.value)
+        assertEquals(0.62f, enabled.fontScaleSlider.valueRange.start)
+        assertEquals(1.08f, enabled.fontScaleSlider.valueRange.endInclusive)
+        assertEquals(8, enabled.fontScaleSlider.steps)
+        assertEquals(SourceLibraryTone.Backup, enabled.fontScaleSlider.tone)
         assertTrue(enabled.safetySummary.contains("避让"))
         assertEquals(SourceLibraryTone.Primary, enabled.tone)
         assertEquals("弹幕已关闭", disabled.toggleTitle)
@@ -2106,8 +2124,12 @@ class PlaybackUiModelsTest {
         assertEquals(0.5f, disabled.toggleIconAlpha)
         assertEquals(0.76f, disabled.toggleTitleAlpha)
         assertEquals(0.68f, disabled.toggleSubtitleAlpha)
-        assertEquals("30%", disabled.densityLabel)
-        assertEquals("100%", disabled.alphaLabel)
+        assertEquals("30%", disabled.densitySlider.valueText)
+        assertEquals(0.3f, disabled.densitySlider.value)
+        assertEquals("100%", disabled.alphaSlider.valueText)
+        assertEquals(1f, disabled.alphaSlider.value)
+        assertEquals("108%", disabled.fontScaleSlider.valueText)
+        assertEquals(1.08f, disabled.fontScaleSlider.value)
         assertEquals(SourceLibraryTone.Muted, disabled.tone)
     }
 
