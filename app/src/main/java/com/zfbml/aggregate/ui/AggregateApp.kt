@@ -2330,7 +2330,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.58")
+                setRequestProperty("User-Agent", "ZFBML/0.5.59")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2823,7 +2823,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.58",
+            version = "0.5.59",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -8015,17 +8015,25 @@ private fun PlayerDanmakuSettingsPanel(
     onAlphaChange: (Float) -> Unit,
     onFontScaleChange: (Float) -> Unit,
 ) {
+    val state = remember(danmakuEnabled, density, alpha, fontScale) {
+        buildPlayerDanmakuSettingsUiState(
+            enabled = danmakuEnabled,
+            density = density,
+            alpha = alpha,
+            fontScale = fontScale,
+        )
+    }
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         PlayerSelectableRow(
-            title = if (danmakuEnabled) "弹幕已开启" else "弹幕已关闭",
-            subtitle = "点击切换弹幕显示状态",
-            selected = danmakuEnabled,
+            title = state.toggleTitle,
+            subtitle = state.toggleSubtitle,
+            selected = state.toggleSelected,
             icon = Icons.Filled.ClosedCaption,
             onClick = onToggleDanmaku,
         )
         PlayerSliderSetting(
             title = "密度",
-            valueText = formatDanmakuDensity(density),
+            valueText = state.densityLabel,
             value = density.coerceIn(0.3f, 1f),
             valueRange = 0.3f..1f,
             steps = 2,
@@ -8033,7 +8041,7 @@ private fun PlayerDanmakuSettingsPanel(
         )
         PlayerSliderSetting(
             title = "透明度",
-            valueText = formatPercentLabel(alpha),
+            valueText = state.alphaLabel,
             value = alpha.coerceIn(0.35f, 1f),
             valueRange = 0.35f..1f,
             steps = 12,
@@ -8041,11 +8049,18 @@ private fun PlayerDanmakuSettingsPanel(
         )
         PlayerSliderSetting(
             title = "字号",
-            valueText = formatScaleLabel(fontScale),
+            valueText = state.fontScaleLabel,
             value = fontScale.coerceIn(0.62f, 1.08f),
             valueRange = 0.62f..1.08f,
             steps = 8,
             onValueChange = onFontScaleChange,
+        )
+        Text(
+            state.safetySummary,
+            style = MaterialTheme.typography.labelSmall,
+            color = sourceLibraryToneColor(state.tone),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }
@@ -9149,11 +9164,7 @@ private fun nextDanmakuDensity(density: Float): Float {
 }
 
 private fun formatDanmakuDensity(density: Float): String {
-    return when {
-        density < 0.45f -> "30%"
-        density < 0.82f -> "60%"
-        else -> "100%"
-    }
+    return formatDanmakuDensityForUi(density)
 }
 
 private fun formatPlaybackSpeed(speed: Float): String {
@@ -9162,11 +9173,11 @@ private fun formatPlaybackSpeed(speed: Float): String {
 }
 
 private fun formatPercentLabel(value: Float): String {
-    return "%.0f%%".format(value.coerceIn(0f, 1f) * 100f)
+    return formatPercentForUi(value)
 }
 
 private fun formatScaleLabel(value: Float): String {
-    return "%.0f%%".format(value * 100f)
+    return formatScaleForUi(value)
 }
 
 private fun formatBytes(bytes: Long): String {

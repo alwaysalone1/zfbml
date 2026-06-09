@@ -123,3 +123,5 @@ This pass upgrades route source grouping. `RouteSourceGroupUiState` now owns sta
 This pass upgrades the player route summary card. `RoutePanelUiState` now owns compact/detailed titles, recommendation copy, current-route copy, and metric chip states so the in-player route switcher no longer rebuilds source and failure summaries inside Compose.
 
 This pass upgrades the player episode panel. `PlayerEpisodePanelUiState` and `PlayerEpisodeOptionUiState` now own current-episode summary, list title, status chips, row labels, loading state, disabled waiting rows, and action copy so episode switching follows the same model-driven contract as route switching.
+
+This pass upgrades the player danmaku settings panel. `PlayerDanmakuSettingsUiState` now owns toggle copy, density/alpha/font labels, semantic tone, and safe-area summary so danmaku controls and anti-obstruction feedback share the same model-driven language as the player route and episode panels.

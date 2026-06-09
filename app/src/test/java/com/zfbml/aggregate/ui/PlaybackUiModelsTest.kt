@@ -1308,19 +1308,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.58",
+            version = "0.5.59",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.58", state.version)
+        assertEquals("0.5.59", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.58" })
+        assertTrue(state.chips.any { it.label == "v0.5.59" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1334,7 +1334,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.58",
+            version = "0.5.59",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,
@@ -1496,6 +1496,45 @@ class PlaybackUiModelsTest {
         assertEquals(0, locked.endInsetDp)
         assertEquals(0, compact.endInsetDp)
         assertTrue(compact.bottomInsetDp > hidden.bottomInsetDp)
+    }
+
+    @Test
+    fun playerDanmakuSettingsUiStateFormatsToggleSlidersAndSafeArea() {
+        val safeArea = buildPlayerDanmakuSafeAreaUiState(
+            compact = false,
+            controlsVisible = true,
+            controlsLocked = false,
+            panelOpen = true,
+            noticeVisible = true,
+        )
+
+        val enabled = buildPlayerDanmakuSettingsUiState(
+            enabled = true,
+            density = 0.62f,
+            alpha = 0.76f,
+            fontScale = 0.72f,
+            safeArea = safeArea,
+        )
+        val disabled = buildPlayerDanmakuSettingsUiState(
+            enabled = false,
+            density = 0.3f,
+            alpha = 1.2f,
+            fontScale = 1.08f,
+        )
+
+        assertEquals("弹幕已开启", enabled.toggleTitle)
+        assertEquals("点击关闭弹幕显示", enabled.toggleSubtitle)
+        assertTrue(enabled.toggleSelected)
+        assertEquals("60%", enabled.densityLabel)
+        assertEquals("76%", enabled.alphaLabel)
+        assertEquals("72%", enabled.fontScaleLabel)
+        assertTrue(enabled.safetySummary.contains("避让"))
+        assertEquals(SourceLibraryTone.Primary, enabled.tone)
+        assertEquals("弹幕已关闭", disabled.toggleTitle)
+        assertEquals("点击开启弹幕显示", disabled.toggleSubtitle)
+        assertEquals("30%", disabled.densityLabel)
+        assertEquals("100%", disabled.alphaLabel)
+        assertEquals(SourceLibraryTone.Muted, disabled.tone)
     }
 
     @Test

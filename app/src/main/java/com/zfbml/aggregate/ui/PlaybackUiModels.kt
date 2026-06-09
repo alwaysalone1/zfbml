@@ -365,6 +365,17 @@ internal data class PlayerEpisodeOptionUiState(
     val tone: SourceLibraryTone,
 )
 
+internal data class PlayerDanmakuSettingsUiState(
+    val toggleTitle: String,
+    val toggleSubtitle: String,
+    val toggleSelected: Boolean,
+    val densityLabel: String,
+    val alphaLabel: String,
+    val fontScaleLabel: String,
+    val safetySummary: String,
+    val tone: SourceLibraryTone,
+)
+
 internal data class PlayerDanmakuSafeAreaUiState(
     val topInsetDp: Int,
     val bottomInsetDp: Int,
@@ -1837,6 +1848,47 @@ internal fun playerProgressPollDelayMs(
         controlsVisible -> 300L
         else -> 500L
     }
+}
+
+internal fun buildPlayerDanmakuSettingsUiState(
+    enabled: Boolean,
+    density: Float,
+    alpha: Float,
+    fontScale: Float,
+    safeArea: PlayerDanmakuSafeAreaUiState? = null,
+): PlayerDanmakuSettingsUiState {
+    val densityLabel = formatDanmakuDensityForUi(density)
+    val alphaLabel = formatPercentForUi(alpha)
+    val fontScaleLabel = formatScaleForUi(fontScale)
+    val safetySummary = safeArea?.let { area ->
+        "避让 顶${area.topInsetDp} / 底${area.bottomInsetDp} / 侧${area.startInsetDp + area.endInsetDp}"
+    } ?: "自动避让播放器控制区"
+    return PlayerDanmakuSettingsUiState(
+        toggleTitle = if (enabled) "弹幕已开启" else "弹幕已关闭",
+        toggleSubtitle = if (enabled) "点击关闭弹幕显示" else "点击开启弹幕显示",
+        toggleSelected = enabled,
+        densityLabel = densityLabel,
+        alphaLabel = alphaLabel,
+        fontScaleLabel = fontScaleLabel,
+        safetySummary = safetySummary,
+        tone = if (enabled) SourceLibraryTone.Primary else SourceLibraryTone.Muted,
+    )
+}
+
+internal fun formatDanmakuDensityForUi(density: Float): String {
+    return when {
+        density < 0.45f -> "30%"
+        density < 0.82f -> "60%"
+        else -> "100%"
+    }
+}
+
+internal fun formatPercentForUi(value: Float): String {
+    return "%.0f%%".format(value.coerceIn(0f, 1f) * 100f)
+}
+
+internal fun formatScaleForUi(value: Float): String {
+    return "%.0f%%".format(value * 100f)
 }
 
 internal fun buildPlayerDanmakuSafeAreaUiState(

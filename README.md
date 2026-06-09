@@ -25,6 +25,23 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.59
+
+中文：
+- 播放器弹幕设置新增 `PlayerDanmakuSettingsUiState`，统一生成开关标题、开关说明、密度、透明度、字号和防遮挡摘要。
+- 弹幕设置面板改为消费模型字段，`弹幕已开启/已关闭`、密度百分比、透明度和字号格式不再散在 Compose 里。
+- 弹幕设置新增安全区摘要，显示当前自动避让播放器控制区的策略。
+- 新增单元测试覆盖开关状态、滑杆标签格式和安全区摘要。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.59`。
+
+English:
+
+- The player danmaku settings panel now has `PlayerDanmakuSettingsUiState` for toggle title, toggle copy, density, alpha, font scale, and anti-obstruction summary.
+- The settings panel now renders model fields, keeping enabled/disabled copy and percent/scale formatting out of Compose.
+- Danmaku settings now show a safe-area summary for automatic control avoidance.
+- Added unit coverage for toggle state, slider labels, and safe-area summary.
+- App version labels, request user agents, and README notes are now updated to `0.5.59`.
+
 ### v0.5.58
 
 中文：
