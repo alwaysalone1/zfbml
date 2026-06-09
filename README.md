@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.83
+
+English:
+
+- Route candidate cards now expose model-provided badge chips through `RouteCandidateUiState`, covering recommended, current, failed, fallback, and online-playable route states.
+- Detail route candidate rows and player route option rows now render the same badge list instead of deriving recommended/status badges inside Compose.
+- Added unit coverage for recommended online, current playback, and failed route candidate badges.
+- App version labels, request user agents, and README notes are now updated to `0.5.83`.
+
 ### v0.5.82
 
 English:

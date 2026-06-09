@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.82")
+                setRequestProperty("User-Agent", "ZFBML/0.5.83")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2866,7 +2866,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.82",
+            version = "0.5.83",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -4927,7 +4927,6 @@ private fun RouteCandidateRow(
 ) {
     val state = buildRouteCandidateUiState(route = route, recommended = recommended)
     val accent = sourceLibraryToneColor(state.accentTone)
-    val statusColor = sourceLibraryToneColor(state.statusTone)
     Card(
         onClick = onClick,
         modifier = modifier.fillMaxWidth().focusable(),
@@ -4960,8 +4959,9 @@ private fun RouteCandidateRow(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    if (state.recommended) RouteStatusBadge("推荐", AnimeAccentPink)
-                    RouteStatusBadge(state.statusLabel, statusColor)
+                    state.badges.forEach { badge ->
+                        RouteStatusBadge(badge.label, sourceLibraryToneColor(badge.tone))
+                    }
                 }
                 Text(
                     state.primaryLabel,
@@ -8190,7 +8190,6 @@ private fun PlayerRouteOptionRow(
         failed = failed,
     )
     val accent = sourceLibraryToneColor(state.accentTone)
-    val statusColor = sourceLibraryToneColor(state.statusTone)
     val actionColor = sourceLibraryToneColor(state.actionTone)
     val primaryTitle = if (detailedMode) state.sourceName else state.primaryLabel
     val secondaryTitle = if (detailedMode) state.primaryLabel else state.sourceName
@@ -8224,8 +8223,9 @@ private fun PlayerRouteOptionRow(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    if (state.recommended) RouteStatusBadge("推荐", AnimeAccentPink)
-                    RouteStatusBadge(state.statusLabel, statusColor)
+                    state.badges.forEach { badge ->
+                        RouteStatusBadge(badge.label, sourceLibraryToneColor(badge.tone))
+                    }
                 }
                 Text(
                     secondaryTitle,

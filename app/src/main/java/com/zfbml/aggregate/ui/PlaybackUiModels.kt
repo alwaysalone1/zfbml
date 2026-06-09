@@ -780,6 +780,7 @@ internal data class RouteCandidateUiState(
     val sizeLabel: String?,
     val statusLabel: String,
     val actionLabel: String,
+    val badges: List<SourceLibraryChipUiState>,
     val selected: Boolean,
     val recommended: Boolean,
     val playable: Boolean,
@@ -1458,6 +1459,10 @@ internal fun buildRouteCandidateUiState(
         route.protocol == StreamProtocol.WEBVIEW_ONLY -> SourceLibraryTone.Muted
         else -> SourceLibraryTone.Online
     }
+    val badges = buildList {
+        if (recommended) add(SourceLibraryChipUiState("\u63a8\u8350", SourceLibraryTone.Primary))
+        add(SourceLibraryChipUiState(statusLabel, statusTone))
+    }
     val cacheAction = buildPlayerCacheActionUiState(route.stream)
     return RouteCandidateUiState(
         streamId = route.stream.id,
@@ -1470,6 +1475,7 @@ internal fun buildRouteCandidateUiState(
         sizeLabel = route.sizeBytes?.let(::formatBytesForUi),
         statusLabel = statusLabel,
         actionLabel = actionLabel,
+        badges = badges,
         selected = selected,
         recommended = recommended,
         playable = playable,
