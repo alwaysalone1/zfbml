@@ -25,6 +25,23 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.57
+
+中文：
+- `RoutePanelUiState` 新增播放器换源摘要标题、简单/详细摘要、当前线路说明和简单/详细指标列表。
+- 播放器换源摘要卡改为消费模型字段，推荐源、当前源、可用/在线/BT/失败统计不再由 Compose 本地拼接。
+- 指标 chip 新增 `RoutePanelMetricUiState`，统一用 `SourceLibraryTone` 映射颜色，和来源组/候选线路模型保持一致。
+- 新增单元测试覆盖线路摘要标题、推荐摘要、当前线路说明和指标语义色。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.57`。
+
+English:
+
+- `RoutePanelUiState` now exposes player route-panel titles, compact/detailed summaries, current-route copy, and compact/detailed metric lists.
+- The player route summary card now renders model fields instead of composing recommendation, current-source, available, online, BT, and failure stats locally.
+- Metric chips now use `RoutePanelMetricUiState` with `SourceLibraryTone`, keeping color semantics aligned with source-group and route-candidate models.
+- Added unit coverage for route-summary titles, recommendation copy, current-route copy, and metric tones.
+- App version labels, request user agents, and README notes are now updated to `0.5.57`.
+
 ### v0.5.56
 
 中文：

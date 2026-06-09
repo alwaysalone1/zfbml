@@ -463,6 +463,15 @@ class PlaybackUiModelsTest {
         assertEquals(1, state.onlineCount)
         assertEquals(1, state.btCount)
         assertEquals(1, state.failedCount)
+        assertEquals("推荐源 · 可播 2 源", state.compactTitle)
+        assertTrue(state.compactSummary.contains("720p"))
+        assertEquals("自动推荐 · 共 3 源", state.detailedTitle)
+        assertTrue(state.detailedSummary.contains("推荐 Provider"))
+        assertEquals("当前 Provider · 1080p", state.selectedRouteSummary)
+        assertEquals(listOf("可用", "失败"), state.compactMetrics.map { it.label })
+        assertEquals(listOf("可用", "在线", "BT", "失败"), state.detailedMetrics.map { it.label })
+        assertEquals(SourceLibraryTone.Cache, state.detailedMetrics.first().tone)
+        assertEquals(SourceLibraryTone.Web, state.detailedMetrics.last().tone)
     }
 
     @Test
@@ -1299,19 +1308,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.56",
+            version = "0.5.57",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.56", state.version)
+        assertEquals("0.5.57", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.56" })
+        assertTrue(state.chips.any { it.label == "v0.5.57" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1325,7 +1334,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.56",
+            version = "0.5.57",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,

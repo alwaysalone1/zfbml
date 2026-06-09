@@ -372,6 +372,19 @@ internal data class RoutePanelUiState(
     val btCount: Int,
     val failedCount: Int,
     val recommendationReason: String,
+    val compactTitle: String,
+    val compactSummary: String,
+    val detailedTitle: String,
+    val detailedSummary: String,
+    val selectedRouteSummary: String?,
+    val compactMetrics: List<RoutePanelMetricUiState>,
+    val detailedMetrics: List<RoutePanelMetricUiState>,
+)
+
+internal data class RoutePanelMetricUiState(
+    val label: String,
+    val value: String,
+    val tone: SourceLibraryTone,
 )
 
 internal data class RouteCandidateUiState(
@@ -1927,15 +1940,44 @@ internal fun buildRoutePanelUiState(
             route.stream.protocol != StreamProtocol.WEBVIEW_ONLY
     }
     val recommendedRoute = firstPlayableRouteForAutoplay(routes, failedStreamIds)
+    val selectedRoute = routes.firstOrNull { it.stream.id == selectedStreamId }
+    val availableCount = availableRoutes.size
+    val onlineCount = availableRoutes.count { it.protocol != StreamProtocol.BITTORRENT }
+    val btCount = availableRoutes.count { it.protocol == StreamProtocol.BITTORRENT }
+    val failedCount = failedStreamIds.count { failedId -> routes.any { it.stream.id == failedId } }
+    val recommendationReason = routeRecommendationReason(recommendedRoute)
+    val compactMetrics = if (failedCount > 0) {
+        listOf(
+            RoutePanelMetricUiState("可用", availableCount.toString(), SourceLibraryTone.Cache),
+            RoutePanelMetricUiState("失败", failedCount.toString(), SourceLibraryTone.Web),
+        )
+    } else {
+        emptyList()
+    }
+    val detailedMetrics = buildList {
+        add(RoutePanelMetricUiState("可用", availableCount.toString(), SourceLibraryTone.Cache))
+        add(RoutePanelMetricUiState("在线", onlineCount.toString(), SourceLibraryTone.Online))
+        add(RoutePanelMetricUiState("BT", btCount.toString(), SourceLibraryTone.Backup))
+        if (failedCount > 0) {
+            add(RoutePanelMetricUiState("失败", failedCount.toString(), SourceLibraryTone.Web))
+        }
+    }
     return RoutePanelUiState(
         recommendedRoute = recommendedRoute,
-        selectedRoute = routes.firstOrNull { it.stream.id == selectedStreamId },
+        selectedRoute = selectedRoute,
         totalCount = routes.size,
-        availableCount = availableRoutes.size,
-        onlineCount = availableRoutes.count { it.protocol != StreamProtocol.BITTORRENT },
-        btCount = availableRoutes.count { it.protocol == StreamProtocol.BITTORRENT },
-        failedCount = failedStreamIds.count { failedId -> routes.any { it.stream.id == failedId } },
-        recommendationReason = routeRecommendationReason(recommendedRoute),
+        availableCount = availableCount,
+        onlineCount = onlineCount,
+        btCount = btCount,
+        failedCount = failedCount,
+        recommendationReason = recommendationReason,
+        compactTitle = "推荐源 · 可播 $availableCount 源",
+        compactSummary = recommendedRoute?.let { recommendationReason } ?: "暂时没有推荐源",
+        detailedTitle = "自动推荐 · 共 ${routes.size} 源",
+        detailedSummary = recommendedRoute?.let { route -> "推荐 ${route.sourceName} · $recommendationReason" } ?: "暂无推荐源",
+        selectedRouteSummary = selectedRoute?.let { route -> "当前 ${route.sourceName} · ${routePrimaryLabelForUi(route)}" },
+        compactMetrics = compactMetrics,
+        detailedMetrics = detailedMetrics,
     )
 }
 

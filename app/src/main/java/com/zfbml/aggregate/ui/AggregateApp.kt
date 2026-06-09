@@ -2330,7 +2330,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.56")
+                setRequestProperty("User-Agent", "ZFBML/0.5.57")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2823,7 +2823,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.56",
+            version = "0.5.57",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -8429,27 +8429,21 @@ private fun RoutePanelSummaryCard(
                 )
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
-                        if (detailedMode) "自动推荐 · 共 ${state.totalCount} 源" else "推荐源 · 可播 ${state.availableCount} 源",
+                        if (detailedMode) state.detailedTitle else state.compactTitle,
                         style = MaterialTheme.typography.titleSmall,
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
                     )
                     Text(
-                        if (detailedMode) {
-                            state.recommendedRoute?.let { route ->
-                                "推荐 ${route.sourceName} · ${state.recommendationReason}"
-                            } ?: "暂无推荐源"
-                        } else {
-                            state.recommendedRoute?.let { state.recommendationReason } ?: "暂时没有推荐源"
-                        },
+                        if (detailedMode) state.detailedSummary else state.compactSummary,
                         style = MaterialTheme.typography.bodySmall,
                         color = AnimeMuted,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    if (detailedMode) state.selectedRoute?.let { route ->
+                    if (detailedMode) state.selectedRouteSummary?.let { summary ->
                         Text(
-                            "当前 ${route.sourceName} · ${route.routeName.orEmpty().ifBlank { route.protocol.displayName() }}",
+                            summary,
                             style = MaterialTheme.typography.labelSmall,
                             color = Color.White.copy(alpha = 0.62f),
                             maxLines = 1,
@@ -8470,15 +8464,11 @@ private fun RoutePanelSummaryCard(
                     Text(if (detailedMode) "简单" else "详细", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, maxLines = 1)
                 }
             }
-            if (detailedMode || state.failedCount > 0) {
+            val metrics = if (detailedMode) state.detailedMetrics else state.compactMetrics
+            if (metrics.isNotEmpty()) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    RoutePanelMetricChip("可用", state.availableCount.toString(), AnimeAccentGreen)
-                    if (detailedMode) {
-                        RoutePanelMetricChip("在线", state.onlineCount.toString(), AnimeAccentCyan)
-                        RoutePanelMetricChip("BT", state.btCount.toString(), AnimeAccentAmber)
-                    }
-                    if (state.failedCount > 0) {
-                        RoutePanelMetricChip("失败", state.failedCount.toString(), MaterialTheme.colorScheme.error)
+                    metrics.forEach { metric ->
+                        RoutePanelMetricChip(metric)
                     }
                 }
             }
@@ -8497,10 +8487,9 @@ private fun RoutePanelSummaryCard(
 
 @Composable
 private fun RoutePanelMetricChip(
-    label: String,
-    value: String,
-    color: Color,
+    metric: RoutePanelMetricUiState,
 ) {
+    val color = sourceLibraryToneColor(metric.tone)
     Row(
         modifier = Modifier
             .height(30.dp)
@@ -8511,13 +8500,13 @@ private fun RoutePanelMetricChip(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            label,
+            metric.label,
             style = MaterialTheme.typography.labelSmall,
             color = Color.White.copy(alpha = 0.7f),
             maxLines = 1,
         )
         Text(
-            value,
+            metric.value,
             style = MaterialTheme.typography.labelMedium,
             color = color,
             fontWeight = FontWeight.Bold,
