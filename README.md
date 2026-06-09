@@ -25,6 +25,23 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.64
+
+中文：
+- 播放器状态条新增 `PlayerTopStatusStripUiState`、`PlayerStatusChipUiState` 和 `PlayerFullscreenStatusStripUiState`，统一生成顶部状态 chip 与全屏播放状态条。
+- 顶部状态条的本集、来源、清晰度和倍速文案改由模型层生成，线路覆盖和空来源/空清晰度归一化不再散在 Compose 中。
+- 全屏状态条的播放/异常状态、线路摘要、清晰度、倍速、线路覆盖和集数标签改由模型层生成，异常态只由 UI 映射颜色。
+- 新增单元测试覆盖多线路状态 chip、倍速格式、空值兜底和播放异常状态条。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.64`。
+
+English:
+
+- The player status strips now have `PlayerTopStatusStripUiState`, `PlayerStatusChipUiState`, and `PlayerFullscreenStatusStripUiState` for top chips and fullscreen playback status.
+- Top status chips for episode, source, quality, and speed now come from the model layer, including route coverage and blank source/quality normalization.
+- The fullscreen status strip now receives playback/error state, route summary, quality, speed, route coverage, and episode-count tags from the model layer, while Compose only maps presentation color.
+- Added unit coverage for multi-route chips, speed formatting, fallback values, and playback issue status.
+- App version labels, request user agents, and README notes are now updated to `0.5.64`.
+
 ### v0.5.63
 
 中文：

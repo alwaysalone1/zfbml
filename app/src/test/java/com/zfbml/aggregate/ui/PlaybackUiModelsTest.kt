@@ -1308,19 +1308,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.63",
+            version = "0.5.64",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.63", state.version)
+        assertEquals("0.5.64", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.63" })
+        assertTrue(state.chips.any { it.label == "v0.5.64" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1334,7 +1334,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.63",
+            version = "0.5.64",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,
@@ -1741,6 +1741,74 @@ class PlaybackUiModelsTest {
         assertFalse(state.tabs.first { it.kind == PlayerPanelKind.Danmaku }.highlighted)
         assertEquals("关", state.tabs.first { it.kind == PlayerPanelKind.Danmaku }.value)
         assertEquals(SourceLibraryTone.Muted, state.tabs.first { it.kind == PlayerPanelKind.Danmaku }.tone)
+    }
+
+    @Test
+    fun playerTopStatusStripUiStateBuildsStableChips() {
+        val overlay = PlayerOverlayState(
+            title = "标题",
+            episodeTitle = "第 3 集",
+            sourceLabel = "Animeko",
+            qualityLabel = "1080p",
+            routeLabel = "Animeko · HLS",
+            playbackState = "播放中",
+            statusLabel = "播放中",
+            notice = null,
+            error = null,
+        )
+
+        val state = buildPlayerTopStatusStripUiState(
+            overlayState = overlay,
+            episodeValue = "3/12",
+            routeCount = 4,
+            routeCoverageLabel = "在线 3 · BT 1",
+            playbackSpeed = 1.5f,
+        )
+
+        assertEquals(listOf("本集", "来源", "清晰度", "倍速"), state.chips.map { it.label })
+        assertEquals("3/12", state.chips.first { it.label == "本集" }.value)
+        assertEquals("Animeko · 在线 3 · BT 1", state.chips.first { it.label == "来源" }.value)
+        assertEquals("1080p", state.chips.first { it.label == "清晰度" }.value)
+        assertEquals("1.5x", state.chips.first { it.label == "倍速" }.value)
+        assertEquals(SourceLibraryTone.Cache, state.chips.first { it.label == "倍速" }.tone)
+    }
+
+    @Test
+    fun playerStatusStripUiStateNormalizesFallbacksAndIssues() {
+        val top = buildPlayerTopStatusStripUiState(
+            overlayState = PlayerOverlayState(
+                title = "",
+                episodeTitle = "",
+                sourceLabel = "",
+                qualityLabel = "",
+                routeLabel = "",
+                playbackState = "缓冲中",
+                statusLabel = "缓冲中",
+                notice = null,
+                error = null,
+            ),
+            episodeValue = "",
+            routeCount = 1,
+            routeCoverageLabel = "",
+            playbackSpeed = 1f,
+        )
+        val fullscreen = buildPlayerFullscreenStatusStripUiState(
+            routeSummary = "",
+            quality = "",
+            routeCount = 1,
+            routeCoverageLabel = "",
+            episodeCount = 1,
+            playbackSpeed = 1f,
+            hasPlaybackIssue = true,
+        )
+
+        assertEquals("当前集", top.chips.first { it.label == "本集" }.value)
+        assertEquals("自动源", top.chips.first { it.label == "来源" }.value)
+        assertEquals("自动", top.chips.first { it.label == "清晰度" }.value)
+        assertEquals("播放异常", fullscreen.statusLabel)
+        assertEquals("自动线路", fullscreen.routeSummary)
+        assertEquals(listOf("自动", "1.0x"), fullscreen.tags)
+        assertTrue(fullscreen.error)
     }
 
     @Test

@@ -342,6 +342,23 @@ internal data class PlayerOverlayState(
     val error: String?,
 )
 
+internal data class PlayerTopStatusStripUiState(
+    val chips: List<PlayerStatusChipUiState>,
+)
+
+internal data class PlayerStatusChipUiState(
+    val label: String,
+    val value: String,
+    val tone: SourceLibraryTone,
+)
+
+internal data class PlayerFullscreenStatusStripUiState(
+    val statusLabel: String,
+    val routeSummary: String,
+    val tags: List<String>,
+    val error: Boolean,
+)
+
 internal data class PlayerEpisodePanelUiState(
     val title: String,
     val summary: String,
@@ -2206,6 +2223,78 @@ internal fun buildPlayerPanelSheetUiState(
             ),
         ),
     )
+}
+
+internal fun buildPlayerTopStatusStripUiState(
+    overlayState: PlayerOverlayState,
+    episodeValue: String,
+    routeCount: Int,
+    routeCoverageLabel: String,
+    playbackSpeed: Float,
+): PlayerTopStatusStripUiState {
+    return PlayerTopStatusStripUiState(
+        chips = listOf(
+            PlayerStatusChipUiState(
+                label = "本集",
+                value = episodeValue.ifBlank { overlayState.episodeTitle.ifBlank { "当前集" } },
+                tone = SourceLibraryTone.Primary,
+            ),
+            PlayerStatusChipUiState(
+                label = "来源",
+                value = playerSourceStatusValueForUi(
+                    sourceLabel = overlayState.sourceLabel,
+                    routeCount = routeCount,
+                    routeCoverageLabel = routeCoverageLabel,
+                ),
+                tone = SourceLibraryTone.Online,
+            ),
+            PlayerStatusChipUiState(
+                label = "清晰度",
+                value = overlayState.qualityLabel.ifBlank { "自动" },
+                tone = SourceLibraryTone.Backup,
+            ),
+            PlayerStatusChipUiState(
+                label = "倍速",
+                value = formatPlaybackSpeedForUi(playbackSpeed),
+                tone = SourceLibraryTone.Cache,
+            ),
+        ),
+    )
+}
+
+internal fun buildPlayerFullscreenStatusStripUiState(
+    routeSummary: String,
+    quality: String,
+    routeCount: Int,
+    routeCoverageLabel: String,
+    episodeCount: Int,
+    playbackSpeed: Float,
+    hasPlaybackIssue: Boolean,
+): PlayerFullscreenStatusStripUiState {
+    return PlayerFullscreenStatusStripUiState(
+        statusLabel = if (hasPlaybackIssue) "播放异常" else "正在播放",
+        routeSummary = routeSummary.ifBlank { "自动线路" },
+        tags = listOfNotNull(
+            quality.ifBlank { "自动" },
+            formatPlaybackSpeedForUi(playbackSpeed),
+            routeCoverageLabel.takeIf { routeCount > 1 && it.isNotBlank() },
+            episodeCount.takeIf { it > 1 }?.let { "$it 集" },
+        ),
+        error = hasPlaybackIssue,
+    )
+}
+
+private fun playerSourceStatusValueForUi(
+    sourceLabel: String,
+    routeCount: Int,
+    routeCoverageLabel: String,
+): String {
+    val normalizedSource = sourceLabel.ifBlank { "自动源" }
+    return if (routeCount > 1 && routeCoverageLabel.isNotBlank()) {
+        "$normalizedSource · $routeCoverageLabel"
+    } else {
+        normalizedSource
+    }
 }
 
 private fun PlayerPanelKind.titleForUi(): String {

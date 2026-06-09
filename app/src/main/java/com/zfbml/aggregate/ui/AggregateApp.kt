@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.63")
+                setRequestProperty("User-Agent", "ZFBML/0.5.64")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2845,7 +2845,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.63",
+            version = "0.5.64",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -6294,38 +6294,30 @@ private fun PlayerTopStatusStrip(
     playbackSpeed: Float,
     modifier: Modifier = Modifier,
 ) {
-    val sourceValue = if (routeCount > 1) {
-        "${overlayState.sourceLabel} · $routeCoverageLabel"
-    } else {
-        overlayState.sourceLabel
+    val state = remember(overlayState, episodeValue, routeCount, routeCoverageLabel, playbackSpeed) {
+        buildPlayerTopStatusStripUiState(
+            overlayState = overlayState,
+            episodeValue = episodeValue,
+            routeCount = routeCount,
+            routeCoverageLabel = routeCoverageLabel,
+            playbackSpeed = playbackSpeed,
+        )
     }
-    val chips = listOf(
-        PlayerTopStatusSpec("本集", episodeValue, AnimeAccentPink),
-        PlayerTopStatusSpec("来源", sourceValue, AnimeAccentCyan),
-        PlayerTopStatusSpec("清晰度", overlayState.qualityLabel, AnimeAccentAmber),
-        PlayerTopStatusSpec("倍速", formatPlaybackSpeed(playbackSpeed), AnimeAccentGreen),
-    )
 
     LazyRow(
         modifier = modifier.height(32.dp),
         horizontalArrangement = Arrangement.spacedBy(7.dp),
         contentPadding = PaddingValues(end = 2.dp),
     ) {
-        items(chips, key = { it.label }) { chip ->
+        items(state.chips, key = { it.label }) { chip ->
             PlayerTopStatusChip(
                 label = chip.label,
                 value = chip.value,
-                color = chip.color,
+                color = sourceLibraryToneColor(chip.tone),
             )
         }
     }
 }
-
-private data class PlayerTopStatusSpec(
-    val label: String,
-    val value: String,
-    val color: Color,
-)
 
 @Composable
 private fun PlayerTopStatusChip(
@@ -7140,6 +7132,25 @@ private fun PlayerFullscreenStatusStrip(
     hasPlaybackIssue: Boolean,
     modifier: Modifier = Modifier,
 ) {
+    val state = remember(
+        routeSummary,
+        quality,
+        routeCount,
+        routeCoverageLabel,
+        episodeCount,
+        playbackSpeed,
+        hasPlaybackIssue,
+    ) {
+        buildPlayerFullscreenStatusStripUiState(
+            routeSummary = routeSummary,
+            quality = quality,
+            routeCount = routeCount,
+            routeCoverageLabel = routeCoverageLabel,
+            episodeCount = episodeCount,
+            playbackSpeed = playbackSpeed,
+            hasPlaybackIssue = hasPlaybackIssue,
+        )
+    }
     Row(
         modifier = modifier
             .height(32.dp)
@@ -7147,29 +7158,24 @@ private fun PlayerFullscreenStatusStrip(
             .background(Color.Black.copy(alpha = 0.26f))
             .border(
                 1.dp,
-                if (hasPlaybackIssue) MaterialTheme.colorScheme.error.copy(alpha = 0.28f) else Color.White.copy(alpha = 0.08f),
+                if (state.error) MaterialTheme.colorScheme.error.copy(alpha = 0.28f) else Color.White.copy(alpha = 0.08f),
                 RoundedCornerShape(8.dp),
             )
             .padding(horizontal = 10.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        RouteStatusBadge(if (hasPlaybackIssue) "播放异常" else "正在播放", if (hasPlaybackIssue) MaterialTheme.colorScheme.error else AnimeAccentGreen)
+        RouteStatusBadge(state.statusLabel, if (state.error) MaterialTheme.colorScheme.error else AnimeAccentGreen)
         Text(
-            text = routeSummary,
+            text = state.routeSummary,
             modifier = Modifier.weight(1f),
             style = MaterialTheme.typography.labelMedium,
             color = Color.White.copy(alpha = 0.86f),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
-        PlayerStatusTinyText(quality)
-        PlayerStatusTinyText(formatPlaybackSpeed(playbackSpeed))
-        if (routeCount > 1) {
-            PlayerStatusTinyText(routeCoverageLabel)
-        }
-        if (episodeCount > 1) {
-            PlayerStatusTinyText("${episodeCount}集")
+        state.tags.forEach { tag ->
+            PlayerStatusTinyText(tag)
         }
     }
 }
