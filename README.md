@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.90
+
+English:
+
+- Player panel quick tabs now expose model-provided action enablement, prominent state, visual tone, container alpha, content alpha, and value alpha through `PlayerPanelTabUiState`.
+- `PlayerPanelQuickTab` now renders those tab fields instead of deriving selected, highlighted, and disabled presentation locally in Compose.
+- Added unit coverage for selected, highlighted, enabled, and disabled player-panel tab presentation state.
+- App version labels, request user agents, and README notes are now updated to `0.5.90`.
+
 ### v0.5.89
 
 English:

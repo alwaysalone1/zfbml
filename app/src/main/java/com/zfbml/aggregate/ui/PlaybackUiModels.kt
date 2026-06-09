@@ -735,6 +735,13 @@ internal data class PlayerPanelTabUiState(
     val enabled: Boolean,
     val selected: Boolean,
     val highlighted: Boolean,
+    val actionEnabled: Boolean,
+    val prominent: Boolean,
+    val usesVisualTone: Boolean,
+    val visualTone: SourceLibraryTone,
+    val containerAlpha: Float,
+    val contentAlpha: Float,
+    val valueAlpha: Float,
     val tone: SourceLibraryTone,
 )
 
@@ -3047,6 +3054,46 @@ internal fun buildPlayerPanelSheetUiState(
         routeCount > 1 -> routeCoverageLabel.ifBlank { "$routeCount 条线路" }
         else -> "自动"
     }
+    fun panelTab(
+        kind: PlayerPanelKind,
+        label: String,
+        value: String?,
+        enabled: Boolean,
+        highlighted: Boolean = false,
+        tone: SourceLibraryTone,
+    ): PlayerPanelTabUiState {
+        val selected = selectedPanel == kind
+        val actionEnabled = enabled || selected
+        val usesVisualTone = selected || highlighted
+        return PlayerPanelTabUiState(
+            kind = kind,
+            label = label,
+            value = value,
+            enabled = enabled,
+            selected = selected,
+            highlighted = highlighted,
+            actionEnabled = actionEnabled,
+            prominent = selected,
+            usesVisualTone = usesVisualTone,
+            visualTone = when {
+                selected -> SourceLibraryTone.Primary
+                highlighted -> SourceLibraryTone.Online
+                else -> tone
+            },
+            containerAlpha = when {
+                selected -> 0.18f
+                actionEnabled -> 0.06f
+                else -> 0.035f
+            },
+            contentAlpha = when {
+                usesVisualTone -> 1f
+                actionEnabled -> 0.72f
+                else -> 0.32f
+            },
+            valueAlpha = if (actionEnabled) 0.76f else 0.48f,
+            tone = tone,
+        )
+    }
     return PlayerPanelSheetUiState(
         title = selectedPanel.titleForUi(),
         subtitle = selectedPanel.subtitleForUi(),
@@ -3056,58 +3103,47 @@ internal fun buildPlayerPanelSheetUiState(
             statusLabel = "播放中",
         ),
         tabs = listOf(
-            PlayerPanelTabUiState(
+            panelTab(
                 kind = PlayerPanelKind.Quality,
                 label = "清晰度",
                 value = null,
                 enabled = routeCount > 0,
-                selected = selectedPanel == PlayerPanelKind.Quality,
-                highlighted = false,
                 tone = SourceLibraryTone.Primary,
             ),
-            PlayerPanelTabUiState(
+            panelTab(
                 kind = PlayerPanelKind.Speed,
                 label = "倍速",
                 value = null,
                 enabled = true,
-                selected = selectedPanel == PlayerPanelKind.Speed,
-                highlighted = false,
                 tone = SourceLibraryTone.Online,
             ),
-            PlayerPanelTabUiState(
+            panelTab(
                 kind = PlayerPanelKind.Route,
                 label = "换源",
                 value = routeValue,
                 enabled = routeCount > 1,
-                selected = selectedPanel == PlayerPanelKind.Route,
-                highlighted = false,
                 tone = SourceLibraryTone.Online,
             ),
-            PlayerPanelTabUiState(
+            panelTab(
                 kind = PlayerPanelKind.Episode,
                 label = "选集",
                 value = if (episodeCount > 1) "${normalizedEpisodeCount}集" else "单集",
                 enabled = episodeCount > 1,
-                selected = selectedPanel == PlayerPanelKind.Episode,
-                highlighted = false,
                 tone = SourceLibraryTone.Backup,
             ),
-            PlayerPanelTabUiState(
+            panelTab(
                 kind = PlayerPanelKind.Danmaku,
                 label = "弹幕",
                 value = if (danmakuEnabled) "开" else "关",
                 enabled = true,
-                selected = selectedPanel == PlayerPanelKind.Danmaku,
                 highlighted = danmakuEnabled,
                 tone = if (danmakuEnabled) SourceLibraryTone.Primary else SourceLibraryTone.Muted,
             ),
-            PlayerPanelTabUiState(
+            panelTab(
                 kind = PlayerPanelKind.More,
                 label = "设置",
                 value = null,
                 enabled = true,
-                selected = selectedPanel == PlayerPanelKind.More,
-                highlighted = false,
                 tone = SourceLibraryTone.Muted,
             ),
         ),

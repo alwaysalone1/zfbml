@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.89")
+                setRequestProperty("User-Agent", "ZFBML/0.5.90")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2866,7 +2866,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.89",
+            version = "0.5.90",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -7579,21 +7579,22 @@ private fun PlayerPanelQuickTab(
     icon: ImageVector,
     onClick: () -> Unit,
 ) {
-    val accent = when {
-        tab.selected -> AnimeAccentPink
-        tab.highlighted -> AnimeAccentCyan
-        else -> Color.White.copy(alpha = 0.72f)
+    val baseColor = if (tab.usesVisualTone) {
+        sourceLibraryToneColor(tab.visualTone)
+    } else {
+        Color.White
     }
+    val contentColor = baseColor.copy(alpha = tab.contentAlpha)
     TextButton(
         onClick = onClick,
-        enabled = tab.enabled || tab.selected,
+        enabled = tab.actionEnabled,
         modifier = Modifier.width(86.dp).height(36.dp).focusable(),
         shape = RoundedCornerShape(999.dp),
         colors = ButtonDefaults.textButtonColors(
-            containerColor = if (tab.selected) AnimeAccentPink.copy(alpha = 0.18f) else Color.White.copy(alpha = 0.06f),
-            contentColor = accent,
-            disabledContainerColor = Color.White.copy(alpha = 0.035f),
-            disabledContentColor = Color.White.copy(alpha = 0.32f),
+            containerColor = if (tab.prominent) sourceLibraryToneColor(tab.visualTone).copy(alpha = tab.containerAlpha) else Color.White.copy(alpha = tab.containerAlpha),
+            contentColor = contentColor,
+            disabledContainerColor = Color.White.copy(alpha = tab.containerAlpha),
+            disabledContentColor = contentColor,
         ),
         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
     ) {
@@ -7615,7 +7616,7 @@ private fun PlayerPanelQuickTab(
                 Text(
                     text = it,
                     style = MaterialTheme.typography.labelSmall,
-                    color = accent.copy(alpha = if (tab.enabled || tab.selected) 0.76f else 0.48f),
+                    color = baseColor.copy(alpha = tab.valueAlpha),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )

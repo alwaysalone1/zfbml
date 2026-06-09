@@ -185,3 +185,5 @@ This pass upgrades danmaku settings toggle presentation. `PlayerDanmakuSettingsU
 This pass upgrades danmaku slider presentation. `PlayerDanmakuSliderUiState` now owns density, alpha, and font-size slider titles, formatted values, clamped values, ranges, steps, and semantic tones so danmaku rendering controls are configured by the UI model instead of Compose-local constants.
 
 This pass upgrades player more-action tile presentation. `PlayerMoreActionUiState` now owns highlighted/prominent state, action enablement, tile alpha, container/border alpha, icon alpha, and text alpha so the player settings entry grid follows the same model-driven contract as quality, speed, episode, route, and danmaku controls.
+
+This pass upgrades player panel quick-tab presentation. `PlayerPanelTabUiState` now owns action enablement, prominent state, visual tone, container alpha, content alpha, and value alpha so the panel navigation strip no longer derives selected, highlighted, or disabled visual behavior inside Compose.
