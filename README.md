@@ -25,6 +25,16 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.96
+
+English:
+
+- Player route summary cards now expose model-provided card alpha, border alpha, corner radius, content spacing, icon tone/size, summary tone, selected-route summary alpha, detailed-toggle labels, toggle dimensions, metric spacing, and notice presentation through `RoutePanelUiState`.
+- Route-panel metric chips now expose height, radius, container alpha, padding, spacing, and label alpha through `RoutePanelMetricUiState`.
+- `RoutePanelSummaryCard` and `RoutePanelMetricChip` now render those model fields instead of hard-coding route summary card and metric chip presentation locally in Compose.
+- Added unit coverage for route summary card shell, toggle, notice, and metric-chip presentation fields.
+- App version labels, request user agents, and README notes are now updated to `0.5.96`.
+
 ### v0.5.95
 
 English:

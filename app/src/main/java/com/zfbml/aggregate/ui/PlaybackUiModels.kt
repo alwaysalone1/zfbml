@@ -851,12 +851,41 @@ internal data class RoutePanelUiState(
     val selectedRouteSummary: String?,
     val compactMetrics: List<RoutePanelMetricUiState>,
     val detailedMetrics: List<RoutePanelMetricUiState>,
+    val containerAlpha: Float,
+    val borderAlpha: Float,
+    val cornerRadius: Dp,
+    val contentPadding: Dp,
+    val contentSpacing: Dp,
+    val headerSpacing: Dp,
+    val iconTone: SourceLibraryTone,
+    val iconSize: Dp,
+    val textSpacing: Dp,
+    val summaryTone: SourceLibraryTone,
+    val selectedRouteSummaryAlpha: Float,
+    val expandToggleLabel: String,
+    val collapseToggleLabel: String,
+    val toggleWidth: Dp,
+    val toggleHeight: Dp,
+    val toggleCornerRadius: Dp,
+    val toggleTone: SourceLibraryTone,
+    val toggleActiveContainerAlpha: Float,
+    val toggleInactiveContainerAlpha: Float,
+    val toggleInactiveContentAlpha: Float,
+    val metricSpacing: Dp,
+    val noticeTone: SourceLibraryTone,
+    val noticeMaxLines: Int,
 )
 
 internal data class RoutePanelMetricUiState(
     val label: String,
     val value: String,
     val tone: SourceLibraryTone,
+    val height: Dp,
+    val cornerRadius: Dp,
+    val containerAlpha: Float,
+    val horizontalPadding: Dp,
+    val spacing: Dp,
+    val labelAlpha: Float,
 )
 
 internal data class PlayerRouteSourceStripUiState(
@@ -4130,20 +4159,33 @@ internal fun buildRoutePanelUiState(
     val btCount = availableRoutes.count { it.protocol == StreamProtocol.BITTORRENT }
     val failedCount = failedStreamIds.count { failedId -> routes.any { it.stream.id == failedId } }
     val recommendationReason = routeRecommendationReason(recommendedRoute)
+    fun metric(label: String, value: String, tone: SourceLibraryTone): RoutePanelMetricUiState {
+        return RoutePanelMetricUiState(
+            label = label,
+            value = value,
+            tone = tone,
+            height = 30.dp,
+            cornerRadius = 8.dp,
+            containerAlpha = 0.28f,
+            horizontalPadding = 9.dp,
+            spacing = 4.dp,
+            labelAlpha = 0.7f,
+        )
+    }
     val compactMetrics = if (failedCount > 0) {
         listOf(
-            RoutePanelMetricUiState("可用", availableCount.toString(), SourceLibraryTone.Cache),
-            RoutePanelMetricUiState("失败", failedCount.toString(), SourceLibraryTone.Web),
+            metric("可用", availableCount.toString(), SourceLibraryTone.Cache),
+            metric("失败", failedCount.toString(), SourceLibraryTone.Web),
         )
     } else {
         emptyList()
     }
     val detailedMetrics = buildList {
-        add(RoutePanelMetricUiState("可用", availableCount.toString(), SourceLibraryTone.Cache))
-        add(RoutePanelMetricUiState("在线", onlineCount.toString(), SourceLibraryTone.Online))
-        add(RoutePanelMetricUiState("BT", btCount.toString(), SourceLibraryTone.Backup))
+        add(metric("可用", availableCount.toString(), SourceLibraryTone.Cache))
+        add(metric("在线", onlineCount.toString(), SourceLibraryTone.Online))
+        add(metric("BT", btCount.toString(), SourceLibraryTone.Backup))
         if (failedCount > 0) {
-            add(RoutePanelMetricUiState("失败", failedCount.toString(), SourceLibraryTone.Web))
+            add(metric("失败", failedCount.toString(), SourceLibraryTone.Web))
         }
     }
     return RoutePanelUiState(
@@ -4162,6 +4204,29 @@ internal fun buildRoutePanelUiState(
         selectedRouteSummary = selectedRoute?.let { route -> "当前 ${route.sourceName} · ${routePrimaryLabelForUi(route)}" },
         compactMetrics = compactMetrics,
         detailedMetrics = detailedMetrics,
+        containerAlpha = 0.06f,
+        borderAlpha = 0.08f,
+        cornerRadius = 8.dp,
+        contentPadding = 12.dp,
+        contentSpacing = 10.dp,
+        headerSpacing = 10.dp,
+        iconTone = SourceLibraryTone.Online,
+        iconSize = 20.dp,
+        textSpacing = 2.dp,
+        summaryTone = SourceLibraryTone.Muted,
+        selectedRouteSummaryAlpha = 0.62f,
+        expandToggleLabel = "详细",
+        collapseToggleLabel = "简单",
+        toggleWidth = 58.dp,
+        toggleHeight = 32.dp,
+        toggleCornerRadius = 8.dp,
+        toggleTone = SourceLibraryTone.Online,
+        toggleActiveContainerAlpha = 0.16f,
+        toggleInactiveContainerAlpha = 0.08f,
+        toggleInactiveContentAlpha = 0.74f,
+        metricSpacing = 8.dp,
+        noticeTone = SourceLibraryTone.Backup,
+        noticeMaxLines = 2,
     )
 }
 

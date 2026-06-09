@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.95")
+                setRequestProperty("User-Agent", "ZFBML/0.5.96")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2866,7 +2866,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.95",
+            version = "0.5.96",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -8274,26 +8274,26 @@ private fun RoutePanelSummaryCard(
 ) {
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(8.dp),
-        color = Color.White.copy(alpha = 0.06f),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f)),
+        shape = RoundedCornerShape(state.cornerRadius),
+        color = Color.White.copy(alpha = state.containerAlpha),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = state.borderAlpha)),
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.fillMaxWidth().padding(state.contentPadding),
+            verticalArrangement = Arrangement.spacedBy(state.contentSpacing),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(state.headerSpacing),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(
                     Icons.Filled.VideoLibrary,
                     contentDescription = null,
-                    tint = AnimeAccentCyan,
-                    modifier = Modifier.size(20.dp),
+                    tint = sourceLibraryToneColor(state.iconTone),
+                    modifier = Modifier.size(state.iconSize),
                 )
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(state.textSpacing)) {
                     Text(
                         if (detailedMode) state.detailedTitle else state.compactTitle,
                         style = MaterialTheme.typography.titleSmall,
@@ -8303,7 +8303,7 @@ private fun RoutePanelSummaryCard(
                     Text(
                         if (detailedMode) state.detailedSummary else state.compactSummary,
                         style = MaterialTheme.typography.bodySmall,
-                        color = AnimeMuted,
+                        color = sourceLibraryToneColor(state.summaryTone),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -8311,7 +8311,7 @@ private fun RoutePanelSummaryCard(
                         Text(
                             summary,
                             style = MaterialTheme.typography.labelSmall,
-                            color = Color.White.copy(alpha = 0.62f),
+                            color = Color.White.copy(alpha = state.selectedRouteSummaryAlpha),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -8319,20 +8319,33 @@ private fun RoutePanelSummaryCard(
                 }
                 TextButton(
                     onClick = onToggleDetailed,
-                    modifier = Modifier.width(58.dp).height(32.dp).focusable(),
-                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.width(state.toggleWidth).height(state.toggleHeight).focusable(),
+                    shape = RoundedCornerShape(state.toggleCornerRadius),
                     colors = ButtonDefaults.textButtonColors(
-                        containerColor = if (detailedMode) AnimeAccentCyan.copy(alpha = 0.16f) else Color.White.copy(alpha = 0.08f),
-                        contentColor = if (detailedMode) AnimeAccentCyan else Color.White.copy(alpha = 0.74f),
+                        containerColor = if (detailedMode) {
+                            sourceLibraryToneColor(state.toggleTone).copy(alpha = state.toggleActiveContainerAlpha)
+                        } else {
+                            Color.White.copy(alpha = state.toggleInactiveContainerAlpha)
+                        },
+                        contentColor = if (detailedMode) {
+                            sourceLibraryToneColor(state.toggleTone)
+                        } else {
+                            Color.White.copy(alpha = state.toggleInactiveContentAlpha)
+                        },
                     ),
                     contentPadding = PaddingValues(0.dp),
                 ) {
-                    Text(if (detailedMode) "简单" else "详细", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, maxLines = 1)
+                    Text(
+                        if (detailedMode) state.collapseToggleLabel else state.expandToggleLabel,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                    )
                 }
             }
             val metrics = if (detailedMode) state.detailedMetrics else state.compactMetrics
             if (metrics.isNotEmpty()) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(state.metricSpacing)) {
                     metrics.forEach { metric ->
                         RoutePanelMetricChip(metric)
                     }
@@ -8342,8 +8355,8 @@ private fun RoutePanelSummaryCard(
                 Text(
                     it,
                     style = MaterialTheme.typography.bodySmall,
-                    color = AnimeAccentAmber,
-                    maxLines = 2,
+                    color = sourceLibraryToneColor(state.noticeTone),
+                    maxLines = state.noticeMaxLines,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
@@ -8358,17 +8371,17 @@ private fun RoutePanelMetricChip(
     val color = sourceLibraryToneColor(metric.tone)
     Row(
         modifier = Modifier
-            .height(30.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color.Black.copy(alpha = 0.28f))
-            .padding(horizontal = 9.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+            .height(metric.height)
+            .clip(RoundedCornerShape(metric.cornerRadius))
+            .background(Color.Black.copy(alpha = metric.containerAlpha))
+            .padding(horizontal = metric.horizontalPadding),
+        horizontalArrangement = Arrangement.spacedBy(metric.spacing),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             metric.label,
             style = MaterialTheme.typography.labelSmall,
-            color = Color.White.copy(alpha = 0.7f),
+            color = Color.White.copy(alpha = metric.labelAlpha),
             maxLines = 1,
         )
         Text(
