@@ -2330,7 +2330,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.55")
+                setRequestProperty("User-Agent", "ZFBML/0.5.56")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2823,7 +2823,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.55",
+            version = "0.5.56",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -4764,11 +4764,7 @@ private fun RouteSourceSelector(
         LazyRow(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             items(groups) { group ->
                 RouteSourceFilterPill(
-                    title = group.name,
-                    subtitle = group.sourceSummary,
-                    badge = "${group.totalCount}线",
-                    selected = group.isFilterSelected,
-                    recommended = group.hasRecommended,
+                    group = group,
                     onClick = { onSelected(group.id) },
                 )
             }
@@ -4887,21 +4883,14 @@ private fun RouteSourceStatusPill(label: String, value: String, color: Color) {
 
 @Composable
 private fun RouteSourceFilterPill(
-    title: String,
-    subtitle: String,
-    badge: String,
-    selected: Boolean,
-    recommended: Boolean,
+    group: RouteSourceGroupUiState,
     onClick: () -> Unit,
 ) {
-    val accent = when {
-        recommended -> AnimeAccentPink
-        selected -> AnimeAccentCyan
-        else -> AnimeBorder
-    }
+    val accent = sourceLibraryToneColor(group.tone)
+    val emphasized = group.isFilterSelected || group.hasRecommended
     val contentColor = when {
-        selected -> Color.White
-        recommended -> Color.White.copy(alpha = 0.94f)
+        group.isFilterSelected -> Color.White
+        group.hasRecommended -> Color.White.copy(alpha = 0.94f)
         else -> Color.White.copy(alpha = 0.78f)
     }
     TextButton(
@@ -4910,13 +4899,13 @@ private fun RouteSourceFilterPill(
         shape = RoundedCornerShape(8.dp),
         colors = ButtonDefaults.textButtonColors(
             containerColor = when {
-                selected -> accent.copy(alpha = 0.18f)
-                recommended -> AnimeAccentPink.copy(alpha = 0.12f)
+                group.isFilterSelected -> accent.copy(alpha = 0.18f)
+                group.hasRecommended -> AnimeAccentPink.copy(alpha = 0.12f)
                 else -> Color.White.copy(alpha = 0.06f)
             },
             contentColor = contentColor,
         ),
-        border = BorderStroke(1.dp, if (selected || recommended) accent else AnimeBorder),
+        border = BorderStroke(1.dp, if (emphasized) accent else AnimeBorder),
         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
     ) {
         Column(
@@ -4925,54 +4914,39 @@ private fun RouteSourceFilterPill(
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = title,
+                    text = group.name,
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.labelLarge,
                     color = contentColor,
-                    fontWeight = if (selected || recommended) FontWeight.Bold else FontWeight.SemiBold,
+                    fontWeight = if (emphasized) FontWeight.Bold else FontWeight.SemiBold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = badge,
+                    text = group.routeCountLabel,
                     style = MaterialTheme.typography.labelSmall,
-                    color = if (selected || recommended) accent else AnimeMuted,
+                    color = if (emphasized) accent else AnimeMuted,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                 )
             }
             Text(
-                text = subtitle,
+                text = group.sourceSummary,
                 style = MaterialTheme.typography.labelSmall,
-                color = if (selected || recommended) accent else AnimeMuted,
+                color = if (emphasized) accent else AnimeMuted,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                if (recommended) {
-                    Text(
-                        text = "自动推荐",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = AnimeAccentPink,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                    )
-                }
-                if (selected) {
-                    Text(
-                        text = "当前方案",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = AnimeAccentCyan,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
-                    )
-                } else if (!recommended) {
-                    Text(
-                        text = "点按切换",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.White.copy(alpha = 0.58f),
-                        maxLines = 1,
-                    )
+                Text(
+                    text = group.footerLabel,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (emphasized) accent else Color.White.copy(alpha = 0.58f),
+                    fontWeight = if (emphasized) FontWeight.Bold else FontWeight.Medium,
+                    maxLines = 1,
+                )
+                if (!emphasized) {
+                    RouteStatusBadge(group.statusLabel, accent)
                 }
             }
         }
@@ -8273,26 +8247,20 @@ private fun PlayerRouteSourceChip(
     detailedMode: Boolean,
     onClick: () -> Unit,
 ) {
-    val accent = when {
-        group.isFilterSelected -> AnimeAccentCyan
-        group.hasSelected -> AnimeAccentCyan
-        group.hasRecommended -> AnimeAccentPink
-        group.onlineCount > 0 -> AnimeAccentGreen
-        group.btCount > 0 -> AnimeAccentAmber
-        else -> AnimeMuted
-    }
+    val accent = sourceLibraryToneColor(group.tone)
+    val emphasized = group.isFilterSelected || group.hasSelected || group.hasRecommended
     Card(
         onClick = onClick,
         modifier = Modifier.width(if (detailedMode) 152.dp else 132.dp).height(if (detailedMode) 74.dp else 46.dp),
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (group.isFilterSelected || group.hasSelected || group.hasRecommended) {
+            containerColor = if (emphasized) {
                 Color.White.copy(alpha = 0.08f)
             } else {
                 Color.White.copy(alpha = 0.045f)
             },
         ),
-        border = BorderStroke(1.dp, accent.copy(alpha = if (group.isFilterSelected || group.hasSelected || group.hasRecommended) 0.85f else 0.34f)),
+        border = BorderStroke(1.dp, accent.copy(alpha = if (emphasized) 0.85f else 0.34f)),
     ) {
         Column(
             modifier = Modifier.fillMaxSize().padding(10.dp),
@@ -8308,37 +8276,23 @@ private fun PlayerRouteSourceChip(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                when {
-                    group.isFilterSelected && group.isAll -> RouteStatusBadge("全部", AnimeAccentCyan)
-                    group.isFilterSelected -> RouteStatusBadge("已选", AnimeAccentCyan)
-                    group.hasSelected -> RouteStatusBadge("当前", AnimeAccentCyan)
-                    group.hasRecommended -> RouteStatusBadge("推荐", AnimeAccentPink)
-                }
+                RouteStatusBadge(group.statusLabel, accent)
             }
             if (detailedMode) {
                 Text(
-                    "${group.playableCount}/${group.totalCount} 可播 · ${group.onlineCount} 在线 · ${group.btCount} BT",
+                    group.detailSummary,
                     style = MaterialTheme.typography.labelSmall,
                     color = Color.White.copy(alpha = 0.66f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                if (group.failedCount > 0) {
-                    Text(
-                        "${group.failedCount} 条失败已降级",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.error,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                } else {
-                    Text(
-                        if (group.onlineCount > 0) "在线播放" else "备用来源",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = accent,
-                        maxLines = 1,
-                    )
-                }
+                Text(
+                    group.footerLabel,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (group.failedCount > 0 && !emphasized) MaterialTheme.colorScheme.error else accent,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
         }
     }

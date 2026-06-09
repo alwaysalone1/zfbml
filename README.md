@@ -25,6 +25,23 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.56
+
+中文：
+- `RouteSourceGroupUiState` 新增来源组状态标签、语义色、线路数标签、详细统计和底部动作文案。
+- 详情页播放方案筛选和播放器换源来源条改为消费同一来源组模型，已选、当前、推荐、全部来源和失败降级语义保持一致。
+- 来源筛选 UI 移除本地颜色/文案推导，后续详情页和播放器不会再各自维护一套来源状态分支。
+- 新增单元测试覆盖已选来源、推荐来源、全部来源、当前播放来源和详细统计文案。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.56`。
+
+English:
+
+- `RouteSourceGroupUiState` now exposes source-group status labels, semantic tone, route-count labels, detailed stats, and footer action copy.
+- Detail source filtering and the player route-source strip now consume the same source-group model, keeping selected, current, recommended, all-source, and failed-fallback semantics consistent.
+- Source-filter UI no longer derives local color/copy branches, avoiding separate source-state logic between detail and player surfaces.
+- Added unit coverage for selected sources, recommended sources, all sources, current playback sources, and detailed stats.
+- App version labels, request user agents, and README notes are now updated to `0.5.56`.
+
 ### v0.5.55
 
 中文：

@@ -420,6 +420,44 @@ internal data class RouteSourceGroupUiState(
             failedCount > 0 -> "${failedCount}条失败"
             else -> "待检测"
         }
+    val routeCountLabel: String
+        get() = "${totalCount}线"
+    val detailSummary: String
+        get() = "${playableCount}/${totalCount} 可播 · ${onlineCount} 在线 · ${btCount} BT"
+    val statusLabel: String
+        get() = when {
+            isFilterSelected && isAll -> "全部"
+            isFilterSelected -> "已选"
+            hasSelected -> "当前"
+            hasRecommended -> "推荐"
+            onlineCount > 0 -> "在线"
+            btCount > 0 -> "备用"
+            webOnlyCount > 0 -> "网页"
+            failedCount > 0 -> "失败"
+            else -> "待检"
+        }
+    val footerLabel: String
+        get() = when {
+            isFilterSelected && isAll -> "全部来源"
+            isFilterSelected -> "当前方案"
+            hasSelected -> "正在播放"
+            hasRecommended -> "自动推荐"
+            failedCount > 0 -> "${failedCount} 条失败已降级"
+            onlineCount > 0 -> "在线播放"
+            btCount > 0 -> "备用来源"
+            webOnlyCount > 0 -> "网页兜底"
+            else -> "待检测"
+        }
+    val tone: SourceLibraryTone
+        get() = when {
+            isFilterSelected || hasSelected -> SourceLibraryTone.Online
+            hasRecommended -> SourceLibraryTone.Primary
+            onlineCount > 0 -> SourceLibraryTone.Cache
+            btCount > 0 -> SourceLibraryTone.Backup
+            webOnlyCount > 0 -> SourceLibraryTone.Web
+            failedCount > 0 -> SourceLibraryTone.Web
+            else -> SourceLibraryTone.Muted
+        }
 }
 
 internal fun buildRouteUiState(

@@ -117,3 +117,5 @@ This pass upgrades the detail episode selector summary. `DetailEpisodeSummaryUiS
 This pass upgrades detail route candidate cards. `RouteCandidateUiState` now centralizes source identity, protocol, primary quality label, file size, playback status, cache capability, and action copy so online, BT, WebView fallback, and failed routes can share one tested display contract before the player route panel reuses it.
 
 This pass reuses `RouteCandidateUiState` in the player route panel. The fullscreen route switcher now shares detail-page route semantics and adds selected-route priority, so "current", "recommended", failed, BT fallback, and WebView fallback states stay consistent across pre-play and in-player switching.
+
+This pass upgrades route source grouping. `RouteSourceGroupUiState` now owns status labels, tone, route-count labels, detailed source stats, and footer copy so detail source filtering and the player route-source strip share one display contract for selected, current, recommended, all-source, and failed-fallback groups.
