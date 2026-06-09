@@ -1309,19 +1309,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.67",
+            version = "0.5.68",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.67", state.version)
+        assertEquals("0.5.68", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.67" })
+        assertTrue(state.chips.any { it.label == "v0.5.68" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1335,7 +1335,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.67",
+            version = "0.5.68",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,
@@ -1412,6 +1412,61 @@ class PlaybackUiModelsTest {
         assertEquals("当前条目没有可切换选集", state.summary)
         assertEquals("当前条目没有可切换选集", state.emptyText)
         assertEquals(listOf("正在看", "自动匹配"), state.chips.map { it.label })
+    }
+
+    @Test
+    fun portraitEpisodeRailUiStateWindowsEpisodesAndLoadingState() {
+        val episodes = (1..24).map { index -> episode(id = "ep-$index", index = index) }
+        val detail = MediaDetail(
+            providerId = "provider",
+            title = "Alpha",
+            url = "https://example.invalid/alpha",
+            episodes = episodes,
+        )
+
+        val state = buildPortraitEpisodeRailUiState(
+            detail = detail,
+            currentEpisode = episodes[9],
+            episodeLoadingId = "ep-11",
+            maxCount = 6,
+        )
+
+        assertTrue(state.visible)
+        assertEquals("选集", state.title)
+        assertEquals("全部 24 集", state.allEpisodesLabel)
+        assertEquals(listOf("ep-6", "ep-7", "ep-8", "ep-9", "ep-10", "ep-11"), state.items.map { it.episode.id })
+        assertEquals("10", state.items.first { it.episode.id == "ep-10" }.indexLabel)
+        assertTrue(state.items.first { it.episode.id == "ep-10" }.selected)
+        assertEquals(SourceLibraryTone.Online, state.items.first { it.episode.id == "ep-10" }.tone)
+        assertEquals("加载中", state.items.first { it.episode.id == "ep-11" }.title)
+        assertTrue(state.items.first { it.episode.id == "ep-11" }.loading)
+        assertEquals(SourceLibraryTone.Backup, state.items.first { it.episode.id == "ep-11" }.tone)
+        assertFalse(state.items.first { it.episode.id == "ep-6" }.enabled)
+        assertEquals("全部", checkNotNull(state.moreAction).title)
+        assertEquals("24集", checkNotNull(state.moreAction).subtitle)
+    }
+
+    @Test
+    fun portraitEpisodeRailUiStateHidesSingleEpisode() {
+        val onlyEpisode = episode(id = "ep-1", index = 1)
+        val detail = MediaDetail(
+            providerId = "provider",
+            title = "Single",
+            url = "https://example.invalid/single",
+            episodes = listOf(onlyEpisode),
+        )
+
+        val state = buildPortraitEpisodeRailUiState(
+            detail = detail,
+            currentEpisode = onlyEpisode,
+            episodeLoadingId = null,
+            maxCount = 6,
+        )
+
+        assertFalse(state.visible)
+        assertTrue(state.items.isEmpty())
+        assertNull(state.moreAction)
+        assertEquals("全部 1 集", state.allEpisodesLabel)
     }
 
     @Test

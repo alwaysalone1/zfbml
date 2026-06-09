@@ -25,6 +25,23 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.68
+
+中文：
+- 竖屏选集横栏新增 `PortraitEpisodeRailUiState`、`PortraitEpisodeRailItemUiState` 和 `PortraitEpisodeMoreActionUiState`，统一生成横栏标题、全部入口、可见集数窗口、集数卡片标签和更多入口。
+- `PortraitWatchInfoPanel` 不再在 Compose 内计算可见选集窗口、加载中文案、禁用态、选中态和 `02` / `SP` 集数标签，竖屏播放页继续向模型驱动播放器靠拢。
+- 选集切换中时，横栏卡片的加载、禁用和 tone 状态由模型层生成，UI 只负责颜色映射和点击路由。
+- 新增单元测试覆盖长列表窗口裁剪、加载中禁用态、更多入口，以及单集内容隐藏横栏的兜底。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.68`。
+
+English:
+
+- The portrait episode rail now has `PortraitEpisodeRailUiState`, `PortraitEpisodeRailItemUiState`, and `PortraitEpisodeMoreActionUiState` for the rail title, all-episodes entry, visible episode window, card labels, and more entry.
+- `PortraitWatchInfoPanel` no longer calculates visible episode windows, loading copy, disabled state, selection state, or `02` / `SP` labels inside Compose, moving portrait playback further toward model-driven player UI.
+- During episode switching, card loading, disabled, and tone state now come from the model layer, while UI only maps color and click routing.
+- Added unit coverage for long-list windowing, loading disabled state, the more entry, and the single-episode hidden rail fallback.
+- App version labels, request user agents, and README notes are now updated to `0.5.68`.
+
 ### v0.5.67
 
 中文：

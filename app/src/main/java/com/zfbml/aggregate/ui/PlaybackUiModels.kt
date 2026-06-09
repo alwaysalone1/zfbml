@@ -391,6 +391,30 @@ internal data class PortraitWatchActionUiState(
     val tone: SourceLibraryTone,
 )
 
+internal data class PortraitEpisodeRailUiState(
+    val visible: Boolean,
+    val title: String,
+    val allEpisodesLabel: String,
+    val items: List<PortraitEpisodeRailItemUiState>,
+    val moreAction: PortraitEpisodeMoreActionUiState?,
+)
+
+internal data class PortraitEpisodeRailItemUiState(
+    val episode: Episode,
+    val indexLabel: String,
+    val title: String,
+    val selected: Boolean,
+    val loading: Boolean,
+    val enabled: Boolean,
+    val tone: SourceLibraryTone,
+)
+
+internal data class PortraitEpisodeMoreActionUiState(
+    val title: String,
+    val subtitle: String,
+    val count: Int,
+)
+
 internal data class PlayerActionBarUiState(
     val actions: List<PlayerActionUiState>,
 )
@@ -2576,6 +2600,67 @@ internal fun buildPortraitWatchInfoUiState(
         actions = actions,
         diagnostic = diagnostic,
     )
+}
+
+internal fun buildPortraitEpisodeRailUiState(
+    detail: MediaDetail,
+    currentEpisode: Episode,
+    episodeLoadingId: String?,
+    maxCount: Int = 18,
+): PortraitEpisodeRailUiState {
+    val episodes = detail.episodes
+    val visible = episodes.size > 1
+    val visibleEpisodes = if (visible) {
+        portraitEpisodeWindowForUi(episodes, currentEpisode, maxCount)
+    } else {
+        emptyList()
+    }
+    val items = visibleEpisodes.map { episode ->
+        val loading = episode.id == episodeLoadingId
+        val selected = episode.id == currentEpisode.id
+        val enabled = episodeLoadingId == null || loading
+        PortraitEpisodeRailItemUiState(
+            episode = episode,
+            indexLabel = episode.index?.let { "%02d".format(it) } ?: "SP",
+            title = if (loading) "加载中" else episode.title.ifBlank { episodeTitleForPlayer(episode) },
+            selected = selected,
+            loading = loading,
+            enabled = enabled,
+            tone = when {
+                loading -> SourceLibraryTone.Backup
+                selected -> SourceLibraryTone.Online
+                enabled -> SourceLibraryTone.Muted
+                else -> SourceLibraryTone.Muted
+            },
+        )
+    }
+    return PortraitEpisodeRailUiState(
+        visible = visible,
+        title = "选集",
+        allEpisodesLabel = "全部 ${episodes.size} 集",
+        items = items,
+        moreAction = if (visible && episodes.size > visibleEpisodes.size) {
+            PortraitEpisodeMoreActionUiState(
+                title = "全部",
+                subtitle = "${episodes.size}集",
+                count = episodes.size,
+            )
+        } else {
+            null
+        },
+    )
+}
+
+private fun portraitEpisodeWindowForUi(
+    episodes: List<Episode>,
+    currentEpisode: Episode,
+    maxCount: Int,
+): List<Episode> {
+    if (episodes.size <= maxCount) return episodes
+    val currentIndex = episodes.indexOfFirst { it.id == currentEpisode.id }
+    if (currentIndex < 0) return episodes.take(maxCount)
+    val start = (currentIndex - 4).coerceIn(0, episodes.size - maxCount)
+    return episodes.subList(start, start + maxCount).toList()
 }
 
 private fun playerSourceStatusValueForUi(

@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.67")
+                setRequestProperty("User-Agent", "ZFBML/0.5.68")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2855,7 +2855,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.67",
+            version = "0.5.68",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -5820,8 +5820,13 @@ private fun PortraitWatchInfoPanel(
             hasPlaybackIssue = hasPlaybackIssue,
         )
     }
-    val visibleEpisodes = remember(detail.episodes, episode.id) {
-        portraitEpisodeWindow(detail.episodes, episode, maxCount = 18)
+    val episodeRailState = remember(detail, episode.id, episodeLoadingId) {
+        buildPortraitEpisodeRailUiState(
+            detail = detail,
+            currentEpisode = episode,
+            episodeLoadingId = episodeLoadingId,
+            maxCount = 18,
+        )
     }
     LazyColumn(
         modifier = modifier.fillMaxWidth().background(AnimeBackground),
@@ -5957,57 +5962,63 @@ private fun PortraitWatchInfoPanel(
                 }
             }
         }
-        if (detail.episodes.size > 1) {
+        if (episodeRailState.visible) {
             item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text("选集", style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold)
+                    Text(episodeRailState.title, style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold)
                     TextButton(onClick = { onShowPanel(PlayerPanel.Episode) }) {
-                        Text("全部 ${detail.episodes.size} 集", color = AnimeAccentCyan)
+                        Text(episodeRailState.allEpisodesLabel, color = AnimeAccentCyan)
                     }
                 }
             }
             item {
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    items(visibleEpisodes, key = { it.id }) { item ->
-                        val selected = item.id == episode.id
-                        val loading = episodeLoadingId == item.id
+                    items(episodeRailState.items, key = { it.episode.id }) { railItem ->
+                        val accent = sourceLibraryToneColor(railItem.tone)
                         Card(
-                            onClick = { onEpisodeSelected(item) },
-                            enabled = episodeLoadingId == null || loading,
+                            onClick = { onEpisodeSelected(railItem.episode) },
+                            enabled = railItem.enabled,
                             modifier = Modifier.width(82.dp).height(48.dp).focusable(),
                             shape = RoundedCornerShape(8.dp),
-                            colors = CardDefaults.cardColors(containerColor = if (selected) AnimePanelSoft else AnimePanel),
-                            border = BorderStroke(1.dp, if (selected) AnimeAccentCyan else AnimeBorder),
+                            colors = CardDefaults.cardColors(containerColor = if (railItem.selected) AnimePanelSoft else AnimePanel),
+                            border = BorderStroke(
+                                1.dp,
+                                if (railItem.selected || railItem.loading) accent else AnimeBorder,
+                            ),
                         ) {
                             Column(
                                 modifier = Modifier.fillMaxSize().padding(horizontal = 9.dp, vertical = 7.dp),
                                 verticalArrangement = Arrangement.SpaceBetween,
                             ) {
                                 Text(
-                                    text = item.index?.let { "%02d".format(it) } ?: "SP",
+                                    text = railItem.indexLabel,
                                     style = MaterialTheme.typography.labelLarge,
-                                    color = if (selected) AnimeAccentCyan else Color.White,
+                                    color = if (railItem.selected || railItem.loading) accent else Color.White,
                                     fontWeight = FontWeight.Bold,
                                     maxLines = 1,
                                 )
                                 Text(
-                                    text = if (loading) "加载中" else item.title,
+                                    text = railItem.title,
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = if (selected) Color.White else AnimeMuted,
+                                    color = when {
+                                        railItem.selected -> Color.White
+                                        railItem.loading -> accent
+                                        else -> AnimeMuted
+                                    },
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                 )
                             }
                         }
                     }
-                    if (detail.episodes.size > visibleEpisodes.size) {
+                    episodeRailState.moreAction?.let { moreAction ->
                         item {
                             PortraitEpisodeMoreCard(
-                                count = detail.episodes.size,
+                                state = moreAction,
                                 onClick = { onShowPanel(PlayerPanel.Episode) },
                             )
                         }
@@ -6028,18 +6039,6 @@ private fun PortraitWatchInfoPanel(
             }
         }
     }
-}
-
-private fun portraitEpisodeWindow(
-    episodes: List<Episode>,
-    currentEpisode: Episode,
-    maxCount: Int,
-): List<Episode> {
-    if (episodes.size <= maxCount) return episodes
-    val currentIndex = episodes.indexOfFirst { it.id == currentEpisode.id }
-    if (currentIndex < 0) return episodes.take(maxCount)
-    val start = (currentIndex - 4).coerceIn(0, episodes.size - maxCount)
-    return episodes.subList(start, start + maxCount).toList()
 }
 
 @Composable
@@ -6089,7 +6088,7 @@ private fun PortraitPlaybackAction(
 }
 
 @Composable
-private fun PortraitEpisodeMoreCard(count: Int, onClick: () -> Unit) {
+private fun PortraitEpisodeMoreCard(state: PortraitEpisodeMoreActionUiState, onClick: () -> Unit) {
     Card(
         onClick = onClick,
         modifier = Modifier.width(72.dp).height(48.dp).focusable(),
@@ -6102,8 +6101,8 @@ private fun PortraitEpisodeMoreCard(count: Int, onClick: () -> Unit) {
             verticalArrangement = Arrangement.SpaceBetween,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text("全部", style = MaterialTheme.typography.labelLarge, color = AnimeAccentCyan, fontWeight = FontWeight.Bold, maxLines = 1)
-            Text("${count}集", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.78f), maxLines = 1)
+            Text(state.title, style = MaterialTheme.typography.labelLarge, color = AnimeAccentCyan, fontWeight = FontWeight.Bold, maxLines = 1)
+            Text(state.subtitle, style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.78f), maxLines = 1)
         }
     }
 }

@@ -141,3 +141,5 @@ This pass upgrades the player bottom action bar. `PlayerActionBarUiState`, `Play
 This pass upgrades player notices and route status. `PlayerNoticeUiState` and `PlayerRouteStatusUiState` now own playback-error priority, route-switch notice priority, fallback titles, semantic tones, and route-status labels so compact top notices, the top route pill, and fullscreen bottom notices share one tested notification contract instead of duplicating Compose branching.
 
 This pass upgrades the portrait watch info panel. `PortraitWatchInfoUiState` and `PortraitWatchActionUiState` now own the visible title, current-episode label, meta chips, playback summary, panel actions, and diagnostic notice so portrait playback uses the same model-driven contract as fullscreen player controls.
+
+This pass upgrades the portrait episode rail. `PortraitEpisodeRailUiState`, `PortraitEpisodeRailItemUiState`, and `PortraitEpisodeMoreActionUiState` now own visible episode windowing, compact episode labels, loading/disabled state, and the all-episodes entry so portrait playback episode switching no longer keeps player-state logic in Compose.
