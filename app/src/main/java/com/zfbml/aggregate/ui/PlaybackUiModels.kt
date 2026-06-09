@@ -394,6 +394,20 @@ internal data class PlayerQualityOptionUiState(
     val tone: SourceLibraryTone,
 )
 
+internal data class PlayerSpeedPanelUiState(
+    val summary: String,
+    val options: List<PlayerSpeedOptionUiState>,
+)
+
+internal data class PlayerSpeedOptionUiState(
+    val speed: Float,
+    val title: String,
+    val subtitle: String?,
+    val selected: Boolean,
+    val actionLabel: String,
+    val tone: SourceLibraryTone,
+)
+
 internal data class PlayerDanmakuSafeAreaUiState(
     val topInsetDp: Int,
     val bottomInsetDp: Int,
@@ -1943,6 +1957,42 @@ internal fun routeQualityLabelForUi(route: RouteCandidate): String {
     } else {
         quality
     }
+}
+
+internal fun buildPlayerSpeedPanelUiState(
+    playbackSpeed: Float,
+    speeds: List<Float> = defaultPlayerSpeedOptions,
+): PlayerSpeedPanelUiState {
+    val options = speeds.distinct().sorted().map { speed ->
+        val selected = playbackSpeed.nearlyEquals(speed)
+        PlayerSpeedOptionUiState(
+            speed = speed,
+            title = formatPlaybackSpeedForUi(speed),
+            subtitle = when {
+                speed.nearlyEquals(1f) -> "标准速度"
+                speed < 1f -> "慢速回看"
+                else -> "快速播放"
+            },
+            selected = selected,
+            actionLabel = if (selected) "使用中" else "切换",
+            tone = if (selected) SourceLibraryTone.Primary else SourceLibraryTone.Online,
+        )
+    }
+    return PlayerSpeedPanelUiState(
+        summary = "当前 ${formatPlaybackSpeedForUi(playbackSpeed)} · ${options.size} 档可选",
+        options = options,
+    )
+}
+
+internal fun formatPlaybackSpeedForUi(speed: Float): String {
+    val number = "%.2f".format(speed).trimEnd('0').trimEnd('.')
+    return "${if (number.contains(".")) number else "$number.0"}x"
+}
+
+private val defaultPlayerSpeedOptions = listOf(0.5f, 0.75f, 1f, 1.25f, 1.5f, 2f)
+
+private fun Float.nearlyEquals(other: Float): Boolean {
+    return kotlin.math.abs(this - other) < 0.001f
 }
 
 internal fun formatDanmakuDensityForUi(density: Float): String {

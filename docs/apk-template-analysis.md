@@ -127,3 +127,5 @@ This pass upgrades the player episode panel. `PlayerEpisodePanelUiState` and `Pl
 This pass upgrades the player danmaku settings panel. `PlayerDanmakuSettingsUiState` now owns toggle copy, density/alpha/font labels, semantic tone, and safe-area summary so danmaku controls and anti-obstruction feedback share the same model-driven language as the player route and episode panels.
 
 This pass upgrades the player quality panel. `PlayerQualityPanelUiState` and `PlayerQualityOptionUiState` now own quality buckets, current-quality selection, source subtitle, action copy, empty state, and normalized auto-quality labels so quality switching follows the same tested model contract as routes, episodes, and danmaku settings.
+
+This pass upgrades the player speed panel. `PlayerSpeedPanelUiState` and `PlayerSpeedOptionUiState` now own speed formatting, sorted option buckets, current-speed selection, helper copy, and action labels so playback speed switching follows the same model-driven panel contract as quality, route, episode, and danmaku controls.

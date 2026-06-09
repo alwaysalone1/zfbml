@@ -1308,19 +1308,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.60",
+            version = "0.5.61",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.60", state.version)
+        assertEquals("0.5.61", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.60" })
+        assertTrue(state.chips.any { it.label == "v0.5.61" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1334,7 +1334,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.60",
+            version = "0.5.61",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,
@@ -1579,6 +1579,25 @@ class PlaybackUiModelsTest {
         assertFalse(empty.hasOptions)
         assertEquals("当前播放源没有提供可切换清晰度", empty.emptyText)
         assertEquals("当前播放源没有提供可切换清晰度", empty.summary)
+    }
+
+    @Test
+    fun playerSpeedPanelUiStateFormatsOptionsAndSelection() {
+        val state = buildPlayerSpeedPanelUiState(
+            playbackSpeed = 1.25f,
+            speeds = listOf(2f, 1f, 0.5f, 1.25f, 1f),
+        )
+
+        assertEquals("当前 1.25x · 4 档可选", state.summary)
+        assertEquals(listOf(0.5f, 1f, 1.25f, 2f), state.options.map { it.speed })
+        assertEquals(listOf("0.5x", "1.0x", "1.25x", "2.0x"), state.options.map { it.title })
+        assertEquals("慢速回看", state.options.first { it.speed == 0.5f }.subtitle)
+        assertEquals("标准速度", state.options.first { it.speed == 1f }.subtitle)
+        assertEquals("快速播放", state.options.first { it.speed == 2f }.subtitle)
+        assertTrue(state.options.first { it.speed == 1.25f }.selected)
+        assertEquals("使用中", state.options.first { it.speed == 1.25f }.actionLabel)
+        assertEquals(SourceLibraryTone.Primary, state.options.first { it.speed == 1.25f }.tone)
+        assertEquals("切换", state.options.first { it.speed == 2f }.actionLabel)
     }
 
     @Test

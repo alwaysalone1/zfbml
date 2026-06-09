@@ -2330,7 +2330,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.60")
+                setRequestProperty("User-Agent", "ZFBML/0.5.61")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2823,7 +2823,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.60",
+            version = "0.5.61",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -8106,15 +8106,27 @@ private fun PlayerSpeedPanel(
     playbackSpeed: Float,
     onSpeedSelected: (Float) -> Unit,
 ) {
-    val speeds = listOf(0.5f, 0.75f, 1f, 1.25f, 1.5f, 2f)
+    val state = remember(playbackSpeed) {
+        buildPlayerSpeedPanelUiState(playbackSpeed)
+    }
     LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        items(speeds) { speed ->
+        item {
+            Text(
+                state.summary,
+                style = MaterialTheme.typography.labelMedium,
+                color = AnimeMuted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        items(state.options) { option ->
             PlayerSelectableRow(
-                title = formatPlaybackSpeed(speed),
-                subtitle = if (speed == 1f) "标准速度" else null,
-                selected = speed == playbackSpeed,
+                title = option.title,
+                subtitle = option.subtitle,
+                selected = option.selected,
                 icon = Icons.Filled.Speed,
-                onClick = { onSpeedSelected(speed) },
+                trailing = option.actionLabel,
+                onClick = { onSpeedSelected(option.speed) },
             )
         }
     }
@@ -9170,8 +9182,7 @@ private fun formatDanmakuDensity(density: Float): String {
 }
 
 private fun formatPlaybackSpeed(speed: Float): String {
-    val number = "%.2f".format(speed).trimEnd('0').trimEnd('.')
-    return "${if (number.contains(".")) number else "$number.0"}x"
+    return formatPlaybackSpeedForUi(speed)
 }
 
 private fun formatPercentLabel(value: Float): String {

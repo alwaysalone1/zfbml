@@ -25,6 +25,23 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.61
+
+中文：
+- 播放器倍速面板新增 `PlayerSpeedPanelUiState` 和 `PlayerSpeedOptionUiState`，统一生成当前倍速摘要、可选档位、说明和动作文案。
+- 倍速面板改为消费模型字段，`标准速度`、`慢速回看`、`快速播放`、`使用中/切换` 不再散在 Compose 里。
+- 倍速格式化新增 `formatPlaybackSpeedForUi`，顶部状态、面板和更多菜单继续共享同一显示格式。
+- 新增单元测试覆盖倍速列表去重排序、当前倍速选中、说明文案和动作语义。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.61`。
+
+English:
+
+- The player speed panel now has `PlayerSpeedPanelUiState` and `PlayerSpeedOptionUiState` for current-speed summary, available options, helper copy, and action labels.
+- The speed panel now renders model fields, keeping standard/slow/fast labels and use/switch copy out of Compose.
+- `formatPlaybackSpeedForUi` centralizes speed formatting for top status, panels, and more-menu copy.
+- Added unit coverage for de-duplicated sorted speed options, selected speed, helper copy, and action semantics.
+- App version labels, request user agents, and README notes are now updated to `0.5.61`.
+
 ### v0.5.60
 
 中文：
