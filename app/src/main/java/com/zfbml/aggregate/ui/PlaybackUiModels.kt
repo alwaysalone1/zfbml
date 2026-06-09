@@ -428,6 +428,16 @@ internal data class PortraitRecoveryActionsUiState(
     val actions: List<PlayerActionUiState>,
 )
 
+internal data class PortraitRouteInsightUiState(
+    val chips: List<PortraitRouteInsightChipUiState>,
+)
+
+internal data class PortraitRouteInsightChipUiState(
+    val label: String,
+    val value: String,
+    val tone: SourceLibraryTone,
+)
+
 internal data class PlayerActionBarUiState(
     val actions: List<PlayerActionUiState>,
 )
@@ -2755,6 +2765,36 @@ internal fun buildPortraitRecoveryActionsUiState(
             ),
         ),
     )
+}
+
+internal fun buildPortraitRouteInsightUiState(
+    routes: List<RouteCandidate>,
+    stream: MediaStream,
+): PortraitRouteInsightUiState {
+    val routeCoverageLabel = if (routes.isNotEmpty()) playerRouteCoverageLabel(routes) else "单线"
+    val onlineRoutes = routes.filter { it.protocol != StreamProtocol.BITTORRENT && it.protocol != StreamProtocol.WEBVIEW_ONLY }
+    val btRoutes = routes.filter { it.protocol == StreamProtocol.BITTORRENT }
+    val currentLabel = stream.quality?.takeIf { it.isNotBlank() } ?: stream.protocol.uiProtocolName()
+    return PortraitRouteInsightUiState(
+        chips = listOf(
+            PortraitRouteInsightChipUiState("覆盖", routeCoverageLabel, SourceLibraryTone.Online),
+            PortraitRouteInsightChipUiState("在线", portraitRouteInsightCountLabel(onlineRoutes) ?: "待匹配", SourceLibraryTone.Primary),
+            PortraitRouteInsightChipUiState("备用", portraitRouteInsightCountLabel(btRoutes) ?: "自动", SourceLibraryTone.Backup),
+            PortraitRouteInsightChipUiState("当前", currentLabel, SourceLibraryTone.Cache),
+        ),
+    )
+}
+
+private fun portraitRouteInsightCountLabel(routes: List<RouteCandidate>): String? {
+    if (routes.isEmpty()) return null
+    val sourceCount = routes.map { it.sourceId }.distinct().size
+    val routeCount = routes.distinctBy { it.stream.id }.size
+    return when {
+        sourceCount > 1 && routeCount > sourceCount -> "${sourceCount}源 · ${routeCount}线"
+        sourceCount > 1 -> "${sourceCount}源"
+        routeCount > 1 -> "${routeCount}线"
+        else -> "单线"
+    }
 }
 
 private fun playerSourceStatusValueForUi(

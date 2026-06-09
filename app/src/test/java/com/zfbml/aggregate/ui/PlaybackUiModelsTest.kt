@@ -1309,19 +1309,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.70",
+            version = "0.5.71",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.70", state.version)
+        assertEquals("0.5.71", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.70" })
+        assertTrue(state.chips.any { it.label == "v0.5.71" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1335,7 +1335,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.70",
+            version = "0.5.71",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,
@@ -2049,6 +2049,74 @@ class PlaybackUiModelsTest {
         assertFalse(noFallback.actions[1].enabled)
         assertEquals("无", noFallback.actions[1].value)
         assertEquals(SourceLibraryTone.Muted, noFallback.actions[1].tone)
+    }
+
+    @Test
+    fun portraitRouteInsightUiStateSummarizesCoverageAndCurrentRoute() {
+        val onlineA = route(
+            id = "hls-a",
+            protocol = StreamProtocol.HLS,
+            score = 600,
+            quality = "1080p",
+            sourceId = "online-a",
+            sourceName = "Online A",
+        )
+        val onlineB = route(
+            id = "hls-b",
+            protocol = StreamProtocol.HLS,
+            score = 500,
+            quality = "720p",
+            sourceId = "online-b",
+            sourceName = "Online B",
+        )
+        val onlineBBackup = route(
+            id = "mp4-b",
+            protocol = StreamProtocol.PROGRESSIVE,
+            score = 400,
+            quality = "480p",
+            sourceId = "online-b",
+            sourceName = "Online B",
+        )
+        val bt = route(
+            id = "bt",
+            protocol = StreamProtocol.BITTORRENT,
+            score = 300,
+            quality = "1080p",
+            sourceId = "bt",
+            sourceName = "BT",
+        )
+
+        val state = buildPortraitRouteInsightUiState(
+            routes = listOf(onlineA, onlineB, onlineBBackup, bt),
+            stream = onlineB.stream,
+        )
+
+        assertEquals(listOf("覆盖", "在线", "备用", "当前"), state.chips.map { it.label })
+        assertEquals("3源 · 4线", state.chips.first { it.label == "覆盖" }.value)
+        assertEquals("2源 · 3线", state.chips.first { it.label == "在线" }.value)
+        assertEquals("单线", state.chips.first { it.label == "备用" }.value)
+        assertEquals("720p", state.chips.first { it.label == "当前" }.value)
+        assertEquals(SourceLibraryTone.Online, state.chips.first { it.label == "覆盖" }.tone)
+        assertEquals(SourceLibraryTone.Primary, state.chips.first { it.label == "在线" }.tone)
+        assertEquals(SourceLibraryTone.Backup, state.chips.first { it.label == "备用" }.tone)
+        assertEquals(SourceLibraryTone.Cache, state.chips.first { it.label == "当前" }.tone)
+    }
+
+    @Test
+    fun portraitRouteInsightUiStateFallsBackForEmptyRoutes() {
+        val stream = MediaStream(
+            id = "dash",
+            providerId = "provider",
+            url = "https://example.invalid/manifest.mpd",
+            protocol = StreamProtocol.DASH,
+        )
+
+        val state = buildPortraitRouteInsightUiState(routes = emptyList(), stream = stream)
+
+        assertEquals("单线", state.chips.first { it.label == "覆盖" }.value)
+        assertEquals("待匹配", state.chips.first { it.label == "在线" }.value)
+        assertEquals("自动", state.chips.first { it.label == "备用" }.value)
+        assertEquals("DASH", state.chips.first { it.label == "当前" }.value)
     }
 
     @Test

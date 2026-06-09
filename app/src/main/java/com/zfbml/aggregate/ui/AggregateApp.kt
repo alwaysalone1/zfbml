@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.70")
+                setRequestProperty("User-Agent", "ZFBML/0.5.71")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2855,7 +2855,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.70",
+            version = "0.5.71",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -6130,45 +6130,24 @@ private fun PortraitRouteInsightRow(
     stream: MediaStream,
     modifier: Modifier = Modifier,
 ) {
-    val routeCoverageLabel = if (routes.isNotEmpty()) playerRouteCoverageLabel(routes) else "单线"
-    val onlineRoutes = routes.filter { it.protocol != StreamProtocol.BITTORRENT && it.protocol != StreamProtocol.WEBVIEW_ONLY }
-    val btRoutes = routes.filter { it.protocol == StreamProtocol.BITTORRENT }
-    val onlineValue = routeInsightCountLabel(onlineRoutes)
-    val btValue = routeInsightCountLabel(btRoutes)
-    val currentLabel = stream.quality?.takeIf { it.isNotBlank() } ?: stream.protocol.displayName()
-    val chips = listOf(
-        Triple("覆盖", routeCoverageLabel, AnimeAccentCyan),
-        Triple("在线", onlineValue ?: "待匹配", AnimeAccentPink),
-        Triple("备用", btValue ?: "自动", AnimeAccentAmber),
-        Triple("当前", currentLabel, AnimeAccentGreen),
-    )
+    val state = remember(routes, stream) {
+        buildPortraitRouteInsightUiState(routes = routes, stream = stream)
+    }
 
     LazyRow(
         modifier = modifier.height(31.dp),
         horizontalArrangement = Arrangement.spacedBy(7.dp),
         contentPadding = PaddingValues(end = 2.dp),
     ) {
-        items(chips.size) { index ->
-            val (label, value, color) = chips[index]
-            PortraitRouteInsightChip(label = label, value = value, color = color)
+        items(state.chips, key = { it.label }) { chip ->
+            PortraitRouteInsightChip(chip = chip)
         }
     }
 }
 
-private fun routeInsightCountLabel(routes: List<RouteCandidate>): String? {
-    if (routes.isEmpty()) return null
-    val sourceCount = routes.map { it.sourceId }.distinct().size
-    val routeCount = routes.distinctBy { it.stream.id }.size
-    return when {
-        sourceCount > 1 && routeCount > sourceCount -> "${sourceCount}源 · ${routeCount}线"
-        sourceCount > 1 -> "${sourceCount}源"
-        routeCount > 1 -> "${routeCount}线"
-        else -> "单线"
-    }
-}
-
 @Composable
-private fun PortraitRouteInsightChip(label: String, value: String, color: Color) {
+private fun PortraitRouteInsightChip(chip: PortraitRouteInsightChipUiState) {
+    val color = sourceLibraryToneColor(chip.tone)
     Row(
         modifier = Modifier
             .height(30.dp)
@@ -6178,9 +6157,9 @@ private fun PortraitRouteInsightChip(label: String, value: String, color: Color)
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, style = MaterialTheme.typography.labelSmall, color = color, maxLines = 1)
+        Text(chip.label, style = MaterialTheme.typography.labelSmall, color = color, maxLines = 1)
         Text(
-            text = value,
+            text = chip.value,
             style = MaterialTheme.typography.labelSmall,
             color = Color.White.copy(alpha = 0.86f),
             maxLines = 1,

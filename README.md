@@ -25,6 +25,23 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.71
+
+中文：
+- 竖屏线路洞察新增 `PortraitRouteInsightUiState` 和 `PortraitRouteInsightChipUiState`，统一生成覆盖、在线、备用和当前线路 chips。
+- `PortraitRouteInsightRow` 不再在 Compose 内统计在线源、BT 备用、线路覆盖和当前协议/清晰度，UI 只负责横向排版和 tone 颜色映射。
+- 空线路、待匹配、自动备用和当前协议兜底现在由模型层统一处理，竖屏诊断区域与全屏线路状态继续共享同一线路语义。
+- 新增单元测试覆盖多源多线路统计、BT 备用、当前清晰度、空线路和 DASH 协议兜底。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.71`。
+
+English:
+
+- The portrait route insight row now has `PortraitRouteInsightUiState` and `PortraitRouteInsightChipUiState` for coverage, online, backup, and current-route chips.
+- `PortraitRouteInsightRow` no longer counts online sources, BT fallback routes, route coverage, or current protocol/quality inside Compose; UI only handles horizontal layout and tone-to-color mapping.
+- Empty routes, pending match, automatic backup fallback, and current protocol fallback now come from the model layer, keeping portrait diagnostics aligned with fullscreen route semantics.
+- Added unit coverage for multi-source/multi-route counts, BT fallback, current quality, empty routes, and DASH protocol fallback.
+- App version labels, request user agents, and README notes are now updated to `0.5.71`.
+
 ### v0.5.70
 
 中文：
