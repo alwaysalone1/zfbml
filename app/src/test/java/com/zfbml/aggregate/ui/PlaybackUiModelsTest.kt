@@ -1,5 +1,6 @@
 package com.zfbml.aggregate.ui
 
+import androidx.compose.ui.unit.dp
 import com.zfbml.aggregate.source.Episode
 import com.zfbml.aggregate.source.DownloadPolicy
 import com.zfbml.aggregate.source.MediaDetail
@@ -1792,19 +1793,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.92",
+            version = "0.5.93",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.92", state.version)
+        assertEquals("0.5.93", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.92" })
+        assertTrue(state.chips.any { it.label == "v0.5.93" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1818,7 +1819,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.92",
+            version = "0.5.93",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,
@@ -2450,6 +2451,38 @@ class PlaybackUiModelsTest {
         assertFalse(danmakuTab.usesVisualTone)
         assertEquals(0.72f, danmakuTab.contentAlpha)
         assertEquals(0.76f, danmakuTab.valueAlpha)
+    }
+
+    @Test
+    fun playerPanelShellUiStateAdaptsLandscapeAndPortraitConstraints() {
+        val narrowLandscape = buildPlayerPanelShellUiState(maxWidth = 600.dp, maxHeight = 360.dp)
+        val wideLandscape = buildPlayerPanelShellUiState(maxWidth = 960.dp, maxHeight = 540.dp)
+        val portrait = buildPlayerPanelShellUiState(maxWidth = 360.dp, maxHeight = 640.dp)
+        val compactPortrait = buildPlayerPanelShellUiState(maxWidth = 360.dp, maxHeight = 400.dp)
+
+        assertTrue(narrowLandscape.landscape)
+        assertEquals(600.dp * 0.54f, narrowLandscape.panelWidth)
+        assertEquals(0.14f, narrowLandscape.scrimAlpha)
+        assertEquals(10.dp, narrowLandscape.landscapeEndPadding)
+        assertEquals(14.dp, narrowLandscape.landscapeTopPadding)
+        assertEquals(8.dp, narrowLandscape.bottomStartRadius)
+        assertEquals(8.dp, narrowLandscape.bottomEndRadius)
+        assertEquals(392.dp, wideLandscape.panelWidth)
+        assertFalse(portrait.landscape)
+        assertEquals(360.dp, portrait.panelWidth)
+        assertEquals(640.dp * 0.58f, portrait.portraitPanelHeight)
+        assertEquals(320.dp, portrait.portraitPanelMinHeight)
+        assertEquals(0.32f, portrait.scrimAlpha)
+        assertEquals(8.dp, portrait.topStartRadius)
+        assertEquals(8.dp, portrait.topEndRadius)
+        assertEquals(0.dp, portrait.bottomStartRadius)
+        assertEquals(0.dp, portrait.bottomEndRadius)
+        assertEquals(400.dp * 0.72f, compactPortrait.portraitPanelHeight)
+        assertEquals(400.dp * 0.66f, compactPortrait.portraitPanelMinHeight)
+        assertEquals(0xF217171C.toInt(), portrait.surfaceColorArgb)
+        assertEquals(0.08f, portrait.borderAlpha)
+        assertEquals(16.dp, portrait.contentPadding)
+        assertEquals(12.dp, portrait.contentSpacing)
     }
 
     @Test

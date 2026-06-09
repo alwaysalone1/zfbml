@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.93
+
+English:
+
+- Player option-panel shell layout now uses `PlayerPanelShellUiState` for landscape/portrait sizing, scrim alpha, panel surface color, border alpha, content spacing, and corner radii.
+- `PlayerOptionPanel` now renders those shell fields instead of deriving panel width, height, shape, scrim, padding, and spacing locally in Compose.
+- Added unit coverage for landscape, compact landscape, portrait, and compact portrait shell layout parameters.
+- App version labels, request user agents, and README notes are now updated to `0.5.93`.
+
 ### v0.5.92
 
 English:

@@ -1,5 +1,7 @@
 package com.zfbml.aggregate.ui
 
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import com.zfbml.aggregate.source.Episode
 import com.zfbml.aggregate.source.DownloadPolicy
 import com.zfbml.aggregate.source.MediaDetail
@@ -724,6 +726,25 @@ internal data class PlayerPanelSheetUiState(
     val dismissLabelAlpha: Float,
     val context: PlayerPanelContextUiState,
     val tabs: List<PlayerPanelTabUiState>,
+)
+
+internal data class PlayerPanelShellUiState(
+    val landscape: Boolean,
+    val panelWidth: Dp,
+    val portraitPanelHeight: Dp,
+    val portraitPanelMinHeight: Dp,
+    val landscapeEndPadding: Dp,
+    val landscapeTopPadding: Dp,
+    val landscapeBottomPadding: Dp,
+    val scrimAlpha: Float,
+    val surfaceColorArgb: Int,
+    val borderAlpha: Float,
+    val contentPadding: Dp,
+    val contentSpacing: Dp,
+    val topStartRadius: Dp,
+    val topEndRadius: Dp,
+    val bottomStartRadius: Dp,
+    val bottomEndRadius: Dp,
 )
 
 internal data class PlayerPanelContextUiState(
@@ -3169,6 +3190,45 @@ internal fun buildPlayerPanelSheetUiState(
                 tone = SourceLibraryTone.Muted,
             ),
         ),
+    )
+}
+
+internal fun buildPlayerPanelShellUiState(
+    maxWidth: Dp,
+    maxHeight: Dp,
+): PlayerPanelShellUiState {
+    val landscape = maxWidth > maxHeight
+    val panelWidth = when {
+        !landscape -> maxWidth
+        maxWidth < 680.dp -> maxWidth * 0.54f
+        else -> 392.dp
+    }
+    val portraitPanelHeight = when {
+        maxHeight < 620.dp -> maxHeight * 0.72f
+        else -> maxHeight * 0.58f
+    }
+    val portraitPanelMinHeight = when {
+        maxHeight < 420.dp -> maxHeight * 0.66f
+        maxHeight < 520.dp -> 260.dp
+        else -> 320.dp
+    }
+    return PlayerPanelShellUiState(
+        landscape = landscape,
+        panelWidth = panelWidth,
+        portraitPanelHeight = portraitPanelHeight,
+        portraitPanelMinHeight = portraitPanelMinHeight,
+        landscapeEndPadding = 10.dp,
+        landscapeTopPadding = 14.dp,
+        landscapeBottomPadding = 14.dp,
+        scrimAlpha = if (landscape) 0.14f else 0.32f,
+        surfaceColorArgb = 0xF217171C.toInt(),
+        borderAlpha = 0.08f,
+        contentPadding = 16.dp,
+        contentSpacing = 12.dp,
+        topStartRadius = 8.dp,
+        topEndRadius = 8.dp,
+        bottomStartRadius = if (landscape) 8.dp else 0.dp,
+        bottomEndRadius = if (landscape) 8.dp else 0.dp,
     )
 }
 

@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.92")
+                setRequestProperty("User-Agent", "ZFBML/0.5.93")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2866,7 +2866,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.92",
+            version = "0.5.93",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -7318,20 +7318,8 @@ private fun PlayerOptionPanel(
 ) {
     val routeCoverageLabel = remember(routeOptions) { playerRouteCoverageLabel(routeOptions) }
     BoxWithConstraints(modifier = modifier) {
-        val landscape = maxWidth > maxHeight
-        val panelWidth = when {
-            !landscape -> maxWidth
-            maxWidth < 680.dp -> maxWidth * 0.54f
-            else -> 392.dp
-        }
-        val portraitPanelHeight = when {
-            maxHeight < 620.dp -> maxHeight * 0.72f
-            else -> maxHeight * 0.58f
-        }
-        val portraitPanelMinHeight = when {
-            maxHeight < 420.dp -> maxHeight * 0.66f
-            maxHeight < 520.dp -> 260.dp
-            else -> 320.dp
+        val panelShellState = remember(maxWidth, maxHeight) {
+            buildPlayerPanelShellUiState(maxWidth, maxHeight)
         }
         val currentRoute = routeOptions.firstOrNull { route ->
             route.stream.id == currentStream.id || route.stream.url == currentStream.url
@@ -7364,30 +7352,37 @@ private fun PlayerOptionPanel(
                 danmakuEnabled = danmakuEnabled,
             )
         }
-        val scrimAlpha = if (landscape) 0.14f else 0.32f
         val panelInteractionSource = remember { MutableInteractionSource() }
-        val panelModifier = if (landscape) {
+        val panelModifier = if (panelShellState.landscape) {
             Modifier
                 .align(Alignment.CenterEnd)
-                .padding(end = 10.dp, top = 14.dp, bottom = 14.dp)
+                .padding(
+                    end = panelShellState.landscapeEndPadding,
+                    top = panelShellState.landscapeTopPadding,
+                    bottom = panelShellState.landscapeBottomPadding,
+                )
                 .fillMaxHeight()
-                .width(panelWidth)
+                .width(panelShellState.panelWidth)
         } else {
             Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .heightIn(min = portraitPanelMinHeight, max = portraitPanelHeight)
+                .heightIn(
+                    min = panelShellState.portraitPanelMinHeight,
+                    max = panelShellState.portraitPanelHeight,
+                )
         }
-        val panelShape = if (landscape) {
-            RoundedCornerShape(8.dp)
-        } else {
-            RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)
-        }
+        val panelShape = RoundedCornerShape(
+            topStart = panelShellState.topStartRadius,
+            topEnd = panelShellState.topEndRadius,
+            bottomStart = panelShellState.bottomStartRadius,
+            bottomEnd = panelShellState.bottomEndRadius,
+        )
 
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = scrimAlpha))
+                .background(Color.Black.copy(alpha = panelShellState.scrimAlpha))
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -7401,12 +7396,12 @@ private fun PlayerOptionPanel(
                 onClick = {},
             ),
             shape = panelShape,
-            color = Color(0xF217171C),
-            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f)),
+            color = Color(panelShellState.surfaceColorArgb),
+            border = BorderStroke(1.dp, Color.White.copy(alpha = panelShellState.borderAlpha)),
         ) {
             Column(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth().padding(panelShellState.contentPadding),
+                verticalArrangement = Arrangement.spacedBy(panelShellState.contentSpacing),
             ) {
                 PlayerPanelHeader(
                     state = panelSheetState,
