@@ -169,3 +169,5 @@ This pass upgrades the detail route status card. `DetailRouteStatusUiState` now 
 This pass upgrades the detail route source selector. `DetailRouteSourceSelectorUiState` now owns the source selector header, recommended/current source pills, auto-best card, action label, and source badges so users get a product-level route-source choice surface instead of raw source grouping copy assembled inside Compose.
 
 This pass upgrades the detail route prefetch card. `RoutePrefetchUiState` and `RoutePrefetchItemUiState` now own prefetch card tone, progress visibility, badge copy, item status labels, and item tones so adjacent-episode route warming reads as a first-class cache/product feature rather than a local Compose status mapping.
+
+This pass upgrades the detail playback readiness strip. `DetailPlaybackReadinessUiState` now owns semantic tone, cache tone, and route/online/backup/cache readiness chips so the detail hero can present playback readiness and cache availability without deriving product copy or colors inside Compose.

@@ -63,6 +63,9 @@ internal data class DetailPlaybackReadinessUiState(
     val cacheReason: String,
     val canPlay: Boolean,
     val cacheEnabled: Boolean,
+    val tone: SourceLibraryTone,
+    val cacheTone: SourceLibraryTone,
+    val chips: List<DetailFirstPlayChipUiState>,
 )
 
 internal data class DetailHeroActionUiState(
@@ -1034,6 +1037,20 @@ internal fun buildDetailPlaybackReadinessUiState(
         state.status == RouteLoadStatus.Loading -> "\u5907\u7528\u5f85\u547d"
         else -> "\u5907\u7528\u5f85\u547d"
     }
+    val tone = when (state.status) {
+        RouteLoadStatus.Ready -> SourceLibraryTone.Cache
+        RouteLoadStatus.Loading -> SourceLibraryTone.Online
+        RouteLoadStatus.Failed -> SourceLibraryTone.Web
+        RouteLoadStatus.Empty -> SourceLibraryTone.Backup
+        RouteLoadStatus.Idle -> SourceLibraryTone.Muted
+    }
+    val cacheTone = if (cacheAction?.enabled == true) SourceLibraryTone.Primary else SourceLibraryTone.Muted
+    val routeTone = when {
+        state.canPlay -> SourceLibraryTone.Online
+        state.status == RouteLoadStatus.Loading -> SourceLibraryTone.Online
+        state.status == RouteLoadStatus.Failed -> SourceLibraryTone.Web
+        else -> SourceLibraryTone.Muted
+    }
     return DetailPlaybackReadinessUiState(
         headline = headline,
         summary = summary,
@@ -1045,6 +1062,14 @@ internal fun buildDetailPlaybackReadinessUiState(
         cacheReason = cacheAction?.reason ?: "\u64ad\u653e\u6e90\u5c31\u7eea\u540e\u5224\u65ad\u7f13\u5b58\u80fd\u529b",
         canPlay = state.canPlay,
         cacheEnabled = cacheAction?.enabled == true,
+        tone = tone,
+        cacheTone = cacheTone,
+        chips = listOf(
+            DetailFirstPlayChipUiState("\u7ebf\u8def", state.sourceCoverageLabel, routeTone),
+            DetailFirstPlayChipUiState("\u5728\u7ebf", onlineLabel, SourceLibraryTone.Cache),
+            DetailFirstPlayChipUiState("\u5907\u7528", backupLabel, SourceLibraryTone.Backup),
+            DetailFirstPlayChipUiState("\u7f13\u5b58", cacheAction?.value ?: "\u5f85\u7ebf\u8def", cacheTone),
+        ),
     )
 }
 

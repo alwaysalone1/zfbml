@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.81")
+                setRequestProperty("User-Agent", "ZFBML/0.5.82")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2866,7 +2866,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.81",
+            version = "0.5.82",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -4151,11 +4151,7 @@ private fun DetailFirstPlayStrip(
 
 @Composable
 private fun DetailPlaybackReadinessStrip(state: DetailPlaybackReadinessUiState) {
-    val accent = when {
-        state.canPlay -> AnimeAccentGreen
-        state.primaryActionLabel.contains("\u5339\u914d") -> AnimeAccentCyan
-        else -> AnimeAccentAmber
-    }
+    val accent = sourceLibraryToneColor(state.tone)
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -4196,14 +4192,11 @@ private fun DetailPlaybackReadinessStrip(state: DetailPlaybackReadinessUiState) 
             RouteStatusBadge(state.primaryActionLabel, accent)
         }
         LazyRow(horizontalArrangement = Arrangement.spacedBy(7.dp), modifier = Modifier.fillMaxWidth()) {
-            item { DetailDecisionChip("\u7ebf\u8def", state.routeLabel, AnimeAccentCyan) }
-            item { DetailDecisionChip("\u5728\u7ebf", state.onlineLabel, AnimeAccentGreen) }
-            item { DetailDecisionChip("\u5907\u7528", state.backupLabel, AnimeAccentAmber) }
-            item {
+            items(state.chips) { chip ->
                 DetailDecisionChip(
-                    "\u7f13\u5b58",
-                    state.cacheLabel,
-                    if (state.cacheEnabled) AnimeAccentPink else AnimeMuted,
+                    chip.label,
+                    chip.value,
+                    sourceLibraryToneColor(chip.tone),
                 )
             }
         }

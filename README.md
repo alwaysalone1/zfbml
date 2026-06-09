@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.82
+
+English:
+
+- Detail playback readiness now exposes model-provided semantic tone, cache tone, and readiness chips for route, online coverage, backup, and cache status.
+- `DetailPlaybackReadinessStrip` now renders readiness chips from `DetailPlaybackReadinessUiState` instead of deriving accent color and cache-chip color in Compose.
+- Added unit coverage for readiness tones, cache tones, and chip payloads across playable and loading states.
+- App version labels, request user agents, and README notes are now updated to `0.5.82`.
+
 ### v0.5.81
 
 English:

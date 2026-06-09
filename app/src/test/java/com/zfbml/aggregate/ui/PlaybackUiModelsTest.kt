@@ -202,6 +202,13 @@ class PlaybackUiModelsTest {
         assertEquals("1 \u5728\u7ebf", readiness.onlineLabel)
         assertEquals("\u5907\u7528\u5f85\u547d", readiness.backupLabel)
         assertEquals("\u53ef\u79bb\u7ebf", readiness.cacheLabel)
+        assertEquals(SourceLibraryTone.Cache, readiness.tone)
+        assertEquals(SourceLibraryTone.Primary, readiness.cacheTone)
+        assertEquals(
+            listOf("\u7ebf\u8def", "\u5728\u7ebf", "\u5907\u7528", "\u7f13\u5b58"),
+            readiness.chips.map { it.label },
+        )
+        assertTrue(readiness.chips.any { it.label == "\u7f13\u5b58" && it.value == "\u53ef\u79bb\u7ebf" && it.tone == SourceLibraryTone.Primary })
         assertTrue(readiness.summary.contains("Online"))
     }
 
@@ -242,6 +249,9 @@ class PlaybackUiModelsTest {
         assertEquals("\u6b63\u5728\u5339\u914d\u64ad\u653e\u6e90", loading.headline)
         assertEquals("\u5339\u914d\u4e2d", loading.primaryActionLabel)
         assertEquals("\u4f18\u5148\u5339\u914d", loading.onlineLabel)
+        assertEquals(SourceLibraryTone.Online, loading.tone)
+        assertEquals(SourceLibraryTone.Muted, loading.cacheTone)
+        assertTrue(loading.chips.any { it.label == "\u7f13\u5b58" && it.value == "\u5f85\u7ebf\u8def" })
     }
 
     @Test
@@ -1759,19 +1769,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.81",
+            version = "0.5.82",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.81", state.version)
+        assertEquals("0.5.82", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.81" })
+        assertTrue(state.chips.any { it.label == "v0.5.82" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1785,7 +1795,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.81",
+            version = "0.5.82",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,
