@@ -1308,19 +1308,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.64",
+            version = "0.5.65",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.64", state.version)
+        assertEquals("0.5.65", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.64" })
+        assertTrue(state.chips.any { it.label == "v0.5.65" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1334,7 +1334,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.64",
+            version = "0.5.65",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,
@@ -1809,6 +1809,91 @@ class PlaybackUiModelsTest {
         assertEquals("自动线路", fullscreen.routeSummary)
         assertEquals(listOf("自动", "1.0x"), fullscreen.tags)
         assertTrue(fullscreen.error)
+    }
+
+    @Test
+    fun playerActionBarUiStateBuildsDefaultPlaybackActions() {
+        val state = buildPlayerActionBarUiState(
+            quality = "1080p",
+            routeCount = 3,
+            routeCoverageLabel = "在线 2 · BT 1",
+            episodeCount = 12,
+            nextEpisode = Episode(
+                providerId = "animeko",
+                id = "ep-6",
+                title = "下一话",
+                url = "https://example.invalid/ep6",
+                index = 6,
+            ),
+            playbackSpeed = 1.25f,
+            activePanel = PlayerPanelKind.Speed,
+            cacheAction = PlayerCacheActionUiState(
+                enabled = true,
+                title = "缓存",
+                value = "可离线",
+                reason = "Media3 离线缓存队列",
+                actionLabel = "缓存本集",
+            ),
+            hasPlaybackIssue = false,
+            canSelectNextRoute = true,
+        )
+
+        assertEquals(
+            listOf(
+                PlayerActionKind.Quality,
+                PlayerActionKind.Speed,
+                PlayerActionKind.Route,
+                PlayerActionKind.Episode,
+                PlayerActionKind.NextEpisode,
+                PlayerActionKind.Cache,
+                PlayerActionKind.More,
+            ),
+            state.actions.map { it.kind },
+        )
+        assertEquals("1080p", state.actions.first { it.kind == PlayerActionKind.Quality }.value)
+        assertTrue(state.actions.first { it.kind == PlayerActionKind.Speed }.selected)
+        assertEquals("1.25x", state.actions.first { it.kind == PlayerActionKind.Speed }.value)
+        assertEquals("在线 2 · BT 1", state.actions.first { it.kind == PlayerActionKind.Route }.value)
+        assertTrue(state.actions.first { it.kind == PlayerActionKind.Route }.enabled)
+        assertEquals("12集", state.actions.first { it.kind == PlayerActionKind.Episode }.value)
+        assertEquals("第6集", state.actions.first { it.kind == PlayerActionKind.NextEpisode }.value)
+        assertEquals(SourceLibraryTone.Cache, state.actions.first { it.kind == PlayerActionKind.Cache }.tone)
+    }
+
+    @Test
+    fun playerActionBarUiStatePrioritizesPlaybackIssueActions() {
+        val state = buildPlayerActionBarUiState(
+            quality = "",
+            routeCount = 1,
+            routeCoverageLabel = "",
+            episodeCount = 1,
+            nextEpisode = null,
+            playbackSpeed = 1f,
+            activePanel = PlayerPanelKind.More,
+            cacheAction = PlayerCacheActionUiState(
+                enabled = false,
+                title = "缓存",
+                value = "嗅探",
+                reason = "网页嗅探源需现场播放，暂不支持离线",
+                actionLabel = "不可缓存",
+            ),
+            hasPlaybackIssue = true,
+            canSelectNextRoute = false,
+        )
+
+        assertEquals(PlayerActionKind.Retry, state.actions[0].kind)
+        assertEquals(PlayerActionKind.NextRoute, state.actions[1].kind)
+        assertTrue(state.actions[0].selected)
+        assertEquals("当前", state.actions[0].value)
+        assertFalse(state.actions[1].enabled)
+        assertEquals("无", state.actions[1].value)
+        assertEquals("自动", state.actions.first { it.kind == PlayerActionKind.Quality }.value)
+        assertFalse(state.actions.first { it.kind == PlayerActionKind.Route }.enabled)
+        assertEquals("自动", state.actions.first { it.kind == PlayerActionKind.Route }.value)
+        assertFalse(state.actions.first { it.kind == PlayerActionKind.Episode }.enabled)
+        assertEquals("单集", state.actions.first { it.kind == PlayerActionKind.Episode }.value)
+        assertFalse(state.actions.first { it.kind == PlayerActionKind.Cache }.enabled)
+        assertTrue(state.actions.first { it.kind == PlayerActionKind.More }.selected)
     }
 
     @Test

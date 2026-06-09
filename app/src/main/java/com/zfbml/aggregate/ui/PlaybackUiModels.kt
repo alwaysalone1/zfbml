@@ -359,6 +359,31 @@ internal data class PlayerFullscreenStatusStripUiState(
     val error: Boolean,
 )
 
+internal data class PlayerActionBarUiState(
+    val actions: List<PlayerActionUiState>,
+)
+
+internal data class PlayerActionUiState(
+    val kind: PlayerActionKind,
+    val title: String,
+    val value: String?,
+    val selected: Boolean,
+    val enabled: Boolean,
+    val tone: SourceLibraryTone,
+)
+
+internal enum class PlayerActionKind {
+    Retry,
+    NextRoute,
+    Quality,
+    Speed,
+    Route,
+    Episode,
+    NextEpisode,
+    Cache,
+    More,
+}
+
 internal data class PlayerEpisodePanelUiState(
     val title: String,
     val summary: String,
@@ -2282,6 +2307,119 @@ internal fun buildPlayerFullscreenStatusStripUiState(
         ),
         error = hasPlaybackIssue,
     )
+}
+
+internal fun buildPlayerActionBarUiState(
+    quality: String,
+    routeCount: Int,
+    routeCoverageLabel: String,
+    episodeCount: Int,
+    nextEpisode: Episode?,
+    playbackSpeed: Float,
+    activePanel: PlayerPanelKind?,
+    cacheAction: PlayerCacheActionUiState,
+    hasPlaybackIssue: Boolean,
+    canSelectNextRoute: Boolean,
+): PlayerActionBarUiState {
+    val actions = buildList {
+        if (hasPlaybackIssue) {
+            add(
+                PlayerActionUiState(
+                    kind = PlayerActionKind.Retry,
+                    title = "重试",
+                    value = "当前",
+                    selected = true,
+                    enabled = true,
+                    tone = SourceLibraryTone.Primary,
+                ),
+            )
+            add(
+                PlayerActionUiState(
+                    kind = PlayerActionKind.NextRoute,
+                    title = "换个源",
+                    value = if (canSelectNextRoute) "可切" else "无",
+                    selected = false,
+                    enabled = canSelectNextRoute,
+                    tone = SourceLibraryTone.Online,
+                ),
+            )
+        }
+        add(
+            PlayerActionUiState(
+                kind = PlayerActionKind.Quality,
+                title = "清晰度",
+                value = quality.ifBlank { "自动" },
+                selected = activePanel == PlayerPanelKind.Quality,
+                enabled = routeCount > 0,
+                tone = SourceLibraryTone.Primary,
+            ),
+        )
+        add(
+            PlayerActionUiState(
+                kind = PlayerActionKind.Speed,
+                title = "倍速",
+                value = formatPlaybackSpeedForUi(playbackSpeed),
+                selected = activePanel == PlayerPanelKind.Speed,
+                enabled = true,
+                tone = SourceLibraryTone.Online,
+            ),
+        )
+        add(
+            PlayerActionUiState(
+                kind = PlayerActionKind.Route,
+                title = "换源",
+                value = if (routeCount > 1) routeCoverageLabel.ifBlank { "$routeCount 条" } else "自动",
+                selected = activePanel == PlayerPanelKind.Route,
+                enabled = routeCount > 1,
+                tone = SourceLibraryTone.Online,
+            ),
+        )
+        add(
+            PlayerActionUiState(
+                kind = PlayerActionKind.Episode,
+                title = "选集",
+                value = if (episodeCount > 1) "${episodeCount}集" else "单集",
+                selected = activePanel == PlayerPanelKind.Episode,
+                enabled = episodeCount > 1,
+                tone = SourceLibraryTone.Backup,
+            ),
+        )
+        add(
+            PlayerActionUiState(
+                kind = PlayerActionKind.NextEpisode,
+                title = "下一集",
+                value = nextEpisode.playerNextEpisodeValueForUi(),
+                selected = false,
+                enabled = nextEpisode != null,
+                tone = SourceLibraryTone.Backup,
+            ),
+        )
+        add(
+            PlayerActionUiState(
+                kind = PlayerActionKind.Cache,
+                title = cacheAction.title,
+                value = cacheAction.value,
+                selected = false,
+                enabled = cacheAction.enabled,
+                tone = if (cacheAction.enabled) SourceLibraryTone.Cache else SourceLibraryTone.Muted,
+            ),
+        )
+        add(
+            PlayerActionUiState(
+                kind = PlayerActionKind.More,
+                title = "更多",
+                value = "设置",
+                selected = activePanel == PlayerPanelKind.More,
+                enabled = true,
+                tone = SourceLibraryTone.Muted,
+            ),
+        )
+    }
+    return PlayerActionBarUiState(actions = actions)
+}
+
+private fun Episode?.playerNextEpisodeValueForUi(): String {
+    return this?.index?.let { "第${it}集" } ?: this?.title?.takeIf { it.isNotBlank() } ?: "无"
 }
 
 private fun playerSourceStatusValueForUi(

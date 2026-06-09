@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.64")
+                setRequestProperty("User-Agent", "ZFBML/0.5.65")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2845,7 +2845,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.64",
+            version = "0.5.65",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -7318,91 +7318,42 @@ private fun PlayerActionBar(
     onNextRoute: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val actions = buildList {
-        if (hasPlaybackIssue) {
-            add(
-                PlayerActionSpec(
-                    icon = Icons.Filled.Refresh,
-                    title = "重试",
-                    value = "当前",
-                    selected = true,
-                    onClick = onRetryRoute,
-                ),
-            )
-            add(
-                PlayerActionSpec(
-                    icon = Icons.Filled.VideoLibrary,
-                    title = "换个源",
-                    value = if (canSelectNextRoute) "可切" else "无",
-                    enabled = canSelectNextRoute,
-                    onClick = onNextRoute,
-                ),
-            )
-        }
-        add(
-            PlayerActionSpec(
-                icon = Icons.Filled.HighQuality,
-                title = "清晰度",
-                value = quality,
-                selected = activePanel == PlayerPanel.Quality,
-                enabled = routeCount > 0,
-                onClick = { onShowPanel(PlayerPanel.Quality) },
-            ),
+    val state = remember(
+        quality,
+        routeCount,
+        routeCoverageLabel,
+        episodeCount,
+        nextEpisode,
+        playbackSpeed,
+        activePanel,
+        cacheActionState,
+        hasPlaybackIssue,
+        canSelectNextRoute,
+    ) {
+        buildPlayerActionBarUiState(
+            quality = quality,
+            routeCount = routeCount,
+            routeCoverageLabel = routeCoverageLabel,
+            episodeCount = episodeCount,
+            nextEpisode = nextEpisode,
+            playbackSpeed = playbackSpeed,
+            activePanel = activePanel?.asPlayerPanelKind(),
+            cacheAction = cacheActionState,
+            hasPlaybackIssue = hasPlaybackIssue,
+            canSelectNextRoute = canSelectNextRoute,
         )
-        add(
-            PlayerActionSpec(
-                icon = Icons.Filled.Speed,
-                title = "倍速",
-                value = formatPlaybackSpeed(playbackSpeed),
-                selected = activePanel == PlayerPanel.Speed,
-                onClick = { onShowPanel(PlayerPanel.Speed) },
-            ),
-        )
-        add(
-            PlayerActionSpec(
-                icon = Icons.Filled.VideoLibrary,
-                title = "换源",
-                value = routeCoverageLabel,
-                selected = activePanel == PlayerPanel.Route,
-                enabled = routeCount > 1,
-                onClick = { onShowPanel(PlayerPanel.Route) },
-            ),
-        )
-        add(
-            PlayerActionSpec(
-                icon = Icons.AutoMirrored.Filled.PlaylistPlay,
-                title = "选集",
-                value = if (episodeCount > 1) "${episodeCount}集" else "单集",
-                selected = activePanel == PlayerPanel.Episode,
-                enabled = episodeCount > 1,
-                onClick = { onShowPanel(PlayerPanel.Episode) },
-            ),
-        )
-        add(
-            PlayerActionSpec(
-                icon = Icons.Filled.SkipNext,
-                title = "下一集",
-                value = nextEpisode?.index?.let { "第${it}集" } ?: nextEpisode?.title ?: "无",
-                enabled = nextEpisode != null,
-                onClick = onNextEpisode,
-            ),
-        )
-        add(
-            PlayerActionSpec(
-                icon = Icons.Filled.CloudDownload,
-                title = cacheActionState.title,
-                value = cacheActionState.value,
-                enabled = cacheActionState.enabled,
-                onClick = onOffline,
-            ),
-        )
-        add(
-            PlayerActionSpec(
-                icon = Icons.Filled.MoreVert,
-                title = "更多",
-                value = "设置",
-                selected = activePanel == PlayerPanel.More,
-                onClick = { onShowPanel(PlayerPanel.More) },
+    }
+    val actions = state.actions.map { actionState ->
+        PlayerActionSpec(
+            state = actionState,
+            icon = playerActionIcon(actionState.kind),
+            onClick = playerActionClick(
+                kind = actionState.kind,
+                onShowPanel = onShowPanel,
+                onNextEpisode = onNextEpisode,
+                onOffline = onOffline,
+                onRetryRoute = onRetryRoute,
+                onNextRoute = onNextRoute,
             ),
         )
     }
@@ -7416,10 +7367,10 @@ private fun PlayerActionBar(
             actions.forEach { action ->
                 PlayerTextAction(
                     icon = action.icon,
-                    title = action.title,
-                    value = if (compactValues) null else action.value,
-                    selected = action.selected,
-                    enabled = action.enabled,
+                    title = action.state.title,
+                    value = if (compactValues) null else action.state.value,
+                    selected = action.state.selected,
+                    enabled = action.state.enabled,
                     onClick = action.onClick,
                     modifier = Modifier.weight(1f),
                 )
@@ -7429,13 +7380,46 @@ private fun PlayerActionBar(
 }
 
 private data class PlayerActionSpec(
+    val state: PlayerActionUiState,
     val icon: ImageVector?,
-    val title: String,
-    val value: String? = null,
-    val selected: Boolean = false,
-    val enabled: Boolean = true,
     val onClick: () -> Unit,
 )
+
+private fun playerActionIcon(kind: PlayerActionKind): ImageVector {
+    return when (kind) {
+        PlayerActionKind.Retry -> Icons.Filled.Refresh
+        PlayerActionKind.NextRoute -> Icons.Filled.VideoLibrary
+        PlayerActionKind.Quality -> Icons.Filled.HighQuality
+        PlayerActionKind.Speed -> Icons.Filled.Speed
+        PlayerActionKind.Route -> Icons.Filled.VideoLibrary
+        PlayerActionKind.Episode -> Icons.AutoMirrored.Filled.PlaylistPlay
+        PlayerActionKind.NextEpisode -> Icons.Filled.SkipNext
+        PlayerActionKind.Cache -> Icons.Filled.CloudDownload
+        PlayerActionKind.More -> Icons.Filled.MoreVert
+    }
+}
+
+private fun playerActionClick(
+    kind: PlayerActionKind,
+    onShowPanel: (PlayerPanel) -> Unit,
+    onNextEpisode: () -> Unit,
+    onOffline: () -> Unit,
+    onRetryRoute: () -> Unit,
+    onNextRoute: () -> Unit,
+): () -> Unit {
+    fun show(panel: PlayerPanel): () -> Unit = { onShowPanel(panel) }
+    return when (kind) {
+        PlayerActionKind.Retry -> onRetryRoute
+        PlayerActionKind.NextRoute -> onNextRoute
+        PlayerActionKind.Quality -> show(PlayerPanel.Quality)
+        PlayerActionKind.Speed -> show(PlayerPanel.Speed)
+        PlayerActionKind.Route -> show(PlayerPanel.Route)
+        PlayerActionKind.Episode -> show(PlayerPanel.Episode)
+        PlayerActionKind.NextEpisode -> onNextEpisode
+        PlayerActionKind.Cache -> onOffline
+        PlayerActionKind.More -> show(PlayerPanel.More)
+    }
+}
 
 @Composable
 private fun PlayerOptionPanel(

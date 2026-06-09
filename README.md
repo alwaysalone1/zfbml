@@ -25,6 +25,23 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.65
+
+中文：
+- 播放器底部操作栏新增 `PlayerActionBarUiState`、`PlayerActionUiState` 和 `PlayerActionKind`，统一生成重试、换源、清晰度、倍速、选集、下一集、缓存和更多入口。
+- 操作栏的播放异常优先动作、下一线路可用态、当前面板选中态、单集/单线路禁用态、缓存可用态和倍速文案改由模型层生成。
+- `PlayerActionBar` 现在只负责图标、点击路由和排版，和播放器面板壳层、状态条、更多设置面板保持同一模型驱动控制体系。
+- 新增单元测试覆盖常规播放动作顺序、倍速/线路/下一集/缓存状态，以及播放异常下的重试和换源兜底。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.65`。
+
+English:
+
+- The player bottom action bar now has `PlayerActionBarUiState`, `PlayerActionUiState`, and `PlayerActionKind` for retry, route fallback, quality, speed, episode, next-episode, cache, and more actions.
+- Playback issue priority actions, next-route availability, active-panel selection, single-episode/single-route disabled state, cache availability, and speed copy now come from the model layer.
+- `PlayerActionBar` now only handles icons, click routing, and layout, aligning it with the model-driven panel shell, status strips, and more/settings panel.
+- Added unit coverage for default action order, speed/route/next-episode/cache state, and retry/fallback actions during playback issues.
+- App version labels, request user agents, and README notes are now updated to `0.5.65`.
+
 ### v0.5.64
 
 中文：
