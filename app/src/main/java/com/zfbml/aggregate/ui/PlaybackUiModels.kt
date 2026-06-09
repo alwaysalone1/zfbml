@@ -166,6 +166,13 @@ internal data class SearchIdleHintUiState(
     val actionLabel: String,
 )
 
+internal data class SearchResultsSectionUiState(
+    val headerTitle: String,
+    val headerSubtitle: String,
+    val emptyTitle: String,
+    val emptySubtitle: String,
+)
+
 internal data class SearchResultChipUiState(
     val label: String,
     val tone: SourceLibraryTone,
@@ -1497,6 +1504,46 @@ internal fun buildSearchIdleHintUiState(
         subtitle = subtitle,
         chips = chips,
         actionLabel = actionLabel,
+    )
+}
+
+internal fun buildSearchResultsSectionUiState(
+    indexState: SearchIndexUiState,
+    visibleResultCount: Int,
+    loading: Boolean,
+    searched: Boolean,
+): SearchResultsSectionUiState {
+    val visibleCount = visibleResultCount.coerceAtLeast(0)
+    val totalCount = indexState.resultCount.coerceAtLeast(0)
+    val sourceCount = indexState.searchableSourceCount.coerceAtLeast(0)
+    val failedCount = indexState.failedSourceCount.coerceAtLeast(0)
+    val selectedFilter = indexState.sourceFilters.firstOrNull { it.selected && !it.isAll }
+    val headerSubtitle = when {
+        loading -> "\u6b63\u5728\u5e76\u884c\u641c\u7d22 $sourceCount \u4e2a\u6765\u6e90"
+        !searched -> "\u5148\u627e\u756a\uff0c\u518d\u8fdb\u8be6\u60c5\u786e\u8ba4\u9009\u96c6\u548c\u7ebf\u8def"
+        selectedFilter != null -> "${selectedFilter.name} \u00b7 $visibleCount \u4e2a\u7ed3\u679c"
+        totalCount > 0 && failedCount > 0 -> "$totalCount \u4e2a\u7ed3\u679c \u00b7 $failedCount \u4e2a\u6e90\u5f02\u5e38"
+        totalCount > 0 -> "$totalCount \u4e2a\u7ed3\u679c \u00b7 \u8fdb\u5165\u8be6\u60c5\u540e\u7ee7\u7eed\u5339\u914d\u7ebf\u8def"
+        failedCount > 0 -> "\u6682\u65e0\u7ed3\u679c \u00b7 $failedCount \u4e2a\u6e90\u5f02\u5e38"
+        else -> "\u9009\u62e9\u756a\u5267\u8fdb\u5165\u8be6\u60c5"
+    }
+    val emptyTitle = when {
+        !searched -> "\u7b49\u5f85\u641c\u7d22"
+        selectedFilter != null && totalCount > 0 -> "\u5f53\u524d\u6765\u6e90\u6682\u65e0\u547d\u4e2d"
+        failedCount > 0 -> "\u6682\u672a\u547d\u4e2d\u53ef\u7528\u7ed3\u679c"
+        else -> "\u6ca1\u6709\u627e\u5230\u5408\u9002\u7ed3\u679c"
+    }
+    val emptySubtitle = when {
+        !searched -> "\u53ef\u4ece\u65e5\u7a0b\u5efa\u8bae\u3001\u70ed\u95e8\u8bcd\u6216\u624b\u52a8\u8f93\u5165\u5f00\u59cb\u3002"
+        selectedFilter != null && totalCount > 0 -> "\u53ef\u5207\u56de\u5168\u90e8\u7d22\u5f15\uff0c\u6216\u6362\u4e00\u4e2a\u5173\u952e\u8bcd\u7ee7\u7eed\u641c\u7d22\u3002"
+        failedCount > 0 -> "\u53ef\u6362\u756a\u540d\u3001\u522b\u540d\u6216\u7a0d\u540e\u91cd\u8bd5\uff1b\u5f02\u5e38\u6e90\u5df2\u5728\u6765\u6e90\u7b5b\u9009\u4e2d\u6807\u51fa\u3002"
+        else -> "\u53ef\u4ee5\u6362\u4e00\u4e2a\u756a\u540d\u3001\u522b\u540d\u6216\u5173\u952e\u8bcd\u518d\u8bd5\u3002"
+    }
+    return SearchResultsSectionUiState(
+        headerTitle = "\u641c\u7d22\u7ed3\u679c",
+        headerSubtitle = headerSubtitle,
+        emptyTitle = emptyTitle,
+        emptySubtitle = emptySubtitle,
     )
 }
 

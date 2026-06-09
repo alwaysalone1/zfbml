@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.73")
+                setRequestProperty("User-Agent", "ZFBML/0.5.74")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2488,6 +2488,14 @@ private fun SearchScreen(
         )
     }
     val visibleResults = searchResultsForProvider(results, searchIndexUiState.selectedProviderId)
+    val searchResultsSectionUiState = remember(searchIndexUiState, visibleResults.size, loading, searched) {
+        buildSearchResultsSectionUiState(
+            indexState = searchIndexUiState,
+            visibleResultCount = visibleResults.size,
+            loading = loading,
+            searched = searched,
+        )
+    }
 
     fun runSearch(searchTerm: String = query) {
         val normalizedQuery = searchTerm.trim()
@@ -2563,7 +2571,7 @@ private fun SearchScreen(
             }
         }
         item {
-            ResultsHeader()
+            ResultsHeader(state = searchResultsSectionUiState)
         }
         searchStatusItems(
             loading = loading,
@@ -2571,11 +2579,7 @@ private fun SearchScreen(
             searchMessage = searchMessage,
             results = visibleResults,
             idleHintState = searchIdleHintUiState,
-            emptyMessage = if (searchIndexUiState.selectedProviderId != null && results.isNotEmpty() && visibleResults.isEmpty()) {
-                "\u5f53\u524d\u6765\u6e90\u6682\u65e0\u547d\u4e2d\uff0c\u53ef\u5207\u56de\u5168\u90e8\u7d22\u5f15\u6216\u6362\u4e00\u4e2a\u5173\u952e\u8bcd\u3002"
-            } else {
-                null
-            },
+            sectionState = searchResultsSectionUiState,
             onOpenDetail = onOpenDetail,
         )
     }
@@ -2862,7 +2866,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.73",
+            version = "0.5.74",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -3343,10 +3347,10 @@ private fun SearchSourceFilterButton(
 }
 
 @Composable
-private fun ResultsHeader() {
+private fun ResultsHeader(state: SearchResultsSectionUiState) {
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text("\u641c\u7d22\u7ed3\u679c", style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold)
-        Text("\u9009\u62e9\u756a\u5267\u8fdb\u5165\u8be6\u60c5", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+        Text(state.headerTitle, style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold)
+        Text(state.headerSubtitle, style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
     }
 }
 
@@ -3356,7 +3360,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.searchStatusItems(
     searchMessage: String?,
     results: List<SearchResult>,
     idleHintState: SearchIdleHintUiState,
-    emptyMessage: String? = null,
+    sectionState: SearchResultsSectionUiState,
     onOpenDetail: (SearchResult) -> Unit,
 ) {
     if (loading) {
@@ -3372,7 +3376,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.searchStatusItems(
     if (results.isEmpty() && !loading) {
         if (searched) {
             item {
-                EmptySearchState(message = emptyMessage)
+                EmptySearchState(state = sectionState)
             }
         } else {
             item {
@@ -3387,18 +3391,16 @@ private fun androidx.compose.foundation.lazy.LazyListScope.searchStatusItems(
 }
 
 @Composable
-private fun EmptySearchState(message: String? = null) {
+private fun EmptySearchState(state: SearchResultsSectionUiState) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = AnimePanel),
         border = BorderStroke(1.dp, AnimeBorder),
     ) {
-        Text(
-            text = message ?: "\u6ca1\u627e\u5230\u5408\u9002\u7ed3\u679c\uff0c\u53ef\u4ee5\u6362\u4e00\u4e2a\u756a\u540d\u3001\u522b\u540d\u6216\u5173\u952e\u8bcd\u518d\u8bd5\u3002",
-            style = MaterialTheme.typography.bodyMedium,
-            color = AnimeMuted,
-            modifier = Modifier.padding(14.dp),
-        )
+        Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(state.emptyTitle, style = MaterialTheme.typography.titleSmall, color = Color.White)
+            Text(state.emptySubtitle, style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+        }
     }
 }
 

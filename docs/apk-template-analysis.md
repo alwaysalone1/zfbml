@@ -153,3 +153,5 @@ This pass upgrades the portrait route insight row. `PortraitRouteInsightUiState`
 This pass upgrades the BT playback preparation placeholder. `TorrentPlaybackPreparationUiState` now owns startup buffering progress, metadata/readiness labels, overall/video/buffer percentages, connection speed, selected-file labels, file size, and error copy so torrent edge-cache playback preparation can become a reusable player/cache status surface.
 
 This pass upgrades the search idle guidance. `SearchIdleHintUiState` now owns the pre-search title, summary, action copy, searchable-source chip, schedule-suggestion chip, and index-health chip so the search tab exposes source coverage and schedule-backed entry points before the user types a query.
+
+This pass upgrades the search results section. `SearchResultsSectionUiState` now owns the results header subtitle and empty-result title/subtitle for loading, selected-source filtering, no-hit, and failed-source states, making search/index feedback consistent before the user opens detail playback decisions.

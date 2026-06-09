@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.74
+
+English:
+
+- Search results now have `SearchResultsSectionUiState`, centralizing the results header and empty-state copy for idle, loading, filtered, no-hit, and partial-failure cases.
+- `ResultsHeader` and `EmptySearchState` no longer assemble search-result explanations in Compose; they render model-provided title and subtitle fields.
+- Added unit coverage for loading, selected-source filtering, filtered empty results, and no-hit searches with failed sources.
+- App version labels, request user agents, and README notes are now updated to `0.5.74`.
+
 ### v0.5.73
 
 English:

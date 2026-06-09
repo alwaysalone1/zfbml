@@ -1035,6 +1035,82 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun searchResultsSectionUiStateSummarizesLoadingAndSelectedSource() {
+        val manifests = listOf(
+            manifest("bangumi-catalog", "Bangumi"),
+            manifest("bt", "BT Source", setOf(SourceCapability.SEARCH, SourceCapability.BITTORRENT)),
+        )
+        val results = listOf(
+            searchResult("bangumi-catalog", "Alpha"),
+            searchResult("bt", "Beta"),
+            searchResult("bt", "Gamma"),
+        )
+        val report = SourceSearchReport(results = results, failures = emptyList())
+        val loadingState = buildSearchResultsSectionUiState(
+            indexState = buildSearchIndexUiState(
+                manifests = manifests,
+                report = null,
+                results = emptyList(),
+            ),
+            visibleResultCount = 0,
+            loading = true,
+            searched = false,
+        )
+        val selectedIndex = buildSearchIndexUiState(
+            manifests = manifests,
+            report = report,
+            results = results,
+            selectedProviderId = "bt",
+        )
+        val selectedState = buildSearchResultsSectionUiState(
+            indexState = selectedIndex,
+            visibleResultCount = 2,
+            loading = false,
+            searched = true,
+        )
+        val selectedEmpty = buildSearchResultsSectionUiState(
+            indexState = selectedIndex,
+            visibleResultCount = 0,
+            loading = false,
+            searched = true,
+        )
+
+        assertEquals("\u641c\u7d22\u7ed3\u679c", loadingState.headerTitle)
+        assertEquals("\u6b63\u5728\u5e76\u884c\u641c\u7d22 2 \u4e2a\u6765\u6e90", loadingState.headerSubtitle)
+        assertEquals("BT Source \u00b7 2 \u4e2a\u7ed3\u679c", selectedState.headerSubtitle)
+        assertEquals("\u5f53\u524d\u6765\u6e90\u6682\u65e0\u547d\u4e2d", selectedEmpty.emptyTitle)
+        assertTrue(selectedEmpty.emptySubtitle.contains("\u5168\u90e8\u7d22\u5f15"))
+    }
+
+    @Test
+    fun searchResultsSectionUiStateExplainsNoHitsAndFailures() {
+        val manifests = listOf(
+            manifest("bangumi-catalog", "Bangumi"),
+            manifest("direct-url", "Direct", setOf(SourceCapability.SEARCH, SourceCapability.STREAM)),
+        )
+        val report = SourceSearchReport(
+            results = emptyList(),
+            failures = listOf(SourceSearchFailure("direct-url", "Direct", "timeout")),
+        )
+        val indexState = buildSearchIndexUiState(
+            manifests = manifests,
+            report = report,
+            results = emptyList(),
+        )
+
+        val state = buildSearchResultsSectionUiState(
+            indexState = indexState,
+            visibleResultCount = 0,
+            loading = false,
+            searched = true,
+        )
+
+        assertEquals("\u6682\u65e0\u7ed3\u679c \u00b7 1 \u4e2a\u6e90\u5f02\u5e38", state.headerSubtitle)
+        assertEquals("\u6682\u672a\u547d\u4e2d\u53ef\u7528\u7ed3\u679c", state.emptyTitle)
+        assertTrue(state.emptySubtitle.contains("\u5f02\u5e38\u6e90"))
+    }
+
+    @Test
     fun homeScheduleUiStateSummarizesSelectedTodayAndWeek() {
         val days = listOf(
             scheduleDay(1, "\u661f\u671f\u4e00", listOf(searchResult("bangumi-catalog", "Alpha"), searchResult("bangumi-catalog", "Beta"))),
@@ -1386,19 +1462,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.73",
+            version = "0.5.74",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.73", state.version)
+        assertEquals("0.5.74", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.73" })
+        assertTrue(state.chips.any { it.label == "v0.5.74" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1412,7 +1488,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.73",
+            version = "0.5.74",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,
