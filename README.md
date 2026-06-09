@@ -25,6 +25,23 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.72
+
+中文：
+- BT 播放准备占位页新增 `TorrentPlaybackPreparationUiState`，统一生成准备标题、说明、起播进度、状态、元数据/播放通道、整体进度、连接、文件和错误信息。
+- `TorrentPlaceholderSurface` 不再在 Compose 内拼接 BT 起播缓冲、文件大小、下载速度、连接节点和错误文案，UI 只负责进度条和文本排版。
+- 起播百分比、字节大小、速度和无 plan 兜底现在由模型层统一格式化，便于后续把 BT 边下边播升级成可复用的缓存/播放状态面板。
+- 新增单元测试覆盖完整 BT plan、起播缓存、连接速度、文件信息，以及无 plan/error 兜底。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.72`。
+
+English:
+
+- The BT playback preparation placeholder now has `TorrentPlaybackPreparationUiState` for preparation title, description, startup progress, status, metadata/playback-channel readiness, overall progress, connection, file, and error information.
+- `TorrentPlaceholderSurface` no longer assembles BT startup buffering, file size, download speed, peer counts, or error copy inside Compose; UI only handles the progress bar and text layout.
+- Startup percentages, byte sizes, speed, and no-plan fallback are now formatted by the model layer, preparing the BT edge-cache path for a reusable cache/playback status panel.
+- Added unit coverage for a complete BT plan, startup buffer, connection speed, file information, and no-plan/error fallback.
+- App version labels, request user agents, and README notes are now updated to `0.5.72`.
+
 ### v0.5.71
 
 中文：

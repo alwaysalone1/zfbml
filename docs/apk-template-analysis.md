@@ -149,3 +149,5 @@ This pass upgrades the fullscreen player top overlay. `PlayerTopOverlayUiState` 
 This pass upgrades the portrait playback recovery strip. `PortraitRecoveryActionsUiState` now owns retry and fallback-route action visibility, labels, enabled state, and semantic tones so portrait playback recovery shares action semantics with the fullscreen player action bar instead of hard-coding recovery buttons in Compose.
 
 This pass upgrades the portrait route insight row. `PortraitRouteInsightUiState` and `PortraitRouteInsightChipUiState` now own route coverage, online-route counts, BT fallback counts, current-route labels, and semantic tones so portrait diagnostics no longer compute route insight chips inside Compose.
+
+This pass upgrades the BT playback preparation placeholder. `TorrentPlaybackPreparationUiState` now owns startup buffering progress, metadata/readiness labels, overall/video/buffer percentages, connection speed, selected-file labels, file size, and error copy so torrent edge-cache playback preparation can become a reusable player/cache status surface.

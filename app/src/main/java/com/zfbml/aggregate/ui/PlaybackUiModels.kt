@@ -12,6 +12,7 @@ import com.zfbml.aggregate.source.SourceSearchReport
 import com.zfbml.aggregate.source.StreamProtocol
 import com.zfbml.aggregate.source.catalog.BangumiCategory
 import com.zfbml.aggregate.source.catalog.BangumiScheduleDay
+import com.zfbml.aggregate.torrent.TorrentEngineState
 
 internal enum class RouteLoadStatus {
     Idle,
@@ -436,6 +437,20 @@ internal data class PortraitRouteInsightChipUiState(
     val label: String,
     val value: String,
     val tone: SourceLibraryTone,
+)
+
+internal data class TorrentPlaybackPreparationUiState(
+    val title: String,
+    val description: String,
+    val bufferingProgress: Float,
+    val statusLine: String,
+    val readinessLine: String,
+    val progressLine: String,
+    val bufferingLine: String?,
+    val connectionLine: String,
+    val fileLine: String?,
+    val sizeLine: String?,
+    val errorMessage: String?,
 )
 
 internal data class PlayerActionBarUiState(
@@ -2795,6 +2810,32 @@ private fun portraitRouteInsightCountLabel(routes: List<RouteCandidate>): String
         routeCount > 1 -> "${routeCount}线"
         else -> "单线"
     }
+}
+
+internal fun buildTorrentPlaybackPreparationUiState(
+    state: TorrentEngineState,
+): TorrentPlaybackPreparationUiState {
+    val plan = state.plan
+    val bufferingPercent = plan?.bufferingPercent ?: 0f
+    return TorrentPlaybackPreparationUiState(
+        title = "正在准备播放",
+        description = "正在匹配视频文件并建立起播缓冲，完成后会自动进入播放。",
+        bufferingProgress = (bufferingPercent / 100f).coerceIn(0f, 1f),
+        statusLine = "状态: ${state.status ?: "等待中"}",
+        readinessLine = "视频信息: ${if (state.hasMetadata) "已获取" else "匹配中"}  播放通道: ${if (plan?.localPlaybackUrl != null) "已就绪" else "准备中"}",
+        progressLine = "整体: ${formatTorrentPercentForUi(state.progressPercent)}  视频: ${formatTorrentPercentForUi(state.selectedFileProgressPercent)}  起播: ${formatTorrentPercentForUi(bufferingPercent)}",
+        bufferingLine = plan?.takeIf { it.playbackReadyBytes > 0L }?.let {
+            "起播缓存: ${formatBytesForUi(it.selectedFileContiguousBytes)} / ${formatBytesForUi(it.playbackReadyBytes)}"
+        },
+        connectionLine = "连接: ${state.connectedPeers}  高速节点: ${state.connectedSeeds}  速度: ${formatBytesForUi(state.downloadRateBytesPerSecond.toLong())}/s",
+        fileLine = plan?.selectedFileName?.let { "文件: $it" },
+        sizeLine = plan?.selectedFileSizeBytes?.let { "大小: ${formatBytesForUi(it)}" },
+        errorMessage = state.errorMessage,
+    )
+}
+
+private fun formatTorrentPercentForUi(percent: Float): String {
+    return "%.1f%%".format(percent.coerceIn(0f, 100f))
 }
 
 private fun playerSourceStatusValueForUi(

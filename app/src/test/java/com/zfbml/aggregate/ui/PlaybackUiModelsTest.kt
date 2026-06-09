@@ -13,6 +13,8 @@ import com.zfbml.aggregate.source.SourceSearchReport
 import com.zfbml.aggregate.source.StreamProtocol
 import com.zfbml.aggregate.source.catalog.BangumiCategory
 import com.zfbml.aggregate.source.catalog.BangumiScheduleDay
+import com.zfbml.aggregate.torrent.TorrentEngineState
+import com.zfbml.aggregate.torrent.TorrentPlaybackPlan
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -1309,19 +1311,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.71",
+            version = "0.5.72",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.71", state.version)
+        assertEquals("0.5.72", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.71" })
+        assertTrue(state.chips.any { it.label == "v0.5.72" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1335,7 +1337,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.71",
+            version = "0.5.72",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,
@@ -2371,6 +2373,69 @@ class PlaybackUiModelsTest {
         assertEquals("\u8fb9\u4e0b\u8fb9\u64ad", bt.value)
         assertFalse(rtsp.enabled)
         assertEquals("RTSP", rtsp.value)
+    }
+
+    @Test
+    fun torrentPlaybackPreparationUiStateSummarizesPlanAndNetwork() {
+        val stream = MediaStream(
+            id = "bt",
+            providerId = "bt",
+            url = "magnet:?xt=urn:btih:test",
+            protocol = StreamProtocol.BITTORRENT,
+        )
+        val state = buildTorrentPlaybackPreparationUiState(
+            TorrentEngineState(
+                stream = stream,
+                plan = TorrentPlaybackPlan(
+                    stream = stream,
+                    selectedFileName = "episode-01.mkv",
+                    selectedFileSizeBytes = 1_073_741_824L,
+                    selectedFileContiguousBytes = 104_857_600L,
+                    playbackReadyBytes = 209_715_200L,
+                    selectedFileProgressPercent = 42.5f,
+                    localPlaybackUrl = "http://127.0.0.1:8080/video",
+                    bufferingPercent = 50f,
+                ),
+                hasMetadata = true,
+                status = "缓冲中",
+                progressPercent = 12.5f,
+                selectedFileProgressPercent = 42.5f,
+                downloadRateBytesPerSecond = 1_048_576,
+                connectedPeers = 12,
+                connectedSeeds = 3,
+            ),
+        )
+
+        assertEquals("正在准备播放", state.title)
+        assertEquals(0.5f, state.bufferingProgress, 0.001f)
+        assertEquals("状态: 缓冲中", state.statusLine)
+        assertEquals("视频信息: 已获取  播放通道: 已就绪", state.readinessLine)
+        assertEquals("整体: 12.5%  视频: 42.5%  起播: 50.0%", state.progressLine)
+        assertEquals("起播缓存: 100.0 MB / 200.0 MB", state.bufferingLine)
+        assertEquals("连接: 12  高速节点: 3  速度: 1.0 MB/s", state.connectionLine)
+        assertEquals("文件: episode-01.mkv", state.fileLine)
+        assertEquals("大小: 1.0 GB", state.sizeLine)
+        assertNull(state.errorMessage)
+    }
+
+    @Test
+    fun torrentPlaybackPreparationUiStateFallsBackWithoutPlan() {
+        val state = buildTorrentPlaybackPreparationUiState(
+            TorrentEngineState(
+                hasMetadata = false,
+                errorMessage = "种子解析失败",
+            ),
+        )
+
+        assertEquals(0f, state.bufferingProgress, 0.001f)
+        assertEquals("状态: 等待中", state.statusLine)
+        assertEquals("视频信息: 匹配中  播放通道: 准备中", state.readinessLine)
+        assertEquals("整体: 0.0%  视频: 0.0%  起播: 0.0%", state.progressLine)
+        assertEquals("连接: 0  高速节点: 0  速度: 0 B/s", state.connectionLine)
+        assertNull(state.bufferingLine)
+        assertNull(state.fileLine)
+        assertNull(state.sizeLine)
+        assertEquals("种子解析失败", state.errorMessage)
     }
 
     @Test

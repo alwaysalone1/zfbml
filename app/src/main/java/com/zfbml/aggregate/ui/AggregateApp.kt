@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.71")
+                setRequestProperty("User-Agent", "ZFBML/0.5.72")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2855,7 +2855,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.71",
+            version = "0.5.72",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -5453,7 +5453,6 @@ private fun PlayerScreen(
         Box(modifier.background(Color.Black)) {
             if (currentStream.protocol == StreamProtocol.BITTORRENT && torrentPlaybackUrl == null) {
                 TorrentPlaceholderSurface(
-                    stream = currentStream,
                     state = torrentState,
                     modifier = Modifier.fillMaxSize(),
                 )
@@ -9012,10 +9011,12 @@ private fun VideoStartupOverlay(
 
 @Composable
 private fun TorrentPlaceholderSurface(
-    stream: MediaStream,
     state: TorrentEngineState,
     modifier: Modifier = Modifier,
 ) {
+    val preparationState = remember(state) {
+        buildTorrentPlaybackPreparationUiState(state)
+    }
     Box(
         modifier = modifier.background(AnimeBackground),
         contentAlignment = Alignment.Center,
@@ -9025,46 +9026,32 @@ private fun TorrentPlaceholderSurface(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             horizontalAlignment = Alignment.Start,
         ) {
-            Text("\u6B63\u5728\u51C6\u5907\u64AD\u653E", style = MaterialTheme.typography.headlineSmall, color = Color.White, fontWeight = FontWeight.Bold)
+            Text(preparationState.title, style = MaterialTheme.typography.headlineSmall, color = Color.White, fontWeight = FontWeight.Bold)
             Text(
-                "\u6B63\u5728\u5339\u914D\u89C6\u9891\u6587\u4EF6\u5E76\u5EFA\u7ACB\u8D77\u64AD\u7F13\u51B2\uFF0C\u5B8C\u6210\u540E\u4F1A\u81EA\u52A8\u8FDB\u5165\u64AD\u653E\u3002",
+                preparationState.description,
                 style = MaterialTheme.typography.bodyLarge,
                 color = AnimeMuted,
             )
             LinearProgressIndicator(
-                progress = { (state.plan?.bufferingPercent ?: 0f) / 100f },
+                progress = { preparationState.bufferingProgress },
                 modifier = Modifier.fillMaxWidth(),
             )
-            Text("\u72B6\u6001: ${state.status ?: "\u7B49\u5F85\u4E2D"}", color = Color.White)
-            Text(
-                "\u89C6\u9891\u4FE1\u606F: ${if (state.hasMetadata) "\u5DF2\u83B7\u53D6" else "\u5339\u914D\u4E2D"}  \u64AD\u653E\u901A\u9053: ${if (state.plan?.localPlaybackUrl != null) "\u5DF2\u5C31\u7EEA" else "\u51C6\u5907\u4E2D"}",
-                color = Color.White,
-            )
-            Text("\u6574\u4F53: ${formatPercent(state.progressPercent)}  \u89C6\u9891: ${formatPercent(state.selectedFileProgressPercent)}  \u8D77\u64AD: ${formatPercent(state.plan?.bufferingPercent ?: 0f)}", color = Color.White)
-            state.plan?.takeIf { it.playbackReadyBytes > 0L }?.let { plan ->
-                Text(
-                    "\u8D77\u64AD\u7F13\u5B58: ${formatBytes(plan.selectedFileContiguousBytes)} / ${formatBytes(plan.playbackReadyBytes)}",
-                    color = Color.White,
-                )
+            Text(preparationState.statusLine, color = Color.White)
+            Text(preparationState.readinessLine, color = Color.White)
+            Text(preparationState.progressLine, color = Color.White)
+            preparationState.bufferingLine?.let { line ->
+                Text(line, color = Color.White)
             }
-            Text("\u8FDE\u63A5: ${state.connectedPeers}  \u9AD8\u901F\u8282\u70B9: ${state.connectedSeeds}  \u901F\u5EA6: ${formatBytesPerSecond(state.downloadRateBytesPerSecond)}", color = Color.White)
-            state.plan?.selectedFileName?.let { name ->
-                Text("\u6587\u4EF6: $name", style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(preparationState.connectionLine, color = Color.White)
+            preparationState.fileLine?.let { line ->
+                Text(line, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
-            state.plan?.selectedFileSizeBytes?.let { size ->
-                Text("\u5927\u5C0F: ${formatBytes(size)}", style = MaterialTheme.typography.bodySmall, color = AnimeMuted)
+            preparationState.sizeLine?.let { line ->
+                Text(line, style = MaterialTheme.typography.bodySmall, color = AnimeMuted)
             }
-            state.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            preparationState.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         }
     }
-}
-
-private fun formatBytesPerSecond(bytesPerSecond: Int): String {
-    return "${formatBytes(bytesPerSecond.toLong())}/s"
-}
-
-private fun formatPercent(percent: Float): String {
-    return "%.1f%%".format(percent)
 }
 
 private fun normalizePlaybackDurationMs(durationMs: Long): Long {
@@ -9116,21 +9103,6 @@ private fun formatPercentLabel(value: Float): String {
 
 private fun formatScaleLabel(value: Float): String {
     return formatScaleForUi(value)
-}
-
-private fun formatBytes(bytes: Long): String {
-    val units = listOf("B", "KB", "MB", "GB", "TB")
-    var value = bytes.toDouble()
-    var index = 0
-    while (value >= 1024.0 && index < units.lastIndex) {
-        value /= 1024.0
-        index += 1
-    }
-    return if (index == 0) {
-        "${bytes} ${units[index]}"
-    } else {
-        "%.1f %s".format(value, units[index])
-    }
 }
 
 private const val HOME_SCHEDULE_LIMIT = 12
