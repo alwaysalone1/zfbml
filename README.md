@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.95
+
+English:
+
+- Player route rows now expose model-provided container alpha, disabled alpha, border tone/alpha, row spacing, rail dimensions, subtitle tones, and action-label dimensions through `RouteCandidateUiState`.
+- `PlayerRouteOptionRow` and `PlayerRouteActionLabel` now render those route-row fields instead of hard-coding row shell, rail, subtitle, and action-chip presentation locally in Compose.
+- Added unit coverage for route-row presentation fields across recommended, current, web-only, and failed route states.
+- App version labels, request user agents, and README notes are now updated to `0.5.95`.
+
 ### v0.5.94
 
 English:

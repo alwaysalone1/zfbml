@@ -751,6 +751,27 @@ class PlaybackUiModelsTest {
         assertTrue(state.enabled)
         assertTrue(state.prominent)
         assertTrue(state.highlighted)
+        assertEquals(0.08f, state.containerAlpha)
+        assertEquals(0.035f, state.disabledContainerAlpha)
+        assertEquals(0.85f, state.borderAlpha)
+        assertEquals(SourceLibraryTone.Primary, state.borderTone)
+        assertEquals(10.dp, state.rowPadding)
+        assertEquals(10.dp, state.rowSpacing)
+        assertEquals(8.dp, state.rowCornerRadius)
+        assertEquals(4.dp, state.railWidth)
+        assertEquals(46.dp, state.compactRailHeight)
+        assertEquals(58.dp, state.detailedRailHeight)
+        assertEquals(5.dp, state.textColumnSpacing)
+        assertEquals(6.dp, state.titleBadgeSpacing)
+        assertEquals(5.dp, state.trailingSpacing)
+        assertEquals(SourceLibraryTone.Muted, state.compactSubtitleTone)
+        assertEquals(SourceLibraryTone.Online, state.detailedSubtitleTone)
+        assertEquals(30.dp, state.actionLabelHeight)
+        assertEquals(8.dp, state.actionLabelCornerRadius)
+        assertEquals(8.dp, state.actionLabelHorizontalPadding)
+        assertEquals(4.dp, state.actionLabelSpacing)
+        assertEquals(13.dp, state.actionLabelIconSize)
+        assertEquals(0.13f, state.actionLabelContainerAlpha)
         assertEquals("1080p", state.compactTitle)
         assertEquals("Online", state.compactSubtitle)
         assertEquals("Online", state.detailedTitle)
@@ -782,6 +803,7 @@ class PlaybackUiModelsTest {
         assertTrue(state.highlighted)
         assertEquals(SourceLibraryTone.Online, state.accentTone)
         assertEquals(SourceLibraryTone.Online, state.actionTone)
+        assertEquals(SourceLibraryTone.Online, state.borderTone)
     }
 
     @Test
@@ -804,6 +826,9 @@ class PlaybackUiModelsTest {
         assertFalse(web.playable)
         assertFalse(web.enabled)
         assertFalse(web.highlighted)
+        assertEquals(0.045f, web.containerAlpha)
+        assertEquals(0.08f, web.borderAlpha)
+        assertNull(web.borderTone)
         assertEquals(SourceLibraryTone.Muted, web.accentTone)
         assertEquals("播放失败", failed.statusLabel)
         assertEquals("重试", failed.actionLabel)
@@ -814,6 +839,9 @@ class PlaybackUiModelsTest {
         assertFalse(failed.prominent)
         assertTrue(failed.highlighted)
         assertFalse(failed.playable)
+        assertEquals(0.045f, failed.containerAlpha)
+        assertEquals(0.85f, failed.borderAlpha)
+        assertEquals(SourceLibraryTone.Web, failed.borderTone)
         assertEquals(SourceLibraryTone.Web, failed.accentTone)
     }
 
@@ -1882,19 +1910,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.94",
+            version = "0.5.95",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.94", state.version)
+        assertEquals("0.5.95", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.94" })
+        assertTrue(state.chips.any { it.label == "v0.5.95" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1908,7 +1936,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.94",
+            version = "0.5.95",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,
