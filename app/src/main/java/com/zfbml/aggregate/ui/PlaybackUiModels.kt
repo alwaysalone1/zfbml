@@ -2,6 +2,7 @@ package com.zfbml.aggregate.ui
 
 import com.zfbml.aggregate.source.Episode
 import com.zfbml.aggregate.source.DownloadPolicy
+import com.zfbml.aggregate.source.MediaDetail
 import com.zfbml.aggregate.source.MediaStream
 import com.zfbml.aggregate.source.RouteCandidate
 import com.zfbml.aggregate.source.SearchResult
@@ -61,6 +62,18 @@ internal data class DetailPlaybackReadinessUiState(
     val cacheReason: String,
     val canPlay: Boolean,
     val cacheEnabled: Boolean,
+)
+
+internal data class DetailEntryUiState(
+    val headline: String,
+    val summary: String,
+    val providerLabel: String,
+    val typeLabel: String,
+    val detailStatusLabel: String,
+    val episodeLabel: String,
+    val actionLabel: String,
+    val tone: SourceLibraryTone,
+    val chips: List<SearchResultChipUiState>,
 )
 
 internal enum class RoutePrefetchStatus {
@@ -984,6 +997,66 @@ internal fun buildSearchResultCardUiState(result: SearchResult): SearchResultCar
         posterUrl = result.posterUrl,
         providerId = result.providerId,
         tone = providerKind.tone,
+        chips = chips,
+    )
+}
+
+internal fun buildDetailEntryUiState(
+    result: SearchResult,
+    detail: MediaDetail?,
+    loading: Boolean,
+    error: String?,
+): DetailEntryUiState {
+    val resultState = buildSearchResultCardUiState(result)
+    val episodeCount = detail?.episodes?.size
+        ?: result.raw["episodeCount"]?.toIntOrNull()
+        ?: 0
+    val statusLabel = when {
+        loading -> "详情加载中"
+        !error.isNullOrBlank() -> "详情异常"
+        detail != null -> "详情已就绪"
+        else -> "等待详情"
+    }
+    val actionLabel = when {
+        loading -> "读取中"
+        !error.isNullOrBlank() -> "可重试"
+        detail != null && episodeCount > 0 -> "准备播放"
+        detail != null -> "查看详情"
+        else -> "进入详情"
+    }
+    val summary = when {
+        loading -> "${resultState.providerLabel} · 正在读取简介、选集和播放入口。"
+        !error.isNullOrBlank() -> "详情加载失败：${error.orEmpty()}"
+        detail != null && episodeCount > 0 -> "已载入 $episodeCount 集，首集会自动匹配播放线路。"
+        detail != null -> "已载入详情，选集和播放线路会继续自动补齐。"
+        else -> "${resultState.providerLabel} · 进入详情后会读取选集并自动匹配播放源。"
+    }
+    val statusTone = when {
+        loading -> SourceLibraryTone.Backup
+        !error.isNullOrBlank() -> SourceLibraryTone.Web
+        detail != null -> SourceLibraryTone.Cache
+        else -> SourceLibraryTone.Muted
+    }
+    val chips = buildList {
+        add(SearchResultChipUiState(resultState.typeLabel, resultState.tone))
+        add(SearchResultChipUiState(statusLabel, statusTone))
+        if (episodeCount > 0) {
+            add(SearchResultChipUiState("${episodeCount} 集", SourceLibraryTone.Online))
+        }
+        resultState.chips
+            .filterNot { chip -> any { it.label == chip.label } }
+            .take(2)
+            .forEach(::add)
+    }.take(4)
+    return DetailEntryUiState(
+        headline = detail?.title?.takeIf { it.isNotBlank() } ?: resultState.title,
+        summary = summary,
+        providerLabel = resultState.providerLabel,
+        typeLabel = resultState.typeLabel,
+        detailStatusLabel = statusLabel,
+        episodeLabel = if (episodeCount > 0) "$episodeCount 集" else "待选集",
+        actionLabel = actionLabel,
+        tone = resultState.tone,
         chips = chips,
     )
 }

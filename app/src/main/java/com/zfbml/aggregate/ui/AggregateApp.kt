@@ -2330,7 +2330,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.51")
+                setRequestProperty("User-Agent", "ZFBML/0.5.52")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2823,7 +2823,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.51",
+            version = "0.5.52",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -3601,6 +3601,12 @@ private fun DetailScreen(
         selectedSourceId = routeSourceFilter,
         loadedFromCache = routesFromCache,
     )
+    val detailEntryState = buildDetailEntryUiState(
+        result = result,
+        detail = detail,
+        loading = loading,
+        error = error,
+    )
     val detailPlaybackReadiness = buildDetailPlaybackReadinessUiState(routeUiState)
     val routePrefetchUiState = detail?.let { media ->
         buildRoutePrefetchUiState(
@@ -3663,6 +3669,12 @@ private fun DetailScreen(
                     Text("追番详情", style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1)
                 }
             }
+        }
+        item {
+            DetailEntryStatusCard(
+                state = detailEntryState,
+                modifier = Modifier.padding(horizontal = 18.dp),
+            )
         }
         if (loading) {
             item {
@@ -3888,6 +3900,62 @@ private fun DetailHero(
                     onClick = onToggleRoutes,
                     modifier = Modifier.widthIn(min = 126.dp, max = 156.dp).height(48.dp),
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun DetailEntryStatusCard(
+    state: DetailEntryUiState,
+    modifier: Modifier = Modifier,
+) {
+    val accent = sourceLibraryToneColor(state.tone)
+    Surface(
+        modifier = modifier.fillMaxWidth().focusable(),
+        color = AnimePanel,
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.28f)),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(14.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier.size(42.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.18f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Filled.Movie, contentDescription = null, tint = accent, modifier = Modifier.size(22.dp))
+            }
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = state.headline,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
+                    )
+                    RouteStatusBadge(state.detailStatusLabel, sourceLibraryToneColor(state.chips.getOrNull(1)?.tone ?: state.tone))
+                }
+                Text(state.summary, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    items(state.chips) { chip ->
+                        RouteStatusBadge(chip.label, sourceLibraryToneColor(chip.tone))
+                    }
+                }
+            }
+            Column(
+                modifier = Modifier.widthIn(max = 104.dp),
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(state.providerLabel, style = MaterialTheme.typography.labelMedium, color = accent, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(state.episodeLabel, style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.72f), maxLines = 1)
+                Text(state.actionLabel, style = MaterialTheme.typography.labelSmall, color = AnimeMuted, maxLines = 1)
             }
         }
     }

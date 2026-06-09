@@ -25,6 +25,23 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.52
+
+中文：
+- 详情页新增 `DetailEntryUiState`，统一生成进入详情后的条目来源、结果类型、详情加载状态、集数和下一步动作。
+- 详情页标题区下方新增入口状态卡，加载中、加载失败、详情已就绪都会显示一致的来源/选集/播放准备摘要。
+- 详情入口摘要复用搜索结果卡的类型判断，搜索结果到详情页的用户路径更连贯。
+- 新增单元测试覆盖详情已载入、加载中和异常状态下的入口摘要。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.52`。
+
+English:
+
+- Detail pages now have `DetailEntryUiState` to centralize source, result type, detail loading state, episode count, and next action.
+- A detail-entry status card now appears below the detail title area, keeping loading, failure, and ready states consistent.
+- Detail entry summaries reuse the search-result classification model, making the search-to-detail path more coherent.
+- Added unit coverage for loaded, loading, and failed detail-entry summaries.
+- App version labels, request user agents, and README notes are now updated to `0.5.52`.
+
 ### v0.5.51
 
 中文：

@@ -109,3 +109,5 @@ This pass wires the app shell navigation to the real home schedule digest. `Main
 This pass upgrades the search landing surface. `SearchLandingUiState` turns the shared home schedule digest into first-class search suggestions, then fills with popular fallback keywords, so the search tab opens with data-backed anime entries and source-readiness copy before the user types.
 
 This pass upgrades search result cards. `SearchResultCardUiState` classifies catalog, direct-link, BT/RSS, and generic video-source hits, then exposes rating, episode count, category, and popularity chips so users can decide which result to open without relying on raw source names.
+
+This pass upgrades the search-to-detail handoff. `DetailEntryUiState` reuses search result classification to show source type, detail loading state, episode readiness, and next action directly on the detail page before playback route decisions.

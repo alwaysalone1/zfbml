@@ -2,6 +2,7 @@ package com.zfbml.aggregate.ui
 
 import com.zfbml.aggregate.source.Episode
 import com.zfbml.aggregate.source.DownloadPolicy
+import com.zfbml.aggregate.source.MediaDetail
 import com.zfbml.aggregate.source.MediaStream
 import com.zfbml.aggregate.source.RouteCandidate
 import com.zfbml.aggregate.source.SearchResult
@@ -668,6 +669,67 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun detailEntryUiStateSummarizesLoadedDetailAndEpisodes() {
+        val result = SearchResult(
+            providerId = "bangumi-catalog",
+            title = "Alpha Result",
+            url = "bangumi://subject/1",
+            raw = mapOf("rating" to "8.7"),
+        )
+        val detail = MediaDetail(
+            providerId = "bangumi-catalog",
+            title = "Alpha Detail",
+            url = "bangumi://subject/1",
+            episodes = listOf(episode(id = "ep-1", index = 1), episode(id = "ep-2", index = 2)),
+        )
+
+        val state = buildDetailEntryUiState(
+            result = result,
+            detail = detail,
+            loading = false,
+            error = null,
+        )
+
+        assertEquals("Alpha Detail", state.headline)
+        assertEquals("Bangumi 资料库", state.providerLabel)
+        assertEquals("资料库", state.typeLabel)
+        assertEquals("详情已就绪", state.detailStatusLabel)
+        assertEquals("2 集", state.episodeLabel)
+        assertEquals("准备播放", state.actionLabel)
+        assertEquals(SourceLibraryTone.Online, state.tone)
+        assertTrue(state.summary.contains("2 集"))
+        assertTrue(state.chips.any { it.label == "详情已就绪" })
+        assertTrue(state.chips.any { it.label == "评分 8.7" })
+    }
+
+    @Test
+    fun detailEntryUiStateExplainsLoadingAndErrorStates() {
+        val result = searchResult(providerId = "direct-url", title = "Direct", raw = mapOf("episodeCount" to "1"))
+
+        val loading = buildDetailEntryUiState(
+            result = result,
+            detail = null,
+            loading = true,
+            error = null,
+        )
+        val failed = buildDetailEntryUiState(
+            result = result,
+            detail = null,
+            loading = false,
+            error = "HTTP 500",
+        )
+
+        assertEquals("详情加载中", loading.detailStatusLabel)
+        assertEquals("读取中", loading.actionLabel)
+        assertEquals("1 集", loading.episodeLabel)
+        assertTrue(loading.summary.contains("正在读取"))
+        assertEquals("详情异常", failed.detailStatusLabel)
+        assertEquals("可重试", failed.actionLabel)
+        assertTrue(failed.summary.contains("HTTP 500"))
+        assertTrue(failed.chips.any { it.label == "详情异常" })
+    }
+
+    @Test
     fun searchIndexUiStateSummarizesSourcesResultsAndFailures() {
         val manifests = listOf(
             manifest("bangumi-catalog", "Bangumi", setOf(SourceCapability.SEARCH, SourceCapability.DETAIL, SourceCapability.EPISODES)),
@@ -1090,19 +1152,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.51",
+            version = "0.5.52",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.51", state.version)
+        assertEquals("0.5.52", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.51" })
+        assertTrue(state.chips.any { it.label == "v0.5.52" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1116,7 +1178,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.51",
+            version = "0.5.52",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,
