@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.96")
+                setRequestProperty("User-Agent", "ZFBML/0.5.97")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2866,7 +2866,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.96",
+            version = "0.5.97",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -8412,7 +8412,7 @@ private fun PlayerEpisodePanel(
         Text(state.emptyText, style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         return
     }
-    LazyColumn(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+    LazyColumn(verticalArrangement = Arrangement.spacedBy(state.listSpacing)) {
         item {
             PlayerEpisodeSummaryCard(
                 state = state,
@@ -8423,7 +8423,7 @@ private fun PlayerEpisodePanel(
             Text(
                 state.listTitle,
                 style = MaterialTheme.typography.labelMedium,
-                color = Color.White.copy(alpha = 0.72f),
+                color = Color.White.copy(alpha = state.listTitleAlpha),
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
             )
@@ -8444,22 +8444,31 @@ private fun PlayerEpisodeSummaryCard(
 ) {
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(8.dp),
-        color = Color.White.copy(alpha = 0.06f),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f)),
+        shape = RoundedCornerShape(state.summaryCardCornerRadius),
+        color = Color.White.copy(alpha = state.summaryCardContainerAlpha),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = state.summaryCardBorderAlpha)),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.fillMaxWidth().padding(state.summaryCardPadding),
+            horizontalArrangement = Arrangement.spacedBy(state.summaryCardSpacing),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            val accent = sourceLibraryToneColor(state.summaryIconTone)
             Box(
-                modifier = Modifier.size(40.dp).clip(RoundedCornerShape(8.dp)).background(AnimeAccentPink.copy(alpha = 0.18f)),
+                modifier = Modifier
+                    .size(state.summaryIconBoxSize)
+                    .clip(RoundedCornerShape(state.summaryIconCornerRadius))
+                    .background(accent.copy(alpha = state.summaryIconContainerAlpha)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.AutoMirrored.Filled.PlaylistPlay, contentDescription = null, tint = AnimeAccentPink, modifier = Modifier.size(22.dp))
+                Icon(
+                    Icons.AutoMirrored.Filled.PlaylistPlay,
+                    contentDescription = null,
+                    tint = accent,
+                    modifier = Modifier.size(state.summaryIconSize),
+                )
             }
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(state.summaryTextSpacing)) {
                 Text(
                     state.title,
                     style = MaterialTheme.typography.titleSmall,
@@ -8471,19 +8480,19 @@ private fun PlayerEpisodeSummaryCard(
                 Text(
                     state.summary,
                     style = MaterialTheme.typography.bodySmall,
-                    color = AnimeMuted,
+                    color = sourceLibraryToneColor(state.summaryTone),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(horizontalArrangement = Arrangement.spacedBy(state.summaryChipSpacing), verticalAlignment = Alignment.CenterVertically) {
                     state.chips.forEach { chip ->
                         RouteStatusBadge(chip.label, sourceLibraryToneColor(chip.tone))
                     }
                     Text(
-                        "切换选集后自动选择最佳播放源",
+                        state.helperText,
                         modifier = Modifier.weight(1f),
                         style = MaterialTheme.typography.labelSmall,
-                        color = Color.White.copy(alpha = 0.64f),
+                        color = Color.White.copy(alpha = state.helperTextAlpha),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )

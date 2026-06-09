@@ -1940,19 +1940,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.96",
+            version = "0.5.97",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.96", state.version)
+        assertEquals("0.5.97", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.96" })
+        assertTrue(state.chips.any { it.label == "v0.5.97" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1966,7 +1966,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.96",
+            version = "0.5.97",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,
@@ -2009,6 +2009,23 @@ class PlaybackUiModelsTest {
         assertEquals("当前 第 1 集 · 共 3 集", idle.summary)
         assertEquals("全部选集", idle.listTitle)
         assertEquals(listOf("正在看", "自动匹配", "3集"), idle.chips.map { it.label })
+        assertEquals(9.dp, idle.listSpacing)
+        assertEquals(0.72f, idle.listTitleAlpha)
+        assertEquals(0.06f, idle.summaryCardContainerAlpha)
+        assertEquals(0.08f, idle.summaryCardBorderAlpha)
+        assertEquals(8.dp, idle.summaryCardCornerRadius)
+        assertEquals(12.dp, idle.summaryCardPadding)
+        assertEquals(10.dp, idle.summaryCardSpacing)
+        assertEquals(SourceLibraryTone.Primary, idle.summaryIconTone)
+        assertEquals(40.dp, idle.summaryIconBoxSize)
+        assertEquals(22.dp, idle.summaryIconSize)
+        assertEquals(8.dp, idle.summaryIconCornerRadius)
+        assertEquals(0.18f, idle.summaryIconContainerAlpha)
+        assertEquals(3.dp, idle.summaryTextSpacing)
+        assertEquals(SourceLibraryTone.Muted, idle.summaryTone)
+        assertEquals(7.dp, idle.summaryChipSpacing)
+        assertEquals("切换选集后自动选择最佳播放源", idle.helperText)
+        assertEquals(0.64f, idle.helperTextAlpha)
         assertEquals("01", idle.items[0].compactIndexLabel)
         assertEquals("当前", idle.items[0].statusLabel)
         assertEquals("播放中", idle.items[0].actionLabel)

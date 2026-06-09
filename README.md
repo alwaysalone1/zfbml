@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.97
+
+English:
+
+- Player episode panels now expose model-provided list spacing, list-title alpha, summary-card alpha/border/radius, summary icon tone/size/container alpha, summary text spacing, chip spacing, helper copy, and helper alpha through `PlayerEpisodePanelUiState`.
+- `PlayerEpisodePanel` and `PlayerEpisodeSummaryCard` now render those fields instead of hard-coding episode summary card and list-title presentation locally in Compose.
+- Added unit coverage for episode-panel summary shell, list title, icon, helper text, and spacing presentation fields.
+- App version labels, request user agents, and README notes are now updated to `0.5.97`.
+
 ### v0.5.96
 
 English:
