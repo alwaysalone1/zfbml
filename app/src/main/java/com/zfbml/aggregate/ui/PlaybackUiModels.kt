@@ -408,6 +408,31 @@ internal data class PlayerSpeedOptionUiState(
     val tone: SourceLibraryTone,
 )
 
+internal data class PlayerMorePanelUiState(
+    val summaryBadge: String,
+    val summaryPrimary: String,
+    val summarySecondary: String,
+    val actions: List<PlayerMoreActionUiState>,
+)
+
+internal data class PlayerMoreActionUiState(
+    val kind: PlayerMoreActionKind,
+    val title: String,
+    val subtitle: String,
+    val enabled: Boolean,
+    val selected: Boolean,
+    val tone: SourceLibraryTone,
+)
+
+internal enum class PlayerMoreActionKind {
+    Quality,
+    Speed,
+    Episode,
+    Route,
+    Danmaku,
+    Cache,
+}
+
 internal data class PlayerDanmakuSafeAreaUiState(
     val topInsetDp: Int,
     val bottomInsetDp: Int,
@@ -1981,6 +2006,85 @@ internal fun buildPlayerSpeedPanelUiState(
     return PlayerSpeedPanelUiState(
         summary = "当前 ${formatPlaybackSpeedForUi(playbackSpeed)} · ${options.size} 档可选",
         options = options,
+    )
+}
+
+internal fun buildPlayerMorePanelUiState(
+    routeCount: Int,
+    routeCoverageLabel: String,
+    episodeCount: Int,
+    routeLabel: String,
+    quality: String,
+    playbackSpeed: Float,
+    danmakuEnabled: Boolean,
+    cacheAction: PlayerCacheActionUiState,
+): PlayerMorePanelUiState {
+    val normalizedQuality = quality.ifBlank { "自动" }
+    val speedLabel = formatPlaybackSpeedForUi(playbackSpeed)
+    val normalizedEpisodeCount = episodeCount.coerceAtLeast(1)
+    val normalizedRouteLabel = routeLabel.ifBlank { "自动推荐" }
+    val routeSummary = when {
+        routeCount > 1 -> routeCoverageLabel.ifBlank { "$routeCount 条线路" }
+        else -> "自动推荐"
+    }
+    return PlayerMorePanelUiState(
+        summaryBadge = "当前设置",
+        summaryPrimary = listOf("清晰度 $normalizedQuality", "倍速 $speedLabel").joinToString(" · "),
+        summarySecondary = listOf(
+            "当前源 $normalizedRouteLabel",
+            routeSummary,
+            "$normalizedEpisodeCount 集",
+        ).joinToString(" · "),
+        actions = listOf(
+            PlayerMoreActionUiState(
+                kind = PlayerMoreActionKind.Quality,
+                title = "清晰度",
+                subtitle = normalizedQuality,
+                enabled = true,
+                selected = false,
+                tone = SourceLibraryTone.Primary,
+            ),
+            PlayerMoreActionUiState(
+                kind = PlayerMoreActionKind.Speed,
+                title = "倍速",
+                subtitle = speedLabel,
+                enabled = true,
+                selected = false,
+                tone = SourceLibraryTone.Online,
+            ),
+            PlayerMoreActionUiState(
+                kind = PlayerMoreActionKind.Episode,
+                title = "选集",
+                subtitle = "共 $normalizedEpisodeCount 集",
+                enabled = episodeCount > 1,
+                selected = false,
+                tone = SourceLibraryTone.Backup,
+            ),
+            PlayerMoreActionUiState(
+                kind = PlayerMoreActionKind.Route,
+                title = "换源",
+                subtitle = routeSummary,
+                enabled = routeCount > 1,
+                selected = false,
+                tone = SourceLibraryTone.Online,
+            ),
+            PlayerMoreActionUiState(
+                kind = PlayerMoreActionKind.Danmaku,
+                title = "弹幕",
+                subtitle = if (danmakuEnabled) "已开启" else "已关闭",
+                enabled = true,
+                selected = danmakuEnabled,
+                tone = if (danmakuEnabled) SourceLibraryTone.Primary else SourceLibraryTone.Muted,
+            ),
+            PlayerMoreActionUiState(
+                kind = PlayerMoreActionKind.Cache,
+                title = cacheAction.title,
+                subtitle = if (cacheAction.enabled) cacheAction.actionLabel else cacheAction.reason,
+                enabled = cacheAction.enabled,
+                selected = false,
+                tone = if (cacheAction.enabled) SourceLibraryTone.Primary else SourceLibraryTone.Muted,
+            ),
+        ),
     )
 }
 

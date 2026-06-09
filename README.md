@@ -25,6 +25,23 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.62
+
+中文：
+- 播放器更多设置新增 `PlayerMorePanelUiState`、`PlayerMoreActionUiState` 和 `PlayerMoreActionKind`，统一生成当前设置摘要和 6 个快捷入口。
+- 更多设置面板改为消费模型字段，清晰度、倍速、选集、换源、弹幕和缓存入口的启用态、选中态、说明文案不再散在 Compose 里。
+- 摘要卡统一显示当前源、线路覆盖、集数、清晰度和倍速，空质量、单集、单线路等边界状态由模型层归一化。
+- 新增单元测试覆盖多线路多集、弹幕开启、可缓存，以及单线路、无选集、弹幕关闭、不可缓存状态。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.62`。
+
+English:
+
+- The player more/settings panel now has `PlayerMorePanelUiState`, `PlayerMoreActionUiState`, and `PlayerMoreActionKind` for its summary and six quick actions.
+- The panel now renders model fields for quality, speed, episode, route, danmaku, and cache actions, keeping enabled, selected, and helper copy out of Compose.
+- The summary card now normalizes current source, route coverage, episode count, quality, and speed, including blank quality, single-episode, and single-route edge cases.
+- Added unit coverage for multi-route/multi-episode/danmaku/cacheable states and unavailable single-route/cache-blocked states.
+- App version labels, request user agents, and README notes are now updated to `0.5.62`.
+
 ### v0.5.61
 
 中文：

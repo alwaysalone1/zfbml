@@ -129,3 +129,5 @@ This pass upgrades the player danmaku settings panel. `PlayerDanmakuSettingsUiSt
 This pass upgrades the player quality panel. `PlayerQualityPanelUiState` and `PlayerQualityOptionUiState` now own quality buckets, current-quality selection, source subtitle, action copy, empty state, and normalized auto-quality labels so quality switching follows the same tested model contract as routes, episodes, and danmaku settings.
 
 This pass upgrades the player speed panel. `PlayerSpeedPanelUiState` and `PlayerSpeedOptionUiState` now own speed formatting, sorted option buckets, current-speed selection, helper copy, and action labels so playback speed switching follows the same model-driven panel contract as quality, route, episode, and danmaku controls.
+
+This pass upgrades the player more/settings panel. `PlayerMorePanelUiState`, `PlayerMoreActionUiState`, and `PlayerMoreActionKind` now own the current-setting summary, quick-action order, enabled/selected state, and helper copy for quality, speed, episode, route, danmaku, and cache entry points so the fullscreen control layer follows the same app-store-grade model contract as the specialized player panels.

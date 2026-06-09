@@ -2330,7 +2330,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.61")
+                setRequestProperty("User-Agent", "ZFBML/0.5.62")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2823,7 +2823,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.61",
+            version = "0.5.62",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -7800,59 +7800,41 @@ private fun PlayerMorePanel(
     onShowPanel: (PlayerPanel) -> Unit,
     onOffline: () -> Unit,
 ) {
-    val actions = listOf(
+    val state = remember(
+        routeCount,
+        routeCoverageLabel,
+        episodeCount,
+        routeLabel,
+        quality,
+        playbackSpeed,
+        danmakuEnabled,
+        cacheActionState,
+    ) {
+        buildPlayerMorePanelUiState(
+            routeCount = routeCount,
+            routeCoverageLabel = routeCoverageLabel,
+            episodeCount = episodeCount,
+            routeLabel = routeLabel,
+            quality = quality,
+            playbackSpeed = playbackSpeed,
+            danmakuEnabled = danmakuEnabled,
+            cacheAction = cacheActionState,
+        )
+    }
+    val actions = state.actions.map { actionState ->
         PlayerMoreAction(
-            title = "清晰度",
-            subtitle = quality,
-            icon = Icons.Filled.HighQuality,
-            onClick = { onShowPanel(PlayerPanel.Quality) },
-        ),
-        PlayerMoreAction(
-            title = "倍速",
-            subtitle = formatPlaybackSpeed(playbackSpeed),
-            icon = Icons.Filled.Speed,
-            onClick = { onShowPanel(PlayerPanel.Speed) },
-        ),
-        PlayerMoreAction(
-            title = "选集",
-            subtitle = "共 $episodeCount 集",
-            icon = Icons.AutoMirrored.Filled.PlaylistPlay,
-            enabled = episodeCount > 1,
-            onClick = { onShowPanel(PlayerPanel.Episode) },
-        ),
-        PlayerMoreAction(
-            title = "换源",
-            subtitle = if (routeCount > 1) routeCoverageLabel else "自动推荐",
-            icon = Icons.Filled.VideoLibrary,
-            enabled = routeCount > 1,
-            onClick = { onShowPanel(PlayerPanel.Route) },
-        ),
-        PlayerMoreAction(
-            title = "弹幕",
-            subtitle = if (danmakuEnabled) "已开启" else "已关闭",
-            icon = Icons.Filled.ClosedCaption,
-            selected = danmakuEnabled,
-            onClick = { onShowPanel(PlayerPanel.Danmaku) },
-        ),
-        PlayerMoreAction(
-            title = cacheActionState.title,
-            subtitle = if (cacheActionState.enabled) cacheActionState.actionLabel else cacheActionState.reason,
-            icon = Icons.Filled.CloudDownload,
-            enabled = cacheActionState.enabled,
-            onClick = onOffline,
-        ),
-    )
+            state = actionState,
+            icon = playerMoreActionIcon(actionState.kind),
+            onClick = playerMoreActionClick(actionState.kind, onShowPanel, onOffline),
+        )
+    }
 
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         PlayerMoreSummaryCard(
-            routeLabel = routeLabel,
-            quality = quality,
-            playbackSpeed = playbackSpeed,
-            routeCoverageLabel = routeCoverageLabel,
-            episodeCount = episodeCount,
+            state = state,
             modifier = Modifier.fillMaxWidth(),
         )
         LazyColumn(
@@ -7880,11 +7862,7 @@ private fun PlayerMorePanel(
 
 @Composable
 private fun PlayerMoreSummaryCard(
-    routeLabel: String,
-    quality: String,
-    playbackSpeed: Float,
-    routeCoverageLabel: String,
-    episodeCount: Int,
+    state: PlayerMorePanelUiState,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -7909,9 +7887,9 @@ private fun PlayerMoreSummaryCard(
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) {
-                    RouteStatusBadge("当前设置", AnimeAccentPink)
+                    RouteStatusBadge(state.summaryBadge, AnimeAccentPink)
                     Text(
-                        text = listOf("清晰度 $quality", "倍速 ${formatPlaybackSpeed(playbackSpeed)}").joinToString(" · "),
+                        text = state.summaryPrimary,
                         style = MaterialTheme.typography.labelMedium,
                         color = Color.White.copy(alpha = 0.82f),
                         maxLines = 1,
@@ -7920,11 +7898,7 @@ private fun PlayerMoreSummaryCard(
                     )
                 }
                 Text(
-                    text = listOf(
-                        "当前源 ${routeLabel.ifBlank { "自动推荐" }}",
-                        routeCoverageLabel,
-                        "${episodeCount.coerceAtLeast(1)} 集",
-                    ).joinToString(" · "),
+                    text = state.summarySecondary,
                     style = MaterialTheme.typography.bodySmall,
                     color = AnimeMuted,
                     maxLines = 1,
@@ -7936,22 +7910,48 @@ private fun PlayerMoreSummaryCard(
 }
 
 private data class PlayerMoreAction(
-    val title: String,
-    val subtitle: String,
+    val state: PlayerMoreActionUiState,
     val icon: ImageVector,
-    val enabled: Boolean = true,
-    val selected: Boolean = false,
     val onClick: () -> Unit,
 )
 
+private fun playerMoreActionIcon(kind: PlayerMoreActionKind): ImageVector {
+    return when (kind) {
+        PlayerMoreActionKind.Quality -> Icons.Filled.HighQuality
+        PlayerMoreActionKind.Speed -> Icons.Filled.Speed
+        PlayerMoreActionKind.Episode -> Icons.AutoMirrored.Filled.PlaylistPlay
+        PlayerMoreActionKind.Route -> Icons.Filled.VideoLibrary
+        PlayerMoreActionKind.Danmaku -> Icons.Filled.ClosedCaption
+        PlayerMoreActionKind.Cache -> Icons.Filled.CloudDownload
+    }
+}
+
+private fun playerMoreActionClick(
+    kind: PlayerMoreActionKind,
+    onShowPanel: (PlayerPanel) -> Unit,
+    onOffline: () -> Unit,
+): () -> Unit {
+    fun show(panel: PlayerPanel): () -> Unit = { onShowPanel(panel) }
+    return when (kind) {
+        PlayerMoreActionKind.Quality -> show(PlayerPanel.Quality)
+        PlayerMoreActionKind.Speed -> show(PlayerPanel.Speed)
+        PlayerMoreActionKind.Episode -> show(PlayerPanel.Episode)
+        PlayerMoreActionKind.Route -> show(PlayerPanel.Route)
+        PlayerMoreActionKind.Danmaku -> show(PlayerPanel.Danmaku)
+        PlayerMoreActionKind.Cache -> onOffline
+    }
+}
+
 @Composable
 private fun PlayerMoreActionTile(action: PlayerMoreAction, modifier: Modifier = Modifier) {
-    val border = if (action.selected) {
+    val selected = action.state.selected
+    val enabled = action.state.enabled
+    val border = if (selected) {
         BorderStroke(1.dp, AnimeAccentCyan.copy(alpha = 0.62f))
     } else {
         BorderStroke(1.dp, Color.White.copy(alpha = 0.06f))
     }
-    val container = if (action.selected) {
+    val container = if (selected) {
         AnimeAccentCyan.copy(alpha = 0.16f)
     } else {
         Color.White.copy(alpha = 0.08f)
@@ -7959,8 +7959,8 @@ private fun PlayerMoreActionTile(action: PlayerMoreAction, modifier: Modifier = 
     Surface(
         modifier = modifier
             .height(58.dp)
-            .alpha(if (action.enabled) 1f else 0.42f)
-            .clickable(enabled = action.enabled, onClick = action.onClick),
+            .alpha(if (enabled) 1f else 0.42f)
+            .clickable(enabled = enabled, onClick = action.onClick),
         shape = RoundedCornerShape(8.dp),
         color = container,
         border = border,
@@ -7974,26 +7974,26 @@ private fun PlayerMoreActionTile(action: PlayerMoreAction, modifier: Modifier = 
                 modifier = Modifier
                     .size(30.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(if (action.selected) AnimeAccentCyan.copy(alpha = 0.18f) else Color.Black.copy(alpha = 0.22f)),
+                    .background(if (selected) AnimeAccentCyan.copy(alpha = 0.18f) else Color.Black.copy(alpha = 0.22f)),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector = action.icon,
-                    contentDescription = action.title,
-                    tint = if (action.selected) AnimeAccentCyan else Color.White.copy(alpha = 0.88f),
+                    contentDescription = action.state.title,
+                    tint = if (selected) AnimeAccentCyan else Color.White.copy(alpha = 0.88f),
                     modifier = Modifier.size(18.dp),
                 )
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
-                    text = action.title,
+                    text = action.state.title,
                     style = MaterialTheme.typography.labelLarge,
                     color = Color.White,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = action.subtitle,
+                    text = action.state.subtitle,
                     style = MaterialTheme.typography.labelSmall,
                     color = Color.White.copy(alpha = 0.56f),
                     maxLines = 1,
