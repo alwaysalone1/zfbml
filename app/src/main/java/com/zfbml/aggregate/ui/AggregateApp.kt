@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.97")
+                setRequestProperty("User-Agent", "ZFBML/0.5.98")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2866,7 +2866,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.97",
+            version = "0.5.98",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -8512,27 +8512,34 @@ private fun PlayerEpisodeOptionRow(
         onClick = onClick,
         enabled = state.enabled,
         modifier = Modifier.fillMaxWidth().focusable(),
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(state.rowCornerRadius),
         colors = CardDefaults.cardColors(
-            containerColor = if (state.prominent) Color.White.copy(alpha = 0.08f) else Color.White.copy(alpha = 0.045f),
-            disabledContainerColor = Color.White.copy(alpha = 0.032f),
+            containerColor = Color.White.copy(alpha = state.containerAlpha),
+            disabledContainerColor = Color.White.copy(alpha = state.disabledContainerAlpha),
         ),
-        border = BorderStroke(1.dp, if (state.highlighted) accent.copy(alpha = 0.85f) else Color.White.copy(alpha = 0.08f)),
+        border = BorderStroke(1.dp, if (state.highlighted) accent.copy(alpha = state.borderAlpha) else Color.White.copy(alpha = state.borderAlpha)),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(10.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.fillMaxWidth().padding(state.rowPadding),
+            horizontalArrangement = Arrangement.spacedBy(state.rowSpacing),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
-                modifier = Modifier.width(4.dp).height(52.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = state.railAlpha)),
+                modifier = Modifier
+                    .width(state.railWidth)
+                    .height(state.railHeight)
+                    .clip(RoundedCornerShape(state.rowCornerRadius))
+                    .background(accent.copy(alpha = state.railAlpha)),
             )
             Box(
-                modifier = Modifier.size(42.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.16f)),
+                modifier = Modifier
+                    .size(state.indexBoxSize)
+                    .clip(RoundedCornerShape(state.indexBoxCornerRadius))
+                    .background(accent.copy(alpha = state.indexBoxContainerAlpha)),
                 contentAlignment = Alignment.Center,
             ) {
                 if (state.loading) {
-                    CircularProgressIndicator(color = accent, modifier = Modifier.size(20.dp))
+                    CircularProgressIndicator(color = accent, modifier = Modifier.size(state.loadingIndicatorSize))
                 } else {
                     Text(
                         state.compactIndexLabel,
@@ -8543,8 +8550,8 @@ private fun PlayerEpisodeOptionRow(
                     )
                 }
             }
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(state.textColumnSpacing)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(state.titleBadgeSpacing), verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         state.title,
                         modifier = Modifier.weight(1f),
@@ -8561,34 +8568,40 @@ private fun PlayerEpisodeOptionRow(
                 Text(
                     state.indexLabel,
                     style = MaterialTheme.typography.bodySmall,
-                    color = AnimeMuted.copy(alpha = state.subtitleAlpha),
+                    color = sourceLibraryToneColor(state.subtitleTone).copy(alpha = state.subtitleAlpha),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            EpisodeActionLabel(label = state.actionLabel, tone = state.tone, enabled = state.actionEnabled)
+            EpisodeActionLabel(state = state)
         }
     }
 }
 
 @Composable
 private fun EpisodeActionLabel(
-    label: String,
-    tone: SourceLibraryTone,
-    enabled: Boolean,
+    state: PlayerEpisodeOptionUiState,
 ) {
-    val color = sourceLibraryToneColor(tone)
+    val color = sourceLibraryToneColor(state.tone)
     Row(
         modifier = Modifier
-            .height(30.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(color.copy(alpha = if (enabled) 0.13f else 0.06f))
-            .padding(horizontal = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+            .height(state.actionLabelHeight)
+            .clip(RoundedCornerShape(state.actionLabelCornerRadius))
+            .background(
+                color.copy(
+                    alpha = if (state.actionEnabled) {
+                        state.actionLabelContainerAlpha
+                    } else {
+                        state.actionLabelDisabledContainerAlpha
+                    },
+                ),
+            )
+            .padding(horizontal = state.actionLabelHorizontalPadding),
+        horizontalArrangement = Arrangement.spacedBy(state.actionLabelSpacing),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = color, modifier = Modifier.size(13.dp))
-        Text(label, style = MaterialTheme.typography.labelSmall, color = color, maxLines = 1)
+        Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = color, modifier = Modifier.size(state.actionLabelIconSize))
+        Text(state.actionLabel, style = MaterialTheme.typography.labelSmall, color = color, maxLines = 1)
     }
 }
 

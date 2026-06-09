@@ -1940,19 +1940,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.97",
+            version = "0.5.98",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.97", state.version)
+        assertEquals("0.5.98", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.97" })
+        assertTrue(state.chips.any { it.label == "v0.5.98" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1966,7 +1966,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.97",
+            version = "0.5.98",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,
@@ -2036,6 +2036,28 @@ class PlaybackUiModelsTest {
         assertEquals(1f, idle.items[0].railAlpha)
         assertEquals(0.94f, idle.items[0].titleAlpha)
         assertEquals(0.86f, idle.items[0].subtitleAlpha)
+        assertEquals(0.08f, idle.items[0].containerAlpha)
+        assertEquals(0.032f, idle.items[0].disabledContainerAlpha)
+        assertEquals(0.85f, idle.items[0].borderAlpha)
+        assertEquals(10.dp, idle.items[0].rowPadding)
+        assertEquals(10.dp, idle.items[0].rowSpacing)
+        assertEquals(8.dp, idle.items[0].rowCornerRadius)
+        assertEquals(4.dp, idle.items[0].railWidth)
+        assertEquals(52.dp, idle.items[0].railHeight)
+        assertEquals(42.dp, idle.items[0].indexBoxSize)
+        assertEquals(8.dp, idle.items[0].indexBoxCornerRadius)
+        assertEquals(0.16f, idle.items[0].indexBoxContainerAlpha)
+        assertEquals(20.dp, idle.items[0].loadingIndicatorSize)
+        assertEquals(4.dp, idle.items[0].textColumnSpacing)
+        assertEquals(6.dp, idle.items[0].titleBadgeSpacing)
+        assertEquals(SourceLibraryTone.Muted, idle.items[0].subtitleTone)
+        assertEquals(30.dp, idle.items[0].actionLabelHeight)
+        assertEquals(8.dp, idle.items[0].actionLabelCornerRadius)
+        assertEquals(8.dp, idle.items[0].actionLabelHorizontalPadding)
+        assertEquals(4.dp, idle.items[0].actionLabelSpacing)
+        assertEquals(13.dp, idle.items[0].actionLabelIconSize)
+        assertEquals(0.13f, idle.items[0].actionLabelContainerAlpha)
+        assertEquals(0.06f, idle.items[0].actionLabelDisabledContainerAlpha)
         assertEquals(SourceLibraryTone.Primary, idle.items[0].tone)
         assertEquals("播放", idle.items[1].actionLabel)
         assertEquals("02", idle.items[1].compactIndexLabel)
@@ -2043,6 +2065,8 @@ class PlaybackUiModelsTest {
         assertFalse(idle.items[1].highlighted)
         assertFalse(idle.items[1].prominent)
         assertTrue(idle.items[1].enabled)
+        assertEquals(0.045f, idle.items[1].containerAlpha)
+        assertEquals(0.08f, idle.items[1].borderAlpha)
         assertTrue(loading.summary.contains("第 2 集"))
         assertEquals("加载中", loading.items[1].statusLabel)
         assertEquals("加载中", loading.items[1].actionLabel)
@@ -2056,6 +2080,8 @@ class PlaybackUiModelsTest {
         assertEquals(0.38f, loading.items[2].railAlpha)
         assertEquals(0.42f, loading.items[2].titleAlpha)
         assertEquals(0.38f, loading.items[2].subtitleAlpha)
+        assertEquals(0.045f, loading.items[2].containerAlpha)
+        assertEquals(0.08f, loading.items[2].borderAlpha)
         assertEquals(SourceLibraryTone.Muted, loading.items[2].tone)
     }
 

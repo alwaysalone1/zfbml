@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.98
+
+English:
+
+- Player episode rows now expose model-provided container alpha, disabled alpha, border alpha, row spacing, rail dimensions, index-box dimensions, loading indicator size, subtitle tone, and action-label dimensions through `PlayerEpisodeOptionUiState`.
+- `PlayerEpisodeOptionRow` and `EpisodeActionLabel` now render those fields instead of hard-coding episode-row shell, index box, loading indicator, subtitle, and action-chip presentation locally in Compose.
+- Added unit coverage for current, playable, loading, and disabled episode-row presentation fields.
+- App version labels, request user agents, and README notes are now updated to `0.5.98`.
+
 ### v0.5.97
 
 English:
