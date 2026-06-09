@@ -1308,19 +1308,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.59",
+            version = "0.5.60",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.59", state.version)
+        assertEquals("0.5.60", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.59" })
+        assertTrue(state.chips.any { it.label == "v0.5.60" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1334,7 +1334,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.59",
+            version = "0.5.60",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,
@@ -1535,6 +1535,50 @@ class PlaybackUiModelsTest {
         assertEquals("30%", disabled.densityLabel)
         assertEquals("100%", disabled.alphaLabel)
         assertEquals(SourceLibraryTone.Muted, disabled.tone)
+    }
+
+    @Test
+    fun playerQualityPanelUiStateGroupsQualityAndMarksCurrent() {
+        val current = route("hls-1080", StreamProtocol.HLS, 900, quality = "1080p", sourceName = "Online A")
+        val lower720 = route("hls-720-low", StreamProtocol.HLS, 100, quality = "720p", sourceName = "Online A")
+        val better720 = route("hls-720-better", StreamProtocol.HLS, 500, quality = "720p", sourceName = "Online B")
+        val bt = route("bt-4k", StreamProtocol.BITTORRENT, 300, quality = "4K", sourceName = "BT")
+
+        val state = buildPlayerQualityPanelUiState(
+            routes = listOf(lower720, current, bt, better720),
+            currentStream = current.stream,
+        )
+
+        assertTrue(state.hasOptions)
+        assertEquals("1080p", state.currentQualityLabel)
+        assertEquals("当前 1080p · 3 档可选", state.summary)
+        assertEquals(listOf("1080p", "720p", "4K"), state.options.map { it.title })
+        assertEquals("hls-720-better", state.options.first { it.title == "720p" }.route.stream.id)
+        assertTrue(state.options.first { it.title == "1080p" }.selected)
+        assertEquals("使用中", state.options.first { it.title == "1080p" }.actionLabel)
+        assertEquals(SourceLibraryTone.Primary, state.options.first { it.title == "1080p" }.tone)
+        assertEquals(SourceLibraryTone.Backup, state.options.first { it.title == "4K" }.tone)
+    }
+
+    @Test
+    fun playerQualityPanelUiStateExplainsAutoAndEmptyOptions() {
+        val auto = route("auto", StreamProtocol.HLS, 100, quality = "auto")
+
+        val state = buildPlayerQualityPanelUiState(
+            routes = listOf(auto),
+            currentStream = auto.stream,
+        )
+        val empty = buildPlayerQualityPanelUiState(
+            routes = emptyList(),
+            currentStream = auto.stream,
+        )
+
+        assertEquals("自动", state.currentQualityLabel)
+        assertEquals("自动", state.options.single().title)
+        assertTrue(state.options.single().selected)
+        assertFalse(empty.hasOptions)
+        assertEquals("当前播放源没有提供可切换清晰度", empty.emptyText)
+        assertEquals("当前播放源没有提供可切换清晰度", empty.summary)
     }
 
     @Test

@@ -25,6 +25,23 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.60
+
+中文：
+- 播放器清晰度面板新增 `PlayerQualityPanelUiState` 和 `PlayerQualityOptionUiState`，统一生成当前画质、可选档位、来源说明和动作文案。
+- 清晰度面板保留同画质取最高分线路的策略，但选中态、空状态和 `使用中/切换` 动作改由模型生成。
+- 画质标签新增 `routeQualityLabelForUi`，自动画质统一显示为 `自动`，减少播放器内多套画质标签逻辑。
+- 新增单元测试覆盖同画质去重、当前画质选中、BT 画质语义和空清晰度面板。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.60`。
+
+English:
+
+- The player quality panel now has `PlayerQualityPanelUiState` and `PlayerQualityOptionUiState` for current quality, available options, source copy, and action labels.
+- The panel keeps the best-scored route per quality bucket while moving selected state, empty state, and use/switch copy into the model.
+- `routeQualityLabelForUi` now normalizes quality labels, including `auto` to `自动`, reducing duplicated player quality logic.
+- Added unit coverage for quality de-duplication, current-quality selection, BT quality semantics, and empty quality panels.
+- App version labels, request user agents, and README notes are now updated to `0.5.60`.
+
 ### v0.5.59
 
 中文：

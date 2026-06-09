@@ -376,6 +376,24 @@ internal data class PlayerDanmakuSettingsUiState(
     val tone: SourceLibraryTone,
 )
 
+internal data class PlayerQualityPanelUiState(
+    val summary: String,
+    val emptyText: String,
+    val currentQualityLabel: String,
+    val options: List<PlayerQualityOptionUiState>,
+) {
+    val hasOptions: Boolean = options.isNotEmpty()
+}
+
+internal data class PlayerQualityOptionUiState(
+    val route: RouteCandidate,
+    val title: String,
+    val subtitle: String,
+    val selected: Boolean,
+    val actionLabel: String,
+    val tone: SourceLibraryTone,
+)
+
 internal data class PlayerDanmakuSafeAreaUiState(
     val topInsetDp: Int,
     val bottomInsetDp: Int,
@@ -1873,6 +1891,58 @@ internal fun buildPlayerDanmakuSettingsUiState(
         safetySummary = safetySummary,
         tone = if (enabled) SourceLibraryTone.Primary else SourceLibraryTone.Muted,
     )
+}
+
+internal fun buildPlayerQualityPanelUiState(
+    routes: List<RouteCandidate>,
+    currentStream: MediaStream,
+): PlayerQualityPanelUiState {
+    val currentQualityLabel = currentStream.quality
+        ?.takeIf { it.isNotBlank() && !it.equals("auto", ignoreCase = true) && it != "自动" }
+        ?: "自动"
+    val options = routes
+        .groupBy { routeQualityLabelForUi(it) }
+        .mapNotNull { (_, group) -> group.maxByOrNull { it.score } }
+        .sortedByDescending { it.score }
+        .map { route ->
+            val label = routeQualityLabelForUi(route)
+            val selected = label == currentQualityLabel || route.stream.id == currentStream.id
+            PlayerQualityOptionUiState(
+                route = route,
+                title = label,
+                subtitle = "${route.sourceName} · ${routePrimaryLabelForUi(route)}",
+                selected = selected,
+                actionLabel = if (selected) "使用中" else "切换",
+                tone = when {
+                    selected -> SourceLibraryTone.Primary
+                    route.protocol == StreamProtocol.BITTORRENT -> SourceLibraryTone.Backup
+                    route.protocol == StreamProtocol.WEBVIEW_ONLY -> SourceLibraryTone.Web
+                    else -> SourceLibraryTone.Online
+                },
+            )
+        }
+    return PlayerQualityPanelUiState(
+        summary = if (options.isEmpty()) {
+            "当前播放源没有提供可切换清晰度"
+        } else {
+            "当前 $currentQualityLabel · ${options.size} 档可选"
+        },
+        emptyText = "当前播放源没有提供可切换清晰度",
+        currentQualityLabel = currentQualityLabel,
+        options = options,
+    )
+}
+
+internal fun routeQualityLabelForUi(route: RouteCandidate): String {
+    val quality = route.quality?.takeIf { it.isNotBlank() }
+        ?: route.stream.quality?.takeIf { it.isNotBlank() }
+        ?: route.routeName?.takeIf { it.isNotBlank() }
+        ?: route.protocol.uiProtocolName()
+    return if (quality.equals("auto", ignoreCase = true) || quality == "自动") {
+        "自动"
+    } else {
+        quality
+    }
 }
 
 internal fun formatDanmakuDensityForUi(density: Float): String {

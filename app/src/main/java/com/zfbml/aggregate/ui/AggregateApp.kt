@@ -2330,7 +2330,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.59")
+                setRequestProperty("User-Agent", "ZFBML/0.5.60")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2823,7 +2823,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.59",
+            version = "0.5.60",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -8071,26 +8071,31 @@ private fun PlayerQualityPanel(
     currentStream: MediaStream,
     onRouteSelected: (RouteCandidate) -> Unit,
 ) {
-    val qualityRoutes = remember(routes) {
-        routes
-            .groupBy { playerQualityLabel(it) }
-            .mapNotNull { (_, group) -> group.maxByOrNull { it.score } }
-            .sortedByDescending { it.score }
+    val state = remember(routes, currentStream.id, currentStream.quality) {
+        buildPlayerQualityPanelUiState(routes, currentStream)
     }
-    if (qualityRoutes.isEmpty()) {
-        Text("当前播放源没有提供可切换清晰度", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+    if (!state.hasOptions) {
+        Text(state.emptyText, style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         return
     }
-    val currentQuality = currentStream.quality.orEmpty().ifBlank { "自动" }
     LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        items(qualityRoutes, key = { it.stream.id }) { route ->
-            val quality = playerQualityLabel(route)
+        item {
+            Text(
+                state.summary,
+                style = MaterialTheme.typography.labelMedium,
+                color = AnimeMuted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        items(state.options, key = { it.route.stream.id }) { option ->
             PlayerSelectableRow(
-                title = quality,
-                subtitle = "${route.sourceName} · ${route.routeName.orEmpty().ifBlank { route.protocol.displayName() }}",
-                selected = quality == currentQuality || route.stream.id == currentStream.id,
+                title = option.title,
+                subtitle = option.subtitle,
+                selected = option.selected,
                 icon = Icons.Filled.HighQuality,
-                onClick = { onRouteSelected(route) },
+                trailing = option.actionLabel,
+                onClick = { onRouteSelected(option.route) },
             )
         }
     }
@@ -8996,10 +9001,7 @@ private fun playerPanelSubtitle(panel: PlayerPanel): String {
 }
 
 private fun playerQualityLabel(route: RouteCandidate): String {
-    return route.quality
-        ?: route.stream.quality?.takeIf { it.isNotBlank() }
-        ?: route.routeName?.takeIf { it.isNotBlank() }
-        ?: route.protocol.displayName()
+    return routeQualityLabelForUi(route)
 }
 
 @Composable

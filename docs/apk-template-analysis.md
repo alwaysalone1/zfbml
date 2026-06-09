@@ -125,3 +125,5 @@ This pass upgrades the player route summary card. `RoutePanelUiState` now owns c
 This pass upgrades the player episode panel. `PlayerEpisodePanelUiState` and `PlayerEpisodeOptionUiState` now own current-episode summary, list title, status chips, row labels, loading state, disabled waiting rows, and action copy so episode switching follows the same model-driven contract as route switching.
 
 This pass upgrades the player danmaku settings panel. `PlayerDanmakuSettingsUiState` now owns toggle copy, density/alpha/font labels, semantic tone, and safe-area summary so danmaku controls and anti-obstruction feedback share the same model-driven language as the player route and episode panels.
+
+This pass upgrades the player quality panel. `PlayerQualityPanelUiState` and `PlayerQualityOptionUiState` now own quality buckets, current-quality selection, source subtitle, action copy, empty state, and normalized auto-quality labels so quality switching follows the same tested model contract as routes, episodes, and danmaku settings.
