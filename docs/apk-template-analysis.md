@@ -155,3 +155,5 @@ This pass upgrades the BT playback preparation placeholder. `TorrentPlaybackPrep
 This pass upgrades the search idle guidance. `SearchIdleHintUiState` now owns the pre-search title, summary, action copy, searchable-source chip, schedule-suggestion chip, and index-health chip so the search tab exposes source coverage and schedule-backed entry points before the user types a query.
 
 This pass upgrades the search results section. `SearchResultsSectionUiState` now owns the results header subtitle and empty-result title/subtitle for loading, selected-source filtering, no-hit, and failed-source states, making search/index feedback consistent before the user opens detail playback decisions.
+
+This pass upgrades the detail route resolution panel. `DetailRouteResolutionUiState` now owns loading, failed, empty, ready, and idle route-matching titles, subtitles, details, chips, progress state, and semantic tone so detail playback decisions expose source matching status without hard-coded Compose branches.

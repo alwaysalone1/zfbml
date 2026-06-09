@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.75
+
+English:
+
+- Detail route resolution now has `DetailRouteResolutionUiState`, centralizing loading, failed, empty, ready, and idle route-matching panel copy.
+- The expanded detail route area now renders one shared resolution panel instead of separate hard-coded loading, error, and empty-route Compose branches.
+- Added unit coverage for loading preparation, failed route matching, and empty route states.
+- App version labels, request user agents, and README notes are now updated to `0.5.75`.
+
 ### v0.5.74
 
 English:

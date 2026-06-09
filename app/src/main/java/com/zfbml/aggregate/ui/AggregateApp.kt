@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.74")
+                setRequestProperty("User-Agent", "ZFBML/0.5.75")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2866,7 +2866,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.74",
+            version = "0.5.75",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -3661,6 +3661,7 @@ private fun DetailScreen(
         error = error,
     )
     val detailPlaybackReadiness = buildDetailPlaybackReadinessUiState(routeUiState)
+    val detailRouteResolutionState = buildDetailRouteResolutionUiState(routeUiState)
     val routePrefetchUiState = detail?.let { media ->
         buildRoutePrefetchUiState(
             episodes = media.episodes,
@@ -3822,21 +3823,26 @@ private fun DetailScreen(
                 }
                 if (routesLoading) {
                     item {
-                        RouteLoadingPanel(selectedEpisode = selectedEpisode, modifier = Modifier.padding(horizontal = 18.dp))
+                        DetailRouteResolutionPanel(
+                            state = detailRouteResolutionState,
+                            modifier = Modifier.padding(horizontal = 18.dp),
+                        )
                     }
                 }
-                routesError?.let { message ->
+                if (routesError != null) {
                     item {
-                        Text(
-                            "\u7ebf\u8def\u52a0\u8f7d\u5931\u8d25: $message",
-                            color = MaterialTheme.colorScheme.error,
+                        DetailRouteResolutionPanel(
+                            state = detailRouteResolutionState,
                             modifier = Modifier.padding(horizontal = 18.dp),
                         )
                     }
                 }
                 if (!routesLoading && selectedEpisode != null && routes.isEmpty() && routesError == null) {
                     item {
-                        EmptyRoutePanel(modifier = Modifier.padding(horizontal = 18.dp))
+                        DetailRouteResolutionPanel(
+                            state = detailRouteResolutionState,
+                            modifier = Modifier.padding(horizontal = 18.dp),
+                        )
                     }
                 }
                 items(routeUiState.visibleRoutes, key = { it.stream.id }) { route ->
@@ -4733,41 +4739,47 @@ private fun EpisodeVideoRow(episode: Episode, selected: Boolean, onClick: () -> 
 }
 
 @Composable
-private fun RouteLoadingPanel(selectedEpisode: Episode?, modifier: Modifier = Modifier) {
+private fun DetailRouteResolutionPanel(
+    state: DetailRouteResolutionUiState,
+    modifier: Modifier = Modifier,
+) {
+    val accent = sourceLibraryToneColor(state.tone)
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(containerColor = AnimePanel),
-        border = BorderStroke(1.dp, AnimeBorder),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            CircularProgressIndicator(color = AnimeAccentCyan, modifier = Modifier.size(28.dp))
-            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text("\u6B63\u5728\u5339\u914D\u7EBF\u8DEF", style = MaterialTheme.typography.titleMedium, color = Color.White)
-                Text(selectedEpisode?.title.orEmpty().ifBlank { "\u9009\u4E2D\u5267\u96C6" }, style = MaterialTheme.typography.bodySmall, color = AnimeMuted)
-            }
-        }
-    }
-}
-
-@Composable
-private fun EmptyRoutePanel(modifier: Modifier = Modifier) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = AnimePanel),
-        border = BorderStroke(1.dp, AnimeBorder),
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.62f)),
     ) {
         Column(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Text("\u6682\u672A\u5339\u914D\u5230\u53EF\u64AD\u653E\u7EBF\u8DEF", style = MaterialTheme.typography.titleMedium, color = Color.White)
-            Text("\u53EF\u4EE5\u6362\u4E00\u4E2A\u756A\u540D\u641C\u7D22\uFF0C\u6216\u9009\u62E9\u5176\u4ED6\u96C6\u6570\u91CD\u8BD5\u3002", style = MaterialTheme.typography.bodySmall, color = AnimeMuted)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (state.showProgress) {
+                    CircularProgressIndicator(color = accent, modifier = Modifier.size(28.dp))
+                } else {
+                    Box(
+                        modifier = Modifier.size(32.dp).background(accent.copy(alpha = 0.14f), RoundedCornerShape(8.dp)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(Icons.Filled.Search, contentDescription = null, tint = accent, modifier = Modifier.size(18.dp))
+                    }
+                }
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text(state.title, style = MaterialTheme.typography.titleMedium, color = Color.White)
+                    Text(state.subtitle, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                }
+            }
+            Text(state.detail, style = MaterialTheme.typography.bodySmall, color = AnimeMuted)
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                items(state.chips) { chip ->
+                    RouteStatusBadge(chip.label, sourceLibraryToneColor(chip.tone))
+                }
+            }
         }
     }
 }

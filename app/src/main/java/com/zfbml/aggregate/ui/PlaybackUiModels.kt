@@ -76,6 +76,15 @@ internal data class DetailEpisodeSummaryUiState(
     val chips: List<SearchResultChipUiState>,
 )
 
+internal data class DetailRouteResolutionUiState(
+    val title: String,
+    val subtitle: String,
+    val detail: String,
+    val chips: List<SourceLibraryChipUiState>,
+    val showProgress: Boolean,
+    val tone: SourceLibraryTone,
+)
+
 internal data class DetailEntryUiState(
     val headline: String,
     val summary: String,
@@ -977,6 +986,78 @@ internal fun buildDetailEpisodeSummaryUiState(
         tone = tone,
         chips = chips,
     )
+}
+
+internal fun buildDetailRouteResolutionUiState(routeState: RouteUiState): DetailRouteResolutionUiState {
+    val episodeTitle = routeState.selectedEpisodeTitle.ifBlank { "\u9009\u4e2d\u5267\u96c6" }
+    val chips = when (routeState.status) {
+        RouteLoadStatus.Loading -> listOf(
+            SourceLibraryChipUiState("\u5b9e\u65f6\u5339\u914d", SourceLibraryTone.Online),
+            SourceLibraryChipUiState("\u5728\u7ebf\u4f18\u5148", SourceLibraryTone.Primary),
+            SourceLibraryChipUiState("BT \u5907\u7528", SourceLibraryTone.Backup),
+        )
+        RouteLoadStatus.Failed -> listOf(
+            SourceLibraryChipUiState("\u53ef\u91cd\u8bd5", SourceLibraryTone.Web),
+            SourceLibraryChipUiState("\u6362\u96c6\u91cd\u8bd5", SourceLibraryTone.Backup),
+            SourceLibraryChipUiState("\u6765\u6e90\u5f02\u5e38", SourceLibraryTone.Web),
+        )
+        RouteLoadStatus.Empty -> listOf(
+            SourceLibraryChipUiState("\u5f85\u8865\u6e90", SourceLibraryTone.Muted),
+            SourceLibraryChipUiState("\u6362\u96c6\u91cd\u8bd5", SourceLibraryTone.Backup),
+            SourceLibraryChipUiState("\u7ee7\u7eed\u5339\u914d", SourceLibraryTone.Online),
+        )
+        RouteLoadStatus.Ready -> listOf(
+            SourceLibraryChipUiState("\u5df2\u5c31\u7eea", SourceLibraryTone.Cache),
+            SourceLibraryChipUiState("${routeState.routeCount} \u6761\u7ebf\u8def", SourceLibraryTone.Online),
+            SourceLibraryChipUiState(routeState.sourceCoverageLabel, SourceLibraryTone.Primary),
+        )
+        RouteLoadStatus.Idle -> listOf(
+            SourceLibraryChipUiState("\u5f85\u9009\u96c6", SourceLibraryTone.Muted),
+            SourceLibraryChipUiState("\u81ea\u52a8\u5339\u914d", SourceLibraryTone.Online),
+        )
+    }
+    return when (routeState.status) {
+        RouteLoadStatus.Loading -> DetailRouteResolutionUiState(
+            title = "\u6b63\u5728\u5339\u914d\u7ebf\u8def",
+            subtitle = episodeTitle,
+            detail = "\u4f18\u5148\u5339\u914d\u5728\u7ebf\u64ad\u653e\uff0cBT/RSS \u4f5c\u4e3a\u5907\u7528\u6765\u6e90\u8865\u9f50\u3002",
+            chips = chips,
+            showProgress = true,
+            tone = SourceLibraryTone.Online,
+        )
+        RouteLoadStatus.Failed -> DetailRouteResolutionUiState(
+            title = "\u7ebf\u8def\u52a0\u8f7d\u5931\u8d25",
+            subtitle = episodeTitle,
+            detail = routeState.detail.ifBlank { "\u53ef\u7a0d\u540e\u91cd\u8bd5\uff0c\u6216\u5207\u6362\u5267\u96c6\u7ee7\u7eed\u5339\u914d\u3002" },
+            chips = chips,
+            showProgress = false,
+            tone = SourceLibraryTone.Web,
+        )
+        RouteLoadStatus.Empty -> DetailRouteResolutionUiState(
+            title = "\u6682\u672a\u5339\u914d\u5230\u53ef\u64ad\u653e\u7ebf\u8def",
+            subtitle = episodeTitle,
+            detail = "\u53ef\u4ee5\u5207\u6362\u5267\u96c6\u6216\u7a0d\u540e\u91cd\u8bd5\uff0c\u8be6\u60c5\u9875\u4f1a\u7ee7\u7eed\u4fdd\u7559\u7ebf\u8def\u8bca\u65ad\u5165\u53e3\u3002",
+            chips = chips,
+            showProgress = false,
+            tone = SourceLibraryTone.Muted,
+        )
+        RouteLoadStatus.Ready -> DetailRouteResolutionUiState(
+            title = "\u64ad\u653e\u6e90\u5df2\u5c31\u7eea",
+            subtitle = episodeTitle,
+            detail = routeState.recommendationDetail,
+            chips = chips,
+            showProgress = false,
+            tone = SourceLibraryTone.Cache,
+        )
+        RouteLoadStatus.Idle -> DetailRouteResolutionUiState(
+            title = "\u7b49\u5f85\u9009\u62e9\u5267\u96c6",
+            subtitle = episodeTitle,
+            detail = "\u9009\u62e9\u5267\u96c6\u540e\u4f1a\u81ea\u52a8\u5339\u914d\u5728\u7ebf\u6e90\u3001BT \u5907\u7528\u548c\u7f13\u5b58\u80fd\u529b\u3002",
+            chips = chips,
+            showProgress = false,
+            tone = SourceLibraryTone.Muted,
+        )
+    }
 }
 
 internal fun buildRouteCandidateUiState(

@@ -308,6 +308,45 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun detailRouteResolutionUiStateExplainsLoadingPreparation() {
+        val state = buildDetailRouteResolutionUiState(
+            buildRouteUiState(episode(index = 4), emptyList(), loading = true, error = null),
+        )
+
+        assertEquals("\u6b63\u5728\u5339\u914d\u7ebf\u8def", state.title)
+        assertTrue(state.subtitle.isNotBlank())
+        assertTrue(state.detail.contains("BT/RSS"))
+        assertTrue(state.showProgress)
+        assertEquals(SourceLibraryTone.Online, state.tone)
+        assertEquals(
+            listOf("\u5b9e\u65f6\u5339\u914d", "\u5728\u7ebf\u4f18\u5148", "BT \u5907\u7528"),
+            state.chips.map { it.label },
+        )
+    }
+
+    @Test
+    fun detailRouteResolutionUiStateExplainsFailedAndEmptyStates() {
+        val failed = buildDetailRouteResolutionUiState(
+            buildRouteUiState(episode(index = 5), emptyList(), loading = false, error = "HTTP 500"),
+        )
+        val empty = buildDetailRouteResolutionUiState(
+            buildRouteUiState(episode(index = 5), emptyList(), loading = false, error = null),
+        )
+
+        assertEquals("\u7ebf\u8def\u52a0\u8f7d\u5931\u8d25", failed.title)
+        assertTrue(failed.detail.contains("HTTP 500"))
+        assertFalse(failed.showProgress)
+        assertEquals(SourceLibraryTone.Web, failed.tone)
+        assertTrue(failed.chips.any { it.label == "\u53ef\u91cd\u8bd5" })
+
+        assertEquals("\u6682\u672a\u5339\u914d\u5230\u53ef\u64ad\u653e\u7ebf\u8def", empty.title)
+        assertTrue(empty.detail.contains("\u7ebf\u8def\u8bca\u65ad"))
+        assertFalse(empty.showProgress)
+        assertEquals(SourceLibraryTone.Muted, empty.tone)
+        assertEquals("\u5f85\u8865\u6e90", empty.chips.first().label)
+    }
+
+    @Test
     fun autoplayRouteSkipsWebViewOnlyEvenWhenItScoresHighest() {
         val webView = route("webview", StreamProtocol.WEBVIEW_ONLY, 8_000, quality = "1080p")
         val playable = route("hls", StreamProtocol.HLS, 100, quality = "720p")
@@ -1462,19 +1501,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.74",
+            version = "0.5.75",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.74", state.version)
+        assertEquals("0.5.75", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.74" })
+        assertTrue(state.chips.any { it.label == "v0.5.75" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1488,7 +1527,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.74",
+            version = "0.5.75",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,
