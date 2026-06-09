@@ -161,3 +161,5 @@ This pass upgrades the detail route resolution panel. `DetailRouteResolutionUiSt
 This pass upgrades the detail episode rail. `DetailEpisodeOptionUiState` now owns compact episode labels, selected state, route-matching subtitle, action label, and semantic tone so detail-page episode switching uses the same model-driven playback-decision language as route readiness and resolution panels.
 
 This pass upgrades the detail hero actions. `DetailHeroActionUiState` now owns the primary play label plus route-entry title, value, and tone so the first playback decision and the manual route entry share one tested model contract instead of deriving labels inside Compose.
+
+This pass upgrades the detail first-play guidance. `DetailFirstPlayUiState` now owns the first-play title, decision copy, action label, progress/icon state, tone, and detail chips so the detail hero's playback recommendation is model-driven alongside route readiness and hero actions.

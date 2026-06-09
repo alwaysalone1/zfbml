@@ -290,6 +290,60 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun detailFirstPlayUiStateSummarizesReadyRecommendation() {
+        val routeState = buildRouteUiState(
+            selectedEpisode = episode(index = 8),
+            routes = listOf(
+                route("hls", StreamProtocol.HLS, 900, quality = "1080p", sourceName = "Online"),
+                route("backup", StreamProtocol.PROGRESSIVE, 500, quality = "720p", sourceName = "Backup"),
+            ),
+            loading = false,
+            error = null,
+        )
+
+        val state = buildDetailFirstPlayUiState(
+            selectedEpisode = episode(index = 8),
+            routeState = routeState,
+        )
+
+        assertEquals("\u5373\u5c06\u64ad\u653e", state.title)
+        assertTrue(state.decision.contains("\u7b2c 8 \u96c6"))
+        assertTrue(state.decision.contains("Online"))
+        assertEquals("\u63a8\u8350\u64ad\u653e", state.actionLabel)
+        assertFalse(state.showProgress)
+        assertTrue(state.useReadyIcon)
+        assertEquals(SourceLibraryTone.Cache, state.tone)
+        assertTrue(state.chips.any { it.label == "\u6e05\u6670\u5ea6" && it.value == "1080p" })
+        assertTrue(state.chips.any { it.label == "\u53ef\u5207\u6362" })
+    }
+
+    @Test
+    fun detailFirstPlayUiStateExplainsLoadingAndEmptyStates() {
+        val loading = buildDetailFirstPlayUiState(
+            selectedEpisode = episode(index = 2),
+            routeState = buildRouteUiState(episode(index = 2), emptyList(), loading = true, error = null),
+        )
+        val empty = buildDetailFirstPlayUiState(
+            selectedEpisode = episode(index = 2),
+            routeState = buildRouteUiState(episode(index = 2), emptyList(), loading = false, error = null),
+        )
+
+        assertEquals("\u5339\u914d\u64ad\u653e\u6e90", loading.title)
+        assertTrue(loading.decision.contains("\u4f18\u5148\u5339\u914d"))
+        assertEquals("\u81ea\u52a8\u5339\u914d", loading.actionLabel)
+        assertTrue(loading.showProgress)
+        assertFalse(loading.useReadyIcon)
+        assertEquals(SourceLibraryTone.Online, loading.tone)
+        assertTrue(loading.chips.any { it.label == "\u52a0\u8f7d" })
+
+        assertEquals("\u7b49\u5f85\u53ef\u7528\u64ad\u653e\u6e90", empty.title)
+        assertEquals("\u81ea\u52a8\u5339\u914d", empty.actionLabel)
+        assertFalse(empty.showProgress)
+        assertEquals(SourceLibraryTone.Backup, empty.tone)
+        assertTrue(empty.chips.any { it.label == "\u6e05\u6670\u5ea6" && it.value == "\u5f85\u8865\u6e90" })
+    }
+
+    @Test
     fun detailEpisodeSummaryPromotesCurrentEpisodeAndCachedReadyRoute() {
         val state = buildRouteUiState(
             selectedEpisode = episode(index = 3),
@@ -1581,19 +1635,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.77",
+            version = "0.5.78",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.77", state.version)
+        assertEquals("0.5.78", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.77" })
+        assertTrue(state.chips.any { it.label == "v0.5.78" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1607,7 +1661,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.77",
+            version = "0.5.78",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,

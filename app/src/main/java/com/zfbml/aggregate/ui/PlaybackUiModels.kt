@@ -72,6 +72,22 @@ internal data class DetailHeroActionUiState(
     val routeTone: SourceLibraryTone,
 )
 
+internal data class DetailFirstPlayChipUiState(
+    val label: String,
+    val value: String,
+    val tone: SourceLibraryTone,
+)
+
+internal data class DetailFirstPlayUiState(
+    val title: String,
+    val decision: String,
+    val actionLabel: String,
+    val showProgress: Boolean,
+    val useReadyIcon: Boolean,
+    val tone: SourceLibraryTone,
+    val chips: List<DetailFirstPlayChipUiState>,
+)
+
 internal data class DetailEpisodeSummaryUiState(
     val headline: String,
     val summary: String,
@@ -984,6 +1000,61 @@ internal fun buildDetailHeroActionUiState(
         routeTitle = routeTitle,
         routeValue = routeValue,
         routeTone = routeTone,
+    )
+}
+
+internal fun buildDetailFirstPlayUiState(
+    selectedEpisode: Episode?,
+    routeState: RouteUiState,
+): DetailFirstPlayUiState {
+    val episodeLabel = selectedEpisode?.index?.takeIf { it > 0 }?.let { "\u7b2c $it \u96c6" }
+        ?: routeState.selectedEpisodeTitle
+    val title = when (routeState.status) {
+        RouteLoadStatus.Ready -> "\u5373\u5c06\u64ad\u653e"
+        RouteLoadStatus.Loading -> "\u5339\u914d\u64ad\u653e\u6e90"
+        RouteLoadStatus.Failed -> "\u64ad\u653e\u6e90\u5f02\u5e38"
+        RouteLoadStatus.Empty -> "\u7b49\u5f85\u53ef\u7528\u64ad\u653e\u6e90"
+        RouteLoadStatus.Idle -> "\u7b49\u5f85\u9009\u96c6"
+    }
+    val decision = when (routeState.status) {
+        RouteLoadStatus.Ready -> "$episodeLabel \u00b7 ${routeState.recommendationReason} \u00b7 \u63a8\u8350 ${routeState.recommendationTitle}"
+        RouteLoadStatus.Loading -> "$episodeLabel \u00b7 \u6b63\u5728\u4f18\u5148\u5339\u914d\u5728\u7ebf\u64ad\u653e"
+        else -> routeState.detail
+    }
+    val qualityLabel = routeState.bestRoute?.let { routeQualityLabelForUi(it) } ?: when (routeState.status) {
+        RouteLoadStatus.Loading -> "\u5339\u914d\u4e2d"
+        RouteLoadStatus.Failed -> "\u5f85\u91cd\u8bd5"
+        RouteLoadStatus.Empty -> "\u5f85\u8865\u6e90"
+        RouteLoadStatus.Idle -> "\u81ea\u52a8"
+        RouteLoadStatus.Ready -> "\u81ea\u52a8"
+    }
+    val tone = when (routeState.status) {
+        RouteLoadStatus.Ready -> SourceLibraryTone.Cache
+        RouteLoadStatus.Loading -> SourceLibraryTone.Online
+        RouteLoadStatus.Failed -> SourceLibraryTone.Web
+        RouteLoadStatus.Empty -> SourceLibraryTone.Backup
+        RouteLoadStatus.Idle -> SourceLibraryTone.Muted
+    }
+    val chips = buildList {
+        add(DetailFirstPlayChipUiState("\u5f53\u524d\u96c6", episodeLabel, SourceLibraryTone.Primary))
+        add(DetailFirstPlayChipUiState("\u63a8\u8350\u6e90", routeState.recommendationTitle, SourceLibraryTone.Online))
+        add(DetailFirstPlayChipUiState("\u63a8\u8350\u7406\u7531", routeState.recommendationReason, SourceLibraryTone.Cache))
+        add(DetailFirstPlayChipUiState("\u6e05\u6670\u5ea6", qualityLabel, SourceLibraryTone.Backup))
+        if (routeState.status != RouteLoadStatus.Idle) {
+            add(DetailFirstPlayChipUiState("\u52a0\u8f7d", routeState.loadOriginLabel, SourceLibraryTone.Cache))
+        }
+        if (routeState.routeCount > 1) {
+            add(DetailFirstPlayChipUiState("\u53ef\u5207\u6362", routeState.sourceCoverageLabel, SourceLibraryTone.Primary))
+        }
+    }
+    return DetailFirstPlayUiState(
+        title = title,
+        decision = decision,
+        actionLabel = if (routeState.canPlay) "\u63a8\u8350\u64ad\u653e" else "\u81ea\u52a8\u5339\u914d",
+        showProgress = routeState.status == RouteLoadStatus.Loading,
+        useReadyIcon = routeState.status == RouteLoadStatus.Ready,
+        tone = tone,
+        chips = chips,
     )
 }
 

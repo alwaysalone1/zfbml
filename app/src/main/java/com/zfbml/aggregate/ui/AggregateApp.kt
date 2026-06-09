@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.77")
+                setRequestProperty("User-Agent", "ZFBML/0.5.78")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2866,7 +2866,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.77",
+            version = "0.5.78",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -3665,6 +3665,10 @@ private fun DetailScreen(
         selectedEpisode = selectedEpisode,
         routeState = routeUiState,
     )
+    val detailFirstPlayState = buildDetailFirstPlayUiState(
+        selectedEpisode = selectedEpisode,
+        routeState = routeUiState,
+    )
     val detailRouteResolutionState = buildDetailRouteResolutionUiState(routeUiState)
     val routePrefetchUiState = detail?.let { media ->
         buildRoutePrefetchUiState(
@@ -3763,6 +3767,7 @@ private fun DetailScreen(
                     routeUiState = routeUiState,
                     playbackReadiness = detailPlaybackReadiness,
                     actionState = detailHeroActionState,
+                    firstPlayState = detailFirstPlayState,
                     onPlay = {
                         val episode = selectedEpisode ?: media.episodes.firstOrNull()
                         if (episode != null) {
@@ -3873,6 +3878,7 @@ private fun DetailHero(
     routeUiState: RouteUiState,
     playbackReadiness: DetailPlaybackReadinessUiState,
     actionState: DetailHeroActionUiState,
+    firstPlayState: DetailFirstPlayUiState,
     onPlay: () -> Unit,
     onToggleRoutes: () -> Unit,
     modifier: Modifier = Modifier,
@@ -3943,8 +3949,7 @@ private fun DetailHero(
                 }
             }
             DetailFirstPlayStrip(
-                state = routeUiState,
-                selectedEpisode = selectedEpisode,
+                state = firstPlayState,
             )
             DetailPlaybackReadinessStrip(state = playbackReadiness)
             Row(
@@ -4071,37 +4076,9 @@ private fun DetailRouteEntryButton(
 
 @Composable
 private fun DetailFirstPlayStrip(
-    state: RouteUiState,
-    selectedEpisode: Episode?,
+    state: DetailFirstPlayUiState,
 ) {
-    val accent = when (state.status) {
-        RouteLoadStatus.Ready -> AnimeAccentGreen
-        RouteLoadStatus.Loading -> AnimeAccentCyan
-        RouteLoadStatus.Failed -> MaterialTheme.colorScheme.error
-        RouteLoadStatus.Empty -> AnimeAccentAmber
-        RouteLoadStatus.Idle -> AnimeMuted
-    }
-    val title = when (state.status) {
-        RouteLoadStatus.Ready -> "即将播放"
-        RouteLoadStatus.Loading -> "匹配播放源"
-        RouteLoadStatus.Failed -> "播放源异常"
-        RouteLoadStatus.Empty -> "等待可用播放源"
-        RouteLoadStatus.Idle -> "等待选集"
-    }
-    val episodeLabel = selectedEpisode?.index?.let { "第 $it 集" } ?: state.selectedEpisodeTitle
-    val decision = when (state.status) {
-        RouteLoadStatus.Ready -> "$episodeLabel \u00b7 ${state.recommendationReason} \u00b7 \u63a8\u8350 ${state.recommendationTitle}"
-        RouteLoadStatus.Loading -> "$episodeLabel · 正在优先匹配在线播放"
-        else -> state.detail
-    }
-    val bestRoute = state.bestRoute
-    val qualityLabel = bestRoute?.let { playerQualityLabel(it) } ?: when (state.status) {
-        RouteLoadStatus.Loading -> "匹配中"
-        RouteLoadStatus.Failed -> "待重试"
-        RouteLoadStatus.Empty -> "待补源"
-        RouteLoadStatus.Idle -> "自动"
-        RouteLoadStatus.Ready -> "自动"
-    }
+    val accent = sourceLibraryToneColor(state.tone)
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -4119,11 +4096,11 @@ private fun DetailFirstPlayStrip(
                 modifier = Modifier.size(34.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.18f)),
                 contentAlignment = Alignment.Center,
             ) {
-                if (state.status == RouteLoadStatus.Loading) {
+                if (state.showProgress) {
                     CircularProgressIndicator(color = accent, modifier = Modifier.size(18.dp))
                 } else {
                     Icon(
-                        imageVector = if (state.status == RouteLoadStatus.Ready) Icons.Filled.Check else Icons.Filled.VideoLibrary,
+                        imageVector = if (state.useReadyIcon) Icons.Filled.Check else Icons.Filled.VideoLibrary,
                         contentDescription = null,
                         tint = accent,
                         modifier = Modifier.size(18.dp),
@@ -4132,14 +4109,14 @@ private fun DetailFirstPlayStrip(
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
-                    title,
+                    state.title,
                     style = MaterialTheme.typography.labelMedium,
                     color = accent,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                 )
                 Text(
-                    decision,
+                    state.decision,
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.White.copy(alpha = 0.78f),
                     maxLines = 1,
@@ -4147,7 +4124,7 @@ private fun DetailFirstPlayStrip(
                 )
             }
             Text(
-                if (state.canPlay) "推荐播放" else "自动匹配",
+                state.actionLabel,
                 style = MaterialTheme.typography.labelSmall,
                 color = accent,
                 maxLines = 1,
@@ -4158,15 +4135,12 @@ private fun DetailFirstPlayStrip(
             )
         }
         LazyRow(horizontalArrangement = Arrangement.spacedBy(7.dp), modifier = Modifier.fillMaxWidth()) {
-            item { DetailDecisionChip("当前集", episodeLabel, AnimeAccentPink) }
-            item { DetailDecisionChip("推荐源", state.recommendationTitle, AnimeAccentCyan) }
-            item { DetailDecisionChip("\u63a8\u8350\u7406\u7531", state.recommendationReason, AnimeAccentGreen) }
-            item { DetailDecisionChip("清晰度", qualityLabel, AnimeAccentAmber) }
-            if (state.status != RouteLoadStatus.Idle) {
-                item { DetailDecisionChip("加载", state.loadOriginLabel, AnimeAccentGreen) }
-            }
-            if (state.routeCount > 1) {
-                item { DetailDecisionChip("可切换", state.sourceCoverageLabel, AnimeAccentViolet) }
+            items(state.chips) { chip ->
+                DetailDecisionChip(
+                    chip.label,
+                    chip.value,
+                    sourceLibraryToneColor(chip.tone),
+                )
             }
         }
     }

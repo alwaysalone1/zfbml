@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.78
+
+English:
+
+- Detail first-play guidance now has `DetailFirstPlayUiState` and `DetailFirstPlayChipUiState`, centralizing the title, decision copy, action label, progress/icon state, tone, and decision chips.
+- `DetailFirstPlayStrip` now renders model-provided state instead of deriving ready/loading/failed/empty labels and quality chips in Compose.
+- Added unit coverage for ready recommendations, loading route matching, and empty-route first-play guidance.
+- App version labels, request user agents, and README notes are now updated to `0.5.78`.
+
 ### v0.5.77
 
 English:
