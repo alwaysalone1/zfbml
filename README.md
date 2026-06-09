@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.81
+
+English:
+
+- Detail route prefetch cards now expose model-provided tone, progress visibility, badge label, item status labels, and item tones through `RoutePrefetchUiState` and `RoutePrefetchItemUiState`.
+- `DetailRoutePrefetchCard` and `DetailRoutePrefetchChip` no longer derive Warming/Ready/Empty/Queued labels or accent colors inside Compose.
+- Added unit coverage for prefetch card tones, progress state, badge labels, and per-episode prefetch chip labels.
+- App version labels, request user agents, and README notes are now updated to `0.5.81`.
+
 ### v0.5.80
 
 English:

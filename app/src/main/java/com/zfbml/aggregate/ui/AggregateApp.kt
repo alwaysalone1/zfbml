@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.80")
+                setRequestProperty("User-Agent", "ZFBML/0.5.81")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2866,7 +2866,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.80",
+            version = "0.5.81",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -4317,12 +4317,7 @@ private fun DetailRoutePrefetchCard(
     state: RoutePrefetchUiState,
     modifier: Modifier = Modifier,
 ) {
-    val accent = when {
-        state.hasActivePrefetch -> AnimeAccentCyan
-        state.items.all { it.status == RoutePrefetchStatus.Ready } -> AnimeAccentGreen
-        state.items.any { it.status == RoutePrefetchStatus.Empty } -> AnimeAccentAmber
-        else -> AnimeAccentViolet
-    }
+    val accent = sourceLibraryToneColor(state.tone)
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
@@ -4342,7 +4337,7 @@ private fun DetailRoutePrefetchCard(
                     modifier = Modifier.size(34.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.16f)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    if (state.hasActivePrefetch) {
+                    if (state.showProgress) {
                         CircularProgressIndicator(color = accent, modifier = Modifier.size(18.dp))
                     } else {
                         Icon(Icons.Filled.CloudDownload, contentDescription = null, tint = accent, modifier = Modifier.size(18.dp))
@@ -4352,9 +4347,9 @@ private fun DetailRoutePrefetchCard(
                     Text(state.headline, style = MaterialTheme.typography.titleSmall, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text(state.summary, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
-                RouteStatusBadge("\u9884\u70ed", accent)
+                RouteStatusBadge(state.badgeLabel, accent)
             }
-            if (state.hasActivePrefetch) {
+            if (state.showProgress) {
                 LinearProgressIndicator(
                     modifier = Modifier.fillMaxWidth().height(3.dp).clip(RoundedCornerShape(8.dp)),
                     color = accent,
@@ -4372,12 +4367,7 @@ private fun DetailRoutePrefetchCard(
 
 @Composable
 private fun DetailRoutePrefetchChip(item: RoutePrefetchItemUiState) {
-    val (statusLabel, accent) = when (item.status) {
-        RoutePrefetchStatus.Queued -> "\u6392\u961f" to AnimeAccentViolet
-        RoutePrefetchStatus.Warming -> "\u9884\u70ed\u4e2d" to AnimeAccentCyan
-        RoutePrefetchStatus.Ready -> "\u5df2\u547d\u4e2d" to AnimeAccentGreen
-        RoutePrefetchStatus.Empty -> "\u5f85\u8865\u6e90" to AnimeAccentAmber
-    }
+    val accent = sourceLibraryToneColor(item.tone)
     Row(
         modifier = Modifier
             .height(34.dp)
@@ -4390,7 +4380,7 @@ private fun DetailRoutePrefetchChip(item: RoutePrefetchItemUiState) {
     ) {
         Box(Modifier.size(6.dp).clip(CircleShape).background(accent))
         Text(item.title, style = MaterialTheme.typography.labelSmall, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1)
-        Text(statusLabel, style = MaterialTheme.typography.labelSmall, color = accent, maxLines = 1)
+        Text(item.statusLabel, style = MaterialTheme.typography.labelSmall, color = accent, maxLines = 1)
     }
 }
 

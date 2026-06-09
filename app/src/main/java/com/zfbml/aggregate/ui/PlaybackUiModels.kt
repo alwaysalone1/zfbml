@@ -180,7 +180,22 @@ internal data class RoutePrefetchItemUiState(
     val episodeId: String,
     val title: String,
     val status: RoutePrefetchStatus,
-)
+) {
+    val statusLabel: String
+        get() = when (status) {
+            RoutePrefetchStatus.Queued -> "\u6392\u961f"
+            RoutePrefetchStatus.Warming -> "\u9884\u70ed\u4e2d"
+            RoutePrefetchStatus.Ready -> "\u5df2\u547d\u4e2d"
+            RoutePrefetchStatus.Empty -> "\u5f85\u8865\u6e90"
+        }
+    val tone: SourceLibraryTone
+        get() = when (status) {
+            RoutePrefetchStatus.Queued -> SourceLibraryTone.Primary
+            RoutePrefetchStatus.Warming -> SourceLibraryTone.Online
+            RoutePrefetchStatus.Ready -> SourceLibraryTone.Cache
+            RoutePrefetchStatus.Empty -> SourceLibraryTone.Backup
+        }
+}
 
 internal data class RoutePrefetchUiState(
     val items: List<RoutePrefetchItemUiState>,
@@ -188,6 +203,16 @@ internal data class RoutePrefetchUiState(
     val summary: String,
 ) {
     val hasActivePrefetch: Boolean = items.any { it.status == RoutePrefetchStatus.Warming }
+    val showProgress: Boolean = hasActivePrefetch
+    val badgeLabel: String = "\u9884\u70ed"
+    val tone: SourceLibraryTone
+        get() = when {
+            hasActivePrefetch -> SourceLibraryTone.Online
+            items.isEmpty() -> SourceLibraryTone.Muted
+            items.all { it.status == RoutePrefetchStatus.Ready } -> SourceLibraryTone.Cache
+            items.any { it.status == RoutePrefetchStatus.Empty } -> SourceLibraryTone.Backup
+            else -> SourceLibraryTone.Primary
+        }
 }
 
 internal const val SearchAllSourcesId = "__all_search_sources__"
