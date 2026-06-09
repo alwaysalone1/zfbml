@@ -15,6 +15,7 @@ import com.zfbml.aggregate.source.catalog.BangumiCategory
 import com.zfbml.aggregate.source.catalog.BangumiScheduleDay
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -1308,19 +1309,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.65",
+            version = "0.5.66",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.65", state.version)
+        assertEquals("0.5.66", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.65" })
+        assertTrue(state.chips.any { it.label == "v0.5.66" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1334,7 +1335,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.65",
+            version = "0.5.66",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,
@@ -1894,6 +1895,100 @@ class PlaybackUiModelsTest {
         assertEquals("单集", state.actions.first { it.kind == PlayerActionKind.Episode }.value)
         assertFalse(state.actions.first { it.kind == PlayerActionKind.Cache }.enabled)
         assertTrue(state.actions.first { it.kind == PlayerActionKind.More }.selected)
+    }
+
+    @Test
+    fun playerNoticeUiStatePrioritizesErrorAndRouteNotice() {
+        val errorOverlay = PlayerOverlayState(
+            title = "标题",
+            episodeTitle = "第 1 集",
+            sourceLabel = "Animeko",
+            qualityLabel = "1080p",
+            routeLabel = "HLS",
+            playbackState = "播放中",
+            statusLabel = "异常",
+            notice = "正在切换",
+            error = "播放失败",
+        )
+        val noticeOverlay = errorOverlay.copy(notice = "已切换到 1080p", error = null, statusLabel = "切源中")
+        val errorState = checkNotNull(buildPlayerOverlayNoticeUiState(errorOverlay))
+        val noticeState = checkNotNull(buildPlayerOverlayNoticeUiState(noticeOverlay))
+        val fullscreenNotice = checkNotNull(buildPlayerFullscreenNoticeUiState(
+            routeSummary = "Animeko · HLS",
+            routeNotice = "已切换到备用源",
+            errorMessage = "上一条线路失败",
+        ))
+        val fullscreenError = checkNotNull(buildPlayerFullscreenNoticeUiState(
+            routeSummary = "",
+            routeNotice = null,
+            errorMessage = "播放失败",
+        ))
+
+        assertEquals("播放失败", errorState.message)
+        assertTrue(errorState.error)
+        assertEquals(SourceLibraryTone.Web, errorState.tone)
+        assertEquals("已切换到 1080p", noticeState.message)
+        assertFalse(noticeState.error)
+        assertEquals(SourceLibraryTone.Backup, noticeState.tone)
+        assertEquals("已切换到备用源", fullscreenNotice.message)
+        assertFalse(fullscreenNotice.error)
+        assertEquals("Animeko · HLS", fullscreenNotice.title)
+        assertEquals("自动线路", fullscreenError.title)
+        assertEquals("播放失败", fullscreenError.message)
+        assertTrue(fullscreenError.error)
+        assertNull(buildPlayerFullscreenNoticeUiState("", null, null))
+    }
+
+    @Test
+    fun playerRouteStatusUiStateMapsNoticeAndErrorTone() {
+        val normal = buildPlayerRouteStatusUiState(
+            PlayerOverlayState(
+                title = "",
+                episodeTitle = "",
+                sourceLabel = "",
+                qualityLabel = "",
+                routeLabel = "自动最佳",
+                playbackState = "播放中",
+                statusLabel = "播放中",
+                notice = null,
+                error = null,
+            ),
+        )
+        val notice = buildPlayerRouteStatusUiState(
+            PlayerOverlayState(
+                title = "",
+                episodeTitle = "",
+                sourceLabel = "",
+                qualityLabel = "",
+                routeLabel = "",
+                playbackState = "播放中",
+                statusLabel = "切源中",
+                notice = "已切换",
+                error = null,
+            ),
+        )
+        val error = buildPlayerRouteStatusUiState(
+            PlayerOverlayState(
+                title = "",
+                episodeTitle = "",
+                sourceLabel = "",
+                qualityLabel = "",
+                routeLabel = "HLS",
+                playbackState = "播放中",
+                statusLabel = "异常",
+                notice = null,
+                error = "失败",
+            ),
+        )
+
+        assertEquals("自动最佳", normal.routeLabel)
+        assertEquals(SourceLibraryTone.Online, normal.tone)
+        assertFalse(normal.error)
+        assertEquals("自动线路", notice.routeLabel)
+        assertEquals(SourceLibraryTone.Backup, notice.tone)
+        assertFalse(notice.error)
+        assertEquals(SourceLibraryTone.Web, error.tone)
+        assertTrue(error.error)
     }
 
     @Test

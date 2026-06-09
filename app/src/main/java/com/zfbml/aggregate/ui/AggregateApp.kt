@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.65")
+                setRequestProperty("User-Agent", "ZFBML/0.5.66")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2813,6 +2813,16 @@ private fun sourceLibraryToneColor(tone: SourceLibraryTone): Color {
 }
 
 @Composable
+private fun playerNoticeColor(state: PlayerNoticeUiState): Color {
+    return if (state.error) MaterialTheme.colorScheme.error else sourceLibraryToneColor(state.tone)
+}
+
+@Composable
+private fun playerRouteStatusColor(state: PlayerRouteStatusUiState): Color {
+    return if (state.error) MaterialTheme.colorScheme.error else sourceLibraryToneColor(state.tone)
+}
+
+@Composable
 private fun CacheScreen(graph: AppGraph) {
     val cacheState = remember(graph.sourceRegistry.manifests) {
         buildCacheLibraryUiState(
@@ -2845,7 +2855,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.65",
+            version = "0.5.66",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -6199,7 +6209,12 @@ private fun PlayerTopOverlay(
     playbackSpeed: Float,
     modifier: Modifier = Modifier,
 ) {
-    val compactStatus = overlayState.error ?: overlayState.notice
+    val compactNotice = remember(overlayState) {
+        buildPlayerOverlayNoticeUiState(overlayState)
+    }
+    val routeStatusState = remember(overlayState) {
+        buildPlayerRouteStatusUiState(overlayState)
+    }
     Column(
         modifier = modifier
             .background(
@@ -6230,10 +6245,9 @@ private fun PlayerTopOverlay(
             )
             if (compact) {
                 Spacer(Modifier.weight(1f))
-                compactStatus?.let {
+                compactNotice?.let {
                     PlayerCompactStatusPill(
-                        text = it,
-                        error = overlayState.error != null,
+                        state = it,
                     )
                 }
             } else {
@@ -6255,13 +6269,7 @@ private fun PlayerTopOverlay(
                     )
                 }
                 PlayerTopRouteStatus(
-                    routeLabel = overlayState.routeLabel,
-                    statusLabel = overlayState.statusLabel,
-                    accent = when {
-                        overlayState.error != null -> MaterialTheme.colorScheme.error
-                        overlayState.notice != null -> AnimeAccentAmber
-                        else -> AnimeAccentCyan
-                    },
+                    state = routeStatusState,
                     onClick = onOpenRoutePanel,
                     modifier = Modifier.widthIn(min = 142.dp, max = 210.dp),
                 )
@@ -6357,13 +6365,12 @@ private fun PlayerTopStatusChip(
 
 @Composable
 private fun PlayerCompactStatusPill(
-    text: String,
-    error: Boolean,
+    state: PlayerNoticeUiState,
     modifier: Modifier = Modifier,
 ) {
-    val accent = if (error) MaterialTheme.colorScheme.error else Color.White.copy(alpha = 0.82f)
+    val accent = playerNoticeColor(state)
     Text(
-        text = text,
+        text = state.message,
         style = MaterialTheme.typography.labelSmall,
         color = accent,
         maxLines = 1,
@@ -6380,12 +6387,11 @@ private fun PlayerCompactStatusPill(
 
 @Composable
 private fun PlayerTopRouteStatus(
-    routeLabel: String,
-    statusLabel: String,
-    accent: Color,
+    state: PlayerRouteStatusUiState,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val accent = playerRouteStatusColor(state)
     Surface(
         modifier = modifier.height(36.dp).clickable(onClick = onClick).focusable(),
         shape = RoundedCornerShape(999.dp),
@@ -6404,14 +6410,14 @@ private fun PlayerTopRouteStatus(
                     .background(accent),
             )
             Text(
-                text = statusLabel,
+                text = state.statusLabel,
                 style = MaterialTheme.typography.labelSmall,
                 color = accent,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
             )
             Text(
-                text = routeLabel,
+                text = state.routeLabel,
                 style = MaterialTheme.typography.labelMedium,
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
@@ -6638,12 +6644,14 @@ private fun PlayerBottomControls(
                 )
             }
 
-            val bottomNotice = routeNotice ?: errorMessage
-            if (bottomNotice != null) {
+            val noticeState = buildPlayerFullscreenNoticeUiState(
+                routeSummary = routeSummary,
+                routeNotice = routeNotice,
+                errorMessage = errorMessage,
+            )
+            if (noticeState != null) {
                 PlayerFullscreenNoticeStrip(
-                    title = routeSummary,
-                    message = bottomNotice,
-                    isError = errorMessage != null && routeNotice == null,
+                    state = noticeState,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -6698,12 +6706,10 @@ private fun PlayerBottomControls(
 
 @Composable
 private fun PlayerFullscreenNoticeStrip(
-    title: String,
-    message: String,
-    isError: Boolean,
+    state: PlayerNoticeUiState,
     modifier: Modifier = Modifier,
 ) {
-    val accent = if (isError) MaterialTheme.colorScheme.error else AnimeAccentAmber
+    val accent = playerNoticeColor(state)
     Row(
         modifier = modifier
             .height(34.dp)
@@ -6721,7 +6727,7 @@ private fun PlayerFullscreenNoticeStrip(
                 .background(accent),
         )
         Text(
-            text = title,
+            text = state.title,
             style = MaterialTheme.typography.labelMedium,
             color = Color.White,
             maxLines = 1,
@@ -6729,7 +6735,7 @@ private fun PlayerFullscreenNoticeStrip(
             modifier = Modifier.weight(0.9f),
         )
         Text(
-            text = message,
+            text = state.message,
             style = MaterialTheme.typography.labelSmall,
             color = accent,
             maxLines = 1,

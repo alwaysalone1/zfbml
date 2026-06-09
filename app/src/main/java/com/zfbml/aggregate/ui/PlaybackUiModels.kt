@@ -359,6 +359,20 @@ internal data class PlayerFullscreenStatusStripUiState(
     val error: Boolean,
 )
 
+internal data class PlayerNoticeUiState(
+    val title: String,
+    val message: String,
+    val tone: SourceLibraryTone,
+    val error: Boolean,
+)
+
+internal data class PlayerRouteStatusUiState(
+    val routeLabel: String,
+    val statusLabel: String,
+    val tone: SourceLibraryTone,
+    val error: Boolean,
+)
+
 internal data class PlayerActionBarUiState(
     val actions: List<PlayerActionUiState>,
 )
@@ -2306,6 +2320,55 @@ internal fun buildPlayerFullscreenStatusStripUiState(
             episodeCount.takeIf { it > 1 }?.let { "$it 集" },
         ),
         error = hasPlaybackIssue,
+    )
+}
+
+internal fun buildPlayerRouteStatusUiState(
+    overlayState: PlayerOverlayState,
+): PlayerRouteStatusUiState {
+    val error = !overlayState.error.isNullOrBlank()
+    val hasNotice = !overlayState.notice.isNullOrBlank()
+    return PlayerRouteStatusUiState(
+        routeLabel = overlayState.routeLabel.ifBlank { "自动线路" },
+        statusLabel = overlayState.statusLabel.ifBlank { "自动" },
+        tone = when {
+            error -> SourceLibraryTone.Web
+            hasNotice -> SourceLibraryTone.Backup
+            else -> SourceLibraryTone.Online
+        },
+        error = error,
+    )
+}
+
+internal fun buildPlayerOverlayNoticeUiState(
+    overlayState: PlayerOverlayState,
+): PlayerNoticeUiState? {
+    val message = overlayState.error?.takeIf { it.isNotBlank() }
+        ?: overlayState.notice?.takeIf { it.isNotBlank() }
+        ?: return null
+    val error = !overlayState.error.isNullOrBlank()
+    return PlayerNoticeUiState(
+        title = overlayState.statusLabel.ifBlank { if (error) "播放异常" else "播放提示" },
+        message = message,
+        tone = if (error) SourceLibraryTone.Web else SourceLibraryTone.Backup,
+        error = error,
+    )
+}
+
+internal fun buildPlayerFullscreenNoticeUiState(
+    routeSummary: String,
+    routeNotice: String?,
+    errorMessage: String?,
+): PlayerNoticeUiState? {
+    val message = routeNotice?.takeIf { it.isNotBlank() }
+        ?: errorMessage?.takeIf { it.isNotBlank() }
+        ?: return null
+    val error = routeNotice.isNullOrBlank() && !errorMessage.isNullOrBlank()
+    return PlayerNoticeUiState(
+        title = routeSummary.ifBlank { "自动线路" },
+        message = message,
+        tone = if (error) SourceLibraryTone.Web else SourceLibraryTone.Backup,
+        error = error,
     )
 }
 

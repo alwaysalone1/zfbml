@@ -25,6 +25,23 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.66
+
+中文：
+- 播放器通知与线路状态新增 `PlayerNoticeUiState` 和 `PlayerRouteStatusUiState`，统一生成顶部紧凑提示、顶部线路状态和全屏底部通知条的语义。
+- 播放错误、切源提示和普通线路状态的优先级、错误态、标题、提示内容和 tone 改由模型层生成，UI 只负责颜色映射与排版。
+- 顶部线路状态不再在 Compose 内判断错误/切源/正常状态；底部通知条也不再直接拼接 `routeNotice` 和 `errorMessage`。
+- 新增单元测试覆盖错误优先级、切源提示优先于错误消息、空线路标题兜底，以及线路状态 tone 映射。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.66`。
+
+English:
+
+- Player notices and route status now have `PlayerNoticeUiState` and `PlayerRouteStatusUiState` for compact top notices, top route status, and fullscreen bottom notices.
+- Playback errors, route-switch notices, and normal route states now get priority, error state, title, message, and tone from the model layer, while Compose only maps color and layout.
+- The top route status no longer branches on error/notice/normal state in Compose, and the bottom notice strip no longer assembles `routeNotice` and `errorMessage` directly.
+- Added unit coverage for error priority, route notices winning over error messages, empty route-title fallback, and route-status tone mapping.
+- App version labels, request user agents, and README notes are now updated to `0.5.66`.
+
 ### v0.5.65
 
 中文：
