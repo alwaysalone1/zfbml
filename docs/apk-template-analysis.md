@@ -179,3 +179,5 @@ This pass upgrades route candidate row presentation. `RouteCandidateUiState` now
 This pass upgrades player episode row presentation. `PlayerEpisodeOptionUiState` now owns compact episode labels, badges, highlighted/prominent state, action enablement, and text/rail alpha so episode switching rows follow the same model-driven display contract as route rows.
 
 This pass upgrades player quality and speed option presentation. `PlayerQualityOptionUiState` and `PlayerSpeedOptionUiState` now own badges, highlighted/prominent state, action enablement, and icon/text alpha so the player settings panels use the same model-driven row contract as route and episode switching.
+
+This pass upgrades danmaku settings toggle presentation. `PlayerDanmakuSettingsUiState` now owns the toggle action label, status badge, highlighted/prominent state, action enablement, and icon/text alpha so danmaku visibility and safe-area settings share the same model-driven row contract as other player panels.

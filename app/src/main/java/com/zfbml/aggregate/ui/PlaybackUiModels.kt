@@ -636,6 +636,14 @@ internal data class PlayerDanmakuSettingsUiState(
     val toggleTitle: String,
     val toggleSubtitle: String,
     val toggleSelected: Boolean,
+    val toggleActionLabel: String,
+    val toggleBadges: List<SourceLibraryChipUiState>,
+    val toggleHighlighted: Boolean,
+    val toggleProminent: Boolean,
+    val toggleActionEnabled: Boolean,
+    val toggleIconAlpha: Float,
+    val toggleTitleAlpha: Float,
+    val toggleSubtitleAlpha: Float,
     val densityLabel: String,
     val alphaLabel: String,
     val fontScaleLabel: String,
@@ -2749,15 +2757,24 @@ internal fun buildPlayerDanmakuSettingsUiState(
     val safetySummary = safeArea?.let { area ->
         "避让 顶${area.topInsetDp} / 底${area.bottomInsetDp} / 侧${area.startInsetDp + area.endInsetDp}"
     } ?: "自动避让播放器控制区"
+    val tone = if (enabled) SourceLibraryTone.Primary else SourceLibraryTone.Muted
     return PlayerDanmakuSettingsUiState(
         toggleTitle = if (enabled) "弹幕已开启" else "弹幕已关闭",
         toggleSubtitle = if (enabled) "点击关闭弹幕显示" else "点击开启弹幕显示",
         toggleSelected = enabled,
+        toggleActionLabel = if (enabled) "关闭" else "开启",
+        toggleBadges = listOf(SourceLibraryChipUiState(if (enabled) "显示中" else "已隐藏", tone)),
+        toggleHighlighted = enabled,
+        toggleProminent = enabled,
+        toggleActionEnabled = true,
+        toggleIconAlpha = if (enabled) 1f else 0.5f,
+        toggleTitleAlpha = if (enabled) 0.94f else 0.76f,
+        toggleSubtitleAlpha = if (enabled) 0.86f else 0.68f,
         densityLabel = densityLabel,
         alphaLabel = alphaLabel,
         fontScaleLabel = fontScaleLabel,
         safetySummary = safetySummary,
-        tone = if (enabled) SourceLibraryTone.Primary else SourceLibraryTone.Muted,
+        tone = tone,
     )
 }
 

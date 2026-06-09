@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.87
+
+English:
+
+- Danmaku settings now expose model-provided toggle action labels, status badges, highlighted/prominent row state, and icon/text alpha through `PlayerDanmakuSettingsUiState`.
+- The player danmaku toggle row now renders those model fields instead of relying on default selected-state styling in `PlayerSelectableRow`.
+- Added unit coverage for enabled and hidden danmaku toggle presentation state.
+- App version labels, request user agents, and README notes are now updated to `0.5.87`.
+
 ### v0.5.86
 
 English:
