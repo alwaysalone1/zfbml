@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.91")
+                setRequestProperty("User-Agent", "ZFBML/0.5.92")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2866,7 +2866,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.91",
+            version = "0.5.92",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -7409,8 +7409,7 @@ private fun PlayerOptionPanel(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 PlayerPanelHeader(
-                    title = panelSheetState.title,
-                    subtitle = panelSheetState.subtitle,
+                    state = panelSheetState,
                     onDismiss = onDismiss,
                 )
                 PlayerPanelContextBar(
@@ -7476,7 +7475,7 @@ private fun PlayerOptionPanel(
 }
 
 @Composable
-private fun PlayerPanelHeader(title: String, subtitle: String, onDismiss: () -> Unit) {
+private fun PlayerPanelHeader(state: PlayerPanelSheetUiState, onDismiss: () -> Unit) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.Top,
@@ -7487,23 +7486,23 @@ private fun PlayerPanelHeader(title: String, subtitle: String, onDismiss: () -> 
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             Text(
-                text = title,
+                text = state.title,
                 style = MaterialTheme.typography.titleMedium,
-                color = Color.White,
+                color = Color.White.copy(alpha = state.titleAlpha),
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text = subtitle,
+                text = state.subtitle,
                 style = MaterialTheme.typography.labelMedium,
-                color = Color.White.copy(alpha = 0.56f),
+                color = Color.White.copy(alpha = state.subtitleAlpha),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
         }
         TextButton(onClick = onDismiss, modifier = Modifier.height(34.dp)) {
-            Text("收起", color = Color.White.copy(alpha = 0.82f), style = MaterialTheme.typography.labelMedium)
+            Text(state.dismissLabel, color = Color.White.copy(alpha = state.dismissLabelAlpha), style = MaterialTheme.typography.labelMedium)
         }
     }
 }

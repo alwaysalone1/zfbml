@@ -189,3 +189,5 @@ This pass upgrades player more-action tile presentation. `PlayerMoreActionUiStat
 This pass upgrades player panel quick-tab presentation. `PlayerPanelTabUiState` now owns action enablement, prominent state, visual tone, container alpha, content alpha, and value alpha so the panel navigation strip no longer derives selected, highlighted, or disabled visual behavior inside Compose.
 
 This pass upgrades player panel context-bar presentation. `PlayerPanelContextUiState` now owns status tone, icon tone, container/border alpha, icon-container alpha, title alpha, and metadata alpha so the current-playback context strip is configured by the UI model instead of Compose-local color constants.
+
+This pass upgrades player panel header presentation. `PlayerPanelSheetUiState` now owns the dismiss label plus title, subtitle, and dismiss-action alpha so the panel header is rendered from the sheet model instead of Compose-local copy and opacity constants.

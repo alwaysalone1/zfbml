@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.92
+
+English:
+
+- Player panel headers now expose model-provided dismiss labels plus title, subtitle, and dismiss-action alpha through `PlayerPanelSheetUiState`.
+- `PlayerPanelHeader` now renders the sheet model directly instead of hard-coding header copy and opacity inside Compose.
+- Added unit coverage for player-panel header copy and alpha payloads.
+- App version labels, request user agents, and README notes are now updated to `0.5.92`.
+
 ### v0.5.91
 
 English:

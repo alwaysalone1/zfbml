@@ -718,6 +718,10 @@ internal data class PlayerMorePanelUiState(
 internal data class PlayerPanelSheetUiState(
     val title: String,
     val subtitle: String,
+    val dismissLabel: String,
+    val titleAlpha: Float,
+    val subtitleAlpha: Float,
+    val dismissLabelAlpha: Float,
     val context: PlayerPanelContextUiState,
     val tabs: List<PlayerPanelTabUiState>,
 )
@@ -3104,6 +3108,10 @@ internal fun buildPlayerPanelSheetUiState(
     return PlayerPanelSheetUiState(
         title = selectedPanel.titleForUi(),
         subtitle = selectedPanel.subtitleForUi(),
+        dismissLabel = "收起",
+        titleAlpha = 1f,
+        subtitleAlpha = 0.56f,
+        dismissLabelAlpha = 0.82f,
         context = PlayerPanelContextUiState(
             title = title.ifBlank { "正在播放" },
             metadata = listOf(episodeLabel, normalizedSource, normalizedQuality, speedLabel).joinToString(" · "),
