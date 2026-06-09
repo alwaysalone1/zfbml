@@ -308,6 +308,41 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun detailEpisodeOptionUiStateLabelsSelectedAndPendingEpisodes() {
+        val selected = buildDetailEpisodeOptionUiState(episode(index = 3), selected = true)
+        val pending = buildDetailEpisodeOptionUiState(episode(index = 4), selected = false)
+
+        assertEquals("03", selected.indexLabel)
+        assertEquals("\u5df2\u9009", selected.actionLabel)
+        assertTrue(selected.subtitle.contains("\u5df2\u5339\u914d\u7ebf\u8def"))
+        assertTrue(selected.selected)
+        assertEquals(SourceLibraryTone.Online, selected.tone)
+
+        assertEquals("04", pending.indexLabel)
+        assertEquals("\u627e\u7ebf\u8def", pending.actionLabel)
+        assertTrue(pending.subtitle.contains("\u5728\u7ebf\u64ad\u653e"))
+        assertFalse(pending.selected)
+        assertEquals(SourceLibraryTone.Muted, pending.tone)
+    }
+
+    @Test
+    fun detailEpisodeOptionUiStateFallsBackForSpecialEpisode() {
+        val special = Episode(
+            providerId = "bangumi-catalog",
+            id = "sp",
+            title = "",
+            url = "bangumi://subject/1/episode/sp",
+            index = null,
+        )
+
+        val state = buildDetailEpisodeOptionUiState(special, selected = false)
+
+        assertEquals("SP", state.indexLabel)
+        assertEquals("\u7279\u522b\u7bc7", state.title)
+        assertEquals("sp", state.episodeId)
+    }
+
+    @Test
     fun detailRouteResolutionUiStateExplainsLoadingPreparation() {
         val state = buildDetailRouteResolutionUiState(
             buildRouteUiState(episode(index = 4), emptyList(), loading = true, error = null),
@@ -1501,19 +1536,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.75",
+            version = "0.5.76",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.75", state.version)
+        assertEquals("0.5.76", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.75" })
+        assertTrue(state.chips.any { it.label == "v0.5.76" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1527,7 +1562,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.75",
+            version = "0.5.76",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,

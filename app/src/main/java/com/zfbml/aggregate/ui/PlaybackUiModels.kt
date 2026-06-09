@@ -76,6 +76,16 @@ internal data class DetailEpisodeSummaryUiState(
     val chips: List<SearchResultChipUiState>,
 )
 
+internal data class DetailEpisodeOptionUiState(
+    val episodeId: String,
+    val indexLabel: String,
+    val title: String,
+    val subtitle: String,
+    val actionLabel: String,
+    val selected: Boolean,
+    val tone: SourceLibraryTone,
+)
+
 internal data class DetailRouteResolutionUiState(
     val title: String,
     val subtitle: String,
@@ -985,6 +995,29 @@ internal fun buildDetailEpisodeSummaryUiState(
         routeActionLabel = routeActionLabel,
         tone = tone,
         chips = chips,
+    )
+}
+
+internal fun buildDetailEpisodeOptionUiState(
+    episode: Episode,
+    selected: Boolean,
+): DetailEpisodeOptionUiState {
+    val indexLabel = episode.index?.takeIf { it > 0 }?.let { "%02d".format(it) } ?: "SP"
+    val title = episode.title.takeIf { it.isNotBlank() }
+        ?: episode.index?.takeIf { it > 0 }?.let { "\u7b2c $it \u96c6" }
+        ?: "\u7279\u522b\u7bc7"
+    return DetailEpisodeOptionUiState(
+        episodeId = episode.id,
+        indexLabel = indexLabel,
+        title = title,
+        subtitle = if (selected) {
+            "\u5f53\u524d\u9009\u96c6\uff0c\u4fdd\u7559\u5df2\u5339\u914d\u7ebf\u8def"
+        } else {
+            "\u70b9\u51fb\u540e\u4f18\u5148\u5339\u914d\u5728\u7ebf\u64ad\u653e"
+        },
+        actionLabel = if (selected) "\u5df2\u9009" else "\u627e\u7ebf\u8def",
+        selected = selected,
+        tone = if (selected) SourceLibraryTone.Online else SourceLibraryTone.Muted,
     )
 }
 

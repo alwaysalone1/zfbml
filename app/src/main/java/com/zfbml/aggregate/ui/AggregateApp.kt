@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.75")
+                setRequestProperty("User-Agent", "ZFBML/0.5.76")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2866,7 +2866,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.75",
+            version = "0.5.76",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -4678,62 +4678,51 @@ private fun EpisodeSelectorRow(
     LazyRow(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         items(episodes) { episode ->
             val selected = episode.id == selectedEpisodeId
+            val state = buildDetailEpisodeOptionUiState(episode, selected)
+            val accent = sourceLibraryToneColor(state.tone)
             Card(
                 onClick = { onEpisodeSelected(episode) },
-                modifier = Modifier.width(118.dp).height(72.dp).focusable(),
+                modifier = Modifier.width(136.dp).height(84.dp).focusable(),
                 shape = RoundedCornerShape(8.dp),
-                colors = CardDefaults.cardColors(containerColor = if (selected) AnimePanelSoft else AnimePanel),
-                border = BorderStroke(1.dp, if (selected) AnimeAccentCyan else AnimeBorder),
+                colors = CardDefaults.cardColors(containerColor = if (state.selected) AnimePanelSoft else AnimePanel),
+                border = BorderStroke(1.dp, if (state.selected) accent else AnimeBorder),
             ) {
                 Column(
                     Modifier.fillMaxSize().padding(10.dp),
-                    verticalArrangement = Arrangement.SpaceBetween,
+                    verticalArrangement = Arrangement.spacedBy(5.dp),
                 ) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = state.indexLabel,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = if (state.selected) accent else Color.White,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                        )
+                        Text(
+                            text = state.actionLabel,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = accent,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                     Text(
-                        text = episode.index?.let { "%02d".format(it) } ?: "SP",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = if (selected) AnimeAccentCyan else Color.White,
-                        fontWeight = FontWeight.Bold,
+                        text = state.title,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (state.selected) Color.White else AnimeMuted,
                         maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                     )
                     Text(
-                        text = episode.title,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (selected) Color.White else AnimeMuted,
+                        text = state.subtitle,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = AnimeMuted,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun EpisodeVideoRow(episode: Episode, selected: Boolean, onClick: () -> Unit) {
-    Card(
-        onClick = onClick,
-        modifier = Modifier.fillMaxWidth().focusable(),
-        shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = if (selected) AnimePanelSoft else AnimePanel),
-        border = BorderStroke(1.dp, if (selected) AnimeAccentCyan else AnimeBorder),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                modifier = Modifier.size(width = 108.dp, height = 62.dp).background(AnimePanelSoft, RoundedCornerShape(6.dp)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = AnimeAccentCyan)
-            }
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(episode.title, style = MaterialTheme.typography.titleMedium, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Text("\u70B9\u51FB\u4F18\u5148\u5339\u914D\u5728\u7EBF\u89C6\u9891\u7EBF\u8DEF\uFF0CBT \u4F5C\u4E3A\u5907\u7528", style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1)
-            }
-            Text(if (selected) "\u5DF2\u9009" else "\u627E\u7EBF\u8DEF", style = MaterialTheme.typography.labelLarge, color = AnimeAccentCyan)
         }
     }
 }
