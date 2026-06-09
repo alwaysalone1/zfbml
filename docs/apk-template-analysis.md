@@ -151,3 +151,5 @@ This pass upgrades the portrait playback recovery strip. `PortraitRecoveryAction
 This pass upgrades the portrait route insight row. `PortraitRouteInsightUiState` and `PortraitRouteInsightChipUiState` now own route coverage, online-route counts, BT fallback counts, current-route labels, and semantic tones so portrait diagnostics no longer compute route insight chips inside Compose.
 
 This pass upgrades the BT playback preparation placeholder. `TorrentPlaybackPreparationUiState` now owns startup buffering progress, metadata/readiness labels, overall/video/buffer percentages, connection speed, selected-file labels, file size, and error copy so torrent edge-cache playback preparation can become a reusable player/cache status surface.
+
+This pass upgrades the search idle guidance. `SearchIdleHintUiState` now owns the pre-search title, summary, action copy, searchable-source chip, schedule-suggestion chip, and index-health chip so the search tab exposes source coverage and schedule-backed entry points before the user types a query.

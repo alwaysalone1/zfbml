@@ -159,6 +159,13 @@ internal data class SearchLandingUiState(
     val searchableSourceCount: Int,
 )
 
+internal data class SearchIdleHintUiState(
+    val title: String,
+    val subtitle: String,
+    val chips: List<SourceLibraryChipUiState>,
+    val actionLabel: String,
+)
+
 internal data class SearchResultChipUiState(
     val label: String,
     val tone: SourceLibraryTone,
@@ -1438,6 +1445,58 @@ internal fun buildSearchLandingUiState(
         suggestions = suggestions,
         scheduleSuggestionCount = scheduleCount,
         searchableSourceCount = searchable,
+    )
+}
+
+internal fun buildSearchIdleHintUiState(
+    landingState: SearchLandingUiState,
+    indexState: SearchIndexUiState,
+): SearchIdleHintUiState {
+    val sourceCount = landingState.searchableSourceCount.coerceAtLeast(0)
+    val scheduleCount = landingState.scheduleSuggestionCount.coerceAtLeast(0)
+    val failedCount = indexState.failedSourceCount.coerceAtLeast(0)
+    val title = when {
+        sourceCount == 0 -> "\u641c\u7d22\u6e90\u5f85\u63a5\u5165"
+        scheduleCount > 0 -> "\u5148\u4ece\u65e5\u7a0b\u5feb\u901f\u627e\u756a"
+        else -> "\u627e\u5230\u540e\u5148\u8fdb\u756a\u5267\u8be6\u60c5"
+    }
+    val subtitle = when {
+        sourceCount == 0 -> "\u63a5\u5165\u53ef\u641c\u7d22\u6765\u6e90\u540e\uff0c\u641c\u7d22\u9875\u4f1a\u663e\u793a\u7ed3\u679c\u3001\u6765\u6e90\u7b5b\u9009\u548c\u8be6\u60c5\u9875\u7ebf\u8def\u5339\u914d\u5165\u53e3\u3002"
+        scheduleCount > 0 -> "\u65e5\u7a0b\u5efa\u8bae\u5df2\u63d0\u4f9b $scheduleCount \u4e2a\u5165\u53e3\uff1b\u6253\u5f00\u8be6\u60c5\u540e\u518d\u786e\u8ba4\u9009\u96c6\u3001\u7ebf\u8def\u3001\u7f13\u5b58\u548c\u5f39\u5e55\u3002"
+        else -> "\u8f93\u5165\u756a\u540d\u3001\u522b\u540d\u6216\u64ad\u653e\u94fe\u63a5\u540e\uff0c\u53ef\u6309\u6765\u6e90\u7b5b\u9009\u7ed3\u679c\uff1b\u8be6\u60c5\u9875\u4f1a\u7ee7\u7eed\u5339\u914d\u53ef\u64ad\u7ebf\u8def\u3002"
+    }
+    val chips = listOf(
+        SourceLibraryChipUiState(
+            label = if (sourceCount > 0) "$sourceCount \u6e90\u53ef\u641c" else "\u5f85\u63a5\u641c\u7d22\u6e90",
+            tone = if (sourceCount > 0) SourceLibraryTone.Online else SourceLibraryTone.Muted,
+        ),
+        SourceLibraryChipUiState(
+            label = if (scheduleCount > 0) "$scheduleCount \u4e2a\u65e5\u7a0b\u5efa\u8bae" else "\u70ed\u95e8\u8bcd\u515c\u5e95",
+            tone = if (scheduleCount > 0) SourceLibraryTone.Primary else SourceLibraryTone.Backup,
+        ),
+        SourceLibraryChipUiState(
+            label = when {
+                failedCount > 0 -> "$failedCount \u6e90\u5f02\u5e38"
+                sourceCount > 0 -> "\u7d22\u5f15\u6b63\u5e38"
+                else -> "\u6765\u6e90\u5f85\u914d\u7f6e"
+            },
+            tone = when {
+                failedCount > 0 -> SourceLibraryTone.Web
+                sourceCount > 0 -> SourceLibraryTone.Cache
+                else -> SourceLibraryTone.Muted
+            },
+        ),
+    )
+    val actionLabel = when {
+        sourceCount == 0 -> "\u5148\u63a5\u5165\u641c\u7d22\u6765\u6e90"
+        scheduleCount > 0 -> "\u70b9\u65e5\u7a0b\u8bcd\u6216\u8f93\u5165\u756a\u540d"
+        else -> "\u8f93\u5165\u756a\u540d\u5f00\u59cb\u641c\u7d22"
+    }
+    return SearchIdleHintUiState(
+        title = title,
+        subtitle = subtitle,
+        chips = chips,
+        actionLabel = actionLabel,
     )
 }
 

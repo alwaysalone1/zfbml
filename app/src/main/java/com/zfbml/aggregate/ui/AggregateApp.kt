@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.72")
+                setRequestProperty("User-Agent", "ZFBML/0.5.73")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2481,6 +2481,12 @@ private fun SearchScreen(
             fallbackKeywords = defaultSearchKeywords(),
         )
     }
+    val searchIdleHintUiState = remember(searchLandingUiState, searchIndexUiState) {
+        buildSearchIdleHintUiState(
+            landingState = searchLandingUiState,
+            indexState = searchIndexUiState,
+        )
+    }
     val visibleResults = searchResultsForProvider(results, searchIndexUiState.selectedProviderId)
 
     fun runSearch(searchTerm: String = query) {
@@ -2564,6 +2570,7 @@ private fun SearchScreen(
             searched = searched,
             searchMessage = searchMessage,
             results = visibleResults,
+            idleHintState = searchIdleHintUiState,
             emptyMessage = if (searchIndexUiState.selectedProviderId != null && results.isNotEmpty() && visibleResults.isEmpty()) {
                 "\u5f53\u524d\u6765\u6e90\u6682\u65e0\u547d\u4e2d\uff0c\u53ef\u5207\u56de\u5168\u90e8\u7d22\u5f15\u6216\u6362\u4e00\u4e2a\u5173\u952e\u8bcd\u3002"
             } else {
@@ -2855,7 +2862,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.72",
+            version = "0.5.73",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -3166,16 +3173,27 @@ private fun SearchSuggestionStrip(
 }
 
 @Composable
-private fun SearchHintPanel() {
+private fun SearchHintPanel(state: SearchIdleHintUiState) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = AnimePanel),
         border = BorderStroke(1.dp, AnimeBorder),
         shape = RoundedCornerShape(8.dp),
     ) {
-        Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("\u627e\u5230\u540e\u5148\u8fdb\u756a\u5267\u8be6\u60c5", style = MaterialTheme.typography.titleSmall, color = Color.White)
-            Text("\u8be6\u60c5\u9875\u4f1a\u5c55\u793a\u7b80\u4ecb\u3001\u9009\u96c6\u548c\u81ea\u52a8\u63a8\u8350\u7684\u64ad\u653e\u6e90\uff0c\u70b9\u64ad\u653e\u5c31\u80fd\u7ee7\u7eed\u770b\u3002", style = MaterialTheme.typography.bodySmall, color = AnimeMuted)
+        Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Filled.Search, contentDescription = null, tint = AnimeAccentCyan, modifier = Modifier.size(18.dp))
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Text(state.title, style = MaterialTheme.typography.titleSmall, color = Color.White)
+                    Text(state.subtitle, style = MaterialTheme.typography.bodySmall, color = AnimeMuted)
+                }
+            }
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                items(state.chips) { chip ->
+                    RouteStatusBadge(chip.label, sourceLibraryToneColor(chip.tone))
+                }
+            }
+            Text(state.actionLabel, style = MaterialTheme.typography.labelMedium, color = AnimeAccentCyan)
         }
     }
 }
@@ -3337,6 +3355,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.searchStatusItems(
     searched: Boolean,
     searchMessage: String?,
     results: List<SearchResult>,
+    idleHintState: SearchIdleHintUiState,
     emptyMessage: String? = null,
     onOpenDetail: (SearchResult) -> Unit,
 ) {
@@ -3357,7 +3376,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.searchStatusItems(
             }
         } else {
             item {
-                SearchHintPanel()
+                SearchHintPanel(idleHintState)
             }
         }
     } else {
