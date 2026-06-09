@@ -938,6 +938,95 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun playerRouteSourceStripUiStateBuildsListTitlesAndChipPresentation() {
+        val recommended = route(
+            id = "recommended",
+            protocol = StreamProtocol.HLS,
+            score = 900,
+            quality = "1080p",
+            sourceId = "source-a",
+            sourceName = "Source A",
+        )
+        val selected = route(
+            id = "selected",
+            protocol = StreamProtocol.PROGRESSIVE,
+            score = 200,
+            quality = "720p",
+            sourceId = "source-b",
+            sourceName = "Source B",
+        )
+        val failedOnly = route(
+            id = "failed",
+            protocol = StreamProtocol.HLS,
+            score = 100,
+            quality = "720p",
+            sourceId = "source-c",
+            sourceName = "Source C",
+        )
+
+        val singleSource = buildPlayerRouteSourceStripUiState(
+            routes = listOf(recommended),
+            selectedSourceId = null,
+            selectedStreamId = recommended.stream.id,
+            recommendedStreamId = recommended.stream.id,
+            detailedMode = false,
+        )
+        val compact = buildPlayerRouteSourceStripUiState(
+            routes = listOf(recommended, selected),
+            selectedSourceId = null,
+            selectedStreamId = selected.stream.id,
+            recommendedStreamId = recommended.stream.id,
+            detailedMode = false,
+        )
+        val detailed = buildPlayerRouteSourceStripUiState(
+            routes = listOf(recommended, selected, failedOnly),
+            selectedSourceId = selected.sourceId,
+            selectedStreamId = selected.stream.id,
+            recommendedStreamId = recommended.stream.id,
+            failedStreamIds = setOf(failedOnly.stream.id),
+            detailedMode = true,
+        )
+
+        assertFalse(singleSource.visible)
+        assertTrue(singleSource.chips.isEmpty())
+        assertEquals("\u63a8\u8350\u6e90 (1)", singleSource.routeListTitle)
+        assertEquals(listOf("recommended"), singleSource.visibleRoutes.map { it.stream.id })
+        assertTrue(compact.visible)
+        assertEquals("\u64ad\u653e\u6e90\u5206\u7ec4", compact.title)
+        assertEquals("\u63a8\u8350\u6e90 (2)", compact.routeListTitle)
+        assertEquals("\u5168\u90e8\u64ad\u653e\u6e90", compact.selectedSourceName)
+        assertEquals(listOf("recommended", "selected"), compact.visibleRoutes.map { it.stream.id })
+        assertEquals(3, compact.chips.size)
+        assertEquals(RouteAllSourcesId, compact.chips.first().group.id)
+        assertEquals(132.dp, compact.chips.first().width)
+        assertEquals(46.dp, compact.chips.first().height)
+        assertFalse(compact.chips.first().detailVisible)
+        assertTrue(compact.chips.first().emphasized)
+        assertEquals(0.08f, compact.chips.first().containerAlpha)
+        assertEquals(0.85f, compact.chips.first().borderAlpha)
+        assertEquals(0.72f, compact.titleAlpha)
+        assertEquals(7.dp, compact.containerSpacing)
+        assertEquals(8.dp, compact.chipSpacing)
+        assertEquals("\u6309\u6765\u6e90\u7b5b\u9009", detailed.title)
+        assertEquals("\u5df2\u7b5b\u9009\u6765\u6e90 \u00b7 Source B (1)", detailed.routeListTitle)
+        assertEquals("Source B", detailed.selectedSourceName)
+        assertEquals(listOf("selected"), detailed.visibleRoutes.map { it.stream.id })
+        val selectedChip = detailed.chips.first { it.group.id == selected.sourceId }
+        assertEquals(152.dp, selectedChip.width)
+        assertEquals(74.dp, selectedChip.height)
+        assertTrue(selectedChip.detailVisible)
+        assertEquals(10.dp, selectedChip.contentPadding)
+        assertEquals(0.66f, selectedChip.detailAlpha)
+        assertTrue(selectedChip.emphasized)
+        assertFalse(selectedChip.footerError)
+        val failedChip = detailed.chips.first { it.group.id == failedOnly.sourceId }
+        assertFalse(failedChip.emphasized)
+        assertEquals(0.045f, failedChip.containerAlpha)
+        assertEquals(0.34f, failedChip.borderAlpha)
+        assertTrue(failedChip.footerError)
+    }
+
+    @Test
     fun detailRouteSourceSelectorUiStateSummarizesAutoChoice() {
         val online = route("ok-hls", StreamProtocol.HLS, 800, quality = "720p", sourceId = "online", sourceName = "Online")
         val bt = route("bt", StreamProtocol.BITTORRENT, 500, quality = "1080p", sourceId = "bt", sourceName = "BT")
@@ -1793,19 +1882,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.93",
+            version = "0.5.94",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.93", state.version)
+        assertEquals("0.5.94", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.93" })
+        assertTrue(state.chips.any { it.label == "v0.5.94" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1819,7 +1908,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.93",
+            version = "0.5.94",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,

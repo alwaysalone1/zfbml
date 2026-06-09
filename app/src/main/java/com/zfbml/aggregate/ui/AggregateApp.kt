@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.93")
+                setRequestProperty("User-Agent", "ZFBML/0.5.94")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2866,7 +2866,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.93",
+            version = "0.5.94",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -8023,27 +8023,16 @@ private fun PlayerRoutePanel(
     val panelState = remember(routes, selectedStreamId, failedStreamIds) {
         buildRoutePanelUiState(routes, selectedStreamId, failedStreamIds)
     }
-    val sourceCount = remember(routes) { routes.map { it.sourceId }.distinct().size }
-    val showSourceStrip = detailedMode || sourceCount > 1
-    val visibleRoutes = remember(routes, selectedSourceId, failedStreamIds) {
-        routePanelVisibleRoutes(
+    val recommendedStreamId = panelState.recommendedRoute?.stream?.id
+    val sourceStripState = remember(routes, selectedSourceId, selectedStreamId, recommendedStreamId, failedStreamIds, detailedMode) {
+        buildPlayerRouteSourceStripUiState(
             routes = routes,
+            selectedStreamId = selectedStreamId,
             selectedSourceId = selectedSourceId,
+            recommendedStreamId = recommendedStreamId,
             failedStreamIds = failedStreamIds,
+            detailedMode = detailedMode,
         )
-    }
-    val selectedSourceName = selectedSourceId?.let { sourceId ->
-        routes.firstOrNull { it.sourceId == sourceId }?.sourceName ?: sourceId
-    } ?: "全部播放源"
-    val sourceListTitle = when {
-        detailedMode && selectedSourceId == null -> "全部播放源"
-        detailedMode -> "已筛选来源"
-        selectedSourceId == null -> "推荐源"
-        else -> "筛选播放源"
-    }
-    val routeListTitle = when {
-        selectedSourceId != null -> "$sourceListTitle · $selectedSourceName (${visibleRoutes.size})"
-        else -> "$sourceListTitle (${visibleRoutes.size})"
     }
     LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         item {
@@ -8055,15 +8044,10 @@ private fun PlayerRoutePanel(
                 modifier = Modifier.fillMaxWidth(),
             )
         }
-        if (showSourceStrip) {
+        if (sourceStripState.visible) {
             item {
                 PlayerRouteSourceStrip(
-                    routes = routes,
-                    selectedStreamId = selectedStreamId,
-                    selectedSourceId = selectedSourceId,
-                    recommendedStreamId = panelState.recommendedRoute?.stream?.id,
-                    failedStreamIds = failedStreamIds,
-                    detailedMode = detailedMode,
+                    state = sourceStripState,
                     onSourceSelected = { selectedSourceId = it },
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -8071,15 +8055,15 @@ private fun PlayerRoutePanel(
         }
         item {
             Text(
-                routeListTitle,
+                sourceStripState.routeListTitle,
                 style = MaterialTheme.typography.labelMedium,
-                color = Color.White.copy(alpha = 0.72f),
+                color = Color.White.copy(alpha = sourceStripState.titleAlpha),
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
         }
-        items(visibleRoutes, key = { it.stream.id }) { route ->
+        items(sourceStripState.visibleRoutes, key = { it.stream.id }) { route ->
             val failed = route.stream.id in failedStreamIds
             val recommended = route.stream.id == panelState.recommendedRoute?.stream?.id
             val selected = route.stream.id == selectedStreamId
@@ -8097,40 +8081,24 @@ private fun PlayerRoutePanel(
 
 @Composable
 private fun PlayerRouteSourceStrip(
-    routes: List<RouteCandidate>,
-    selectedStreamId: String,
-    selectedSourceId: String?,
-    recommendedStreamId: String?,
-    failedStreamIds: Set<String>,
-    detailedMode: Boolean,
+    state: PlayerRouteSourceStripUiState,
     onSourceSelected: (String?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val groups = remember(routes, selectedStreamId, selectedSourceId, recommendedStreamId, failedStreamIds) {
-        buildRouteSourceGroups(
-            routes = routes,
-            selectedSourceId = selectedSourceId,
-            selectedStreamId = selectedStreamId,
-            recommendedStreamId = recommendedStreamId,
-            failedStreamIds = failedStreamIds,
-            includeAll = true,
-        )
-    }
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(7.dp)) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(state.containerSpacing)) {
         Text(
-            if (detailedMode) "按来源筛选" else "播放源分组",
+            state.title,
             style = MaterialTheme.typography.labelMedium,
-            color = Color.White.copy(alpha = 0.72f),
+            color = Color.White.copy(alpha = state.titleAlpha),
             fontWeight = FontWeight.SemiBold,
             maxLines = 1,
         )
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(groups, key = { it.id }) { group ->
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(state.chipSpacing)) {
+            items(state.chips, key = { it.group.id }) { chip ->
                 PlayerRouteSourceChip(
-                    group = group,
-                    detailedMode = detailedMode,
+                    state = chip,
                     onClick = {
-                        onSourceSelected(if (group.isAll) null else group.id)
+                        onSourceSelected(if (chip.group.isAll) null else chip.group.id)
                     },
                 )
             }
@@ -8140,28 +8108,23 @@ private fun PlayerRouteSourceStrip(
 
 @Composable
 private fun PlayerRouteSourceChip(
-    group: RouteSourceGroupUiState,
-    detailedMode: Boolean,
+    state: PlayerRouteSourceChipUiState,
     onClick: () -> Unit,
 ) {
+    val group = state.group
     val accent = sourceLibraryToneColor(group.tone)
-    val emphasized = group.isFilterSelected || group.hasSelected || group.hasRecommended
     Card(
         onClick = onClick,
-        modifier = Modifier.width(if (detailedMode) 152.dp else 132.dp).height(if (detailedMode) 74.dp else 46.dp),
+        modifier = Modifier.width(state.width).height(state.height),
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (emphasized) {
-                Color.White.copy(alpha = 0.08f)
-            } else {
-                Color.White.copy(alpha = 0.045f)
-            },
+            containerColor = Color.White.copy(alpha = state.containerAlpha),
         ),
-        border = BorderStroke(1.dp, accent.copy(alpha = if (emphasized) 0.85f else 0.34f)),
+        border = BorderStroke(1.dp, accent.copy(alpha = state.borderAlpha)),
     ) {
         Column(
-            modifier = Modifier.fillMaxSize().padding(10.dp),
-            verticalArrangement = if (detailedMode) Arrangement.SpaceBetween else Arrangement.Center,
+            modifier = Modifier.fillMaxSize().padding(state.contentPadding),
+            verticalArrangement = if (state.detailVisible) Arrangement.SpaceBetween else Arrangement.Center,
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -8175,18 +8138,18 @@ private fun PlayerRouteSourceChip(
                 )
                 RouteStatusBadge(group.statusLabel, accent)
             }
-            if (detailedMode) {
+            if (state.detailVisible) {
                 Text(
                     group.detailSummary,
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color.White.copy(alpha = 0.66f),
+                    color = Color.White.copy(alpha = state.detailAlpha),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
                     group.footerLabel,
                     style = MaterialTheme.typography.labelSmall,
-                    color = if (group.failedCount > 0 && !emphasized) MaterialTheme.colorScheme.error else accent,
+                    color = if (state.footerError) MaterialTheme.colorScheme.error else accent,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )

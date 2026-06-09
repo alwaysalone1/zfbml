@@ -193,3 +193,5 @@ This pass upgrades player panel context-bar presentation. `PlayerPanelContextUiS
 This pass upgrades player panel header presentation. `PlayerPanelSheetUiState` now owns the dismiss label plus title, subtitle, and dismiss-action alpha so the panel header is rendered from the sheet model instead of Compose-local copy and opacity constants.
 
 This pass upgrades player option-panel shell presentation. `PlayerPanelShellUiState` now owns landscape/portrait sizing, scrim alpha, panel surface color, border alpha, content padding/spacing, and corner radii so the fullscreen player panel container follows the same model-driven contract as its header, context bar, tabs, and action rows.
+
+This pass upgrades player route-source filter presentation. `PlayerRouteSourceStripUiState` and `PlayerRouteSourceChipUiState` now own source-strip visibility, source titles, filtered route-list titles, visible route sets, chip sizing, emphasis alpha, border alpha, detail visibility, and failed-source footer state so manual route switching follows a tested model contract instead of deriving source grouping and chip presentation inside Compose.

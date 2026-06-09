@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.94
+
+English:
+
+- Player route-source filtering now uses `PlayerRouteSourceStripUiState` and `PlayerRouteSourceChipUiState` for source strip visibility, titles, visible routes, chip sizing, emphasis, and detailed failure presentation.
+- `PlayerRoutePanel` now renders the route-source strip and filtered route-list title from model state instead of deriving source grouping, chip dimensions, and title copy locally in Compose.
+- Added unit coverage for hidden single-source strips, compact multi-source strips, detailed source filters, and failed-source chip presentation.
+- App version labels, request user agents, and README notes are now updated to `0.5.94`.
+
 ### v0.5.93
 
 English:

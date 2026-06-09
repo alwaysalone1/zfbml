@@ -859,6 +859,31 @@ internal data class RoutePanelMetricUiState(
     val tone: SourceLibraryTone,
 )
 
+internal data class PlayerRouteSourceStripUiState(
+    val visible: Boolean,
+    val title: String,
+    val routeListTitle: String,
+    val selectedSourceName: String,
+    val visibleRoutes: List<RouteCandidate>,
+    val chips: List<PlayerRouteSourceChipUiState>,
+    val titleAlpha: Float,
+    val containerSpacing: Dp,
+    val chipSpacing: Dp,
+)
+
+internal data class PlayerRouteSourceChipUiState(
+    val group: RouteSourceGroupUiState,
+    val width: Dp,
+    val height: Dp,
+    val emphasized: Boolean,
+    val detailVisible: Boolean,
+    val contentPadding: Dp,
+    val containerAlpha: Float,
+    val borderAlpha: Float,
+    val detailAlpha: Float,
+    val footerError: Boolean,
+)
+
 internal data class RouteCandidateUiState(
     val streamId: String,
     val sourceId: String,
@@ -1823,6 +1848,78 @@ internal fun routePanelVisibleRoutes(
                 .thenBy { it.title },
         )
         .distinctBy { it.stream.id }
+}
+
+internal fun buildPlayerRouteSourceStripUiState(
+    routes: List<RouteCandidate>,
+    selectedSourceId: String?,
+    selectedStreamId: String,
+    recommendedStreamId: String?,
+    failedStreamIds: Set<String> = emptySet(),
+    detailedMode: Boolean,
+): PlayerRouteSourceStripUiState {
+    val sourceCount = routes.map { it.sourceId }.distinct().size
+    val visible = detailedMode || sourceCount > 1
+    val visibleRoutes = routePanelVisibleRoutes(
+        routes = routes,
+        selectedSourceId = selectedSourceId,
+        failedStreamIds = failedStreamIds,
+    )
+    val selectedSourceName = selectedSourceId?.let { sourceId ->
+        routes.firstOrNull { it.sourceId == sourceId }?.sourceName ?: sourceId
+    } ?: "\u5168\u90e8\u64ad\u653e\u6e90"
+    val sourceListTitle = when {
+        detailedMode && selectedSourceId == null -> "\u5168\u90e8\u64ad\u653e\u6e90"
+        detailedMode -> "\u5df2\u7b5b\u9009\u6765\u6e90"
+        selectedSourceId == null -> "\u63a8\u8350\u6e90"
+        else -> "\u7b5b\u9009\u64ad\u653e\u6e90"
+    }
+    val routeListTitle = if (selectedSourceId != null) {
+        "$sourceListTitle \u00b7 $selectedSourceName (${visibleRoutes.size})"
+    } else {
+        "$sourceListTitle (${visibleRoutes.size})"
+    }
+    val recommendedSourceId = recommendedStreamId?.let { streamId ->
+        routes.firstOrNull { it.stream.id == streamId }?.sourceId
+    }
+    val groups = if (visible) {
+        buildRouteSourceGroups(
+            routes = routes,
+            selectedSourceId = selectedSourceId,
+            selectedStreamId = selectedStreamId,
+            recommendedSourceId = recommendedSourceId,
+            recommendedStreamId = recommendedStreamId,
+            failedStreamIds = failedStreamIds,
+            includeAll = true,
+        )
+    } else {
+        emptyList()
+    }
+    return PlayerRouteSourceStripUiState(
+        visible = visible,
+        title = if (detailedMode) "\u6309\u6765\u6e90\u7b5b\u9009" else "\u64ad\u653e\u6e90\u5206\u7ec4",
+        routeListTitle = routeListTitle,
+        selectedSourceName = selectedSourceName,
+        visibleRoutes = visibleRoutes,
+        chips = groups.map { group ->
+            val emphasized = group.isFilterSelected || group.hasSelected || group.hasRecommended
+            PlayerRouteSourceChipUiState(
+                group = group,
+                width = if (detailedMode) 152.dp else 132.dp,
+                height = if (detailedMode) 74.dp else 46.dp,
+                emphasized = emphasized,
+                detailVisible = detailedMode,
+                contentPadding = 10.dp,
+                containerAlpha = if (emphasized) 0.08f else 0.045f,
+                borderAlpha = if (emphasized) 0.85f else 0.34f,
+                detailAlpha = 0.66f,
+                footerError = group.failedCount > 0 && !emphasized,
+            )
+        },
+        titleAlpha = 0.72f,
+        containerSpacing = 7.dp,
+        chipSpacing = 8.dp,
+    )
 }
 
 internal fun nextPlayableRoute(
