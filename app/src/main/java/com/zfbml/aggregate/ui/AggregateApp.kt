@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.84")
+                setRequestProperty("User-Agent", "ZFBML/0.5.85")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2866,7 +2866,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.84",
+            version = "0.5.85",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -8502,10 +8502,10 @@ private fun PlayerEpisodeOptionRow(
         modifier = Modifier.fillMaxWidth().focusable(),
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (state.selected) Color.White.copy(alpha = 0.08f) else Color.White.copy(alpha = 0.045f),
+            containerColor = if (state.prominent) Color.White.copy(alpha = 0.08f) else Color.White.copy(alpha = 0.045f),
             disabledContainerColor = Color.White.copy(alpha = 0.032f),
         ),
-        border = BorderStroke(1.dp, if (state.selected || state.loading) accent.copy(alpha = 0.85f) else Color.White.copy(alpha = 0.08f)),
+        border = BorderStroke(1.dp, if (state.highlighted) accent.copy(alpha = 0.85f) else Color.White.copy(alpha = 0.08f)),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(10.dp),
@@ -8513,7 +8513,7 @@ private fun PlayerEpisodeOptionRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
-                modifier = Modifier.width(4.dp).height(52.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = if (state.enabled) 1f else 0.38f)),
+                modifier = Modifier.width(4.dp).height(52.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = state.railAlpha)),
             )
             Box(
                 modifier = Modifier.size(42.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.16f)),
@@ -8523,7 +8523,7 @@ private fun PlayerEpisodeOptionRow(
                     CircularProgressIndicator(color = accent, modifier = Modifier.size(20.dp))
                 } else {
                     Text(
-                        state.episode.index?.let { "%02d".format(it) } ?: "SP",
+                        state.compactIndexLabel,
                         style = MaterialTheme.typography.labelLarge,
                         color = accent,
                         fontWeight = FontWeight.Bold,
@@ -8537,24 +8537,24 @@ private fun PlayerEpisodeOptionRow(
                         state.title,
                         modifier = Modifier.weight(1f),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White.copy(alpha = if (state.enabled) 0.94f else 0.42f),
-                        fontWeight = if (state.selected) FontWeight.Bold else FontWeight.Normal,
+                        color = Color.White.copy(alpha = state.titleAlpha),
+                        fontWeight = if (state.prominent) FontWeight.Bold else FontWeight.Normal,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    if (state.statusLabel.isNotBlank()) {
-                        RouteStatusBadge(state.statusLabel, accent)
+                    state.badges.forEach { badge ->
+                        RouteStatusBadge(badge.label, sourceLibraryToneColor(badge.tone))
                     }
                 }
                 Text(
                     state.indexLabel,
                     style = MaterialTheme.typography.bodySmall,
-                    color = AnimeMuted.copy(alpha = if (state.enabled) 0.86f else 0.38f),
+                    color = AnimeMuted.copy(alpha = state.subtitleAlpha),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            EpisodeActionLabel(label = state.actionLabel, tone = state.tone, enabled = state.enabled || state.loading || state.selected)
+            EpisodeActionLabel(label = state.actionLabel, tone = state.tone, enabled = state.actionEnabled)
         }
     }
 }

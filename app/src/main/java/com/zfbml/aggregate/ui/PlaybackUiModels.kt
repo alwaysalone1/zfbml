@@ -616,11 +616,19 @@ internal data class PlayerEpisodeOptionUiState(
     val episode: Episode,
     val title: String,
     val indexLabel: String,
+    val compactIndexLabel: String,
     val statusLabel: String,
     val actionLabel: String,
+    val badges: List<SourceLibraryChipUiState>,
     val selected: Boolean,
     val loading: Boolean,
     val enabled: Boolean,
+    val highlighted: Boolean,
+    val prominent: Boolean,
+    val actionEnabled: Boolean,
+    val railAlpha: Float,
+    val titleAlpha: Float,
+    val subtitleAlpha: Float,
     val tone: SourceLibraryTone,
 )
 
@@ -2642,30 +2650,44 @@ internal fun buildPlayerEpisodePanelUiState(
         val loading = episode.id == episodeLoadingId
         val selected = episode.id == currentEpisode.id
         val enabled = episodeLoadingId == null || loading
+        val statusLabel = when {
+            loading -> "加载中"
+            selected -> "当前"
+            else -> ""
+        }
+        val tone = when {
+            loading -> SourceLibraryTone.Backup
+            selected -> SourceLibraryTone.Primary
+            enabled -> SourceLibraryTone.Online
+            else -> SourceLibraryTone.Muted
+        }
         PlayerEpisodeOptionUiState(
             episode = episode,
             title = episode.title.ifBlank { episodeTitleForPlayer(episode) },
             indexLabel = episodeTitleForPlayer(episode),
-            statusLabel = when {
-                loading -> "加载中"
-                selected -> "当前"
-                else -> ""
-            },
+            compactIndexLabel = episode.index?.takeIf { it > 0 }?.let { "%02d".format(it) } ?: "SP",
+            statusLabel = statusLabel,
             actionLabel = when {
                 loading -> "加载中"
                 selected -> "播放中"
                 enabled -> "播放"
                 else -> "等待"
             },
+            badges = if (statusLabel.isNotBlank()) {
+                listOf(SourceLibraryChipUiState(statusLabel, tone))
+            } else {
+                emptyList()
+            },
             selected = selected,
             loading = loading,
             enabled = enabled,
-            tone = when {
-                loading -> SourceLibraryTone.Backup
-                selected -> SourceLibraryTone.Primary
-                enabled -> SourceLibraryTone.Online
-                else -> SourceLibraryTone.Muted
-            },
+            highlighted = selected || loading,
+            prominent = selected,
+            actionEnabled = enabled || loading || selected,
+            railAlpha = if (enabled) 1f else 0.38f,
+            titleAlpha = if (enabled) 0.94f else 0.42f,
+            subtitleAlpha = if (enabled) 0.86f else 0.38f,
+            tone = tone,
         )
     }
     return PlayerEpisodePanelUiState(
