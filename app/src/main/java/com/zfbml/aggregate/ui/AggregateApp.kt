@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.76")
+                setRequestProperty("User-Agent", "ZFBML/0.5.77")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2866,7 +2866,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.76",
+            version = "0.5.77",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -3661,6 +3661,10 @@ private fun DetailScreen(
         error = error,
     )
     val detailPlaybackReadiness = buildDetailPlaybackReadinessUiState(routeUiState)
+    val detailHeroActionState = buildDetailHeroActionUiState(
+        selectedEpisode = selectedEpisode,
+        routeState = routeUiState,
+    )
     val detailRouteResolutionState = buildDetailRouteResolutionUiState(routeUiState)
     val routePrefetchUiState = detail?.let { media ->
         buildRoutePrefetchUiState(
@@ -3758,6 +3762,7 @@ private fun DetailScreen(
                     selectedEpisode = selectedEpisode,
                     routeUiState = routeUiState,
                     playbackReadiness = detailPlaybackReadiness,
+                    actionState = detailHeroActionState,
                     onPlay = {
                         val episode = selectedEpisode ?: media.episodes.firstOrNull()
                         if (episode != null) {
@@ -3867,11 +3872,11 @@ private fun DetailHero(
     selectedEpisode: Episode?,
     routeUiState: RouteUiState,
     playbackReadiness: DetailPlaybackReadinessUiState,
+    actionState: DetailHeroActionUiState,
     onPlay: () -> Unit,
     onToggleRoutes: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val playLabel = selectedEpisode?.index?.let { "播放第 $it 集" } ?: "立即观看"
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -3955,10 +3960,10 @@ private fun DetailHero(
                 ) {
                     Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text(if (routeUiState.canPlay) playLabel else "匹配播放源")
+                    Text(actionState.primaryActionLabel)
                 }
                 DetailRouteEntryButton(
-                    state = routeUiState,
+                    state = actionState,
                     onClick = onToggleRoutes,
                     modifier = Modifier.widthIn(min = 126.dp, max = 156.dp).height(48.dp),
                 )
@@ -4025,32 +4030,11 @@ private fun DetailEntryStatusCard(
 
 @Composable
 private fun DetailRouteEntryButton(
-    state: RouteUiState,
+    state: DetailHeroActionUiState,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val accent = when (state.status) {
-        RouteLoadStatus.Ready -> AnimeAccentCyan
-        RouteLoadStatus.Loading -> AnimeAccentAmber
-        RouteLoadStatus.Failed -> MaterialTheme.colorScheme.error
-        RouteLoadStatus.Empty -> AnimeAccentAmber
-        RouteLoadStatus.Idle -> AnimeMuted
-    }
-    val title = when (state.status) {
-        RouteLoadStatus.Ready -> "自动最佳"
-        RouteLoadStatus.Loading -> "匹配中"
-        RouteLoadStatus.Failed -> "播放源异常"
-        RouteLoadStatus.Empty -> "暂无播放源"
-        RouteLoadStatus.Idle -> "手动换源"
-    }
-    val value = when {
-        state.sourceCount > 1 -> "${state.sourceCount} 个来源"
-        state.routeCount > 1 -> "${state.routeCount} 线可切"
-        state.canPlay -> state.recommendationTitle
-        state.status == RouteLoadStatus.Loading -> "优先在线"
-        state.status == RouteLoadStatus.Failed -> "查看原因"
-        else -> "选择剧集"
-    }
+    val accent = sourceLibraryToneColor(state.routeTone)
     Card(
         onClick = onClick,
         modifier = modifier.focusable(),
@@ -4066,7 +4050,7 @@ private fun DetailRouteEntryButton(
             Icon(Icons.Filled.VideoLibrary, contentDescription = null, tint = accent, modifier = Modifier.size(18.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
                 Text(
-                    title,
+                    state.routeTitle,
                     style = MaterialTheme.typography.labelMedium,
                     color = accent,
                     fontWeight = FontWeight.Bold,
@@ -4074,7 +4058,7 @@ private fun DetailRouteEntryButton(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    value,
+                    state.routeValue,
                     style = MaterialTheme.typography.labelSmall,
                     color = Color.White.copy(alpha = 0.68f),
                     maxLines = 1,

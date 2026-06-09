@@ -245,6 +245,51 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun detailHeroActionUiStateSummarizesPlayableRouteAndRouteEntry() {
+        val state = buildRouteUiState(
+            selectedEpisode = episode(index = 6),
+            routes = listOf(
+                route("hls", StreamProtocol.HLS, 900, quality = "1080p", sourceId = "online", sourceName = "Online"),
+                route("backup", StreamProtocol.PROGRESSIVE, 500, quality = "720p", sourceId = "backup", sourceName = "Backup"),
+            ),
+            loading = false,
+            error = null,
+        )
+
+        val action = buildDetailHeroActionUiState(
+            selectedEpisode = episode(index = 6),
+            routeState = state,
+        )
+
+        assertEquals("\u64ad\u653e\u7b2c 6 \u96c6", action.primaryActionLabel)
+        assertEquals("\u81ea\u52a8\u6700\u4f73", action.routeTitle)
+        assertEquals("2 \u4e2a\u6765\u6e90", action.routeValue)
+        assertEquals(SourceLibraryTone.Online, action.routeTone)
+    }
+
+    @Test
+    fun detailHeroActionUiStateExplainsLoadingAndFailedRoutes() {
+        val loading = buildDetailHeroActionUiState(
+            selectedEpisode = episode(index = 2),
+            routeState = buildRouteUiState(episode(index = 2), emptyList(), loading = true, error = null),
+        )
+        val failed = buildDetailHeroActionUiState(
+            selectedEpisode = episode(index = 2),
+            routeState = buildRouteUiState(episode(index = 2), emptyList(), loading = false, error = "HTTP 500"),
+        )
+
+        assertEquals("\u5339\u914d\u4e2d", loading.primaryActionLabel)
+        assertEquals("\u5339\u914d\u4e2d", loading.routeTitle)
+        assertEquals("\u4f18\u5148\u5728\u7ebf", loading.routeValue)
+        assertEquals(SourceLibraryTone.Backup, loading.routeTone)
+
+        assertEquals("\u91cd\u8bd5\u5339\u914d", failed.primaryActionLabel)
+        assertEquals("\u64ad\u653e\u6e90\u5f02\u5e38", failed.routeTitle)
+        assertEquals("\u67e5\u770b\u539f\u56e0", failed.routeValue)
+        assertEquals(SourceLibraryTone.Web, failed.routeTone)
+    }
+
+    @Test
     fun detailEpisodeSummaryPromotesCurrentEpisodeAndCachedReadyRoute() {
         val state = buildRouteUiState(
             selectedEpisode = episode(index = 3),
@@ -1536,19 +1581,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.76",
+            version = "0.5.77",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.76", state.version)
+        assertEquals("0.5.77", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.76" })
+        assertTrue(state.chips.any { it.label == "v0.5.77" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1562,7 +1607,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.76",
+            version = "0.5.77",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,

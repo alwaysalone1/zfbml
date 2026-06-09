@@ -65,6 +65,13 @@ internal data class DetailPlaybackReadinessUiState(
     val cacheEnabled: Boolean,
 )
 
+internal data class DetailHeroActionUiState(
+    val primaryActionLabel: String,
+    val routeTitle: String,
+    val routeValue: String,
+    val routeTone: SourceLibraryTone,
+)
+
 internal data class DetailEpisodeSummaryUiState(
     val headline: String,
     val summary: String,
@@ -934,6 +941,49 @@ internal fun buildDetailPlaybackReadinessUiState(
         cacheReason = cacheAction?.reason ?: "\u64ad\u653e\u6e90\u5c31\u7eea\u540e\u5224\u65ad\u7f13\u5b58\u80fd\u529b",
         canPlay = state.canPlay,
         cacheEnabled = cacheAction?.enabled == true,
+    )
+}
+
+internal fun buildDetailHeroActionUiState(
+    selectedEpisode: Episode?,
+    routeState: RouteUiState,
+): DetailHeroActionUiState {
+    val playableEpisodeLabel = selectedEpisode?.index?.takeIf { it > 0 }?.let { "\u64ad\u653e\u7b2c $it \u96c6" }
+        ?: selectedEpisode?.title?.takeIf { it.isNotBlank() }?.let { "\u64ad\u653e\u672c\u96c6" }
+        ?: "\u7acb\u5373\u89c2\u770b"
+    val primaryActionLabel = when {
+        routeState.canPlay -> playableEpisodeLabel
+        routeState.status == RouteLoadStatus.Loading -> "\u5339\u914d\u4e2d"
+        routeState.status == RouteLoadStatus.Failed -> "\u91cd\u8bd5\u5339\u914d"
+        else -> "\u5339\u914d\u64ad\u653e\u6e90"
+    }
+    val routeTitle = when (routeState.status) {
+        RouteLoadStatus.Ready -> "\u81ea\u52a8\u6700\u4f73"
+        RouteLoadStatus.Loading -> "\u5339\u914d\u4e2d"
+        RouteLoadStatus.Failed -> "\u64ad\u653e\u6e90\u5f02\u5e38"
+        RouteLoadStatus.Empty -> "\u6682\u65e0\u64ad\u653e\u6e90"
+        RouteLoadStatus.Idle -> "\u624b\u52a8\u6362\u6e90"
+    }
+    val routeValue = when {
+        routeState.sourceCount > 1 -> "${routeState.sourceCount} \u4e2a\u6765\u6e90"
+        routeState.routeCount > 1 -> "${routeState.routeCount} \u7ebf\u53ef\u5207"
+        routeState.canPlay -> routeState.recommendationTitle
+        routeState.status == RouteLoadStatus.Loading -> "\u4f18\u5148\u5728\u7ebf"
+        routeState.status == RouteLoadStatus.Failed -> "\u67e5\u770b\u539f\u56e0"
+        else -> "\u9009\u62e9\u5267\u96c6"
+    }
+    val routeTone = when (routeState.status) {
+        RouteLoadStatus.Ready -> SourceLibraryTone.Online
+        RouteLoadStatus.Loading -> SourceLibraryTone.Backup
+        RouteLoadStatus.Failed -> SourceLibraryTone.Web
+        RouteLoadStatus.Empty -> SourceLibraryTone.Backup
+        RouteLoadStatus.Idle -> SourceLibraryTone.Muted
+    }
+    return DetailHeroActionUiState(
+        primaryActionLabel = primaryActionLabel,
+        routeTitle = routeTitle,
+        routeValue = routeValue,
+        routeTone = routeTone,
     )
 }
 
