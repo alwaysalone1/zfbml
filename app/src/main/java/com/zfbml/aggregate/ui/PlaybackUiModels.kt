@@ -64,6 +64,17 @@ internal data class DetailPlaybackReadinessUiState(
     val cacheEnabled: Boolean,
 )
 
+internal data class DetailEpisodeSummaryUiState(
+    val headline: String,
+    val summary: String,
+    val currentEpisodeLabel: String,
+    val episodeCountLabel: String,
+    val routeStatusLabel: String,
+    val routeActionLabel: String,
+    val tone: SourceLibraryTone,
+    val chips: List<SearchResultChipUiState>,
+)
+
 internal data class DetailEntryUiState(
     val headline: String,
     val summary: String,
@@ -560,6 +571,67 @@ internal fun buildDetailPlaybackReadinessUiState(
         cacheReason = cacheAction?.reason ?: "\u64ad\u653e\u6e90\u5c31\u7eea\u540e\u5224\u65ad\u7f13\u5b58\u80fd\u529b",
         canPlay = state.canPlay,
         cacheEnabled = cacheAction?.enabled == true,
+    )
+}
+
+internal fun buildDetailEpisodeSummaryUiState(
+    episodeCount: Int,
+    selectedEpisode: Episode?,
+    routeState: RouteUiState,
+): DetailEpisodeSummaryUiState {
+    val currentEpisodeLabel = selectedEpisode?.index?.let { "当前第 $it 集" }
+        ?: selectedEpisode?.title?.takeIf { it.isNotBlank() }
+        ?: "默认从第 1 集开始"
+    val episodeCountLabel = if (episodeCount > 0) "共 $episodeCount 集" else "待载入选集"
+    val routeStatusLabel = when (routeState.status) {
+        RouteLoadStatus.Ready -> "已匹配"
+        RouteLoadStatus.Loading -> "匹配中"
+        RouteLoadStatus.Failed -> "异常"
+        RouteLoadStatus.Empty -> "待补源"
+        RouteLoadStatus.Idle -> "待选集"
+    }
+    val routeActionLabel = when (routeState.status) {
+        RouteLoadStatus.Ready -> if (routeState.canPlay) "可播放" else "待确认"
+        RouteLoadStatus.Loading -> "正在准备"
+        RouteLoadStatus.Failed -> "查看异常"
+        RouteLoadStatus.Empty -> "换集/稍后"
+        RouteLoadStatus.Idle -> "选集后匹配"
+    }
+    val tone = when (routeState.status) {
+        RouteLoadStatus.Ready -> if (routeState.loadOriginLabel == "预取命中") SourceLibraryTone.Cache else SourceLibraryTone.Online
+        RouteLoadStatus.Loading -> SourceLibraryTone.Backup
+        RouteLoadStatus.Failed -> SourceLibraryTone.Web
+        RouteLoadStatus.Empty -> SourceLibraryTone.Backup
+        RouteLoadStatus.Idle -> SourceLibraryTone.Muted
+    }
+    val summary = when (routeState.status) {
+        RouteLoadStatus.Ready -> {
+            listOfNotNull(
+                routeState.sourceCoverageLabel.takeIf { it.isNotBlank() },
+                routeState.recommendationTitle.takeIf { it.isNotBlank() },
+                routeState.recommendationReason.takeIf { it.isNotBlank() },
+            ).joinToString(" · ")
+        }
+        RouteLoadStatus.Loading -> "$currentEpisodeLabel 正在优先匹配在线播放和备用线路。"
+        RouteLoadStatus.Failed -> routeState.detail.ifBlank { "当前集播放源异常，可重试或切换剧集。" }
+        RouteLoadStatus.Empty -> "当前集暂未命中可播线路，可切换剧集或稍后重试。"
+        RouteLoadStatus.Idle -> "选择剧集后会自动匹配最佳播放源。"
+    }
+    val chips = buildList {
+        add(SearchResultChipUiState(currentEpisodeLabel, tone))
+        add(SearchResultChipUiState(episodeCountLabel, SourceLibraryTone.Online))
+        add(SearchResultChipUiState(routeState.sourceCoverageLabel, tone))
+        add(SearchResultChipUiState(routeState.loadOriginLabel, SourceLibraryTone.Muted))
+    }
+    return DetailEpisodeSummaryUiState(
+        headline = "选集与线路",
+        summary = summary,
+        currentEpisodeLabel = currentEpisodeLabel,
+        episodeCountLabel = episodeCountLabel,
+        routeStatusLabel = routeStatusLabel,
+        routeActionLabel = routeActionLabel,
+        tone = tone,
+        chips = chips,
     )
 }
 

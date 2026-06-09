@@ -25,6 +25,23 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.53
+
+中文：
+- 详情页新增 `DetailEpisodeSummaryUiState`，统一生成当前选集、总集数、线路状态、动作标签和摘要文案。
+- 选集区 Header 改为消费模型状态，已匹配、匹配中、异常、待补源和待选集语义不再散在 Compose 里。
+- 选集区新增状态标签行，展示当前集、集数、来源覆盖和加载方式，和详情播放准备卡保持一致。
+- 新增单元测试覆盖缓存命中、加载中、空线路、异常和待选集状态下的选集摘要。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.53`。
+
+English:
+
+- Detail pages now have `DetailEpisodeSummaryUiState` to centralize the current episode, episode count, route status, action label, and summary copy.
+- The episode header now renders from model state, keeping ready, loading, failed, empty, and idle semantics out of Compose.
+- The episode area now shows compact status chips for current episode, count, source coverage, and route origin, matching the playback readiness model.
+- Added unit coverage for cached-ready, loading, empty, failed, and idle episode-summary states.
+- App version labels, request user agents, and README notes are now updated to `0.5.53`.
+
 ### v0.5.52
 
 中文：

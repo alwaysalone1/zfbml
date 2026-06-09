@@ -242,6 +242,69 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun detailEpisodeSummaryPromotesCurrentEpisodeAndCachedReadyRoute() {
+        val state = buildRouteUiState(
+            selectedEpisode = episode(index = 3),
+            routes = listOf(route("hls", StreamProtocol.HLS, 900, quality = "1080p")),
+            loading = false,
+            error = null,
+            loadedFromCache = true,
+        )
+
+        val summary = buildDetailEpisodeSummaryUiState(
+            episodeCount = 12,
+            selectedEpisode = episode(index = 3),
+            routeState = state,
+        )
+
+        assertEquals("选集与线路", summary.headline)
+        assertEquals("当前第 3 集", summary.currentEpisodeLabel)
+        assertEquals("共 12 集", summary.episodeCountLabel)
+        assertEquals("已匹配", summary.routeStatusLabel)
+        assertEquals("可播放", summary.routeActionLabel)
+        assertEquals(SourceLibraryTone.Cache, summary.tone)
+        assertTrue(summary.summary.contains("Provider"))
+        assertTrue(summary.chips.any { it.label == "预取命中" })
+    }
+
+    @Test
+    fun detailEpisodeSummaryExplainsNonReadyRouteStates() {
+        val loading = buildDetailEpisodeSummaryUiState(
+            episodeCount = 12,
+            selectedEpisode = episode(index = 2),
+            routeState = buildRouteUiState(episode(index = 2), emptyList(), loading = true, error = null),
+        )
+        val empty = buildDetailEpisodeSummaryUiState(
+            episodeCount = 12,
+            selectedEpisode = episode(index = 2),
+            routeState = buildRouteUiState(episode(index = 2), emptyList(), loading = false, error = null),
+        )
+        val failed = buildDetailEpisodeSummaryUiState(
+            episodeCount = 12,
+            selectedEpisode = episode(index = 2),
+            routeState = buildRouteUiState(episode(index = 2), emptyList(), loading = false, error = "HTTP 500"),
+        )
+        val idle = buildDetailEpisodeSummaryUiState(
+            episodeCount = 0,
+            selectedEpisode = null,
+            routeState = buildRouteUiState(null, emptyList(), loading = false, error = null),
+        )
+
+        assertEquals("匹配中", loading.routeStatusLabel)
+        assertEquals("正在准备", loading.routeActionLabel)
+        assertEquals(SourceLibraryTone.Backup, loading.tone)
+        assertTrue(loading.summary.contains("优先匹配"))
+        assertEquals("待补源", empty.routeStatusLabel)
+        assertEquals("换集/稍后", empty.routeActionLabel)
+        assertEquals("异常", failed.routeStatusLabel)
+        assertEquals("查看异常", failed.routeActionLabel)
+        assertTrue(failed.summary.contains("HTTP 500"))
+        assertEquals("待载入选集", idle.episodeCountLabel)
+        assertEquals("选集后匹配", idle.routeActionLabel)
+        assertEquals(SourceLibraryTone.Muted, idle.tone)
+    }
+
+    @Test
     fun autoplayRouteSkipsWebViewOnlyEvenWhenItScoresHighest() {
         val webView = route("webview", StreamProtocol.WEBVIEW_ONLY, 8_000, quality = "1080p")
         val playable = route("hls", StreamProtocol.HLS, 100, quality = "720p")
@@ -1152,19 +1215,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.52",
+            version = "0.5.53",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.52", state.version)
+        assertEquals("0.5.53", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.52" })
+        assertTrue(state.chips.any { it.label == "v0.5.53" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1178,7 +1241,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.52",
+            version = "0.5.53",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,

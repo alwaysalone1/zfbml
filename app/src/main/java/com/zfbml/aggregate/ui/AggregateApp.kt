@@ -2330,7 +2330,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.52")
+                setRequestProperty("User-Agent", "ZFBML/0.5.53")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2823,7 +2823,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.52",
+            version = "0.5.53",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -3693,6 +3693,11 @@ private fun DetailScreen(
             }
         }
         detail?.let { media ->
+            val episodeSummary = buildDetailEpisodeSummaryUiState(
+                episodeCount = media.episodes.size,
+                selectedEpisode = selectedEpisode,
+                routeState = routeUiState,
+            )
             item {
                 DetailHero(
                     media = media,
@@ -3716,9 +3721,7 @@ private fun DetailScreen(
             }
             item {
                 DetailEpisodeSectionHeader(
-                    episodeCount = media.episodes.size,
-                    selectedEpisode = selectedEpisode,
-                    routeUiState = routeUiState,
+                    state = episodeSummary,
                     modifier = Modifier.padding(horizontal = 18.dp),
                 )
             }
@@ -4555,61 +4558,53 @@ private fun RouteMetricChip(
 
 @Composable
 private fun DetailEpisodeSectionHeader(
-    episodeCount: Int,
-    selectedEpisode: Episode?,
-    routeUiState: RouteUiState,
+    state: DetailEpisodeSummaryUiState,
     modifier: Modifier = Modifier,
 ) {
-    val accent = when (routeUiState.status) {
-        RouteLoadStatus.Ready -> AnimeAccentGreen
-        RouteLoadStatus.Loading -> AnimeAccentCyan
-        RouteLoadStatus.Failed -> MaterialTheme.colorScheme.error
-        RouteLoadStatus.Empty -> AnimeAccentAmber
-        RouteLoadStatus.Idle -> AnimeMuted
-    }
-    val currentLabel = selectedEpisode?.index?.let { "当前第 $it 集" }
-        ?: selectedEpisode?.title?.takeIf { it.isNotBlank() }
-        ?: "默认从第 1 集开始"
-    val statusLabel = when (routeUiState.status) {
-        RouteLoadStatus.Ready -> "已匹配"
-        RouteLoadStatus.Loading -> "匹配中"
-        RouteLoadStatus.Failed -> "异常"
-        RouteLoadStatus.Empty -> "待补源"
-        RouteLoadStatus.Idle -> "待选集"
-    }
+    val accent = sourceLibraryToneColor(state.tone)
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
         color = Color.Transparent,
     ) {
-        Row(
+        Column(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("选集", style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold)
-                    RouteStatusBadge(statusLabel, accent)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(state.headline, style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold)
+                        RouteStatusBadge(state.routeStatusLabel, accent)
+                    }
+                    Text(
+                        state.summary,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = AnimeMuted,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 }
                 Text(
-                    "$currentLabel · 共 ${episodeCount.coerceAtLeast(1)} 集 · 切换后自动匹配最佳播放源",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = AnimeMuted,
+                    state.routeActionLabel,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = accent,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(accent.copy(alpha = 0.1f))
+                        .padding(horizontal = 10.dp, vertical = 7.dp),
                 )
             }
-            Text(
-                "全部 ${episodeCount.coerceAtLeast(1)}",
-                style = MaterialTheme.typography.labelLarge,
-                color = AnimeAccentCyan,
-                maxLines = 1,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(AnimeAccentCyan.copy(alpha = 0.1f))
-                    .padding(horizontal = 10.dp, vertical = 7.dp),
-            )
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                items(state.chips) { chip ->
+                    RouteStatusBadge(chip.label, sourceLibraryToneColor(chip.tone))
+                }
+            }
         }
     }
 }

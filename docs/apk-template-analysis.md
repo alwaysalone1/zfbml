@@ -111,3 +111,5 @@ This pass upgrades the search landing surface. `SearchLandingUiState` turns the 
 This pass upgrades search result cards. `SearchResultCardUiState` classifies catalog, direct-link, BT/RSS, and generic video-source hits, then exposes rating, episode count, category, and popularity chips so users can decide which result to open without relying on raw source names.
 
 This pass upgrades the search-to-detail handoff. `DetailEntryUiState` reuses search result classification to show source type, detail loading state, episode readiness, and next action directly on the detail page before playback route decisions.
+
+This pass upgrades the detail episode selector summary. `DetailEpisodeSummaryUiState` now centralizes current episode, total count, route status, route origin, and source coverage chips so the detail page can explain episode changes and route matching with the same model-driven language as the playback readiness card.
