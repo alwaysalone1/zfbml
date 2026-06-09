@@ -726,6 +726,13 @@ internal data class PlayerPanelContextUiState(
     val title: String,
     val metadata: String,
     val statusLabel: String,
+    val statusTone: SourceLibraryTone,
+    val iconTone: SourceLibraryTone,
+    val containerAlpha: Float,
+    val borderAlpha: Float,
+    val iconContainerAlpha: Float,
+    val titleAlpha: Float,
+    val metadataAlpha: Float,
 )
 
 internal data class PlayerPanelTabUiState(
@@ -3101,6 +3108,13 @@ internal fun buildPlayerPanelSheetUiState(
             title = title.ifBlank { "正在播放" },
             metadata = listOf(episodeLabel, normalizedSource, normalizedQuality, speedLabel).joinToString(" · "),
             statusLabel = "播放中",
+            statusTone = SourceLibraryTone.Cache,
+            iconTone = SourceLibraryTone.Primary,
+            containerAlpha = 0.06f,
+            borderAlpha = 0.08f,
+            iconContainerAlpha = 0.18f,
+            titleAlpha = 1f,
+            metadataAlpha = 1f,
         ),
         tabs = listOf(
             panelTab(

@@ -1792,19 +1792,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.90",
+            version = "0.5.91",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.90", state.version)
+        assertEquals("0.5.91", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.90" })
+        assertTrue(state.chips.any { it.label == "v0.5.91" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1818,7 +1818,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.90",
+            version = "0.5.91",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,
@@ -2347,6 +2347,13 @@ class PlaybackUiModelsTest {
         assertEquals("番剧标题", state.context.title)
         assertEquals("第 8 集 · Animeko · 1080p · 1.25x", state.context.metadata)
         assertEquals("播放中", state.context.statusLabel)
+        assertEquals(SourceLibraryTone.Cache, state.context.statusTone)
+        assertEquals(SourceLibraryTone.Primary, state.context.iconTone)
+        assertEquals(0.06f, state.context.containerAlpha)
+        assertEquals(0.08f, state.context.borderAlpha)
+        assertEquals(0.18f, state.context.iconContainerAlpha)
+        assertEquals(1f, state.context.titleAlpha)
+        assertEquals(1f, state.context.metadataAlpha)
         assertEquals(
             listOf(
                 PlayerPanelKind.Quality,
@@ -2402,6 +2409,12 @@ class PlaybackUiModelsTest {
         assertEquals("清晰度 · 倍速 · 选集 · 换源", state.subtitle)
         assertEquals("正在播放", state.context.title)
         assertEquals("当前集 · 自动源 · 自动 · 1.0x", state.context.metadata)
+        assertEquals(SourceLibraryTone.Cache, state.context.statusTone)
+        assertEquals(SourceLibraryTone.Primary, state.context.iconTone)
+        assertEquals(0.06f, state.context.containerAlpha)
+        assertEquals(0.08f, state.context.borderAlpha)
+        assertEquals(1f, state.context.titleAlpha)
+        assertEquals(1f, state.context.metadataAlpha)
         assertTrue(state.tabs.first { it.kind == PlayerPanelKind.More }.selected)
         val moreTab = state.tabs.first { it.kind == PlayerPanelKind.More }
         assertTrue(moreTab.actionEnabled)

@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.90")
+                setRequestProperty("User-Agent", "ZFBML/0.5.91")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2866,7 +2866,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.90",
+            version = "0.5.91",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -7513,11 +7513,12 @@ private fun PlayerPanelContextBar(
     state: PlayerPanelContextUiState,
     modifier: Modifier = Modifier,
 ) {
+    val iconColor = sourceLibraryToneColor(state.iconTone)
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(8.dp),
-        color = Color.White.copy(alpha = 0.06f),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f)),
+        color = Color.White.copy(alpha = state.containerAlpha),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = state.borderAlpha)),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 11.dp, vertical = 9.dp),
@@ -7525,16 +7526,16 @@ private fun PlayerPanelContextBar(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
-                modifier = Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)).background(AnimeAccentPink.copy(alpha = 0.18f)),
+                modifier = Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)).background(iconColor.copy(alpha = state.iconContainerAlpha)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = AnimeAccentPink, modifier = Modifier.size(18.dp))
+                Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = iconColor, modifier = Modifier.size(18.dp))
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(
                     state.title,
                     style = MaterialTheme.typography.labelLarge,
-                    color = Color.White,
+                    color = Color.White.copy(alpha = state.titleAlpha),
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -7542,12 +7543,12 @@ private fun PlayerPanelContextBar(
                 Text(
                     state.metadata,
                     style = MaterialTheme.typography.labelSmall,
-                    color = AnimeMuted,
+                    color = AnimeMuted.copy(alpha = state.metadataAlpha),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            RouteStatusBadge(state.statusLabel, AnimeAccentGreen)
+            RouteStatusBadge(state.statusLabel, sourceLibraryToneColor(state.statusTone))
         }
     }
 }
