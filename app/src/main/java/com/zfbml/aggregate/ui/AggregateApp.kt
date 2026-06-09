@@ -2330,7 +2330,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.53")
+                setRequestProperty("User-Agent", "ZFBML/0.5.54")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2823,7 +2823,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.53",
+            version = "0.5.54",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -4994,13 +4994,8 @@ private fun RouteStatusBadge(label: String, color: Color) {
 }
 
 @Composable
-private fun RoutePlayActionLabel(route: RouteCandidate, recommended: Boolean) {
-    val (label, color) = when {
-        route.protocol == StreamProtocol.BITTORRENT -> "边下边播" to AnimeAccentAmber
-        route.protocol == StreamProtocol.WEBVIEW_ONLY -> "网页兜底" to AnimeMuted
-        recommended -> "推荐播放" to AnimeAccentPink
-        else -> "播放" to AnimeAccentCyan
-    }
+private fun RoutePlayActionLabel(label: String, tone: SourceLibraryTone) {
+    val color = sourceLibraryToneColor(tone)
     Row(
         modifier = Modifier
             .height(32.dp)
@@ -5016,11 +5011,7 @@ private fun RoutePlayActionLabel(route: RouteCandidate, recommended: Boolean) {
 }
 
 private fun RouteCandidate.primaryRouteLabel(): String {
-    return listOfNotNull(
-        routeName?.takeIf { it.isNotBlank() },
-        quality?.takeIf { it.isNotBlank() },
-        subgroup?.takeIf { it.isNotBlank() }?.take(12),
-    ).distinct().joinToString(" · ").ifBlank { protocol.displayName() }
+    return routePrimaryLabelForUi(this)
 }
 
 private fun RouteCandidate.routeStatusLabel(): Pair<String, Color> {
@@ -5039,19 +5030,15 @@ private fun RouteCandidateRow(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val accent = when {
-        recommended -> AnimeAccentPink
-        route.protocol == StreamProtocol.BITTORRENT -> AnimeAccentAmber
-        route.protocol == StreamProtocol.WEBVIEW_ONLY -> AnimeMuted
-        else -> AnimeAccentCyan
-    }
-    val (statusLabel, statusColor) = route.routeStatusLabel()
+    val state = buildRouteCandidateUiState(route = route, recommended = recommended)
+    val accent = sourceLibraryToneColor(state.accentTone)
+    val statusColor = sourceLibraryToneColor(state.statusTone)
     Card(
         onClick = onClick,
         modifier = modifier.fillMaxWidth().focusable(),
         shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = if (recommended) AnimePanelSoft else AnimePanel),
-        border = BorderStroke(1.dp, if (recommended) AnimeAccentPink else AnimeBorder),
+        colors = CardDefaults.cardColors(containerColor = if (state.recommended) AnimePanelSoft else AnimePanel),
+        border = BorderStroke(1.dp, if (state.recommended) AnimeAccentPink else AnimeBorder),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(12.dp),
@@ -5062,15 +5049,15 @@ private fun RouteCandidateRow(
                 modifier = Modifier.width(4.dp).height(64.dp).clip(RoundedCornerShape(8.dp)).background(accent),
             )
             Box(
-                modifier = Modifier.size(42.dp).background(providerAccent(route.sourceId), RoundedCornerShape(8.dp)),
+                modifier = Modifier.size(42.dp).background(providerAccent(state.sourceId), RoundedCornerShape(8.dp)),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(route.sourceName.take(1), style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1)
+                Text(state.sourceInitial, style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1)
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        route.sourceName,
+                        state.sourceName,
                         modifier = Modifier.weight(1f),
                         style = MaterialTheme.typography.titleMedium,
                         color = Color.White,
@@ -5078,38 +5065,29 @@ private fun RouteCandidateRow(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    if (recommended) RouteStatusBadge("推荐", AnimeAccentPink)
-                    RouteStatusBadge(statusLabel, statusColor)
+                    if (state.recommended) RouteStatusBadge("推荐", AnimeAccentPink)
+                    RouteStatusBadge(state.statusLabel, statusColor)
                 }
                 Text(
-                    route.primaryRouteLabel(),
+                    state.primaryLabel,
                     style = MaterialTheme.typography.bodyMedium,
                     color = AnimeAccentCyan,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                Text(route.title, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(state.title, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(route.protocol.displayName(), style = MaterialTheme.typography.labelLarge, color = accent)
-                route.sizeBytes?.let { Text(formatBytes(it), style = MaterialTheme.typography.bodySmall, color = AnimeMuted) }
-                RoutePlayActionLabel(route, recommended)
+                Text(state.protocolLabel, style = MaterialTheme.typography.labelLarge, color = accent)
+                state.sizeLabel?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = AnimeMuted) }
+                RoutePlayActionLabel(state.actionLabel, state.actionTone)
             }
         }
     }
 }
 
 private fun StreamProtocol.displayName(): String {
-    return when (this) {
-        StreamProtocol.BITTORRENT -> "BT"
-        StreamProtocol.HLS -> "HLS"
-        StreamProtocol.DASH -> "DASH"
-        StreamProtocol.PROGRESSIVE -> "MP4"
-        StreamProtocol.SMOOTH_STREAMING -> "Smooth"
-        StreamProtocol.RTSP -> "RTSP"
-        StreamProtocol.WEBVIEW_ONLY -> "WebView"
-        StreamProtocol.UNKNOWN -> "\u672A\u77E5"
-    }
+    return uiProtocolName()
 }
 
 @Composable

@@ -113,3 +113,5 @@ This pass upgrades search result cards. `SearchResultCardUiState` classifies cat
 This pass upgrades the search-to-detail handoff. `DetailEntryUiState` reuses search result classification to show source type, detail loading state, episode readiness, and next action directly on the detail page before playback route decisions.
 
 This pass upgrades the detail episode selector summary. `DetailEpisodeSummaryUiState` now centralizes current episode, total count, route status, route origin, and source coverage chips so the detail page can explain episode changes and route matching with the same model-driven language as the playback readiness card.
+
+This pass upgrades detail route candidate cards. `RouteCandidateUiState` now centralizes source identity, protocol, primary quality label, file size, playback status, cache capability, and action copy so online, BT, WebView fallback, and failed routes can share one tested display contract before the player route panel reuses it.

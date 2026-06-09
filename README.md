@@ -25,6 +25,23 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.54
+
+中文：
+- 详情页新增 `RouteCandidateUiState`，统一生成线路来源、协议、质量、大小、状态、缓存能力和播放动作标签。
+- 详情页候选线路卡改为消费模型状态，在线推荐、BT 备用、WebView 兜底和失败线路的显示语义更一致。
+- 协议名称、线路主标签和大小格式化开始沉到 UI 模型层，为后续复用到播放器换源面板做准备。
+- 新增单元测试覆盖推荐在线源、BT 备用源、WebView 兜底源和失败线路候选卡。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.54`。
+
+English:
+
+- Detail pages now have `RouteCandidateUiState` to centralize route source, protocol, quality, size, status, cache capability, and playback action labels.
+- Detail route cards now render from model state, keeping online recommendations, BT fallbacks, WebView fallbacks, and failed routes consistent.
+- Protocol labels, primary route labels, and size formatting are now available from the UI model layer for future player route-panel reuse.
+- Added unit coverage for recommended online routes, BT fallbacks, WebView fallbacks, and failed route candidates.
+- App version labels, request user agents, and README notes are now updated to `0.5.54`.
+
 ### v0.5.53
 
 中文：

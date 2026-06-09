@@ -374,6 +374,25 @@ internal data class RoutePanelUiState(
     val recommendationReason: String,
 )
 
+internal data class RouteCandidateUiState(
+    val streamId: String,
+    val sourceId: String,
+    val sourceName: String,
+    val sourceInitial: String,
+    val title: String,
+    val primaryLabel: String,
+    val protocolLabel: String,
+    val sizeLabel: String?,
+    val statusLabel: String,
+    val actionLabel: String,
+    val recommended: Boolean,
+    val playable: Boolean,
+    val cacheLabel: String,
+    val accentTone: SourceLibraryTone,
+    val statusTone: SourceLibraryTone,
+    val actionTone: SourceLibraryTone,
+)
+
 internal const val RouteAllSourcesId = "__all_sources__"
 
 internal data class RouteSourceGroupUiState(
@@ -632,6 +651,69 @@ internal fun buildDetailEpisodeSummaryUiState(
         routeActionLabel = routeActionLabel,
         tone = tone,
         chips = chips,
+    )
+}
+
+internal fun buildRouteCandidateUiState(
+    route: RouteCandidate,
+    recommended: Boolean = false,
+    failed: Boolean = false,
+): RouteCandidateUiState {
+    val protocolLabel = route.protocol.uiProtocolName()
+    val playable = !failed && route.protocol != StreamProtocol.WEBVIEW_ONLY
+    val accentTone = when {
+        recommended -> SourceLibraryTone.Primary
+        failed -> SourceLibraryTone.Web
+        route.protocol == StreamProtocol.BITTORRENT -> SourceLibraryTone.Backup
+        route.protocol == StreamProtocol.WEBVIEW_ONLY -> SourceLibraryTone.Muted
+        else -> SourceLibraryTone.Online
+    }
+    val statusTone = when {
+        failed -> SourceLibraryTone.Web
+        route.protocol == StreamProtocol.BITTORRENT -> SourceLibraryTone.Backup
+        route.protocol == StreamProtocol.WEBVIEW_ONLY -> SourceLibraryTone.Muted
+        route.protocol in media3StreamingProtocols -> SourceLibraryTone.Cache
+        else -> SourceLibraryTone.Online
+    }
+    val statusLabel = when {
+        failed -> "播放失败"
+        route.protocol == StreamProtocol.BITTORRENT -> "备用源"
+        route.protocol == StreamProtocol.WEBVIEW_ONLY -> "仅网页"
+        route.protocol in media3StreamingProtocols -> "在线可播"
+        else -> protocolLabel
+    }
+    val actionLabel = when {
+        failed -> "重试"
+        route.protocol == StreamProtocol.BITTORRENT -> "边下边播"
+        route.protocol == StreamProtocol.WEBVIEW_ONLY -> "网页兜底"
+        recommended -> "推荐播放"
+        else -> "播放"
+    }
+    val actionTone = when {
+        recommended -> SourceLibraryTone.Primary
+        failed -> SourceLibraryTone.Web
+        route.protocol == StreamProtocol.BITTORRENT -> SourceLibraryTone.Backup
+        route.protocol == StreamProtocol.WEBVIEW_ONLY -> SourceLibraryTone.Muted
+        else -> SourceLibraryTone.Online
+    }
+    val cacheAction = buildPlayerCacheActionUiState(route.stream)
+    return RouteCandidateUiState(
+        streamId = route.stream.id,
+        sourceId = route.sourceId,
+        sourceName = route.sourceName,
+        sourceInitial = route.sourceName.take(1).ifBlank { route.sourceId.take(1).uppercase() }.ifBlank { "源" },
+        title = route.title,
+        primaryLabel = routePrimaryLabelForUi(route),
+        protocolLabel = protocolLabel,
+        sizeLabel = route.sizeBytes?.let(::formatBytesForUi),
+        statusLabel = statusLabel,
+        actionLabel = actionLabel,
+        recommended = recommended,
+        playable = playable,
+        cacheLabel = cacheAction.value,
+        accentTone = accentTone,
+        statusTone = statusTone,
+        actionTone = actionTone,
     )
 }
 
@@ -1644,12 +1726,7 @@ internal fun buildPlayerDanmakuSafeAreaUiState(
 }
 
 internal fun buildPlayerCacheActionUiState(stream: MediaStream): PlayerCacheActionUiState {
-    val media3Cacheable = stream.protocol in setOf(
-        StreamProtocol.HLS,
-        StreamProtocol.DASH,
-        StreamProtocol.SMOOTH_STREAMING,
-        StreamProtocol.PROGRESSIVE,
-    )
+    val media3Cacheable = stream.protocol in media3StreamingProtocols
     return when {
         stream.downloadPolicy == DownloadPolicy.BlockedDrm || stream.drmInfo != null -> PlayerCacheActionUiState(
             enabled = false,
@@ -1694,6 +1771,36 @@ internal fun buildPlayerCacheActionUiState(stream: MediaStream): PlayerCacheActi
             reason = "${stream.protocol.uiProtocolName()} \u534f\u8bae\u6682\u672a\u63a5\u5165\u79bb\u7ebf\u7f13\u5b58",
             actionLabel = "\u4e0d\u53ef\u7f13\u5b58",
         )
+    }
+}
+
+private val media3StreamingProtocols = setOf(
+    StreamProtocol.HLS,
+    StreamProtocol.DASH,
+    StreamProtocol.SMOOTH_STREAMING,
+    StreamProtocol.PROGRESSIVE,
+)
+
+internal fun routePrimaryLabelForUi(route: RouteCandidate): String {
+    return listOfNotNull(
+        route.routeName?.takeIf { it.isNotBlank() },
+        route.quality?.takeIf { it.isNotBlank() },
+        route.subgroup?.takeIf { it.isNotBlank() }?.take(12),
+    ).distinct().joinToString(" · ").ifBlank { route.protocol.uiProtocolName() }
+}
+
+internal fun formatBytesForUi(bytes: Long): String {
+    val units = listOf("B", "KB", "MB", "GB", "TB")
+    var value = bytes.toDouble()
+    var index = 0
+    while (value >= 1024.0 && index < units.lastIndex) {
+        value /= 1024.0
+        index += 1
+    }
+    return if (index == 0) {
+        "$bytes ${units[index]}"
+    } else {
+        "%.1f %s".format(value, units[index])
     }
 }
 

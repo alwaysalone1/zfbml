@@ -466,6 +466,59 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun routeCandidateUiStateSummarizesRecommendedOnlineRoute() {
+        val route = route(
+            id = "hls",
+            protocol = StreamProtocol.HLS,
+            score = 900,
+            quality = "1080p",
+            sourceId = "online",
+            sourceName = "Online",
+            sizeBytes = 1_572_864L,
+        )
+
+        val state = buildRouteCandidateUiState(route, recommended = true)
+
+        assertEquals("hls", state.streamId)
+        assertEquals("Online", state.sourceName)
+        assertEquals("O", state.sourceInitial)
+        assertEquals("1080p", state.primaryLabel)
+        assertEquals("HLS", state.protocolLabel)
+        assertEquals("1.5 MB", state.sizeLabel)
+        assertEquals("在线可播", state.statusLabel)
+        assertEquals("推荐播放", state.actionLabel)
+        assertTrue(state.playable)
+        assertEquals("可离线", state.cacheLabel)
+        assertEquals(SourceLibraryTone.Primary, state.accentTone)
+        assertEquals(SourceLibraryTone.Cache, state.statusTone)
+    }
+
+    @Test
+    fun routeCandidateUiStateExplainsFallbackWebAndFailedRoutes() {
+        val bt = buildRouteCandidateUiState(route("bt", StreamProtocol.BITTORRENT, 800, quality = "1080p"))
+        val web = buildRouteCandidateUiState(route("web", StreamProtocol.WEBVIEW_ONLY, 800, quality = "1080p"))
+        val failed = buildRouteCandidateUiState(
+            route("failed", StreamProtocol.HLS, 900, quality = "1080p"),
+            failed = true,
+        )
+
+        assertEquals("备用源", bt.statusLabel)
+        assertEquals("边下边播", bt.actionLabel)
+        assertEquals("边下边播", bt.cacheLabel)
+        assertTrue(bt.playable)
+        assertEquals(SourceLibraryTone.Backup, bt.accentTone)
+        assertEquals("仅网页", web.statusLabel)
+        assertEquals("网页兜底", web.actionLabel)
+        assertEquals("嗅探", web.cacheLabel)
+        assertFalse(web.playable)
+        assertEquals(SourceLibraryTone.Muted, web.accentTone)
+        assertEquals("播放失败", failed.statusLabel)
+        assertEquals("重试", failed.actionLabel)
+        assertFalse(failed.playable)
+        assertEquals(SourceLibraryTone.Web, failed.accentTone)
+    }
+
+    @Test
     fun routePanelVisibleRoutesPrioritizePlayableRoutesBeforeFallbacks() {
         val webView = route("web", StreamProtocol.WEBVIEW_ONLY, 8_000, quality = "1080p")
         val failed = route("failed", StreamProtocol.HLS, 8_000, quality = "1080p")
@@ -1215,19 +1268,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.53",
+            version = "0.5.54",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.53", state.version)
+        assertEquals("0.5.54", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.53" })
+        assertTrue(state.chips.any { it.label == "v0.5.54" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1241,7 +1294,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.53",
+            version = "0.5.54",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,
@@ -1561,6 +1614,7 @@ class PlaybackUiModelsTest {
         sourceId: String = "provider",
         sourceName: String = "Provider",
         providerId: String = sourceId,
+        sizeBytes: Long? = null,
     ): RouteCandidate {
         return RouteCandidate(
             stream = MediaStream(
@@ -1582,7 +1636,7 @@ class PlaybackUiModelsTest {
             protocol = protocol,
             score = score,
             publishedAt = null,
-            sizeBytes = null,
+            sizeBytes = sizeBytes,
         )
     }
 }
