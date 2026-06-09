@@ -2330,7 +2330,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.57")
+                setRequestProperty("User-Agent", "ZFBML/0.5.58")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2823,7 +2823,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.57",
+            version = "0.5.58",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -8522,36 +8522,37 @@ private fun PlayerEpisodePanel(
     episodeLoadingId: String?,
     onEpisodeSelected: (Episode) -> Unit,
 ) {
-    if (detail.episodes.isEmpty()) {
-        Text("当前条目没有可切换选集", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+    val state = remember(detail, currentEpisode.id, episodeLoadingId) {
+        buildPlayerEpisodePanelUiState(
+            detail = detail,
+            currentEpisode = currentEpisode,
+            episodeLoadingId = episodeLoadingId,
+        )
+    }
+    if (!state.hasItems) {
+        Text(state.emptyText, style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
         return
     }
     LazyColumn(verticalArrangement = Arrangement.spacedBy(9.dp)) {
         item {
             PlayerEpisodeSummaryCard(
-                title = detail.title,
-                currentEpisode = currentEpisode,
-                episodeCount = detail.episodes.size,
+                state = state,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
         item {
             Text(
-                "全部选集",
+                state.listTitle,
                 style = MaterialTheme.typography.labelMedium,
                 color = Color.White.copy(alpha = 0.72f),
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
             )
         }
-        items(detail.episodes, key = { it.id }) { item ->
-            val loading = episodeLoadingId == item.id
+        items(state.items, key = { it.episode.id }) { item ->
             PlayerEpisodeOptionRow(
-                episode = item,
-                selected = item.id == currentEpisode.id,
-                loading = loading,
-                enabled = episodeLoadingId == null || loading,
-                onClick = { onEpisodeSelected(item) },
+                state = item,
+                onClick = { onEpisodeSelected(item.episode) },
             )
         }
     }
@@ -8559,12 +8560,9 @@ private fun PlayerEpisodePanel(
 
 @Composable
 private fun PlayerEpisodeSummaryCard(
-    title: String,
-    currentEpisode: Episode,
-    episodeCount: Int,
+    state: PlayerEpisodePanelUiState,
     modifier: Modifier = Modifier,
 ) {
-    val currentEpisodeLabel = currentEpisode.index?.let { "第 $it 集" } ?: currentEpisode.title
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(8.dp),
@@ -8584,7 +8582,7 @@ private fun PlayerEpisodeSummaryCard(
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(
-                    title,
+                    state.title,
                     style = MaterialTheme.typography.titleSmall,
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
@@ -8592,15 +8590,16 @@ private fun PlayerEpisodeSummaryCard(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    "当前 $currentEpisodeLabel · 共 $episodeCount 集",
+                    state.summary,
                     style = MaterialTheme.typography.bodySmall,
                     color = AnimeMuted,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) {
-                    RouteStatusBadge("正在看", AnimeAccentPink)
-                    RouteStatusBadge("自动匹配", AnimeAccentCyan)
+                    state.chips.forEach { chip ->
+                        RouteStatusBadge(chip.label, sourceLibraryToneColor(chip.tone))
+                    }
                     Text(
                         "切换选集后自动选择最佳播放源",
                         modifier = Modifier.weight(1f),
@@ -8617,27 +8616,20 @@ private fun PlayerEpisodeSummaryCard(
 
 @Composable
 private fun PlayerEpisodeOptionRow(
-    episode: Episode,
-    selected: Boolean,
-    loading: Boolean,
-    enabled: Boolean,
+    state: PlayerEpisodeOptionUiState,
     onClick: () -> Unit,
 ) {
-    val accent = when {
-        loading -> AnimeAccentAmber
-        selected -> AnimeAccentPink
-        else -> AnimeAccentCyan
-    }
+    val accent = sourceLibraryToneColor(state.tone)
     Card(
         onClick = onClick,
-        enabled = enabled,
+        enabled = state.enabled,
         modifier = Modifier.fillMaxWidth().focusable(),
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (selected) Color.White.copy(alpha = 0.08f) else Color.White.copy(alpha = 0.045f),
+            containerColor = if (state.selected) Color.White.copy(alpha = 0.08f) else Color.White.copy(alpha = 0.045f),
             disabledContainerColor = Color.White.copy(alpha = 0.032f),
         ),
-        border = BorderStroke(1.dp, if (selected || loading) accent.copy(alpha = 0.85f) else Color.White.copy(alpha = 0.08f)),
+        border = BorderStroke(1.dp, if (state.selected || state.loading) accent.copy(alpha = 0.85f) else Color.White.copy(alpha = 0.08f)),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(10.dp),
@@ -8645,17 +8637,17 @@ private fun PlayerEpisodeOptionRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
-                modifier = Modifier.width(4.dp).height(52.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = if (enabled) 1f else 0.38f)),
+                modifier = Modifier.width(4.dp).height(52.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = if (state.enabled) 1f else 0.38f)),
             )
             Box(
                 modifier = Modifier.size(42.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.16f)),
                 contentAlignment = Alignment.Center,
             ) {
-                if (loading) {
+                if (state.loading) {
                     CircularProgressIndicator(color = accent, modifier = Modifier.size(20.dp))
                 } else {
                     Text(
-                        episode.index?.let { "%02d".format(it) } ?: "SP",
+                        state.episode.index?.let { "%02d".format(it) } ?: "SP",
                         style = MaterialTheme.typography.labelLarge,
                         color = accent,
                         fontWeight = FontWeight.Bold,
@@ -8666,46 +8658,43 @@ private fun PlayerEpisodeOptionRow(
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        episode.title,
+                        state.title,
                         modifier = Modifier.weight(1f),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color.White.copy(alpha = if (enabled) 0.94f else 0.42f),
-                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                        color = Color.White.copy(alpha = if (state.enabled) 0.94f else 0.42f),
+                        fontWeight = if (state.selected) FontWeight.Bold else FontWeight.Normal,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    if (selected) RouteStatusBadge("当前", AnimeAccentPink)
+                    if (state.statusLabel.isNotBlank()) {
+                        RouteStatusBadge(state.statusLabel, accent)
+                    }
                 }
                 Text(
-                    episode.index?.let { "第 $it 集" } ?: "特别篇",
+                    state.indexLabel,
                     style = MaterialTheme.typography.bodySmall,
-                    color = AnimeMuted.copy(alpha = if (enabled) 0.86f else 0.38f),
+                    color = AnimeMuted.copy(alpha = if (state.enabled) 0.86f else 0.38f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            EpisodeActionLabel(selected = selected, loading = loading, enabled = enabled)
+            EpisodeActionLabel(label = state.actionLabel, tone = state.tone, enabled = state.enabled || state.loading || state.selected)
         }
     }
 }
 
 @Composable
 private fun EpisodeActionLabel(
-    selected: Boolean,
-    loading: Boolean,
+    label: String,
+    tone: SourceLibraryTone,
     enabled: Boolean,
 ) {
-    val (label, color) = when {
-        loading -> "加载中" to AnimeAccentAmber
-        selected -> "播放中" to AnimeAccentPink
-        enabled -> "播放" to AnimeAccentCyan
-        else -> "等待" to AnimeMuted
-    }
+    val color = sourceLibraryToneColor(tone)
     Row(
         modifier = Modifier
             .height(30.dp)
             .clip(RoundedCornerShape(8.dp))
-            .background(color.copy(alpha = if (enabled || loading || selected) 0.13f else 0.06f))
+            .background(color.copy(alpha = if (enabled) 0.13f else 0.06f))
             .padding(horizontal = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically,

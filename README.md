@@ -25,6 +25,23 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.58
+
+中文：
+- 播放器选集面板新增 `PlayerEpisodePanelUiState` 和 `PlayerEpisodeOptionUiState`，统一生成当前集、总集数、加载中目标、选集行状态和动作文案。
+- 播放器选集摘要卡和选集行改为消费模型字段，正在看、自动匹配、切换中、播放中、等待等状态不再散在 Compose 里。
+- 切换选集时，非目标剧集会进入等待状态，加载目标显示 `加载中`，当前集显示 `播放中`。
+- 新增单元测试覆盖当前集、加载中目标、等待项和空选集面板。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.58`。
+
+English:
+
+- The player episode panel now has `PlayerEpisodePanelUiState` and `PlayerEpisodeOptionUiState` for current episode, total count, loading target, row status, and action copy.
+- The episode summary card and rows now render model fields, keeping watching, auto-match, switching, playing, and waiting states out of Compose.
+- During episode switching, non-target rows wait, the target row shows loading, and the current row shows playing.
+- Added unit coverage for current episode, loading target, waiting rows, and empty episode panels.
+- App version labels, request user agents, and README notes are now updated to `0.5.58`.
+
 ### v0.5.57
 
 中文：

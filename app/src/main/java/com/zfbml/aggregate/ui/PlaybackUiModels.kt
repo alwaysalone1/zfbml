@@ -342,6 +342,29 @@ internal data class PlayerOverlayState(
     val error: String?,
 )
 
+internal data class PlayerEpisodePanelUiState(
+    val title: String,
+    val summary: String,
+    val listTitle: String,
+    val emptyText: String,
+    val chips: List<SearchResultChipUiState>,
+    val items: List<PlayerEpisodeOptionUiState>,
+) {
+    val hasItems: Boolean = items.isNotEmpty()
+}
+
+internal data class PlayerEpisodeOptionUiState(
+    val episode: Episode,
+    val title: String,
+    val indexLabel: String,
+    val statusLabel: String,
+    val actionLabel: String,
+    val selected: Boolean,
+    val loading: Boolean,
+    val enabled: Boolean,
+    val tone: SourceLibraryTone,
+)
+
 internal data class PlayerDanmakuSafeAreaUiState(
     val topInsetDp: Int,
     val bottomInsetDp: Int,
@@ -1730,6 +1753,76 @@ internal fun nextEpisodeForPlayer(
     val currentIndex = episodes.indexOfFirst { it.id == currentEpisode.id }
     if (currentIndex < 0) return null
     return episodes.getOrNull(currentIndex + 1)
+}
+
+internal fun buildPlayerEpisodePanelUiState(
+    detail: MediaDetail,
+    currentEpisode: Episode,
+    episodeLoadingId: String?,
+): PlayerEpisodePanelUiState {
+    val currentEpisodeLabel = currentEpisode.index?.let { "第 $it 集" }
+        ?: currentEpisode.title.takeIf { it.isNotBlank() }
+        ?: "当前集"
+    val episodeCount = detail.episodes.size
+    val loadingEpisode = detail.episodes.firstOrNull { it.id == episodeLoadingId }
+    val summary = when {
+        episodeCount <= 0 -> "当前条目没有可切换选集"
+        loadingEpisode != null -> "${episodeTitleForPlayer(loadingEpisode)} 正在准备播放源"
+        else -> "当前 $currentEpisodeLabel · 共 $episodeCount 集"
+    }
+    val chips = buildList {
+        add(SearchResultChipUiState("正在看", SourceLibraryTone.Primary))
+        add(SearchResultChipUiState("自动匹配", SourceLibraryTone.Online))
+        if (loadingEpisode != null) {
+            add(SearchResultChipUiState("切换中", SourceLibraryTone.Backup))
+        } else if (episodeCount > 1) {
+            add(SearchResultChipUiState("${episodeCount}集", SourceLibraryTone.Cache))
+        }
+    }
+    val items = detail.episodes.map { episode ->
+        val loading = episode.id == episodeLoadingId
+        val selected = episode.id == currentEpisode.id
+        val enabled = episodeLoadingId == null || loading
+        PlayerEpisodeOptionUiState(
+            episode = episode,
+            title = episode.title.ifBlank { episodeTitleForPlayer(episode) },
+            indexLabel = episodeTitleForPlayer(episode),
+            statusLabel = when {
+                loading -> "加载中"
+                selected -> "当前"
+                else -> ""
+            },
+            actionLabel = when {
+                loading -> "加载中"
+                selected -> "播放中"
+                enabled -> "播放"
+                else -> "等待"
+            },
+            selected = selected,
+            loading = loading,
+            enabled = enabled,
+            tone = when {
+                loading -> SourceLibraryTone.Backup
+                selected -> SourceLibraryTone.Primary
+                enabled -> SourceLibraryTone.Online
+                else -> SourceLibraryTone.Muted
+            },
+        )
+    }
+    return PlayerEpisodePanelUiState(
+        title = detail.title,
+        summary = summary,
+        listTitle = "全部选集",
+        emptyText = "当前条目没有可切换选集",
+        chips = chips,
+        items = items,
+    )
+}
+
+private fun episodeTitleForPlayer(episode: Episode): String {
+    return episode.index?.let { "第 $it 集" }
+        ?: episode.title.takeIf { it.isNotBlank() }
+        ?: "特别篇"
 }
 
 internal fun playerProgressPollDelayMs(

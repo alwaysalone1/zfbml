@@ -1308,19 +1308,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.57",
+            version = "0.5.58",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.57", state.version)
+        assertEquals("0.5.58", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.57" })
+        assertTrue(state.chips.any { it.label == "v0.5.58" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1334,7 +1334,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.57",
+            version = "0.5.58",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,
@@ -1345,6 +1345,72 @@ class PlaybackUiModelsTest {
         assertTrue(state.summary.contains("\u5148\u63a5\u5165\u6765\u6e90"))
         assertEquals("0 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals("0 \u6765\u6e90", state.settings.first { it.id == "sources" }.value)
+    }
+
+    @Test
+    fun playerEpisodePanelUiStateSummarizesCurrentAndLoadingEpisodes() {
+        val episodes = listOf(
+            episode(id = "ep-1", index = 1),
+            episode(id = "ep-2", index = 2),
+            episode(id = "special", index = 99),
+        )
+        val detail = MediaDetail(
+            providerId = "provider",
+            title = "Alpha",
+            url = "https://example.invalid/alpha",
+            episodes = episodes,
+        )
+
+        val idle = buildPlayerEpisodePanelUiState(
+            detail = detail,
+            currentEpisode = episodes[0],
+            episodeLoadingId = null,
+        )
+        val loading = buildPlayerEpisodePanelUiState(
+            detail = detail,
+            currentEpisode = episodes[0],
+            episodeLoadingId = "ep-2",
+        )
+
+        assertTrue(idle.hasItems)
+        assertEquals("Alpha", idle.title)
+        assertEquals("当前 第 1 集 · 共 3 集", idle.summary)
+        assertEquals("全部选集", idle.listTitle)
+        assertEquals(listOf("正在看", "自动匹配", "3集"), idle.chips.map { it.label })
+        assertEquals("当前", idle.items[0].statusLabel)
+        assertEquals("播放中", idle.items[0].actionLabel)
+        assertEquals(SourceLibraryTone.Primary, idle.items[0].tone)
+        assertEquals("播放", idle.items[1].actionLabel)
+        assertTrue(idle.items[1].enabled)
+        assertTrue(loading.summary.contains("第 2 集"))
+        assertEquals("加载中", loading.items[1].statusLabel)
+        assertEquals("加载中", loading.items[1].actionLabel)
+        assertEquals(SourceLibraryTone.Backup, loading.items[1].tone)
+        assertFalse(loading.items[2].enabled)
+        assertEquals("等待", loading.items[2].actionLabel)
+        assertEquals(SourceLibraryTone.Muted, loading.items[2].tone)
+    }
+
+    @Test
+    fun playerEpisodePanelUiStateExplainsEmptyEpisodeList() {
+        val current = episode(id = "ep-1", index = 1)
+        val detail = MediaDetail(
+            providerId = "provider",
+            title = "Empty",
+            url = "https://example.invalid/empty",
+            episodes = emptyList(),
+        )
+
+        val state = buildPlayerEpisodePanelUiState(
+            detail = detail,
+            currentEpisode = current,
+            episodeLoadingId = null,
+        )
+
+        assertFalse(state.hasItems)
+        assertEquals("当前条目没有可切换选集", state.summary)
+        assertEquals("当前条目没有可切换选集", state.emptyText)
+        assertEquals(listOf("正在看", "自动匹配"), state.chips.map { it.label })
     }
 
     @Test
