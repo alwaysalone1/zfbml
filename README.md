@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.86
+
+English:
+
+- Player quality and speed options now expose model-provided badges, highlighted/prominent row state, action enablement, and icon/text alpha through their option UI states.
+- `PlayerSelectableRow` can now render option badges, model-provided emphasis, and tone-aware action labels for quality and speed panels.
+- Added unit coverage for quality and speed option row presentation state.
+- App version labels, request user agents, and README notes are now updated to `0.5.86`.
+
 ### v0.5.85
 
 English:

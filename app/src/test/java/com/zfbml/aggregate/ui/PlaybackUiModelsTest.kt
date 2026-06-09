@@ -1792,19 +1792,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.85",
+            version = "0.5.86",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.85", state.version)
+        assertEquals("0.5.86", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.85" })
+        assertTrue(state.chips.any { it.label == "v0.5.86" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1818,7 +1818,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.85",
+            version = "0.5.86",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,
@@ -2112,10 +2112,24 @@ class PlaybackUiModelsTest {
         assertEquals("当前 1080p · 3 档可选", state.summary)
         assertEquals(listOf("1080p", "720p", "4K"), state.options.map { it.title })
         assertEquals("hls-720-better", state.options.first { it.title == "720p" }.route.stream.id)
-        assertTrue(state.options.first { it.title == "1080p" }.selected)
-        assertEquals("使用中", state.options.first { it.title == "1080p" }.actionLabel)
-        assertEquals(SourceLibraryTone.Primary, state.options.first { it.title == "1080p" }.tone)
-        assertEquals(SourceLibraryTone.Backup, state.options.first { it.title == "4K" }.tone)
+        val currentOption = state.options.first { it.title == "1080p" }
+        val btOption = state.options.first { it.title == "4K" }
+        assertTrue(currentOption.selected)
+        assertEquals("使用中", currentOption.actionLabel)
+        assertEquals(listOf(currentOption.actionLabel), currentOption.badges.map { it.label })
+        assertTrue(currentOption.highlighted)
+        assertTrue(currentOption.prominent)
+        assertTrue(currentOption.enabled)
+        assertTrue(currentOption.actionEnabled)
+        assertEquals(1f, currentOption.iconAlpha)
+        assertEquals(0.94f, currentOption.titleAlpha)
+        assertEquals(0.86f, currentOption.subtitleAlpha)
+        assertEquals(SourceLibraryTone.Primary, currentOption.tone)
+        assertEquals(SourceLibraryTone.Backup, btOption.tone)
+        assertEquals(listOf(StreamProtocol.BITTORRENT.uiProtocolName()), btOption.badges.map { it.label })
+        assertFalse(btOption.highlighted)
+        assertFalse(btOption.prominent)
+        assertEquals(0.76f, btOption.iconAlpha)
     }
 
     @Test
@@ -2152,10 +2166,24 @@ class PlaybackUiModelsTest {
         assertEquals("慢速回看", state.options.first { it.speed == 0.5f }.subtitle)
         assertEquals("标准速度", state.options.first { it.speed == 1f }.subtitle)
         assertEquals("快速播放", state.options.first { it.speed == 2f }.subtitle)
-        assertTrue(state.options.first { it.speed == 1.25f }.selected)
-        assertEquals("使用中", state.options.first { it.speed == 1.25f }.actionLabel)
-        assertEquals(SourceLibraryTone.Primary, state.options.first { it.speed == 1.25f }.tone)
-        assertEquals("切换", state.options.first { it.speed == 2f }.actionLabel)
+        val selectedSpeed = state.options.first { it.speed == 1.25f }
+        val fastSpeed = state.options.first { it.speed == 2f }
+        assertTrue(selectedSpeed.selected)
+        assertEquals("使用中", selectedSpeed.actionLabel)
+        assertEquals(listOf(selectedSpeed.actionLabel), selectedSpeed.badges.map { it.label })
+        assertTrue(selectedSpeed.highlighted)
+        assertTrue(selectedSpeed.prominent)
+        assertTrue(selectedSpeed.enabled)
+        assertTrue(selectedSpeed.actionEnabled)
+        assertEquals(1f, selectedSpeed.iconAlpha)
+        assertEquals(0.94f, selectedSpeed.titleAlpha)
+        assertEquals(0.86f, selectedSpeed.subtitleAlpha)
+        assertEquals(SourceLibraryTone.Primary, selectedSpeed.tone)
+        assertEquals("切换", fastSpeed.actionLabel)
+        assertTrue(fastSpeed.badges.isEmpty())
+        assertFalse(fastSpeed.highlighted)
+        assertFalse(fastSpeed.prominent)
+        assertEquals(0.76f, fastSpeed.iconAlpha)
     }
 
     @Test

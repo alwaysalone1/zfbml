@@ -658,6 +658,14 @@ internal data class PlayerQualityOptionUiState(
     val subtitle: String,
     val selected: Boolean,
     val actionLabel: String,
+    val badges: List<SourceLibraryChipUiState>,
+    val highlighted: Boolean,
+    val prominent: Boolean,
+    val enabled: Boolean,
+    val actionEnabled: Boolean,
+    val iconAlpha: Float,
+    val titleAlpha: Float,
+    val subtitleAlpha: Float,
     val tone: SourceLibraryTone,
 )
 
@@ -672,6 +680,14 @@ internal data class PlayerSpeedOptionUiState(
     val subtitle: String?,
     val selected: Boolean,
     val actionLabel: String,
+    val badges: List<SourceLibraryChipUiState>,
+    val highlighted: Boolean,
+    val prominent: Boolean,
+    val enabled: Boolean,
+    val actionEnabled: Boolean,
+    val iconAlpha: Float,
+    val titleAlpha: Float,
+    val subtitleAlpha: Float,
     val tone: SourceLibraryTone,
 )
 
@@ -2759,18 +2775,28 @@ internal fun buildPlayerQualityPanelUiState(
         .map { route ->
             val label = routeQualityLabelForUi(route)
             val selected = label == currentQualityLabel || route.stream.id == currentStream.id
+            val actionLabel = if (selected) "使用中" else "切换"
+            val tone = when {
+                selected -> SourceLibraryTone.Primary
+                route.protocol == StreamProtocol.BITTORRENT -> SourceLibraryTone.Backup
+                route.protocol == StreamProtocol.WEBVIEW_ONLY -> SourceLibraryTone.Web
+                else -> SourceLibraryTone.Online
+            }
             PlayerQualityOptionUiState(
                 route = route,
                 title = label,
                 subtitle = "${route.sourceName} · ${routePrimaryLabelForUi(route)}",
                 selected = selected,
-                actionLabel = if (selected) "使用中" else "切换",
-                tone = when {
-                    selected -> SourceLibraryTone.Primary
-                    route.protocol == StreamProtocol.BITTORRENT -> SourceLibraryTone.Backup
-                    route.protocol == StreamProtocol.WEBVIEW_ONLY -> SourceLibraryTone.Web
-                    else -> SourceLibraryTone.Online
-                },
+                actionLabel = actionLabel,
+                badges = listOf(SourceLibraryChipUiState(if (selected) actionLabel else route.protocol.uiProtocolName(), tone)),
+                highlighted = selected,
+                prominent = selected,
+                enabled = true,
+                actionEnabled = true,
+                iconAlpha = if (selected) 1f else 0.76f,
+                titleAlpha = 0.94f,
+                subtitleAlpha = 0.86f,
+                tone = tone,
             )
         }
     return PlayerQualityPanelUiState(
@@ -2803,6 +2829,8 @@ internal fun buildPlayerSpeedPanelUiState(
 ): PlayerSpeedPanelUiState {
     val options = speeds.distinct().sorted().map { speed ->
         val selected = playbackSpeed.nearlyEquals(speed)
+        val actionLabel = if (selected) "使用中" else "切换"
+        val tone = if (selected) SourceLibraryTone.Primary else SourceLibraryTone.Online
         PlayerSpeedOptionUiState(
             speed = speed,
             title = formatPlaybackSpeedForUi(speed),
@@ -2812,8 +2840,20 @@ internal fun buildPlayerSpeedPanelUiState(
                 else -> "快速播放"
             },
             selected = selected,
-            actionLabel = if (selected) "使用中" else "切换",
-            tone = if (selected) SourceLibraryTone.Primary else SourceLibraryTone.Online,
+            actionLabel = actionLabel,
+            badges = if (selected) {
+                listOf(SourceLibraryChipUiState(actionLabel, tone))
+            } else {
+                emptyList()
+            },
+            highlighted = selected,
+            prominent = selected,
+            enabled = true,
+            actionEnabled = true,
+            iconAlpha = if (selected) 1f else 0.76f,
+            titleAlpha = 0.94f,
+            subtitleAlpha = 0.86f,
+            tone = tone,
         )
     }
     return PlayerSpeedPanelUiState(

@@ -177,3 +177,5 @@ This pass upgrades route candidate badges. `RouteCandidateUiState` now owns reco
 This pass upgrades route candidate row presentation. `RouteCandidateUiState` now owns player-row enablement, prominent/highlighted state, compact/detailed titles, subtitles, and detail-line copy so route option rows no longer derive visual emphasis or display titles inside Compose.
 
 This pass upgrades player episode row presentation. `PlayerEpisodeOptionUiState` now owns compact episode labels, badges, highlighted/prominent state, action enablement, and text/rail alpha so episode switching rows follow the same model-driven display contract as route rows.
+
+This pass upgrades player quality and speed option presentation. `PlayerQualityOptionUiState` and `PlayerSpeedOptionUiState` now own badges, highlighted/prominent state, action enablement, and icon/text alpha so the player settings panels use the same model-driven row contract as route and episode switching.

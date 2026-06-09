@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.85")
+                setRequestProperty("User-Agent", "ZFBML/0.5.86")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2866,7 +2866,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.85",
+            version = "0.5.86",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -4842,7 +4842,11 @@ private fun RouteSourceFilterPill(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Text(
                     text = group.name,
                     modifier = Modifier.weight(1f),
@@ -7938,7 +7942,16 @@ private fun PlayerQualityPanel(
                 subtitle = option.subtitle,
                 selected = option.selected,
                 icon = Icons.Filled.HighQuality,
+                enabled = option.enabled,
                 trailing = option.actionLabel,
+                badges = option.badges,
+                highlighted = option.highlighted,
+                prominent = option.prominent,
+                actionEnabled = option.actionEnabled,
+                iconAlpha = option.iconAlpha,
+                titleAlpha = option.titleAlpha,
+                subtitleAlpha = option.subtitleAlpha,
+                trailingTone = option.tone,
                 onClick = { onRouteSelected(option.route) },
             )
         }
@@ -7969,7 +7982,16 @@ private fun PlayerSpeedPanel(
                 subtitle = option.subtitle,
                 selected = option.selected,
                 icon = Icons.Filled.Speed,
+                enabled = option.enabled,
                 trailing = option.actionLabel,
+                badges = option.badges,
+                highlighted = option.highlighted,
+                prominent = option.prominent,
+                actionEnabled = option.actionEnabled,
+                iconAlpha = option.iconAlpha,
+                titleAlpha = option.titleAlpha,
+                subtitleAlpha = option.subtitleAlpha,
+                trailingTone = option.tone,
                 onClick = { onSpeedSelected(option.speed) },
             )
         }
@@ -8617,8 +8639,17 @@ private fun PlayerSelectableRow(
     icon: ImageVector? = null,
     enabled: Boolean = true,
     trailing: String? = null,
+    badges: List<SourceLibraryChipUiState> = emptyList(),
+    highlighted: Boolean = selected,
+    prominent: Boolean = selected,
+    actionEnabled: Boolean = enabled,
+    iconAlpha: Float = if (enabled) 0.76f else 0.32f,
+    titleAlpha: Float = if (enabled) 0.94f else 0.42f,
+    subtitleAlpha: Float = if (enabled) 0.86f else 0.38f,
+    trailingTone: SourceLibraryTone = SourceLibraryTone.Backup,
     onClick: () -> Unit,
 ) {
+    val trailingColor = sourceLibraryToneColor(trailingTone)
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -8626,9 +8657,14 @@ private fun PlayerSelectableRow(
             .clip(RoundedCornerShape(8.dp))
             .background(
                 when {
-                    selected -> AnimeAccentPink.copy(alpha = 0.18f)
+                    prominent -> AnimeAccentPink.copy(alpha = 0.18f)
                     else -> Color.White.copy(alpha = 0.06f)
                 },
+            )
+            .border(
+                1.dp,
+                if (highlighted) AnimeAccentPink.copy(alpha = 0.72f) else Color.White.copy(alpha = 0.08f),
+                RoundedCornerShape(8.dp),
             )
             .clickable(enabled = enabled) { onClick() }
             .padding(horizontal = 12.dp, vertical = 9.dp),
@@ -8639,30 +8675,41 @@ private fun PlayerSelectableRow(
             Icon(
                 icon,
                 contentDescription = null,
-                tint = if (selected) AnimeAccentPink else Color.White.copy(alpha = if (enabled) 0.76f else 0.32f),
+                tint = if (prominent) AnimeAccentPink else Color.White.copy(alpha = iconAlpha),
                 modifier = Modifier.size(19.dp),
             )
         }
         Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(
-                title,
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.White.copy(alpha = if (enabled) 0.94f else 0.42f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    title,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White.copy(alpha = titleAlpha),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                badges.forEach { badge ->
+                    RouteStatusBadge(badge.label, sourceLibraryToneColor(badge.tone))
+                }
+            }
             subtitle?.takeIf { it.isNotBlank() }?.let {
                 Text(
                     it,
                     style = MaterialTheme.typography.bodySmall,
-                    color = AnimeMuted.copy(alpha = if (enabled) 0.86f else 0.38f),
+                    color = AnimeMuted.copy(alpha = subtitleAlpha),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
         }
         trailing?.let {
-            Text(it, style = MaterialTheme.typography.labelSmall, color = AnimeAccentAmber, maxLines = 1)
+            Text(
+                it,
+                style = MaterialTheme.typography.labelSmall,
+                color = trailingColor.copy(alpha = if (actionEnabled) 1f else 0.42f),
+                maxLines = 1,
+            )
         }
         if (selected) {
             Icon(Icons.Filled.Check, contentDescription = null, tint = AnimeAccentPink, modifier = Modifier.size(18.dp))
