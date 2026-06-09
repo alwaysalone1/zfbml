@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.79")
+                setRequestProperty("User-Agent", "ZFBML/0.5.80")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2866,7 +2866,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.79",
+            version = "0.5.80",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -4704,42 +4704,21 @@ private fun RouteSourceSelector(
     onSelected: (String?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val groups = remember(routes, selectedSourceId, recommendedSourceId) {
-        buildRouteSourceGroups(
+    val state = remember(routes, selectedSourceId, recommendedSourceId) {
+        buildDetailRouteSourceSelectorUiState(
             routes = routes,
             selectedSourceId = selectedSourceId,
             recommendedSourceId = recommendedSourceId,
         )
     }
-    val allGroup = remember(routes, selectedSourceId, recommendedSourceId) {
-        buildRouteSourceGroups(
-            routes = routes,
-            selectedSourceId = selectedSourceId,
-            recommendedSourceId = recommendedSourceId,
-            includeAll = true,
-        ).first()
-    }
-    val recommendedGroup = groups.firstOrNull { it.hasRecommended }
-    val selectedGroup = groups.firstOrNull { it.isFilterSelected }
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        RouteSourceSelectorHeader(
-            recommendedName = recommendedGroup?.name ?: "自动推荐",
-            selectedName = selectedGroup?.name ?: "自动最佳",
-            routeCount = allGroup.totalCount,
-            sourceCount = groups.size,
-            playableCount = allGroup.playableCount,
-        )
+        RouteSourceSelectorHeader(state)
         RouteSourceAutoChoiceCard(
-            recommendedName = recommendedGroup?.name ?: "自动推荐",
-            selected = selectedSourceId == null,
-            routeCount = allGroup.totalCount,
-            playableCount = allGroup.playableCount,
-            onlineCount = allGroup.onlineCount,
-            btCount = allGroup.btCount,
+            state = state.autoChoice,
             onClick = { onSelected(null) },
         )
         LazyRow(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            items(groups) { group ->
+            items(state.groups) { group ->
                 RouteSourceFilterPill(
                     group = group,
                     onClick = { onSelected(group.id) },
@@ -4751,11 +4730,7 @@ private fun RouteSourceSelector(
 
 @Composable
 private fun RouteSourceSelectorHeader(
-    recommendedName: String,
-    selectedName: String,
-    routeCount: Int,
-    sourceCount: Int,
-    playableCount: Int,
+    state: DetailRouteSourceSelectorUiState,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -4764,7 +4739,7 @@ private fun RouteSourceSelectorHeader(
     ) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
-                text = "播放方案",
+                text = state.title,
                 style = MaterialTheme.typography.titleMedium,
                 color = Color.White,
                 fontWeight = FontWeight.Bold,
@@ -4772,35 +4747,30 @@ private fun RouteSourceSelectorHeader(
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
-                text = "$sourceCount 组来源 · $playableCount/$routeCount 可播 · 默认自动最佳",
+                text = state.subtitle,
                 style = MaterialTheme.typography.bodySmall,
                 color = AnimeMuted,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
         }
-        RouteSourceStatusPill("推荐", recommendedName, AnimeAccentPink)
-        RouteSourceStatusPill("当前", selectedName, AnimeAccentCyan)
+        RouteSourceStatusPill(state.recommended)
+        RouteSourceStatusPill(state.current)
     }
 }
 
 @Composable
 private fun RouteSourceAutoChoiceCard(
-    recommendedName: String,
-    selected: Boolean,
-    routeCount: Int,
-    playableCount: Int,
-    onlineCount: Int,
-    btCount: Int,
+    state: DetailRouteSourceAutoChoiceUiState,
     onClick: () -> Unit,
 ) {
-    val accent = if (selected) AnimeAccentCyan else AnimeAccentPink
+    val accent = sourceLibraryToneColor(state.tone)
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth().focusable(),
         shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = if (selected) AnimePanelSoft else AnimePanel),
-        border = BorderStroke(1.dp, if (selected) AnimeAccentCyan else AnimeAccentPink.copy(alpha = 0.42f)),
+        colors = CardDefaults.cardColors(containerColor = if (state.selected) AnimePanelSoft else AnimePanel),
+        border = BorderStroke(1.dp, accent.copy(alpha = if (state.selected) 1f else 0.42f)),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(12.dp),
@@ -4815,24 +4785,23 @@ private fun RouteSourceAutoChoiceCard(
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("自动最佳", style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1)
-                    RouteStatusBadge("推荐入口", AnimeAccentPink)
-                    if (selected) RouteStatusBadge("当前", AnimeAccentCyan)
+                    Text(state.title, style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1)
                 }
                 Text(
-                    "优先 $recommendedName · $playableCount/$routeCount 可播",
+                    state.subtitle,
                     style = MaterialTheme.typography.bodySmall,
                     color = AnimeMuted,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                    if (onlineCount > 0) RouteStatusBadge("${onlineCount} 在线", AnimeAccentGreen)
-                    if (btCount > 0) RouteStatusBadge("${btCount} 备用", AnimeAccentAmber)
+                    state.badges.forEach { badge ->
+                        RouteStatusBadge(badge.label, sourceLibraryToneColor(badge.tone))
+                    }
                 }
             }
             Text(
-                if (selected) "使用中" else "使用",
+                state.actionLabel,
                 style = MaterialTheme.typography.labelLarge,
                 color = accent,
                 fontWeight = FontWeight.Bold,
@@ -4843,7 +4812,8 @@ private fun RouteSourceAutoChoiceCard(
 }
 
 @Composable
-private fun RouteSourceStatusPill(label: String, value: String, color: Color) {
+private fun RouteSourceStatusPill(state: DetailRouteSourceStatusPillUiState) {
+    val color = sourceLibraryToneColor(state.tone)
     Row(
         modifier = Modifier
             .height(30.dp)
@@ -4853,8 +4823,8 @@ private fun RouteSourceStatusPill(label: String, value: String, color: Color) {
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, style = MaterialTheme.typography.labelSmall, color = color, maxLines = 1)
-        Text(value, style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.86f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(state.label, style = MaterialTheme.typography.labelSmall, color = color, maxLines = 1)
+        Text(state.value, style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.86f), maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 

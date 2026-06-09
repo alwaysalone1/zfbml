@@ -165,3 +165,5 @@ This pass upgrades the detail hero actions. `DetailHeroActionUiState` now owns t
 This pass upgrades the detail first-play guidance. `DetailFirstPlayUiState` now owns the first-play title, decision copy, action label, progress/icon state, tone, and detail chips so the detail hero's playback recommendation is model-driven alongside route readiness and hero actions.
 
 This pass upgrades the detail route status card. `DetailRouteStatusUiState` now owns compact versus expanded status, recommendation copy, source-focus chips, loading diagnostics, metrics, progress/icon state, and error tone so detail playback route readiness behaves like a tested product surface instead of a Compose-local diagnostic block.
+
+This pass upgrades the detail route source selector. `DetailRouteSourceSelectorUiState` now owns the source selector header, recommended/current source pills, auto-best card, action label, and source badges so users get a product-level route-source choice surface instead of raw source grouping copy assembled inside Compose.

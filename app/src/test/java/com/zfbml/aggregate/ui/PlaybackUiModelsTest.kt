@@ -904,6 +904,55 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun detailRouteSourceSelectorUiStateSummarizesAutoChoice() {
+        val online = route("ok-hls", StreamProtocol.HLS, 800, quality = "720p", sourceId = "online", sourceName = "Online")
+        val bt = route("bt", StreamProtocol.BITTORRENT, 500, quality = "1080p", sourceId = "bt", sourceName = "BT")
+
+        val state = buildDetailRouteSourceSelectorUiState(
+            routes = listOf(online, bt),
+            selectedSourceId = null,
+            recommendedSourceId = "online",
+        )
+
+        assertEquals("播放方案", state.title)
+        assertEquals("推荐", state.recommended.label)
+        assertEquals("Online", state.recommended.value)
+        assertEquals(SourceLibraryTone.Primary, state.recommended.tone)
+        assertEquals("当前", state.current.label)
+        assertEquals("自动最佳", state.current.value)
+        assertTrue(state.autoChoice.selected)
+        assertEquals("使用中", state.autoChoice.actionLabel)
+        assertEquals(SourceLibraryTone.Online, state.autoChoice.tone)
+        assertTrue(state.autoChoice.subtitle.contains("Online"))
+        assertTrue(state.autoChoice.badges.any { it.label == "推荐入口" })
+        assertTrue(state.autoChoice.badges.any { it.label == "当前" })
+        assertTrue(state.autoChoice.badges.any { it.label == "1 在线" })
+        assertTrue(state.autoChoice.badges.any { it.label == "1 备用" })
+        assertEquals(listOf("online", "bt"), state.groups.map { it.id })
+    }
+
+    @Test
+    fun detailRouteSourceSelectorUiStateTracksManualSourceSelection() {
+        val recommended = route("recommended", StreamProtocol.HLS, 900, quality = "1080p", sourceId = "source-a", sourceName = "Source A")
+        val selected = route("selected", StreamProtocol.PROGRESSIVE, 200, quality = "720p", sourceId = "source-b", sourceName = "Source B")
+
+        val state = buildDetailRouteSourceSelectorUiState(
+            routes = listOf(recommended, selected),
+            selectedSourceId = "source-b",
+            recommendedSourceId = "source-a",
+        )
+
+        assertEquals("Source A", state.recommended.value)
+        assertEquals("Source B", state.current.value)
+        assertFalse(state.autoChoice.selected)
+        assertEquals("使用", state.autoChoice.actionLabel)
+        assertEquals(SourceLibraryTone.Primary, state.autoChoice.tone)
+        assertFalse(state.autoChoice.badges.any { it.label == "当前" })
+        assertEquals("source-b", state.groups.first().id)
+        assertTrue(state.groups.first().isFilterSelected)
+    }
+
+    @Test
     fun routePrefetchWindowPrioritizesFutureEpisodesBeforePrevious() {
         val episodes = (1..5).map { episode(id = "ep-$it", index = it) }
 
@@ -1697,19 +1746,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.79",
+            version = "0.5.80",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.79", state.version)
+        assertEquals("0.5.80", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.79" })
+        assertTrue(state.chips.any { it.label == "v0.5.80" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1723,7 +1772,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.79",
+            version = "0.5.80",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,

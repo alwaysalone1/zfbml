@@ -827,6 +827,30 @@ internal data class RouteSourceGroupUiState(
         }
 }
 
+internal data class DetailRouteSourceStatusPillUiState(
+    val label: String,
+    val value: String,
+    val tone: SourceLibraryTone,
+)
+
+internal data class DetailRouteSourceAutoChoiceUiState(
+    val title: String,
+    val subtitle: String,
+    val selected: Boolean,
+    val actionLabel: String,
+    val tone: SourceLibraryTone,
+    val badges: List<SourceLibraryChipUiState>,
+)
+
+internal data class DetailRouteSourceSelectorUiState(
+    val title: String,
+    val subtitle: String,
+    val recommended: DetailRouteSourceStatusPillUiState,
+    val current: DetailRouteSourceStatusPillUiState,
+    val autoChoice: DetailRouteSourceAutoChoiceUiState,
+    val groups: List<RouteSourceGroupUiState>,
+)
+
 internal fun buildRouteUiState(
     selectedEpisode: Episode?,
     routes: List<RouteCandidate>,
@@ -1530,6 +1554,62 @@ internal fun buildRouteSourceGroups(
         isAll = true,
     )
     return listOf(allGroup) + sourceGroups
+}
+
+internal fun buildDetailRouteSourceSelectorUiState(
+    routes: List<RouteCandidate>,
+    selectedSourceId: String?,
+    recommendedSourceId: String?,
+): DetailRouteSourceSelectorUiState {
+    val groups = buildRouteSourceGroups(
+        routes = routes,
+        selectedSourceId = selectedSourceId,
+        recommendedSourceId = recommendedSourceId,
+    )
+    val allGroup = buildRouteSourceGroups(
+        routes = routes,
+        selectedSourceId = selectedSourceId,
+        recommendedSourceId = recommendedSourceId,
+        includeAll = true,
+    ).first()
+    val recommendedName = groups.firstOrNull { it.hasRecommended }?.name ?: "\u81ea\u52a8\u63a8\u8350"
+    val selectedName = groups.firstOrNull { it.isFilterSelected }?.name ?: "\u81ea\u52a8\u6700\u4f73"
+    val autoSelected = selectedSourceId == null
+    val autoBadges = buildList {
+        add(SourceLibraryChipUiState("\u63a8\u8350\u5165\u53e3", SourceLibraryTone.Primary))
+        if (autoSelected) {
+            add(SourceLibraryChipUiState("\u5f53\u524d", SourceLibraryTone.Online))
+        }
+        if (allGroup.onlineCount > 0) {
+            add(SourceLibraryChipUiState("${allGroup.onlineCount} \u5728\u7ebf", SourceLibraryTone.Cache))
+        }
+        if (allGroup.btCount > 0) {
+            add(SourceLibraryChipUiState("${allGroup.btCount} \u5907\u7528", SourceLibraryTone.Backup))
+        }
+    }
+    return DetailRouteSourceSelectorUiState(
+        title = "\u64ad\u653e\u65b9\u6848",
+        subtitle = "${groups.size} \u7ec4\u6765\u6e90 \u00b7 ${allGroup.playableCount}/${allGroup.totalCount} \u53ef\u64ad \u00b7 \u9ed8\u8ba4\u81ea\u52a8\u6700\u4f73",
+        recommended = DetailRouteSourceStatusPillUiState(
+            label = "\u63a8\u8350",
+            value = recommendedName,
+            tone = SourceLibraryTone.Primary,
+        ),
+        current = DetailRouteSourceStatusPillUiState(
+            label = "\u5f53\u524d",
+            value = selectedName,
+            tone = SourceLibraryTone.Online,
+        ),
+        autoChoice = DetailRouteSourceAutoChoiceUiState(
+            title = "\u81ea\u52a8\u6700\u4f73",
+            subtitle = "\u4f18\u5148 $recommendedName \u00b7 ${allGroup.playableCount}/${allGroup.totalCount} \u53ef\u64ad",
+            selected = autoSelected,
+            actionLabel = if (autoSelected) "\u4f7f\u7528\u4e2d" else "\u4f7f\u7528",
+            tone = if (autoSelected) SourceLibraryTone.Online else SourceLibraryTone.Primary,
+            badges = autoBadges,
+        ),
+        groups = groups,
+    )
 }
 
 internal fun sortRoutesForUi(
