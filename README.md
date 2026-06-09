@@ -25,6 +25,23 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.67
+
+中文：
+- 竖屏播放信息面板新增 `PortraitWatchInfoUiState` 和 `PortraitWatchActionUiState`，统一生成标题、当前集标签、meta chips、播放摘要、面板入口和诊断提示。
+- `PortraitWatchInfoPanel` 不再在 Compose 内拼接清晰度、播放状态、来源、选集/换源按钮值和错误提示，UI 只负责图标、颜色和点击路由。
+- 播放异常、切源提示和空标题/空集标题兜底现在复用播放器通知状态，竖屏信息面板与全屏通知条保持同一诊断语义。
+- 新增单元测试覆盖多集多源摘要、面板动作、线路覆盖标签，以及空标题和错误状态兜底。
+- App 内版本号、请求 UA 和 README 同步到 `0.5.67`。
+
+English:
+
+- The portrait watch info panel now has `PortraitWatchInfoUiState` and `PortraitWatchActionUiState` for title, current-episode labels, meta chips, playback summary, panel actions, and diagnostics.
+- `PortraitWatchInfoPanel` no longer assembles quality, playback state, source, episode/route action values, or error copy inside Compose; UI only maps icons, colors, and click routing.
+- Playback issues, route notices, and blank title/episode fallbacks now reuse the player notice state, keeping portrait diagnostics aligned with fullscreen notices.
+- Added unit coverage for multi-episode/multi-route summaries, panel actions, route coverage labels, and blank/error fallbacks.
+- App version labels, request user agents, and README notes are now updated to `0.5.67`.
+
 ### v0.5.66
 
 中文：

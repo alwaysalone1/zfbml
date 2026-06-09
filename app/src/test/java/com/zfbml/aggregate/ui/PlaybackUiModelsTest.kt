@@ -1309,19 +1309,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.66",
+            version = "0.5.67",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.66", state.version)
+        assertEquals("0.5.67", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.66" })
+        assertTrue(state.chips.any { it.label == "v0.5.67" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1335,7 +1335,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.66",
+            version = "0.5.67",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,
@@ -1895,6 +1895,107 @@ class PlaybackUiModelsTest {
         assertEquals("单集", state.actions.first { it.kind == PlayerActionKind.Episode }.value)
         assertFalse(state.actions.first { it.kind == PlayerActionKind.Cache }.enabled)
         assertTrue(state.actions.first { it.kind == PlayerActionKind.More }.selected)
+    }
+
+    @Test
+    fun portraitWatchInfoUiStateSummarizesCurrentEpisodeAndRoutes() {
+        val episodes = listOf(
+            episode(id = "ep-1", index = 1),
+            episode(id = "ep-2", index = 2),
+            episode(id = "ep-3", index = 3),
+        )
+        val routes = listOf(
+            route(
+                id = "hls",
+                protocol = StreamProtocol.HLS,
+                score = 500,
+                quality = "1080p",
+                sourceId = "animeko",
+                sourceName = "Animeko",
+                providerId = "animeko",
+            ),
+            route(
+                id = "bt",
+                protocol = StreamProtocol.BITTORRENT,
+                score = 100,
+                quality = "1080p",
+                sourceId = "bt",
+                sourceName = "BT",
+                providerId = "bt",
+            ),
+        )
+        val detail = MediaDetail(
+            providerId = "animeko",
+            title = "番剧标题",
+            url = "https://example.invalid/detail",
+            episodes = episodes,
+        )
+
+        val state = buildPortraitWatchInfoUiState(
+            detail = detail,
+            episode = episodes[1],
+            stream = routes[0].stream,
+            routes = routes,
+            playbackState = "READY",
+            routeNotice = null,
+            errorMessage = null,
+            hasPlaybackIssue = false,
+        )
+
+        assertEquals("番剧标题", state.title)
+        assertEquals("第 2 集", state.currentEpisodeLabel)
+        assertEquals("第 2 集", state.episodeTitle)
+        assertEquals(listOf("第 2 集", "1080p", "播放就绪"), state.metaChips)
+        assertTrue(state.playbackBrief.contains("Animeko"))
+        assertTrue(state.playbackBrief.contains("自动推荐 · 可换源"))
+        assertEquals(listOf(PlayerPanelKind.Episode, PlayerPanelKind.Route), state.actions.map { it.kind })
+        assertEquals("2/3", state.actions.first { it.kind == PlayerPanelKind.Episode }.subtitle)
+        assertEquals("2源", state.actions.first { it.kind == PlayerPanelKind.Route }.subtitle)
+        assertNull(state.diagnostic)
+    }
+
+    @Test
+    fun portraitWatchInfoUiStateFallsBackForBlankAndErrorState() {
+        val episode = Episode(
+            providerId = "provider",
+            id = "ep-empty",
+            title = "",
+            url = "https://example.invalid/empty",
+            index = null,
+        )
+        val detail = MediaDetail(
+            providerId = "provider",
+            title = "",
+            url = "https://example.invalid/detail",
+            episodes = listOf(episode),
+        )
+        val stream = MediaStream(
+            id = "stream",
+            providerId = "provider",
+            url = "https://example.invalid/stream.m3u8",
+            protocol = StreamProtocol.HLS,
+        )
+
+        val state = buildPortraitWatchInfoUiState(
+            detail = detail,
+            episode = episode,
+            stream = stream,
+            routes = emptyList(),
+            playbackState = "",
+            routeNotice = null,
+            errorMessage = "播放失败",
+            hasPlaybackIssue = true,
+        )
+        val diagnostic = checkNotNull(state.diagnostic)
+
+        assertEquals("正在播放", state.title)
+        assertEquals("当前集", state.currentEpisodeLabel)
+        assertEquals("当前集", state.episodeTitle)
+        assertEquals(listOf("当前集", "自动", "播放中"), state.metaChips)
+        assertTrue(state.actions.isEmpty())
+        assertEquals("播放失败", diagnostic.message)
+        assertTrue(diagnostic.error)
+        assertEquals(SourceLibraryTone.Web, diagnostic.tone)
     }
 
     @Test

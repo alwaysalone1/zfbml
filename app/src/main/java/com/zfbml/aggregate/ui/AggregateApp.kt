@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.66")
+                setRequestProperty("User-Agent", "ZFBML/0.5.67")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2855,7 +2855,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.66",
+            version = "0.5.67",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -5808,30 +5808,18 @@ private fun PortraitWatchInfoPanel(
     onEpisodeSelected: (Episode) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val quality = stream.quality.orEmpty().ifBlank { "自动" }
-    val message = routeNotice ?: errorMessage
-    val currentEpisodeText = episode.index?.let { "第 $it 集" } ?: "当前集"
-    val playbackStateText = formatPlaybackStateLabel(playbackState)
-    val sourceName = routes.firstOrNull { it.stream.id == stream.id || it.stream.url == stream.url }?.sourceName
-        ?: stream.metadata["routeProviderName"]
-        ?: stream.providerId
-    val playbackBrief = listOf(
-        quality.takeIf { it != "自动" } ?: "自动清晰度",
-        sourceName.takeIf { it.isNotBlank() },
-        playbackStateText.takeIf { it.isNotBlank() },
-        if (routes.size > 1) "自动推荐 · 可换源" else "自动推荐",
-    )
-        .filterNotNull()
-        .filter { it.isNotBlank() }
-        .distinct()
-        .joinToString(" · ")
-    val episodeActionValue = if (detail.episodes.size > 1) {
-        episode.index?.let { "$it/${detail.episodes.size}" } ?: "${detail.episodes.size}集"
-    } else {
-        "当前"
+    val panelState = remember(detail, episode, stream, routes, playbackState, routeNotice, errorMessage, hasPlaybackIssue) {
+        buildPortraitWatchInfoUiState(
+            detail = detail,
+            episode = episode,
+            stream = stream,
+            routes = routes,
+            playbackState = playbackState,
+            routeNotice = routeNotice,
+            errorMessage = errorMessage,
+            hasPlaybackIssue = hasPlaybackIssue,
+        )
     }
-    val routeActionValue = if (routes.size > 1) "${routes.size}源" else "自动"
-    val showRouteDiagnostics = message != null || hasPlaybackIssue
     val visibleEpisodes = remember(detail.episodes, episode.id) {
         portraitEpisodeWindow(detail.episodes, episode, maxCount = 18)
     }
@@ -5843,7 +5831,7 @@ private fun PortraitWatchInfoPanel(
         item {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    text = detail.title,
+                    text = panelState.title,
                     style = MaterialTheme.typography.titleLarge,
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
@@ -5851,12 +5839,12 @@ private fun PortraitWatchInfoPanel(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    VideoMetaChip(currentEpisodeText)
-                    VideoMetaChip(quality)
-                    VideoMetaChip(playbackStateText)
+                    panelState.metaChips.forEach { chip ->
+                        VideoMetaChip(chip)
+                    }
                 }
                 Text(
-                    text = episode.title,
+                    text = panelState.episodeTitle,
                     style = MaterialTheme.typography.bodyMedium,
                     color = AnimeMuted,
                     maxLines = 2,
@@ -5890,21 +5878,21 @@ private fun PortraitWatchInfoPanel(
                             Row(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) {
                                 RouteStatusBadge("继续看", AnimeAccentPink)
                                 Text(
-                                    text = currentEpisodeText,
+                                    text = panelState.currentEpisodeLabel,
                                     style = MaterialTheme.typography.labelMedium,
                                     color = Color.White.copy(alpha = 0.78f),
                                     maxLines = 1,
                                 )
                             }
                             Text(
-                                text = episode.title,
+                                text = panelState.episodeTitle,
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = Color.White,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
                             Text(
-                                text = playbackBrief,
+                                text = panelState.playbackBrief,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = AnimeMuted,
                                 maxLines = 1,
@@ -5912,48 +5900,35 @@ private fun PortraitWatchInfoPanel(
                             )
                         }
                     }
-                    if (detail.episodes.size > 1 || routes.size > 1) {
+                    if (panelState.actions.isNotEmpty()) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            if (detail.episodes.size > 1) {
+                            panelState.actions.forEach { action ->
                                 PortraitPlaybackAction(
-                                    icon = Icons.AutoMirrored.Filled.PlaylistPlay,
-                                    title = "选集",
-                                    subtitle = episodeActionValue,
-                                    accent = AnimeAccentPink,
-                                    onClick = { onShowPanel(PlayerPanel.Episode) },
-                                    modifier = Modifier.weight(1f),
-                                )
-                            }
-                            if (routes.size > 1) {
-                                PortraitPlaybackAction(
-                                    icon = Icons.Filled.VideoLibrary,
-                                    title = "换源",
-                                    subtitle = routeActionValue,
-                                    accent = AnimeAccentCyan,
-                                    onClick = { onShowPanel(PlayerPanel.Route) },
+                                    icon = playerPanelTabIcon(action.kind),
+                                    title = action.title,
+                                    subtitle = action.subtitle,
+                                    accent = sourceLibraryToneColor(action.tone),
+                                    enabled = action.enabled,
+                                    onClick = { onShowPanel(action.kind.asPlayerPanel()) },
                                     modifier = Modifier.weight(1f),
                                 )
                             }
                         }
                     }
-                    if (showRouteDiagnostics) {
+                    panelState.diagnostic?.let { diagnostic ->
                         PortraitRouteInsightRow(
                             routes = routes,
                             stream = stream,
                             modifier = Modifier.fillMaxWidth(),
                         )
                         Text(
-                            text = message ?: "当前播放源需要处理",
+                            text = diagnostic.message,
                             style = MaterialTheme.typography.bodySmall,
-                            color = when {
-                                errorMessage != null -> MaterialTheme.colorScheme.error
-                                routeNotice != null -> AnimeAccentAmber
-                                else -> AnimeMuted
-                            },
+                            color = playerNoticeColor(diagnostic),
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -6073,11 +6048,13 @@ private fun PortraitPlaybackAction(
     title: String,
     subtitle: String,
     accent: Color,
+    enabled: Boolean = true,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     TextButton(
         onClick = onClick,
+        enabled = enabled,
         modifier = modifier.height(34.dp).focusable(),
         shape = RoundedCornerShape(999.dp),
         colors = ButtonDefaults.textButtonColors(

@@ -373,6 +373,24 @@ internal data class PlayerRouteStatusUiState(
     val error: Boolean,
 )
 
+internal data class PortraitWatchInfoUiState(
+    val title: String,
+    val episodeTitle: String,
+    val currentEpisodeLabel: String,
+    val metaChips: List<String>,
+    val playbackBrief: String,
+    val actions: List<PortraitWatchActionUiState>,
+    val diagnostic: PlayerNoticeUiState?,
+)
+
+internal data class PortraitWatchActionUiState(
+    val kind: PlayerPanelKind,
+    val title: String,
+    val subtitle: String,
+    val enabled: Boolean,
+    val tone: SourceLibraryTone,
+)
+
 internal data class PlayerActionBarUiState(
     val actions: List<PlayerActionUiState>,
 )
@@ -2483,6 +2501,81 @@ internal fun buildPlayerActionBarUiState(
 
 private fun Episode?.playerNextEpisodeValueForUi(): String {
     return this?.index?.let { "第${it}集" } ?: this?.title?.takeIf { it.isNotBlank() } ?: "无"
+}
+
+internal fun buildPortraitWatchInfoUiState(
+    detail: MediaDetail,
+    episode: Episode,
+    stream: MediaStream,
+    routes: List<RouteCandidate>,
+    playbackState: String,
+    routeNotice: String?,
+    errorMessage: String?,
+    hasPlaybackIssue: Boolean,
+): PortraitWatchInfoUiState {
+    val currentRoute = routes.firstOrNull { it.stream.id == stream.id || it.stream.url == stream.url }
+    val quality = stream.quality.orEmpty().ifBlank { "自动" }
+    val currentEpisodeLabel = episode.index?.let { "第 $it 集" } ?: "当前集"
+    val playbackStateLabel = playerPlaybackStateLabelForUi(playbackState)
+    val sourceName = playerSourceLabelForUi(stream, currentRoute)
+    val routeModeLabel = if (routes.size > 1) "自动推荐 · 可换源" else "自动推荐"
+    val playbackBrief = listOf(
+        quality.takeIf { it != "自动" } ?: "自动清晰度",
+        sourceName.takeIf { it.isNotBlank() },
+        playbackStateLabel.takeIf { it.isNotBlank() },
+        routeModeLabel,
+    )
+        .filterNotNull()
+        .filter { it.isNotBlank() }
+        .distinct()
+        .joinToString(" · ")
+    val actions = buildList {
+        if (detail.episodes.size > 1) {
+            add(
+                PortraitWatchActionUiState(
+                    kind = PlayerPanelKind.Episode,
+                    title = "选集",
+                    subtitle = episode.index?.let { "$it/${detail.episodes.size}" } ?: "${detail.episodes.size}集",
+                    enabled = true,
+                    tone = SourceLibraryTone.Primary,
+                ),
+            )
+        }
+        if (routes.size > 1) {
+            add(
+                PortraitWatchActionUiState(
+                    kind = PlayerPanelKind.Route,
+                    title = "换源",
+                    subtitle = playerRouteCoverageLabel(routes),
+                    enabled = true,
+                    tone = SourceLibraryTone.Online,
+                ),
+            )
+        }
+    }
+    val diagnostic = buildPlayerFullscreenNoticeUiState(
+        routeSummary = "播放提示",
+        routeNotice = routeNotice,
+        errorMessage = errorMessage,
+    ) ?: if (hasPlaybackIssue) {
+        PlayerNoticeUiState(
+            title = "播放提示",
+            message = "当前播放源需要处理",
+            tone = SourceLibraryTone.Muted,
+            error = false,
+        )
+    } else {
+        null
+    }
+    return PortraitWatchInfoUiState(
+        title = detail.title.ifBlank { "正在播放" },
+        episodeTitle = episode.title.ifBlank { currentEpisodeLabel },
+        currentEpisodeLabel = currentEpisodeLabel,
+        metaChips = listOf(currentEpisodeLabel, quality, playbackStateLabel).filter { it.isNotBlank() },
+        playbackBrief = playbackBrief,
+        actions = actions,
+        diagnostic = diagnostic,
+    )
 }
 
 private fun playerSourceStatusValueForUi(
