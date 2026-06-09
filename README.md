@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.79
+
+English:
+
+- Detail route status cards now have `DetailRouteStatusUiState`, `DetailRouteRecommendationUiState`, `DetailRouteFocusChipUiState`, and `DetailRouteMetricUiState`, centralizing compact/expanded route status, recommendation copy, diagnostics, and metrics.
+- `DetailRouteStatusCard`, `RouteRecommendationBand`, and route diagnostic rows now render model-provided state instead of deriving titles, subtitles, action labels, source chips, and route metrics in Compose.
+- Added unit coverage for ready compact route cards, loading diagnostics, and failed-route error states.
+- App version labels, request user agents, and README notes are now updated to `0.5.79`.
+
 ### v0.5.78
 
 English:

@@ -118,6 +118,45 @@ internal data class DetailRouteResolutionUiState(
     val tone: SourceLibraryTone,
 )
 
+internal data class DetailRouteFocusChipUiState(
+    val label: String,
+    val value: String,
+    val tone: SourceLibraryTone,
+)
+
+internal data class DetailRouteMetricUiState(
+    val label: String,
+    val value: String,
+    val tone: SourceLibraryTone,
+    val critical: Boolean = false,
+)
+
+internal data class DetailRouteRecommendationUiState(
+    val label: String,
+    val title: String,
+    val reason: String,
+    val detail: String,
+    val actionLabel: String,
+    val canPlay: Boolean,
+)
+
+internal data class DetailRouteStatusUiState(
+    val title: String,
+    val subtitle: String,
+    val actionLabel: String,
+    val showProgress: Boolean,
+    val compact: Boolean,
+    val showRecommendation: Boolean,
+    val showDiagnostics: Boolean,
+    val useReadyIcon: Boolean,
+    val tone: SourceLibraryTone,
+    val error: Boolean,
+    val recommendation: DetailRouteRecommendationUiState,
+    val focusChips: List<DetailRouteFocusChipUiState>,
+    val loadingSteps: List<RouteLoadingStepUiState>,
+    val metrics: List<DetailRouteMetricUiState>,
+)
+
 internal data class DetailEntryUiState(
     val headline: String,
     val summary: String,
@@ -1055,6 +1094,89 @@ internal fun buildDetailFirstPlayUiState(
         useReadyIcon = routeState.status == RouteLoadStatus.Ready,
         tone = tone,
         chips = chips,
+    )
+}
+
+internal fun buildDetailRouteStatusUiState(
+    routeState: RouteUiState,
+    expanded: Boolean,
+): DetailRouteStatusUiState {
+    val compactReady = routeState.status == RouteLoadStatus.Ready && !expanded
+    val tone = when (routeState.status) {
+        RouteLoadStatus.Ready -> SourceLibraryTone.Cache
+        RouteLoadStatus.Loading -> SourceLibraryTone.Online
+        RouteLoadStatus.Failed -> SourceLibraryTone.Web
+        RouteLoadStatus.Empty -> SourceLibraryTone.Backup
+        RouteLoadStatus.Idle -> SourceLibraryTone.Muted
+    }
+    val subtitle = if (compactReady) {
+        routeState.bestRoute?.let { route ->
+            listOfNotNull(
+                routeState.selectedEpisodeTitle,
+                "\u81ea\u52a8\u6700\u4f73",
+                routeQualityLabelForUi(route),
+                if (routeState.routeCount > 1) routeState.sourceCoverageLabel else null,
+            ).filter { it.isNotBlank() }.distinct().joinToString(" \u00b7 ")
+        } ?: routeState.selectedEpisodeTitle
+    } else {
+        routeState.selectedEpisodeTitle
+    }
+    val actionLabel = when {
+        expanded -> "\u6536\u8d77"
+        routeState.status == RouteLoadStatus.Ready -> "\u5207\u6362"
+        else -> "\u8be6\u60c5"
+    }
+    val sourceValue = routeState.bestRoute?.sourceName ?: when (routeState.status) {
+        RouteLoadStatus.Loading -> "\u5339\u914d\u4e2d"
+        RouteLoadStatus.Failed -> "\u5931\u8d25"
+        RouteLoadStatus.Empty -> "\u6682\u65e0"
+        RouteLoadStatus.Idle -> "\u5f85\u9009\u62e9"
+        RouteLoadStatus.Ready -> "\u81ea\u52a8"
+    }
+    val focusChips = listOf(
+        DetailRouteFocusChipUiState("\u63a8\u8350\u6e90", sourceValue, tone),
+        DetailRouteFocusChipUiState("\u6765\u6e90\u8986\u76d6", routeState.sourceCoverageLabel, SourceLibraryTone.Online),
+        DetailRouteFocusChipUiState("\u52a0\u8f7d\u65b9\u5f0f", routeState.loadOriginLabel, SourceLibraryTone.Backup),
+    )
+    val metrics = listOf(
+        DetailRouteMetricUiState("\u53ef\u64ad", routeState.routeCount.toString(), SourceLibraryTone.Online),
+        DetailRouteMetricUiState("\u6765\u6e90", routeState.sourceCount.toString(), SourceLibraryTone.Web),
+        DetailRouteMetricUiState(
+            label = "\u5f02\u5e38",
+            value = routeState.failedCount.toString(),
+            tone = SourceLibraryTone.Muted,
+            critical = routeState.status == RouteLoadStatus.Failed || routeState.failedCount > 0,
+        ),
+    )
+    val recommendation = DetailRouteRecommendationUiState(
+        label = if (routeState.bestRoute == null) "\u64ad\u653e\u6e90" else "\u63a8\u8350\u6e90",
+        title = routeState.recommendationTitle,
+        reason = routeState.recommendationReason,
+        detail = routeState.recommendationDetail,
+        actionLabel = if (routeState.bestRoute?.protocol == StreamProtocol.BITTORRENT) {
+            "\u8fb9\u4e0b\u8fb9\u64ad"
+        } else {
+            "\u64ad\u653e\u63a8\u8350"
+        },
+        canPlay = routeState.canPlay,
+    )
+    return DetailRouteStatusUiState(
+        title = routeState.message,
+        subtitle = subtitle,
+        actionLabel = actionLabel,
+        showProgress = routeState.status == RouteLoadStatus.Loading,
+        compact = compactReady,
+        showRecommendation = !compactReady,
+        showDiagnostics = expanded ||
+            routeState.status == RouteLoadStatus.Loading ||
+            routeState.status == RouteLoadStatus.Failed,
+        useReadyIcon = routeState.status == RouteLoadStatus.Ready,
+        tone = tone,
+        error = routeState.status == RouteLoadStatus.Failed,
+        recommendation = recommendation,
+        focusChips = focusChips,
+        loadingSteps = routeState.loadingSteps,
+        metrics = metrics,
     )
 }
 

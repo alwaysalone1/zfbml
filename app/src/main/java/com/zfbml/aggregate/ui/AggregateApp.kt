@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.78")
+                setRequestProperty("User-Agent", "ZFBML/0.5.79")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2866,7 +2866,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.78",
+            version = "0.5.79",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -3670,6 +3670,10 @@ private fun DetailScreen(
         routeState = routeUiState,
     )
     val detailRouteResolutionState = buildDetailRouteResolutionUiState(routeUiState)
+    val detailRouteStatusState = buildDetailRouteStatusUiState(
+        routeState = routeUiState,
+        expanded = routesExpanded,
+    )
     val routePrefetchUiState = detail?.let { media ->
         buildRoutePrefetchUiState(
             episodes = media.episodes,
@@ -3799,8 +3803,7 @@ private fun DetailScreen(
             }
             item {
                 DetailRouteStatusCard(
-                    state = routeUiState,
-                    expanded = routesExpanded,
+                    state = detailRouteStatusState,
                     onToggleExpanded = { routesExpanded = !routesExpanded },
                     onPlayBest = {
                         val episode = selectedEpisode ?: return@DetailRouteStatusCard
@@ -4226,50 +4229,12 @@ private fun DetailDecisionChip(label: String, value: String, color: Color) {
 
 @Composable
 private fun DetailRouteStatusCard(
-    state: RouteUiState,
-    expanded: Boolean,
+    state: DetailRouteStatusUiState,
     onToggleExpanded: () -> Unit,
     onPlayBest: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val accent = when (state.status) {
-        RouteLoadStatus.Ready -> AnimeAccentGreen
-        RouteLoadStatus.Loading -> AnimeAccentCyan
-        RouteLoadStatus.Failed -> MaterialTheme.colorScheme.error
-        RouteLoadStatus.Empty -> AnimeAccentAmber
-        RouteLoadStatus.Idle -> AnimeMuted
-    }
-    val onlineValue = when {
-        state.onlineCount > 0 -> "${state.onlineCount} 条"
-        state.status == RouteLoadStatus.Loading -> "匹配中"
-        else -> "待补充"
-    }
-    val btValue = when {
-        state.btCount > 0 -> "${state.btCount} 条"
-        state.status == RouteLoadStatus.Loading -> "兜底中"
-        else -> "备用"
-    }
-    val compactReady = state.status == RouteLoadStatus.Ready && !expanded
-    val showDiagnostics = expanded ||
-        state.status == RouteLoadStatus.Loading ||
-        state.status == RouteLoadStatus.Failed
-    val headerSubtitle = if (compactReady) {
-        state.bestRoute?.let { route ->
-            listOfNotNull(
-                state.selectedEpisodeTitle,
-                "自动最佳",
-                playerQualityLabel(route),
-                if (state.routeCount > 1) state.sourceCoverageLabel else null,
-            ).filter { it.isNotBlank() }.distinct().joinToString(" · ")
-        } ?: state.selectedEpisodeTitle
-    } else {
-        state.selectedEpisodeTitle
-    }
-    val actionText = when {
-        expanded -> "收起"
-        state.status == RouteLoadStatus.Ready -> "切换"
-        else -> "详情"
-    }
+    val accent = if (state.error) MaterialTheme.colorScheme.error else sourceLibraryToneColor(state.tone)
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
@@ -4278,7 +4243,7 @@ private fun DetailRouteStatusCard(
     ) {
         Column(
             modifier = Modifier.fillMaxWidth().padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(if (compactReady) 8.dp else 14.dp),
+            verticalArrangement = Arrangement.spacedBy(if (state.compact) 8.dp else 14.dp),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -4287,55 +4252,60 @@ private fun DetailRouteStatusCard(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(if (compactReady) 38.dp else 44.dp)
+                        .size(if (state.compact) 38.dp else 44.dp)
                         .clip(RoundedCornerShape(8.dp))
                         .background(accent.copy(alpha = 0.18f)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    if (state.status == RouteLoadStatus.Loading) {
-                        CircularProgressIndicator(color = accent, modifier = Modifier.size(if (compactReady) 18.dp else 22.dp))
+                    if (state.showProgress) {
+                        CircularProgressIndicator(color = accent, modifier = Modifier.size(if (state.compact) 18.dp else 22.dp))
                     } else {
                         Icon(
-                            imageVector = if (state.status == RouteLoadStatus.Ready) Icons.Filled.Check else Icons.Filled.PlayArrow,
+                            imageVector = if (state.useReadyIcon) Icons.Filled.Check else Icons.Filled.PlayArrow,
                             contentDescription = null,
                             tint = accent,
-                            modifier = Modifier.size(if (compactReady) 21.dp else 24.dp),
+                            modifier = Modifier.size(if (state.compact) 21.dp else 24.dp),
                         )
                     }
                 }
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Text(state.message, style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold)
-                    Text(headerSubtitle, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(state.title, style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold)
+                    Text(state.subtitle, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
                 TextButton(onClick = onToggleExpanded, modifier = Modifier.height(38.dp).focusable()) {
-                    Text(actionText, color = AnimeAccentCyan, style = MaterialTheme.typography.labelLarge)
+                    Text(state.actionLabel, color = AnimeAccentCyan, style = MaterialTheme.typography.labelLarge)
                 }
             }
-            if (state.status == RouteLoadStatus.Loading) {
+            if (state.showProgress) {
                 LinearProgressIndicator(
                     modifier = Modifier.fillMaxWidth().height(3.dp).clip(RoundedCornerShape(8.dp)),
                     color = accent,
                     trackColor = Color.White.copy(alpha = 0.08f),
                 )
             }
-            if (!compactReady) {
+            if (state.showRecommendation) {
                 RouteRecommendationBand(
-                    state = state,
+                    state = state.recommendation,
                     accent = accent,
                     onPlayBest = onPlayBest,
                 )
             }
-            if (showDiagnostics) {
-                RouteSourceFocusRow(state = state, accent = accent)
-                RouteLoadingStepRow(state = state, accent = accent)
+            if (state.showDiagnostics) {
+                RouteSourceFocusRow(chips = state.focusChips)
+                RouteLoadingStepRow(steps = state.loadingSteps, accent = accent)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    RouteMetricChip("可播", state.routeCount.toString(), AnimeAccentCyan, Modifier.weight(1f))
-                    RouteMetricChip("来源", state.sourceCount.toString(), AnimeAccentViolet, Modifier.weight(1f))
-                    RouteMetricChip("异常", state.failedCount.toString(), if (state.failedCount > 0) MaterialTheme.colorScheme.error else AnimeMuted, Modifier.weight(1f))
+                    state.metrics.forEach { metric ->
+                        RouteMetricChip(
+                            title = metric.label,
+                            value = metric.value,
+                            accent = if (metric.critical) MaterialTheme.colorScheme.error else sourceLibraryToneColor(metric.tone),
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
                 }
             }
         }
@@ -4426,12 +4396,10 @@ private fun DetailRoutePrefetchChip(item: RoutePrefetchItemUiState) {
 
 @Composable
 private fun RouteRecommendationBand(
-    state: RouteUiState,
+    state: DetailRouteRecommendationUiState,
     accent: Color,
     onPlayBest: () -> Unit,
 ) {
-    val route = state.bestRoute
-    val actionLabel = if (route?.protocol == StreamProtocol.BITTORRENT) "边下边播" else "播放推荐"
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -4446,10 +4414,10 @@ private fun RouteRecommendationBand(
             modifier = Modifier.width(4.dp).height(48.dp).clip(RoundedCornerShape(8.dp)).background(accent),
         )
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(if (route == null) "播放源" else "推荐源", style = MaterialTheme.typography.labelMedium, color = accent, maxLines = 1)
-            Text(state.recommendationTitle, style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(state.recommendationReason, style = MaterialTheme.typography.labelSmall, color = accent, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(state.recommendationDetail, style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.72f), maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(state.label, style = MaterialTheme.typography.labelMedium, color = accent, maxLines = 1)
+            Text(state.title, style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(state.reason, style = MaterialTheme.typography.labelSmall, color = accent, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(state.detail, style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.72f), maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
         if (state.canPlay) {
             Button(
@@ -4461,30 +4429,27 @@ private fun RouteRecommendationBand(
             ) {
                 Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(4.dp))
-                Text(actionLabel, maxLines = 1)
+                Text(state.actionLabel, maxLines = 1)
             }
         }
     }
 }
 
 @Composable
-private fun RouteSourceFocusRow(state: RouteUiState, accent: Color) {
-    val route = state.bestRoute
-    val sourceValue = route?.sourceName ?: when (state.status) {
-        RouteLoadStatus.Loading -> "匹配中"
-        RouteLoadStatus.Failed -> "失败"
-        RouteLoadStatus.Empty -> "暂无"
-        RouteLoadStatus.Idle -> "待选择"
-        RouteLoadStatus.Ready -> "自动"
-    }
+private fun RouteSourceFocusRow(chips: List<DetailRouteFocusChipUiState>) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        RouteSourceFocusChip("推荐源", sourceValue, accent, Modifier.weight(1f))
-        RouteSourceFocusChip("来源覆盖", state.sourceCoverageLabel, AnimeAccentCyan, Modifier.weight(1f))
-        RouteSourceFocusChip("加载方式", state.loadOriginLabel, AnimeAccentAmber, Modifier.weight(1f))
+        chips.take(3).forEach { chip ->
+            RouteSourceFocusChip(
+                label = chip.label,
+                value = chip.value,
+                accent = sourceLibraryToneColor(chip.tone),
+                modifier = Modifier.weight(1f),
+            )
+        }
     }
 }
 
@@ -4510,7 +4475,7 @@ private fun RouteSourceFocusChip(
 
 @Composable
 private fun RouteLoadingStepRow(
-    state: RouteUiState,
+    steps: List<RouteLoadingStepUiState>,
     accent: Color,
 ) {
     val colors = listOf(accent, AnimeAccentCyan, AnimeAccentAmber)
@@ -4519,7 +4484,7 @@ private fun RouteLoadingStepRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        state.loadingSteps.take(3).forEachIndexed { index, step ->
+        steps.take(3).forEachIndexed { index, step ->
             RouteDiagnosticStep(
                 title = step.title,
                 value = step.value,
@@ -8914,10 +8879,6 @@ private fun playerRouteLabel(stream: MediaStream, route: RouteCandidate?): Strin
         .filterNotNull()
         .joinToString(" · ")
         .ifBlank { stream.protocol.displayName() }
-}
-
-private fun playerQualityLabel(route: RouteCandidate): String {
-    return routeQualityLabelForUi(route)
 }
 
 @Composable
