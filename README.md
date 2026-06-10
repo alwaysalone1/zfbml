@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.108
+
+English:
+
+- Danmaku matching now has an explicit `DanmakuManualMapping` model for user-calibrated anime/episode to provider-token mappings.
+- `DanmakuRegistry` now tries calibrated mappings before automatic provider search, falls back to automatic matching when a calibrated timeline is empty, and clears cached timelines when manual mappings are replaced.
+- Added unit coverage for calibrated timeline priority, automatic fallback, and cache invalidation after manual correction.
+- App version labels, request user agents, and README notes are now updated to `0.5.108`.
+
 ### v0.5.107
 
 English:

@@ -80,10 +80,13 @@ class YoukuDanmakuProvider(httpClient: OkHttpClient) : WebDanmakuProvider(
 
 class DanmakuRegistry(
     providers: List<DanmakuProvider>,
+    initialManualMappings: List<DanmakuManualMapping> = emptyList(),
     private val timelineCacheSize: Int = DEFAULT_TIMELINE_CACHE_SIZE,
 ) {
     private val byId = providers.associateBy { it.id }
     private val timelineCacheLock = Mutex()
+    private val manualMappingLock = Mutex()
+    private var manualMappings = initialManualMappings
     private val timelineCache = LinkedHashMap<DanmakuTimelineCacheKey, List<DanmakuItem>>(16, 0.75f, true)
     private val inFlightTimelineRequests = mutableMapOf<DanmakuTimelineCacheKey, Deferred<List<DanmakuItem>>>()
     val profiles: List<DanmakuProfile> = providers.map { it.profile }
@@ -91,12 +94,47 @@ class DanmakuRegistry(
     fun provider(id: String): DanmakuProvider? = byId[id]
 
     suspend fun matchAll(detail: MediaDetail, episode: Episode): List<DanmakuMatch> = coroutineScope {
+        val manualMatches = manualMatchesFor(detail, episode)
+        val automaticMatches = automaticMatches(detail, episode)
+        (manualMatches + automaticMatches)
+            .distinctBy { it.providerId to it.token }
+            .sortedByDescending { it.score }
+    }
+
+    suspend fun replaceManualMappings(mappings: List<DanmakuManualMapping>) {
+        manualMappingLock.withLock {
+            manualMappings = mappings
+        }
+        clearTimelineCache()
+    }
+
+    suspend fun addOrReplaceManualMapping(mapping: DanmakuManualMapping) {
+        manualMappingLock.withLock {
+            manualMappings = manualMappings
+                .filterNot { it.sameManualTarget(mapping) }
+                .plus(mapping)
+        }
+        clearTimelineCache()
+    }
+
+    private suspend fun automaticMatches(detail: MediaDetail, episode: Episode): List<DanmakuMatch> = coroutineScope {
         byId.values.map { provider ->
             async {
                 runCatching { provider.match(detail, episode) }.getOrDefault(emptyList())
             }
         }.awaitAll()
             .flatten()
+            .sortedByDescending { it.score }
+    }
+
+    private suspend fun manualMatchesFor(detail: MediaDetail, episode: Episode): List<DanmakuMatch> {
+        val mappings = manualMappingLock.withLock { manualMappings.toList() }
+        return mappings
+            .filter { it.matches(detail, episode) }
+            .mapNotNull { mapping ->
+                if (mapping.match.providerId !in byId) return@mapNotNull null
+                mapping.match.copy(score = maxOf(mapping.match.score, MANUAL_MAPPING_SCORE))
+            }
             .sortedByDescending { it.score }
     }
 
@@ -141,13 +179,26 @@ class DanmakuRegistry(
     }
 
     private suspend fun fetchBestTimelineUncached(detail: MediaDetail, episode: Episode): List<DanmakuItem> {
-        for (match in matchAll(detail, episode)) {
+        for (match in manualMatchesFor(detail, episode)) {
+            val timeline = runCatching {
+                provider(match.providerId)?.fetchTimeline(match).orEmpty()
+            }.getOrDefault(emptyList())
+            if (timeline.isNotEmpty()) return timeline
+        }
+        for (match in automaticMatches(detail, episode)) {
             val timeline = runCatching {
                 provider(match.providerId)?.fetchTimeline(match).orEmpty()
             }.getOrDefault(emptyList())
             if (timeline.isNotEmpty()) return timeline
         }
         return emptyList()
+    }
+
+    private suspend fun clearTimelineCache() {
+        timelineCacheLock.withLock {
+            timelineCache.clear()
+            inFlightTimelineRequests.clear()
+        }
     }
 
     private fun cacheTimeline(key: DanmakuTimelineCacheKey, timeline: List<DanmakuItem>) {
@@ -163,7 +214,34 @@ class DanmakuRegistry(
 
     private companion object {
         const val DEFAULT_TIMELINE_CACHE_SIZE = 48
+        const val MANUAL_MAPPING_SCORE = 100_000
     }
+}
+
+private fun DanmakuManualMapping.matches(detail: MediaDetail, episode: Episode): Boolean {
+    if (episodeId.isNullOrBlank() && episodeIndex == null) return false
+    if (!detailProviderId.isNullOrBlank() && detailProviderId != detail.providerId) return false
+    if (!detailUrl.isNullOrBlank() && detailUrl != detail.url) return false
+    if (!episodeId.isNullOrBlank() && episodeId != episode.id) return false
+    if (episodeIndex != null && episodeIndex != episode.index) return false
+    val expectedTitle = normalizedManualTitle(detailTitle)
+    val actualTitle = normalizedManualTitle(detail.title)
+    if (expectedTitle.isBlank() || actualTitle.isBlank()) return false
+    return expectedTitle == actualTitle || expectedTitle.contains(actualTitle) || actualTitle.contains(expectedTitle)
+}
+
+private fun DanmakuManualMapping.sameManualTarget(other: DanmakuManualMapping): Boolean {
+    return normalizedManualTitle(detailTitle) == normalizedManualTitle(other.detailTitle) &&
+        detailProviderId == other.detailProviderId &&
+        detailUrl == other.detailUrl &&
+        episodeId == other.episodeId &&
+        episodeIndex == other.episodeIndex
+}
+
+private fun normalizedManualTitle(value: String): String {
+    return value
+        .lowercase()
+        .replace(Regex("""[\s\p{P}\p{S}]"""), "")
 }
 
 private data class DanmakuTimelineCacheKey(

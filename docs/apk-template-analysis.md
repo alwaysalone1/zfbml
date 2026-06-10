@@ -221,3 +221,5 @@ This pass upgrades player panel tab-strip presentation. `PlayerPanelTabStripUiSt
 This pass upgrades player panel context-bar layout presentation. `PlayerPanelContextUiState` now owns the context card radius, row padding, row spacing, icon-box size, icon size, icon corner radius, and text spacing so the current-playback context strip can be tuned from the same tested UI model as the panel header, tabs, and shell.
 
 This pass upgrades player panel header layout presentation. `PlayerPanelSheetUiState` now owns header spacing, title/subtitle spacing, and dismiss-button height so the player option-panel header follows the same tested model contract as the panel shell, context strip, and tab navigation.
+
+This pass upgrades danmaku episode mapping. `DanmakuManualMapping` now represents user-calibrated anime/episode to provider-token matches, and `DanmakuRegistry` tries those calibrated mappings before automatic provider search while falling back to automatic matching when the calibrated timeline is empty. Replacing manual mappings also clears cached timelines so user corrections take effect immediately.

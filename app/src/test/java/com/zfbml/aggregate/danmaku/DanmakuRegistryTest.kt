@@ -95,6 +95,75 @@ class DanmakuRegistryTest {
         assertEquals(1, filledFallback.fetchCount.get())
     }
 
+    @Test
+    fun manualMappingFetchesCalibratedTimelineBeforeAutomaticMatching() = runTest {
+        val manual = CountingDanmakuProvider(id = "manual", score = 1)
+        val automatic = CountingDanmakuProvider(id = "automatic", score = 200)
+        val registry = DanmakuRegistry(
+            providers = listOf(manual, automatic),
+            initialManualMappings = listOf(
+                manualMapping(
+                    episodeIndex = 6,
+                    providerId = "manual",
+                    token = "manual-ep-6",
+                ),
+            ),
+        )
+
+        val timeline = registry.fetchBestTimeline(detail(), episode("6"))
+
+        assertEquals(listOf("manual-manual-ep-6"), timeline.map { it.text })
+        assertEquals(0, manual.matchCount.get())
+        assertEquals(0, automatic.matchCount.get())
+        assertEquals(1, manual.fetchCount.get())
+        assertEquals(0, automatic.fetchCount.get())
+    }
+
+    @Test
+    fun manualMappingFallsBackToAutomaticMatchWhenTimelineIsEmpty() = runTest {
+        val manual = CountingDanmakuProvider(id = "manual", score = 1, returnEmptyTimeline = true)
+        val automatic = CountingDanmakuProvider(id = "automatic", score = 200)
+        val registry = DanmakuRegistry(
+            providers = listOf(manual, automatic),
+            initialManualMappings = listOf(
+                manualMapping(
+                    episodeIndex = 7,
+                    providerId = "manual",
+                    token = "manual-ep-7",
+                ),
+            ),
+        )
+
+        val timeline = registry.fetchBestTimeline(detail(), episode("7"))
+
+        assertEquals(listOf("automatic-ep-7"), timeline.map { it.text })
+        assertEquals(1, manual.fetchCount.get())
+        assertEquals(1, automatic.matchCount.get())
+        assertEquals(1, automatic.fetchCount.get())
+    }
+
+    @Test
+    fun replacingManualMappingClearsCachedAutomaticTimeline() = runTest {
+        val automatic = CountingDanmakuProvider(id = "automatic", score = 200)
+        val manual = CountingDanmakuProvider(id = "manual", score = 1)
+        val registry = DanmakuRegistry(listOf(automatic, manual))
+
+        val automaticTimeline = registry.fetchBestTimeline(detail(), episode("8"))
+        registry.addOrReplaceManualMapping(
+            manualMapping(
+                episodeIndex = 8,
+                providerId = "manual",
+                token = "manual-ep-8",
+            ),
+        )
+        val correctedTimeline = registry.fetchBestTimeline(detail(), episode("8"))
+
+        assertEquals(listOf("automatic-ep-8"), automaticTimeline.map { it.text })
+        assertEquals(listOf("manual-manual-ep-8"), correctedTimeline.map { it.text })
+        assertEquals(1, automatic.fetchCount.get())
+        assertEquals(1, manual.fetchCount.get())
+    }
+
     private fun detail(): MediaDetail {
         return MediaDetail(
             providerId = "detail",
@@ -111,6 +180,26 @@ class DanmakuRegistryTest {
             url = "detail://anime/episode/$id",
             index = id.toInt(),
             raw = mapOf("subjectId" to "subject-1", "episodeId" to id),
+        )
+    }
+
+    private fun manualMapping(
+        episodeIndex: Int,
+        providerId: String,
+        token: String,
+    ): DanmakuManualMapping {
+        return DanmakuManualMapping(
+            detailTitle = "test anime",
+            detailProviderId = "detail",
+            episodeIndex = episodeIndex,
+            match = DanmakuMatch(
+                providerId = providerId,
+                platform = DanmakuPlatform.Local,
+                title = "Manual Test Anime",
+                episodeTitle = "Manual Episode $episodeIndex",
+                score = 1,
+                token = token,
+            ),
         )
     }
 

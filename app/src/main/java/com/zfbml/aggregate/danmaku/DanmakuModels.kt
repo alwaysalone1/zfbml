@@ -71,3 +71,12 @@ data class DanmakuMatch(
     val score: Int,
     val token: String,
 )
+
+data class DanmakuManualMapping(
+    val detailTitle: String,
+    val detailProviderId: String? = null,
+    val detailUrl: String? = null,
+    val episodeId: String? = null,
+    val episodeIndex: Int? = null,
+    val match: DanmakuMatch,
+)
