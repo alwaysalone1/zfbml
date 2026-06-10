@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.110
+
+English:
+
+- Player danmaku settings now show the automatic match candidate list directly in the panel, including provider labels, platform badges, score copy, and calibrated/manual row state.
+- Selecting a danmaku candidate now writes that match as the current episode's manual mapping, refreshes candidate state, and reloads the best timeline immediately.
+- Added unit coverage for danmaku candidate row presentation, candidate ordering, platform badges, and calibrated candidate disablement.
+- App version labels, request user agents, and README notes are now updated to `0.5.110`.
+
 ### v0.5.109
 
 English:

@@ -2417,6 +2417,15 @@ class PlaybackUiModelsTest {
         assertEquals(SourceLibraryTone.Cache, automatic.trailingTone)
         assertTrue(automatic.highlighted)
         assertFalse(automatic.prominent)
+        assertEquals("弹幕候选", automatic.candidateListTitle)
+        assertEquals(8.dp, automatic.candidateSpacing)
+        assertEquals(listOf("Bilibili", "腾讯视频"), automatic.candidates.map { it.title })
+        assertEquals("Episode 1 · 评分 90", automatic.candidates.first().subtitle)
+        assertEquals("设为本集", automatic.candidates.first().actionLabel)
+        assertEquals(listOf("候选", "B站"), automatic.candidates.first().badges.map { it.label })
+        assertFalse(automatic.candidates.first().selected)
+        assertTrue(automatic.candidates.first().enabled)
+        assertTrue(automatic.candidates.first().actionEnabled)
 
         assertEquals("弹幕映射已校准", manual.title)
         assertEquals("重新校准", manual.actionLabel)
@@ -2425,6 +2434,12 @@ class PlaybackUiModelsTest {
         assertTrue(manual.prominent)
         assertEquals(SourceLibraryTone.Primary, manual.trailingTone)
         assertEquals(SourceLibraryTone.Primary, manual.rowState.containerTone)
+        assertEquals("已校准", manual.candidates.first().actionLabel)
+        assertEquals(listOf("人工", "B站"), manual.candidates.first().badges.map { it.label })
+        assertTrue(manual.candidates.first().selected)
+        assertFalse(manual.candidates.first().enabled)
+        assertFalse(manual.candidates.first().actionEnabled)
+        assertEquals(SourceLibraryTone.Primary, manual.candidates.first().rowState.containerTone)
 
         assertEquals("正在匹配弹幕", loading.title)
         assertEquals("匹配中", loading.actionLabel)
@@ -3824,9 +3839,16 @@ class PlaybackUiModelsTest {
         source: DanmakuMatchSource = DanmakuMatchSource.Automatic,
         score: Int,
     ): DanmakuMatch {
+        val platform = when (providerId) {
+            "danmaku-bilibili" -> DanmakuPlatform.Bilibili
+            "danmaku-tencent" -> DanmakuPlatform.Tencent
+            "danmaku-iqiyi" -> DanmakuPlatform.Iqiyi
+            "danmaku-youku" -> DanmakuPlatform.Youku
+            else -> DanmakuPlatform.Local
+        }
         return DanmakuMatch(
             providerId = providerId,
-            platform = DanmakuPlatform.Local,
+            platform = platform,
             title = "Test Anime",
             episodeTitle = "Episode 1",
             score = score,

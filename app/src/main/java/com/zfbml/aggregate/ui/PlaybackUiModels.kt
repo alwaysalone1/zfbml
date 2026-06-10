@@ -4,6 +4,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.zfbml.aggregate.danmaku.DanmakuMatch
 import com.zfbml.aggregate.danmaku.DanmakuMatchSource
+import com.zfbml.aggregate.danmaku.DanmakuPlatform
 import com.zfbml.aggregate.source.Episode
 import com.zfbml.aggregate.source.DownloadPolicy
 import com.zfbml.aggregate.source.MediaDetail
@@ -755,9 +756,29 @@ internal data class PlayerDanmakuMappingUiState(
     val subtitle: String,
     val actionLabel: String,
     val badges: List<SourceLibraryChipUiState>,
+    val candidateListTitle: String,
+    val candidateListTitleAlpha: Float,
+    val candidateSpacing: Dp,
+    val candidates: List<PlayerDanmakuCandidateUiState>,
     val selected: Boolean,
     val highlighted: Boolean,
     val prominent: Boolean,
+    val actionEnabled: Boolean,
+    val iconAlpha: Float,
+    val titleAlpha: Float,
+    val subtitleAlpha: Float,
+    val trailingTone: SourceLibraryTone,
+    val rowState: PlayerSelectableRowUiState,
+)
+
+internal data class PlayerDanmakuCandidateUiState(
+    val match: DanmakuMatch,
+    val title: String,
+    val subtitle: String,
+    val actionLabel: String,
+    val badges: List<SourceLibraryChipUiState>,
+    val selected: Boolean,
+    val enabled: Boolean,
     val actionEnabled: Boolean,
     val iconAlpha: Float,
     val titleAlpha: Float,
@@ -3479,8 +3500,12 @@ internal fun buildPlayerDanmakuMappingUiState(
     matching: Boolean,
     timelineCount: Int,
 ): PlayerDanmakuMappingUiState {
-    val candidateCount = matches.size
-    val best = matches.maxByOrNull { it.score }
+    val candidates = matches
+        .sortedByDescending { it.score }
+        .distinctBy { it.providerId to it.token }
+        .take(6)
+    val candidateCount = candidates.size
+    val best = candidates.maxByOrNull { it.score }
     val manual = best?.source == DanmakuMatchSource.Manual
     val loadedCount = timelineCount.coerceAtLeast(0)
     val tone = when {
@@ -3520,6 +3545,10 @@ internal fun buildPlayerDanmakuMappingUiState(
             else -> "搜索弹幕"
         },
         badges = badges,
+        candidateListTitle = if (candidateCount > 0) "弹幕候选" else "",
+        candidateListTitleAlpha = 0.72f,
+        candidateSpacing = 8.dp,
+        candidates = candidates.map(::buildPlayerDanmakuCandidateUiState),
         selected = manual,
         highlighted = matching || manual || loadedCount > 0,
         prominent = manual,
@@ -3536,6 +3565,36 @@ internal fun buildPlayerDanmakuMappingUiState(
     )
 }
 
+internal fun buildPlayerDanmakuCandidateUiState(match: DanmakuMatch): PlayerDanmakuCandidateUiState {
+    val manual = match.source == DanmakuMatchSource.Manual
+    val tone = if (manual) SourceLibraryTone.Primary else SourceLibraryTone.Online
+    val episodeLabel = match.episodeTitle.orEmpty().ifBlank { match.title }
+    return PlayerDanmakuCandidateUiState(
+        match = match,
+        title = match.providerId.danmakuProviderLabel(),
+        subtitle = listOf(episodeLabel, "评分 ${match.score}")
+            .filter { it.isNotBlank() }
+            .joinToString(" · "),
+        actionLabel = if (manual) "已校准" else "设为本集",
+        badges = buildList {
+            add(SourceLibraryChipUiState(if (manual) "人工" else "候选", tone))
+            add(SourceLibraryChipUiState(match.platform.uiDanmakuPlatformLabel(), SourceLibraryTone.Web))
+        },
+        selected = manual,
+        enabled = !manual,
+        actionEnabled = !manual,
+        iconAlpha = if (manual) 1f else 0.82f,
+        titleAlpha = 0.94f,
+        subtitleAlpha = if (manual) 0.88f else 0.72f,
+        trailingTone = tone,
+        rowState = buildPlayerSelectableRowUiState(
+            enabled = true,
+            highlighted = manual,
+            prominent = manual,
+        ),
+    )
+}
+
 private fun String.danmakuProviderLabel(): String {
     return when (this) {
         "danmaku-bilibili" -> "Bilibili"
@@ -3543,6 +3602,16 @@ private fun String.danmakuProviderLabel(): String {
         "danmaku-iqiyi" -> "爱奇艺"
         "danmaku-youku" -> "优酷"
         else -> this.ifBlank { "弹幕源" }
+    }
+}
+
+private fun DanmakuPlatform.uiDanmakuPlatformLabel(): String {
+    return when (this) {
+        DanmakuPlatform.Bilibili -> "B站"
+        DanmakuPlatform.Tencent -> "腾讯"
+        DanmakuPlatform.Iqiyi -> "爱奇艺"
+        DanmakuPlatform.Youku -> "优酷"
+        DanmakuPlatform.Local -> "本地"
     }
 }
 
