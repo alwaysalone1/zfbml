@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.99
+
+English:
+
+- Shared player selectable rows now use `PlayerSelectableRowUiState` for min height, radius, container/border tones and alpha, padding, spacing, icon sizing, subtitle tone, trailing alpha, and selected-check sizing.
+- Danmaku toggle rows, quality rows, and speed rows now carry that shared row presentation state from their UI models instead of letting `PlayerSelectableRow` derive row chrome locally in Compose.
+- Added unit coverage for selected and unselected shared selectable-row presentation across danmaku, quality, and speed panels.
+- App version labels, request user agents, and README notes are now updated to `0.5.99`.
+
 ### v0.5.98
 
 English:

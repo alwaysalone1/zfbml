@@ -685,6 +685,7 @@ internal data class PlayerDanmakuSettingsUiState(
     val toggleIconAlpha: Float,
     val toggleTitleAlpha: Float,
     val toggleSubtitleAlpha: Float,
+    val toggleRowState: PlayerSelectableRowUiState,
     val densitySlider: PlayerDanmakuSliderUiState,
     val alphaSlider: PlayerDanmakuSliderUiState,
     val fontScaleSlider: PlayerDanmakuSliderUiState,
@@ -699,6 +700,27 @@ internal data class PlayerDanmakuSliderUiState(
     val valueRange: ClosedFloatingPointRange<Float>,
     val steps: Int,
     val tone: SourceLibraryTone,
+)
+
+internal data class PlayerSelectableRowUiState(
+    val minHeight: Dp,
+    val cornerRadius: Dp,
+    val containerTone: SourceLibraryTone?,
+    val containerAlpha: Float,
+    val borderTone: SourceLibraryTone?,
+    val borderAlpha: Float,
+    val horizontalPadding: Dp,
+    val verticalPadding: Dp,
+    val contentSpacing: Dp,
+    val iconTone: SourceLibraryTone?,
+    val iconSize: Dp,
+    val textSpacing: Dp,
+    val titleBadgeSpacing: Dp,
+    val subtitleTone: SourceLibraryTone,
+    val trailingEnabledAlpha: Float,
+    val trailingDisabledAlpha: Float,
+    val selectedIconTone: SourceLibraryTone,
+    val selectedIconSize: Dp,
 )
 
 internal data class PlayerQualityPanelUiState(
@@ -724,6 +746,7 @@ internal data class PlayerQualityOptionUiState(
     val iconAlpha: Float,
     val titleAlpha: Float,
     val subtitleAlpha: Float,
+    val rowState: PlayerSelectableRowUiState,
     val tone: SourceLibraryTone,
 )
 
@@ -746,6 +769,7 @@ internal data class PlayerSpeedOptionUiState(
     val iconAlpha: Float,
     val titleAlpha: Float,
     val subtitleAlpha: Float,
+    val rowState: PlayerSelectableRowUiState,
     val tone: SourceLibraryTone,
 )
 
@@ -3051,6 +3075,35 @@ internal fun playerProgressPollDelayMs(
     }
 }
 
+internal fun buildPlayerSelectableRowUiState(
+    enabled: Boolean,
+    highlighted: Boolean,
+    prominent: Boolean,
+): PlayerSelectableRowUiState {
+    val activeHighlighted = enabled && highlighted
+    val activeProminent = enabled && prominent
+    return PlayerSelectableRowUiState(
+        minHeight = 48.dp,
+        cornerRadius = 8.dp,
+        containerTone = if (activeProminent) SourceLibraryTone.Primary else null,
+        containerAlpha = if (activeProminent) 0.18f else 0.06f,
+        borderTone = if (activeHighlighted) SourceLibraryTone.Primary else null,
+        borderAlpha = if (activeHighlighted) 0.72f else 0.08f,
+        horizontalPadding = 12.dp,
+        verticalPadding = 9.dp,
+        contentSpacing = 10.dp,
+        iconTone = if (activeProminent) SourceLibraryTone.Primary else null,
+        iconSize = 19.dp,
+        textSpacing = 2.dp,
+        titleBadgeSpacing = 6.dp,
+        subtitleTone = SourceLibraryTone.Muted,
+        trailingEnabledAlpha = 1f,
+        trailingDisabledAlpha = 0.42f,
+        selectedIconTone = SourceLibraryTone.Primary,
+        selectedIconSize = 18.dp,
+    )
+}
+
 internal fun buildPlayerDanmakuSettingsUiState(
     enabled: Boolean,
     density: Float,
@@ -3065,18 +3118,25 @@ internal fun buildPlayerDanmakuSettingsUiState(
         "避让 顶${area.topInsetDp} / 底${area.bottomInsetDp} / 侧${area.startInsetDp + area.endInsetDp}"
     } ?: "自动避让播放器控制区"
     val tone = if (enabled) SourceLibraryTone.Primary else SourceLibraryTone.Muted
+    val toggleHighlighted = enabled
+    val toggleProminent = enabled
     return PlayerDanmakuSettingsUiState(
         toggleTitle = if (enabled) "弹幕已开启" else "弹幕已关闭",
         toggleSubtitle = if (enabled) "点击关闭弹幕显示" else "点击开启弹幕显示",
         toggleSelected = enabled,
         toggleActionLabel = if (enabled) "关闭" else "开启",
         toggleBadges = listOf(SourceLibraryChipUiState(if (enabled) "显示中" else "已隐藏", tone)),
-        toggleHighlighted = enabled,
-        toggleProminent = enabled,
+        toggleHighlighted = toggleHighlighted,
+        toggleProminent = toggleProminent,
         toggleActionEnabled = true,
         toggleIconAlpha = if (enabled) 1f else 0.5f,
         toggleTitleAlpha = if (enabled) 0.94f else 0.76f,
         toggleSubtitleAlpha = if (enabled) 0.86f else 0.68f,
+        toggleRowState = buildPlayerSelectableRowUiState(
+            enabled = true,
+            highlighted = toggleHighlighted,
+            prominent = toggleProminent,
+        ),
         densitySlider = PlayerDanmakuSliderUiState(
             title = "密度",
             valueText = densityLabel,
@@ -3141,6 +3201,11 @@ internal fun buildPlayerQualityPanelUiState(
                 iconAlpha = if (selected) 1f else 0.76f,
                 titleAlpha = 0.94f,
                 subtitleAlpha = 0.86f,
+                rowState = buildPlayerSelectableRowUiState(
+                    enabled = true,
+                    highlighted = selected,
+                    prominent = selected,
+                ),
                 tone = tone,
             )
         }
@@ -3198,6 +3263,11 @@ internal fun buildPlayerSpeedPanelUiState(
             iconAlpha = if (selected) 1f else 0.76f,
             titleAlpha = 0.94f,
             subtitleAlpha = 0.86f,
+            rowState = buildPlayerSelectableRowUiState(
+                enabled = true,
+                highlighted = selected,
+                prominent = selected,
+            ),
             tone = tone,
         )
     }

@@ -1940,19 +1940,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.98",
+            version = "0.5.99",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.98", state.version)
+        assertEquals("0.5.99", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.98" })
+        assertTrue(state.chips.any { it.label == "v0.5.99" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1966,7 +1966,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.98",
+            version = "0.5.99",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,
@@ -2282,6 +2282,24 @@ class PlaybackUiModelsTest {
         assertEquals(1f, enabled.toggleIconAlpha)
         assertEquals(0.94f, enabled.toggleTitleAlpha)
         assertEquals(0.86f, enabled.toggleSubtitleAlpha)
+        assertEquals(48.dp, enabled.toggleRowState.minHeight)
+        assertEquals(8.dp, enabled.toggleRowState.cornerRadius)
+        assertEquals(SourceLibraryTone.Primary, enabled.toggleRowState.containerTone)
+        assertEquals(0.18f, enabled.toggleRowState.containerAlpha)
+        assertEquals(SourceLibraryTone.Primary, enabled.toggleRowState.borderTone)
+        assertEquals(0.72f, enabled.toggleRowState.borderAlpha)
+        assertEquals(12.dp, enabled.toggleRowState.horizontalPadding)
+        assertEquals(9.dp, enabled.toggleRowState.verticalPadding)
+        assertEquals(10.dp, enabled.toggleRowState.contentSpacing)
+        assertEquals(SourceLibraryTone.Primary, enabled.toggleRowState.iconTone)
+        assertEquals(19.dp, enabled.toggleRowState.iconSize)
+        assertEquals(2.dp, enabled.toggleRowState.textSpacing)
+        assertEquals(6.dp, enabled.toggleRowState.titleBadgeSpacing)
+        assertEquals(SourceLibraryTone.Muted, enabled.toggleRowState.subtitleTone)
+        assertEquals(1f, enabled.toggleRowState.trailingEnabledAlpha)
+        assertEquals(0.42f, enabled.toggleRowState.trailingDisabledAlpha)
+        assertEquals(SourceLibraryTone.Primary, enabled.toggleRowState.selectedIconTone)
+        assertEquals(18.dp, enabled.toggleRowState.selectedIconSize)
         assertEquals("密度", enabled.densitySlider.title)
         assertEquals("60%", enabled.densitySlider.valueText)
         assertEquals(0.62f, enabled.densitySlider.value)
@@ -2315,6 +2333,11 @@ class PlaybackUiModelsTest {
         assertEquals(0.5f, disabled.toggleIconAlpha)
         assertEquals(0.76f, disabled.toggleTitleAlpha)
         assertEquals(0.68f, disabled.toggleSubtitleAlpha)
+        assertNull(disabled.toggleRowState.containerTone)
+        assertEquals(0.06f, disabled.toggleRowState.containerAlpha)
+        assertNull(disabled.toggleRowState.borderTone)
+        assertEquals(0.08f, disabled.toggleRowState.borderAlpha)
+        assertNull(disabled.toggleRowState.iconTone)
         assertEquals("30%", disabled.densitySlider.valueText)
         assertEquals(0.3f, disabled.densitySlider.value)
         assertEquals("100%", disabled.alphaSlider.valueText)
@@ -2322,6 +2345,23 @@ class PlaybackUiModelsTest {
         assertEquals("108%", disabled.fontScaleSlider.valueText)
         assertEquals(1.08f, disabled.fontScaleSlider.value)
         assertEquals(SourceLibraryTone.Muted, disabled.tone)
+    }
+
+    @Test
+    fun playerSelectableRowUiStateSuppressesAccentWhenDisabled() {
+        val state = buildPlayerSelectableRowUiState(
+            enabled = false,
+            highlighted = true,
+            prominent = true,
+        )
+
+        assertNull(state.containerTone)
+        assertEquals(0.06f, state.containerAlpha)
+        assertNull(state.borderTone)
+        assertEquals(0.08f, state.borderAlpha)
+        assertNull(state.iconTone)
+        assertEquals(48.dp, state.minHeight)
+        assertEquals(8.dp, state.cornerRadius)
     }
 
     @Test
@@ -2353,12 +2393,22 @@ class PlaybackUiModelsTest {
         assertEquals(1f, currentOption.iconAlpha)
         assertEquals(0.94f, currentOption.titleAlpha)
         assertEquals(0.86f, currentOption.subtitleAlpha)
+        assertEquals(SourceLibraryTone.Primary, currentOption.rowState.containerTone)
+        assertEquals(0.18f, currentOption.rowState.containerAlpha)
+        assertEquals(SourceLibraryTone.Primary, currentOption.rowState.borderTone)
+        assertEquals(0.72f, currentOption.rowState.borderAlpha)
+        assertEquals(19.dp, currentOption.rowState.iconSize)
+        assertEquals(SourceLibraryTone.Muted, currentOption.rowState.subtitleTone)
         assertEquals(SourceLibraryTone.Primary, currentOption.tone)
         assertEquals(SourceLibraryTone.Backup, btOption.tone)
         assertEquals(listOf(StreamProtocol.BITTORRENT.uiProtocolName()), btOption.badges.map { it.label })
         assertFalse(btOption.highlighted)
         assertFalse(btOption.prominent)
         assertEquals(0.76f, btOption.iconAlpha)
+        assertNull(btOption.rowState.containerTone)
+        assertEquals(0.06f, btOption.rowState.containerAlpha)
+        assertNull(btOption.rowState.borderTone)
+        assertEquals(0.08f, btOption.rowState.borderAlpha)
     }
 
     @Test
@@ -2407,12 +2457,18 @@ class PlaybackUiModelsTest {
         assertEquals(1f, selectedSpeed.iconAlpha)
         assertEquals(0.94f, selectedSpeed.titleAlpha)
         assertEquals(0.86f, selectedSpeed.subtitleAlpha)
+        assertEquals(SourceLibraryTone.Primary, selectedSpeed.rowState.containerTone)
+        assertEquals(SourceLibraryTone.Primary, selectedSpeed.rowState.borderTone)
+        assertEquals(0.18f, selectedSpeed.rowState.containerAlpha)
+        assertEquals(0.72f, selectedSpeed.rowState.borderAlpha)
         assertEquals(SourceLibraryTone.Primary, selectedSpeed.tone)
         assertEquals("切换", fastSpeed.actionLabel)
         assertTrue(fastSpeed.badges.isEmpty())
         assertFalse(fastSpeed.highlighted)
         assertFalse(fastSpeed.prominent)
         assertEquals(0.76f, fastSpeed.iconAlpha)
+        assertNull(fastSpeed.rowState.containerTone)
+        assertEquals(0.06f, fastSpeed.rowState.containerAlpha)
     }
 
     @Test

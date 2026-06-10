@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.98")
+                setRequestProperty("User-Agent", "ZFBML/0.5.99")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2866,7 +2866,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.98",
+            version = "0.5.99",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -7881,13 +7881,12 @@ private fun PlayerDanmakuSettingsPanel(
             icon = Icons.Filled.ClosedCaption,
             trailing = state.toggleActionLabel,
             badges = state.toggleBadges,
-            highlighted = state.toggleHighlighted,
-            prominent = state.toggleProminent,
             actionEnabled = state.toggleActionEnabled,
             iconAlpha = state.toggleIconAlpha,
             titleAlpha = state.toggleTitleAlpha,
             subtitleAlpha = state.toggleSubtitleAlpha,
             trailingTone = state.tone,
+            rowState = state.toggleRowState,
             onClick = onToggleDanmaku,
         )
         PlayerSliderSetting(
@@ -7944,13 +7943,12 @@ private fun PlayerQualityPanel(
                 enabled = option.enabled,
                 trailing = option.actionLabel,
                 badges = option.badges,
-                highlighted = option.highlighted,
-                prominent = option.prominent,
                 actionEnabled = option.actionEnabled,
                 iconAlpha = option.iconAlpha,
                 titleAlpha = option.titleAlpha,
                 subtitleAlpha = option.subtitleAlpha,
                 trailingTone = option.tone,
+                rowState = option.rowState,
                 onClick = { onRouteSelected(option.route) },
             )
         }
@@ -7984,13 +7982,12 @@ private fun PlayerSpeedPanel(
                 enabled = option.enabled,
                 trailing = option.actionLabel,
                 badges = option.badges,
-                highlighted = option.highlighted,
-                prominent = option.prominent,
                 actionEnabled = option.actionEnabled,
                 iconAlpha = option.iconAlpha,
                 titleAlpha = option.titleAlpha,
                 subtitleAlpha = option.subtitleAlpha,
                 trailingTone = option.tone,
+                rowState = option.rowState,
                 onClick = { onSpeedSelected(option.speed) },
             )
         }
@@ -8640,47 +8637,50 @@ private fun PlayerSelectableRow(
     enabled: Boolean = true,
     trailing: String? = null,
     badges: List<SourceLibraryChipUiState> = emptyList(),
-    highlighted: Boolean = selected,
-    prominent: Boolean = selected,
-    actionEnabled: Boolean = enabled,
-    iconAlpha: Float = if (enabled) 0.76f else 0.32f,
-    titleAlpha: Float = if (enabled) 0.94f else 0.42f,
-    subtitleAlpha: Float = if (enabled) 0.86f else 0.38f,
-    trailingTone: SourceLibraryTone = SourceLibraryTone.Backup,
+    actionEnabled: Boolean,
+    iconAlpha: Float,
+    titleAlpha: Float,
+    subtitleAlpha: Float,
+    trailingTone: SourceLibraryTone,
+    rowState: PlayerSelectableRowUiState,
     onClick: () -> Unit,
 ) {
     val trailingColor = sourceLibraryToneColor(trailingTone)
+    val containerColor = rowState.containerTone
+        ?.let { sourceLibraryToneColor(it) }
+        ?: Color.White
+    val borderColor = rowState.borderTone
+        ?.let { sourceLibraryToneColor(it) }
+        ?: Color.White
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 48.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(
-                when {
-                    prominent -> AnimeAccentPink.copy(alpha = 0.18f)
-                    else -> Color.White.copy(alpha = 0.06f)
-                },
-            )
+            .heightIn(min = rowState.minHeight)
+            .clip(RoundedCornerShape(rowState.cornerRadius))
+            .background(containerColor.copy(alpha = rowState.containerAlpha))
             .border(
                 1.dp,
-                if (highlighted) AnimeAccentPink.copy(alpha = 0.72f) else Color.White.copy(alpha = 0.08f),
-                RoundedCornerShape(8.dp),
+                borderColor.copy(alpha = rowState.borderAlpha),
+                RoundedCornerShape(rowState.cornerRadius),
             )
             .clickable(enabled = enabled) { onClick() }
-            .padding(horizontal = 12.dp, vertical = 9.dp),
+            .padding(horizontal = rowState.horizontalPadding, vertical = rowState.verticalPadding),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(rowState.contentSpacing),
     ) {
         if (icon != null) {
+            val iconColor = rowState.iconTone
+                ?.let { sourceLibraryToneColor(it) }
+                ?: Color.White.copy(alpha = iconAlpha)
             Icon(
                 icon,
                 contentDescription = null,
-                tint = if (prominent) AnimeAccentPink else Color.White.copy(alpha = iconAlpha),
-                modifier = Modifier.size(19.dp),
+                tint = iconColor,
+                modifier = Modifier.size(rowState.iconSize),
             )
         }
-        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(rowState.textSpacing)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(rowState.titleBadgeSpacing), verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     title,
                     modifier = Modifier.weight(1f),
@@ -8697,7 +8697,7 @@ private fun PlayerSelectableRow(
                 Text(
                     it,
                     style = MaterialTheme.typography.bodySmall,
-                    color = AnimeMuted.copy(alpha = subtitleAlpha),
+                    color = sourceLibraryToneColor(rowState.subtitleTone).copy(alpha = subtitleAlpha),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -8707,12 +8707,17 @@ private fun PlayerSelectableRow(
             Text(
                 it,
                 style = MaterialTheme.typography.labelSmall,
-                color = trailingColor.copy(alpha = if (actionEnabled) 1f else 0.42f),
+                color = trailingColor.copy(alpha = if (actionEnabled) rowState.trailingEnabledAlpha else rowState.trailingDisabledAlpha),
                 maxLines = 1,
             )
         }
         if (selected) {
-            Icon(Icons.Filled.Check, contentDescription = null, tint = AnimeAccentPink, modifier = Modifier.size(18.dp))
+            Icon(
+                Icons.Filled.Check,
+                contentDescription = null,
+                tint = sourceLibraryToneColor(rowState.selectedIconTone),
+                modifier = Modifier.size(rowState.selectedIconSize),
+            )
         }
     }
 }
