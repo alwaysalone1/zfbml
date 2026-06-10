@@ -101,6 +101,14 @@ class DanmakuRegistry(
             .sortedByDescending { it.score }
     }
 
+    suspend fun searchCandidates(detail: MediaDetail, episode: Episode, query: String): List<DanmakuMatch> {
+        val cleanQuery = query.trim()
+        if (cleanQuery.isBlank()) return emptyList()
+        return automaticMatches(detail.copy(title = cleanQuery), episode)
+            .distinctBy { it.providerId to it.token }
+            .sortedByDescending { it.score }
+    }
+
     suspend fun replaceManualMappings(mappings: List<DanmakuManualMapping>) {
         manualMappingLock.withLock {
             manualMappings = mappings

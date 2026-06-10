@@ -76,6 +76,19 @@ class DanmakuRegistryTest {
     }
 
     @Test
+    fun searchCandidatesUsesManualQueryTitle() = runTest {
+        val provider = CountingDanmakuProvider(id = "manual-search")
+        val registry = DanmakuRegistry(listOf(provider))
+
+        val matches = registry.searchCandidates(detail(), episode("9"), "  Manual Alias  ")
+        val blankMatches = registry.searchCandidates(detail(), episode("9"), "   ")
+
+        assertEquals(listOf("Manual Alias"), matches.map { it.title })
+        assertEquals(emptyList<DanmakuMatch>(), blankMatches)
+        assertEquals(1, provider.matchCount.get())
+    }
+
+    @Test
     fun fetchBestTimelineFallsBackWhenBestMatchIsEmpty() = runTest {
         val emptyBest = CountingDanmakuProvider(
             id = "empty-best",

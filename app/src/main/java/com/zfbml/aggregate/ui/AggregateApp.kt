@@ -2354,7 +2354,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.111")
+                setRequestProperty("User-Agent", "ZFBML/0.5.112")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2868,7 +2868,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.111",
+            version = "0.5.112",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -4924,6 +4924,40 @@ private fun RouteCandidate.primaryRouteLabel(): String {
     return routePrimaryLabelForUi(this)
 }
 
+private fun defaultDanmakuSearchQuery(detail: MediaDetail, episode: Episode): String {
+    val aliases = buildList {
+        add(episode.raw["subjectNameCn"])
+        add(episode.raw["subjectTitle"])
+        episode.raw["subjectAliases"]
+            ?.split("|")
+            ?.forEach { add(it) }
+        add(episode.raw["subjectName"])
+        add(detail.title)
+    }
+        .filterNotNull()
+        .map { it.trim() }
+        .filter { it.length >= 2 }
+        .distinctBy { it.normalizedDanmakuSearchKey() }
+    return aliases.firstOrNull { it.hasCjkText() } ?: aliases.firstOrNull().orEmpty().ifBlank { detail.title }
+}
+
+private fun String.normalizedDanmakuSearchKey(): String {
+    return lowercase().filter { char ->
+        char.isLetterOrDigit() ||
+            char in '\u4e00'..'\u9fff' ||
+            char in '\u3040'..'\u30ff' ||
+            char in '\u3400'..'\u4dbf'
+    }
+}
+
+private fun String.hasCjkText(): Boolean {
+    return any { char ->
+        char in '\u4e00'..'\u9fff' ||
+            char in '\u3040'..'\u30ff' ||
+            char in '\u3400'..'\u4dbf'
+    }
+}
+
 @Composable
 private fun RouteCandidateRow(
     route: RouteCandidate,
@@ -5019,6 +5053,9 @@ private fun PlayerScreen(
     var danmakuItems by remember { mutableStateOf<List<DanmakuItem>>(emptyList()) }
     var danmakuMatches by remember { mutableStateOf<List<DanmakuMatch>>(emptyList()) }
     var danmakuMatching by remember { mutableStateOf(false) }
+    var danmakuSearchQuery by remember(detail.providerId, detail.url) {
+        mutableStateOf(defaultDanmakuSearchQuery(detail, episode))
+    }
     var danmakuEnabled by remember { mutableStateOf(true) }
     var density by remember { mutableFloatStateOf(0.32f) }
     var danmakuAlpha by remember { mutableFloatStateOf(0.76f) }
@@ -5245,24 +5282,30 @@ private fun PlayerScreen(
         routeNotice = "\u5df2\u52a0\u5165\u79bb\u7ebf\u7f13\u5b58 \u00b7 ${cacheActionState.reason}"
     }
 
-    fun refreshDanmakuMapping() {
+    fun refreshDanmakuMapping(query: String = danmakuSearchQuery) {
         revealControls()
-        routeNotice = "正在重新搜索弹幕候选..."
+        val cleanQuery = query.trim()
+        if (cleanQuery.isBlank()) {
+            routeNotice = "请输入番名后再搜索弹幕候选"
+            return
+        }
+        danmakuSearchQuery = cleanQuery
+        routeNotice = "正在按「$cleanQuery」搜索弹幕候选..."
         scope.launch {
             danmakuMatching = true
             try {
                 graph.ensureDanmakuManualMappingsLoaded()
                 val matches = runCatching {
-                    graph.danmakuRegistry.matchAll(detail, currentEpisode)
+                    graph.danmakuRegistry.searchCandidates(detail, currentEpisode, cleanQuery)
                 }.getOrDefault(emptyList())
                 danmakuMatches = matches
                 danmakuItems = runCatching {
                     graph.danmakuRegistry.fetchBestTimeline(detail, currentEpisode)
                 }.getOrDefault(emptyList())
                 routeNotice = when {
-                    danmakuItems.isNotEmpty() -> "已加载 ${danmakuItems.size} 条弹幕 · ${matches.size} 个候选"
-                    matches.isNotEmpty() -> "已找到 ${matches.size} 个弹幕候选，可继续手动校准"
-                    else -> "暂未找到弹幕候选，可尝试更换番名或手动搜索"
+                    danmakuItems.isNotEmpty() -> "已加载 ${danmakuItems.size} 条弹幕 · 「$cleanQuery」${matches.size} 个候选"
+                    matches.isNotEmpty() -> "已按「$cleanQuery」找到 ${matches.size} 个弹幕候选，可选择校准"
+                    else -> "「$cleanQuery」暂未找到弹幕候选，可尝试中文名、原名或别名"
                 }
             } finally {
                 danmakuMatching = false
@@ -5721,6 +5764,7 @@ private fun PlayerScreen(
                     danmakuMatches = danmakuMatches,
                     danmakuMatching = danmakuMatching,
                     danmakuTimelineCount = danmakuItems.size,
+                    danmakuSearchQuery = danmakuSearchQuery,
                     density = density,
                     danmakuAlpha = danmakuAlpha,
                     danmakuFontScale = danmakuFontScale,
@@ -5748,6 +5792,7 @@ private fun PlayerScreen(
                         danmakuFontScale = it
                     },
                     onSearchDanmaku = ::refreshDanmakuMapping,
+                    onDanmakuSearchQueryChange = { danmakuSearchQuery = it },
                     onDanmakuCandidateSelected = ::calibrateDanmakuMapping,
                     onSpeedSelected = {
                         revealControls()
@@ -7434,6 +7479,7 @@ private fun PlayerOptionPanel(
     danmakuMatches: List<DanmakuMatch>,
     danmakuMatching: Boolean,
     danmakuTimelineCount: Int,
+    danmakuSearchQuery: String,
     density: Float,
     danmakuAlpha: Float,
     danmakuFontScale: Float,
@@ -7448,7 +7494,8 @@ private fun PlayerOptionPanel(
     onDensityChange: (Float) -> Unit,
     onDanmakuAlphaChange: (Float) -> Unit,
     onDanmakuFontScaleChange: (Float) -> Unit,
-    onSearchDanmaku: () -> Unit,
+    onSearchDanmaku: (String) -> Unit,
+    onDanmakuSearchQueryChange: (String) -> Unit,
     onDanmakuCandidateSelected: (DanmakuMatch) -> Unit,
     onSpeedSelected: (Float) -> Unit,
     onShowPanel: (PlayerPanel) -> Unit,
@@ -7574,11 +7621,13 @@ private fun PlayerOptionPanel(
                             matches = danmakuMatches,
                             matching = danmakuMatching,
                             timelineCount = danmakuTimelineCount,
+                            searchQuery = danmakuSearchQuery,
                             density = density,
                             alpha = danmakuAlpha,
                             fontScale = danmakuFontScale,
                             onToggleDanmaku = onToggleDanmaku,
                             onSearchDanmaku = onSearchDanmaku,
+                            onSearchQueryChange = onDanmakuSearchQueryChange,
                             onCandidateSelected = onDanmakuCandidateSelected,
                             onDensityChange = onDensityChange,
                             onAlphaChange = onDanmakuAlphaChange,
@@ -8016,11 +8065,13 @@ private fun PlayerDanmakuSettingsPanel(
     matches: List<DanmakuMatch>,
     matching: Boolean,
     timelineCount: Int,
+    searchQuery: String,
     density: Float,
     alpha: Float,
     fontScale: Float,
     onToggleDanmaku: () -> Unit,
-    onSearchDanmaku: () -> Unit,
+    onSearchDanmaku: (String) -> Unit,
+    onSearchQueryChange: (String) -> Unit,
     onCandidateSelected: (DanmakuMatch) -> Unit,
     onDensityChange: (Float) -> Unit,
     onAlphaChange: (Float) -> Unit,
@@ -8067,7 +8118,24 @@ private fun PlayerDanmakuSettingsPanel(
             subtitleAlpha = state.mapping.subtitleAlpha,
             trailingTone = state.mapping.trailingTone,
             rowState = state.mapping.rowState,
-            onClick = onSearchDanmaku,
+            onClick = { onSearchDanmaku(searchQuery) },
+        )
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = onSearchQueryChange,
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !matching,
+            singleLine = true,
+            label = { Text("弹幕番名") },
+            placeholder = { Text("中文名 / 原名 / 别名") },
+            trailingIcon = {
+                IconButton(
+                    enabled = !matching && searchQuery.isNotBlank(),
+                    onClick = { onSearchDanmaku(searchQuery) },
+                ) {
+                    Icon(Icons.Filled.Search, contentDescription = "搜索弹幕候选")
+                }
+            },
         )
         if (state.mapping.candidates.isNotEmpty()) {
             Text(

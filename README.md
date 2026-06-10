@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.112
+
+English:
+
+- The player danmaku panel now includes an editable anime-title search field so users can manually query candidates by Chinese title, original title, or alias instead of only refreshing the automatic match.
+- `DanmakuRegistry` now exposes `searchCandidates()` for explicit title searches while preserving the existing calibrated mapping path for selecting and saving the correct episode match.
+- Added unit coverage proving manual danmaku search uses the entered query title and ignores blank searches.
+- App version labels, request user agents, and README notes are now updated to `0.5.112`.
+
 ### v0.5.111
 
 English:

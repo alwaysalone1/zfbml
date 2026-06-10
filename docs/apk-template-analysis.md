@@ -229,3 +229,5 @@ This pass upgrades player danmaku mapping presentation. `PlayerDanmakuMappingUiS
 This pass upgrades player danmaku candidate calibration. The danmaku settings panel now renders automatic match candidates with provider/platform badges and lets the user set any candidate as the current episode's manual mapping, then refreshes candidates and reloads the selected timeline immediately.
 
 This pass upgrades persisted danmaku calibration. Manual episode mappings are now serialized to app storage, loaded before episode matching, and written through a synchronized AppGraph path so user-selected danmaku corrections survive app restarts.
+
+This pass upgrades manual danmaku search. The player danmaku panel now exposes an editable anime-title query for Chinese names, original names, and aliases, and `DanmakuRegistry.searchCandidates()` searches providers with the entered title while keeping candidate selection wired to the persisted calibration flow.
