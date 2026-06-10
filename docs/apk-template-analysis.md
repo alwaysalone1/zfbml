@@ -223,3 +223,5 @@ This pass upgrades player panel context-bar layout presentation. `PlayerPanelCon
 This pass upgrades player panel header layout presentation. `PlayerPanelSheetUiState` now owns header spacing, title/subtitle spacing, and dismiss-button height so the player option-panel header follows the same tested model contract as the panel shell, context strip, and tab navigation.
 
 This pass upgrades danmaku episode mapping. `DanmakuManualMapping` now represents user-calibrated anime/episode to provider-token matches, and `DanmakuRegistry` tries those calibrated mappings before automatic provider search while falling back to automatic matching when the calibrated timeline is empty. Replacing manual mappings also clears cached timelines so user corrections take effect immediately.
+
+This pass upgrades player danmaku mapping presentation. `PlayerDanmakuMappingUiState` now summarizes pending, automatic, manual, and loading mapping states, and the player tracks danmaku candidates separately from loaded timeline items so the danmaku panel can show candidate counts, loaded comment counts, calibrated status, and a manual search/calibration entry.

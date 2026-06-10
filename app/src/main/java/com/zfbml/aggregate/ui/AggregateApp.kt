@@ -130,6 +130,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.zfbml.aggregate.AppGraph
 import com.zfbml.aggregate.danmaku.DanmakuItem
+import com.zfbml.aggregate.danmaku.DanmakuMatch
 import com.zfbml.aggregate.danmaku.DanmakuPlatform
 import com.zfbml.aggregate.danmaku.DanmakuProfile
 import com.zfbml.aggregate.danmaku.DanmakuSafeArea
@@ -2352,7 +2353,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.108")
+                setRequestProperty("User-Agent", "ZFBML/0.5.109")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2866,7 +2867,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.108",
+            version = "0.5.109",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -5015,6 +5016,8 @@ private fun PlayerScreen(
     val routeCoverageLabel = remember(routeOptions) { playerRouteCoverageLabel(routeOptions) }
     var routeNotice by remember(stream.id) { mutableStateOf<String?>(null) }
     var danmakuItems by remember { mutableStateOf<List<DanmakuItem>>(emptyList()) }
+    var danmakuMatches by remember { mutableStateOf<List<DanmakuMatch>>(emptyList()) }
+    var danmakuMatching by remember { mutableStateOf(false) }
     var danmakuEnabled by remember { mutableStateOf(true) }
     var density by remember { mutableFloatStateOf(0.32f) }
     var danmakuAlpha by remember { mutableFloatStateOf(0.76f) }
@@ -5111,7 +5114,18 @@ private fun PlayerScreen(
         }
     }
     LaunchedEffect(detail.providerId, detail.url, currentEpisode.providerId, currentEpisode.id) {
-        danmakuItems = graph.danmakuRegistry.fetchBestTimeline(detail, currentEpisode)
+        danmakuMatching = true
+        danmakuItems = emptyList()
+        try {
+            danmakuMatches = runCatching {
+                graph.danmakuRegistry.matchAll(detail, currentEpisode)
+            }.getOrDefault(emptyList())
+            danmakuItems = runCatching {
+                graph.danmakuRegistry.fetchBestTimeline(detail, currentEpisode)
+            }.getOrDefault(emptyList())
+        } finally {
+            danmakuMatching = false
+        }
     }
     LaunchedEffect(currentEpisode.id, detail.episodes, playerRoutes) {
         if (playerRoutes.isEmpty()) return@LaunchedEffect
@@ -5227,6 +5241,30 @@ private fun PlayerScreen(
         }
         graph.media3DownloadCoordinator.enqueue(currentStream, "${detail.title} ${currentEpisode.title}")
         routeNotice = "\u5df2\u52a0\u5165\u79bb\u7ebf\u7f13\u5b58 \u00b7 ${cacheActionState.reason}"
+    }
+
+    fun refreshDanmakuMapping() {
+        revealControls()
+        routeNotice = "正在重新搜索弹幕候选..."
+        scope.launch {
+            danmakuMatching = true
+            try {
+                val matches = runCatching {
+                    graph.danmakuRegistry.matchAll(detail, currentEpisode)
+                }.getOrDefault(emptyList())
+                danmakuMatches = matches
+                danmakuItems = runCatching {
+                    graph.danmakuRegistry.fetchBestTimeline(detail, currentEpisode)
+                }.getOrDefault(emptyList())
+                routeNotice = when {
+                    danmakuItems.isNotEmpty() -> "已加载 ${danmakuItems.size} 条弹幕 · ${matches.size} 个候选"
+                    matches.isNotEmpty() -> "已找到 ${matches.size} 个弹幕候选，可继续手动校准"
+                    else -> "暂未找到弹幕候选，可尝试更换番名或手动搜索"
+                }
+            } finally {
+                danmakuMatching = false
+            }
+        }
     }
 
     fun selectRoute(route: RouteCandidate) {
@@ -5647,6 +5685,9 @@ private fun PlayerScreen(
                     currentStream = currentStream,
                     cacheActionState = cacheActionState,
                     danmakuEnabled = danmakuEnabled,
+                    danmakuMatches = danmakuMatches,
+                    danmakuMatching = danmakuMatching,
+                    danmakuTimelineCount = danmakuItems.size,
                     density = density,
                     danmakuAlpha = danmakuAlpha,
                     danmakuFontScale = danmakuFontScale,
@@ -5673,6 +5714,7 @@ private fun PlayerScreen(
                         revealControls()
                         danmakuFontScale = it
                     },
+                    onSearchDanmaku = ::refreshDanmakuMapping,
                     onSpeedSelected = {
                         revealControls()
                         playbackSpeed = it
@@ -7355,6 +7397,9 @@ private fun PlayerOptionPanel(
     currentStream: MediaStream,
     cacheActionState: PlayerCacheActionUiState,
     danmakuEnabled: Boolean,
+    danmakuMatches: List<DanmakuMatch>,
+    danmakuMatching: Boolean,
+    danmakuTimelineCount: Int,
     density: Float,
     danmakuAlpha: Float,
     danmakuFontScale: Float,
@@ -7369,6 +7414,7 @@ private fun PlayerOptionPanel(
     onDensityChange: (Float) -> Unit,
     onDanmakuAlphaChange: (Float) -> Unit,
     onDanmakuFontScaleChange: (Float) -> Unit,
+    onSearchDanmaku: () -> Unit,
     onSpeedSelected: (Float) -> Unit,
     onShowPanel: (PlayerPanel) -> Unit,
     onOffline: () -> Unit,
@@ -7490,10 +7536,14 @@ private fun PlayerOptionPanel(
                         )
                         PlayerPanel.Danmaku -> PlayerDanmakuSettingsPanel(
                             danmakuEnabled = danmakuEnabled,
+                            matches = danmakuMatches,
+                            matching = danmakuMatching,
+                            timelineCount = danmakuTimelineCount,
                             density = density,
                             alpha = danmakuAlpha,
                             fontScale = danmakuFontScale,
                             onToggleDanmaku = onToggleDanmaku,
+                            onSearchDanmaku = onSearchDanmaku,
                             onDensityChange = onDensityChange,
                             onAlphaChange = onDanmakuAlphaChange,
                             onFontScaleChange = onDanmakuFontScaleChange,
@@ -7927,20 +7977,27 @@ private fun PlayerMoreActionTile(action: PlayerMoreAction, modifier: Modifier = 
 @Composable
 private fun PlayerDanmakuSettingsPanel(
     danmakuEnabled: Boolean,
+    matches: List<DanmakuMatch>,
+    matching: Boolean,
+    timelineCount: Int,
     density: Float,
     alpha: Float,
     fontScale: Float,
     onToggleDanmaku: () -> Unit,
+    onSearchDanmaku: () -> Unit,
     onDensityChange: (Float) -> Unit,
     onAlphaChange: (Float) -> Unit,
     onFontScaleChange: (Float) -> Unit,
 ) {
-    val state = remember(danmakuEnabled, density, alpha, fontScale) {
+    val state = remember(danmakuEnabled, density, alpha, fontScale, matches, matching, timelineCount) {
         buildPlayerDanmakuSettingsUiState(
             enabled = danmakuEnabled,
             density = density,
             alpha = alpha,
             fontScale = fontScale,
+            matches = matches,
+            matching = matching,
+            timelineCount = timelineCount,
         )
     }
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -7958,6 +8015,22 @@ private fun PlayerDanmakuSettingsPanel(
             trailingTone = state.tone,
             rowState = state.toggleRowState,
             onClick = onToggleDanmaku,
+        )
+        PlayerSelectableRow(
+            title = state.mapping.title,
+            subtitle = state.mapping.subtitle,
+            selected = state.mapping.selected,
+            icon = Icons.Filled.Search,
+            enabled = state.mapping.actionEnabled,
+            trailing = state.mapping.actionLabel,
+            badges = state.mapping.badges,
+            actionEnabled = state.mapping.actionEnabled,
+            iconAlpha = state.mapping.iconAlpha,
+            titleAlpha = state.mapping.titleAlpha,
+            subtitleAlpha = state.mapping.subtitleAlpha,
+            trailingTone = state.mapping.trailingTone,
+            rowState = state.mapping.rowState,
+            onClick = onSearchDanmaku,
         )
         PlayerSliderSetting(
             state = state.densitySlider,

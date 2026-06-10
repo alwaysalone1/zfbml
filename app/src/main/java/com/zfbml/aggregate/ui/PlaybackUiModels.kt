@@ -2,6 +2,8 @@ package com.zfbml.aggregate.ui
 
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.zfbml.aggregate.danmaku.DanmakuMatch
+import com.zfbml.aggregate.danmaku.DanmakuMatchSource
 import com.zfbml.aggregate.source.Episode
 import com.zfbml.aggregate.source.DownloadPolicy
 import com.zfbml.aggregate.source.MediaDetail
@@ -743,8 +745,25 @@ internal data class PlayerDanmakuSettingsUiState(
     val densitySlider: PlayerDanmakuSliderUiState,
     val alphaSlider: PlayerDanmakuSliderUiState,
     val fontScaleSlider: PlayerDanmakuSliderUiState,
+    val mapping: PlayerDanmakuMappingUiState,
     val safetySummary: String,
     val tone: SourceLibraryTone,
+)
+
+internal data class PlayerDanmakuMappingUiState(
+    val title: String,
+    val subtitle: String,
+    val actionLabel: String,
+    val badges: List<SourceLibraryChipUiState>,
+    val selected: Boolean,
+    val highlighted: Boolean,
+    val prominent: Boolean,
+    val actionEnabled: Boolean,
+    val iconAlpha: Float,
+    val titleAlpha: Float,
+    val subtitleAlpha: Float,
+    val trailingTone: SourceLibraryTone,
+    val rowState: PlayerSelectableRowUiState,
 )
 
 internal data class PlayerDanmakuSliderUiState(
@@ -3359,6 +3378,9 @@ internal fun buildPlayerDanmakuSettingsUiState(
     density: Float,
     alpha: Float,
     fontScale: Float,
+    matches: List<DanmakuMatch> = emptyList(),
+    matching: Boolean = false,
+    timelineCount: Int = 0,
     safeArea: PlayerDanmakuSafeAreaUiState? = null,
 ): PlayerDanmakuSettingsUiState {
     val densityLabel = formatDanmakuDensityForUi(density)
@@ -3370,6 +3392,11 @@ internal fun buildPlayerDanmakuSettingsUiState(
     val tone = if (enabled) SourceLibraryTone.Primary else SourceLibraryTone.Muted
     val toggleHighlighted = enabled
     val toggleProminent = enabled
+    val mapping = buildPlayerDanmakuMappingUiState(
+        matches = matches,
+        matching = matching,
+        timelineCount = timelineCount,
+    )
     return PlayerDanmakuSettingsUiState(
         toggleTitle = if (enabled) "弹幕已开启" else "弹幕已关闭",
         toggleSubtitle = if (enabled) "点击关闭弹幕显示" else "点击开启弹幕显示",
@@ -3441,9 +3468,82 @@ internal fun buildPlayerDanmakuSettingsUiState(
             inactiveTrackTone = null,
             inactiveTrackAlpha = 0.22f,
         ),
+        mapping = mapping,
         safetySummary = safetySummary,
         tone = tone,
     )
+}
+
+internal fun buildPlayerDanmakuMappingUiState(
+    matches: List<DanmakuMatch>,
+    matching: Boolean,
+    timelineCount: Int,
+): PlayerDanmakuMappingUiState {
+    val candidateCount = matches.size
+    val best = matches.maxByOrNull { it.score }
+    val manual = best?.source == DanmakuMatchSource.Manual
+    val loadedCount = timelineCount.coerceAtLeast(0)
+    val tone = when {
+        manual -> SourceLibraryTone.Primary
+        matching -> SourceLibraryTone.Online
+        loadedCount > 0 -> SourceLibraryTone.Cache
+        candidateCount > 0 -> SourceLibraryTone.Backup
+        else -> SourceLibraryTone.Muted
+    }
+    val title = when {
+        manual -> "弹幕映射已校准"
+        matching -> "正在匹配弹幕"
+        candidateCount > 0 -> "弹幕自动匹配"
+        else -> "弹幕源待校准"
+    }
+    val subtitle = when {
+        manual -> best?.let { match ->
+            "${match.providerId.danmakuProviderLabel()} · ${match.episodeTitle.orEmpty().ifBlank { match.title }}"
+        }.orEmpty()
+        matching -> "按番名和当前集数搜索 Bilibili / 腾讯 / 爱奇艺 / 优酷"
+        loadedCount > 0 -> "已加载 $loadedCount 条 · ${best?.providerId?.danmakuProviderLabel().orEmpty().ifBlank { "自动源" }}"
+        candidateCount > 0 -> "找到 $candidateCount 个候选，可手动选择更准确的弹幕源"
+        else -> "未命中自动候选，可手动搜索弹幕源并校准到本集"
+    }
+    val badges = buildList {
+        add(SourceLibraryChipUiState(if (manual) "人工校准" else "自动匹配", tone))
+        if (candidateCount > 0) add(SourceLibraryChipUiState("$candidateCount 候选", SourceLibraryTone.Online))
+        if (loadedCount > 0) add(SourceLibraryChipUiState("$loadedCount 条", SourceLibraryTone.Cache))
+    }
+    return PlayerDanmakuMappingUiState(
+        title = title,
+        subtitle = subtitle,
+        actionLabel = when {
+            matching -> "匹配中"
+            manual -> "重新校准"
+            candidateCount > 0 -> "手动校准"
+            else -> "搜索弹幕"
+        },
+        badges = badges,
+        selected = manual,
+        highlighted = matching || manual || loadedCount > 0,
+        prominent = manual,
+        actionEnabled = !matching,
+        iconAlpha = if (matching || candidateCount > 0 || loadedCount > 0) 1f else 0.5f,
+        titleAlpha = if (candidateCount > 0 || loadedCount > 0 || matching) 0.94f else 0.76f,
+        subtitleAlpha = if (candidateCount > 0 || loadedCount > 0 || matching) 0.86f else 0.68f,
+        trailingTone = tone,
+        rowState = buildPlayerSelectableRowUiState(
+            enabled = true,
+            highlighted = matching || manual || loadedCount > 0,
+            prominent = manual,
+        ),
+    )
+}
+
+private fun String.danmakuProviderLabel(): String {
+    return when (this) {
+        "danmaku-bilibili" -> "Bilibili"
+        "danmaku-tencent" -> "腾讯视频"
+        "danmaku-iqiyi" -> "爱奇艺"
+        "danmaku-youku" -> "优酷"
+        else -> this.ifBlank { "弹幕源" }
+    }
 }
 
 internal fun buildPlayerQualityPanelUiState(

@@ -1,6 +1,9 @@
 package com.zfbml.aggregate.ui
 
 import androidx.compose.ui.unit.dp
+import com.zfbml.aggregate.danmaku.DanmakuMatch
+import com.zfbml.aggregate.danmaku.DanmakuMatchSource
+import com.zfbml.aggregate.danmaku.DanmakuPlatform
 import com.zfbml.aggregate.source.Episode
 import com.zfbml.aggregate.source.DownloadPolicy
 import com.zfbml.aggregate.source.MediaDetail
@@ -2339,6 +2342,14 @@ class PlaybackUiModelsTest {
         assertEquals(SourceLibraryTone.Backup, enabled.fontScaleSlider.thumbTone)
         assertEquals(SourceLibraryTone.Backup, enabled.fontScaleSlider.activeTrackTone)
         assertEquals(30.dp, enabled.fontScaleSlider.sliderHeight)
+        assertEquals("弹幕源待校准", enabled.mapping.title)
+        assertEquals("搜索弹幕", enabled.mapping.actionLabel)
+        assertEquals(listOf("自动匹配"), enabled.mapping.badges.map { it.label })
+        assertTrue(enabled.mapping.actionEnabled)
+        assertFalse(enabled.mapping.selected)
+        assertFalse(enabled.mapping.prominent)
+        assertEquals(SourceLibraryTone.Muted, enabled.mapping.trailingTone)
+        assertEquals(48.dp, enabled.mapping.rowState.minHeight)
         assertTrue(enabled.safetySummary.contains("避让"))
         assertEquals(SourceLibraryTone.Primary, enabled.tone)
         assertEquals("弹幕已关闭", disabled.toggleTitle)
@@ -2363,6 +2374,63 @@ class PlaybackUiModelsTest {
         assertEquals("108%", disabled.fontScaleSlider.valueText)
         assertEquals(1.08f, disabled.fontScaleSlider.value)
         assertEquals(SourceLibraryTone.Muted, disabled.tone)
+    }
+
+    @Test
+    fun playerDanmakuMappingUiStateSummarizesAutomaticAndManualMatches() {
+        val automatic = buildPlayerDanmakuSettingsUiState(
+            enabled = true,
+            density = 0.6f,
+            alpha = 0.8f,
+            fontScale = 0.7f,
+            matches = listOf(
+                danmakuMatch("danmaku-bilibili", score = 90),
+                danmakuMatch("danmaku-tencent", score = 80),
+            ),
+            matching = false,
+            timelineCount = 345,
+        ).mapping
+        val manual = buildPlayerDanmakuSettingsUiState(
+            enabled = true,
+            density = 0.6f,
+            alpha = 0.8f,
+            fontScale = 0.7f,
+            matches = listOf(
+                danmakuMatch("danmaku-bilibili", source = DanmakuMatchSource.Manual, score = 100_000),
+                danmakuMatch("danmaku-tencent", score = 80),
+            ),
+            matching = false,
+            timelineCount = 120,
+        ).mapping
+        val loading = buildPlayerDanmakuSettingsUiState(
+            enabled = true,
+            density = 0.6f,
+            alpha = 0.8f,
+            fontScale = 0.7f,
+            matching = true,
+        ).mapping
+
+        assertEquals("弹幕自动匹配", automatic.title)
+        assertEquals("手动校准", automatic.actionLabel)
+        assertEquals(listOf("自动匹配", "2 候选", "345 条"), automatic.badges.map { it.label })
+        assertTrue(automatic.subtitle.contains("345"))
+        assertEquals(SourceLibraryTone.Cache, automatic.trailingTone)
+        assertTrue(automatic.highlighted)
+        assertFalse(automatic.prominent)
+
+        assertEquals("弹幕映射已校准", manual.title)
+        assertEquals("重新校准", manual.actionLabel)
+        assertEquals(listOf("人工校准", "2 候选", "120 条"), manual.badges.map { it.label })
+        assertTrue(manual.selected)
+        assertTrue(manual.prominent)
+        assertEquals(SourceLibraryTone.Primary, manual.trailingTone)
+        assertEquals(SourceLibraryTone.Primary, manual.rowState.containerTone)
+
+        assertEquals("正在匹配弹幕", loading.title)
+        assertEquals("匹配中", loading.actionLabel)
+        assertFalse(loading.actionEnabled)
+        assertEquals(SourceLibraryTone.Online, loading.trailingTone)
+        assertTrue(loading.highlighted)
     }
 
     @Test
@@ -3748,6 +3816,22 @@ class PlaybackUiModelsTest {
             domains = domains,
             requiresWebView = requiresWebView,
             supportsDownload = supportsDownload,
+        )
+    }
+
+    private fun danmakuMatch(
+        providerId: String,
+        source: DanmakuMatchSource = DanmakuMatchSource.Automatic,
+        score: Int,
+    ): DanmakuMatch {
+        return DanmakuMatch(
+            providerId = providerId,
+            platform = DanmakuPlatform.Local,
+            title = "Test Anime",
+            episodeTitle = "Episode 1",
+            score = score,
+            token = providerId,
+            source = source,
         )
     }
 

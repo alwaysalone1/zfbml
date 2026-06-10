@@ -70,6 +70,7 @@ data class DanmakuMatch(
     val episodeTitle: String? = null,
     val score: Int,
     val token: String,
+    val source: DanmakuMatchSource = DanmakuMatchSource.Automatic,
 )
 
 data class DanmakuManualMapping(
@@ -80,3 +81,8 @@ data class DanmakuManualMapping(
     val episodeIndex: Int? = null,
     val match: DanmakuMatch,
 )
+
+enum class DanmakuMatchSource {
+    Automatic,
+    Manual,
+}

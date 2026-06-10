@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.109
+
+English:
+
+- Player danmaku settings now expose automatic/manual mapping state through `PlayerDanmakuMappingUiState`, including candidate count, loaded timeline count, calibrated status, action labels, row tone, and badges.
+- `PlayerScreen` now tracks danmaku candidate matches separately from loaded timeline items, refreshes candidates during episode load, and exposes a search/calibration entry from the danmaku panel.
+- Added unit coverage for pending, automatic, manual, and loading danmaku mapping presentation states.
+- App version labels, request user agents, and README notes are now updated to `0.5.109`.
+
 ### v0.5.108
 
 English:

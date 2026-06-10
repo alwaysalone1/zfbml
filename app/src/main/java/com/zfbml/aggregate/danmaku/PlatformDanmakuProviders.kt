@@ -133,7 +133,10 @@ class DanmakuRegistry(
             .filter { it.matches(detail, episode) }
             .mapNotNull { mapping ->
                 if (mapping.match.providerId !in byId) return@mapNotNull null
-                mapping.match.copy(score = maxOf(mapping.match.score, MANUAL_MAPPING_SCORE))
+                mapping.match.copy(
+                    score = maxOf(mapping.match.score, MANUAL_MAPPING_SCORE),
+                    source = DanmakuMatchSource.Manual,
+                )
             }
             .sortedByDescending { it.score }
     }
