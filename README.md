@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.106
+
+English:
+
+- Player option-panel context bars now carry layout metrics in `PlayerPanelContextUiState`, including corner radius, row padding, row spacing, icon-box size, icon size, icon corner radius, and text spacing.
+- `PlayerPanelContextBar` now renders current playback context from state-owned layout values instead of Compose-local constants.
+- Added unit coverage for context-bar dimensions, padding, and spacing.
+- App version labels, request user agents, and README notes are now updated to `0.5.106`.
+
 ### v0.5.105
 
 English:

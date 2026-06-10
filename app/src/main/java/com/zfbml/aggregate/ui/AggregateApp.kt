@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.105")
+                setRequestProperty("User-Agent", "ZFBML/0.5.106")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2866,7 +2866,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.105",
+            version = "0.5.106",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -7568,22 +7568,32 @@ private fun PlayerPanelContextBar(
     val iconColor = sourceLibraryToneColor(state.iconTone)
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(state.cornerRadius),
         color = Color.White.copy(alpha = state.containerAlpha),
         border = BorderStroke(1.dp, Color.White.copy(alpha = state.borderAlpha)),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 11.dp, vertical = 9.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = state.horizontalPadding, vertical = state.verticalPadding),
+            horizontalArrangement = Arrangement.spacedBy(state.rowSpacing),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
-                modifier = Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)).background(iconColor.copy(alpha = state.iconContainerAlpha)),
+                modifier = Modifier
+                    .size(state.iconBoxSize)
+                    .clip(RoundedCornerShape(state.iconCornerRadius))
+                    .background(iconColor.copy(alpha = state.iconContainerAlpha)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = iconColor, modifier = Modifier.size(18.dp))
+                Icon(
+                    Icons.Filled.PlayArrow,
+                    contentDescription = null,
+                    tint = iconColor,
+                    modifier = Modifier.size(state.iconSize),
+                )
             }
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(state.textSpacing)) {
                 Text(
                     state.title,
                     style = MaterialTheme.typography.labelLarge,

@@ -886,6 +886,14 @@ internal data class PlayerPanelContextUiState(
     val iconContainerAlpha: Float,
     val titleAlpha: Float,
     val metadataAlpha: Float,
+    val cornerRadius: Dp,
+    val horizontalPadding: Dp,
+    val verticalPadding: Dp,
+    val rowSpacing: Dp,
+    val iconBoxSize: Dp,
+    val iconSize: Dp,
+    val iconCornerRadius: Dp,
+    val textSpacing: Dp,
 )
 
 internal data class PlayerPanelTabStripUiState(
@@ -3739,6 +3747,14 @@ internal fun buildPlayerPanelSheetUiState(
             iconContainerAlpha = 0.18f,
             titleAlpha = 1f,
             metadataAlpha = 1f,
+            cornerRadius = 8.dp,
+            horizontalPadding = 11.dp,
+            verticalPadding = 9.dp,
+            rowSpacing = 10.dp,
+            iconBoxSize = 32.dp,
+            iconSize = 18.dp,
+            iconCornerRadius = 8.dp,
+            textSpacing = 3.dp,
         ),
         tabStrip = PlayerPanelTabStripUiState(
             height = 38.dp,
