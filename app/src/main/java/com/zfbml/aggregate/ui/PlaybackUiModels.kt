@@ -908,6 +908,32 @@ internal enum class PlayerSeekFeedbackPlacement {
     End,
 }
 
+internal data class PlayerSeekBarUiState(
+    val positionLabel: String,
+    val durationLabel: String,
+    val displayPositionMs: Long,
+    val durationMs: Long,
+    val progressFraction: Float?,
+    val seekable: Boolean,
+    val value: Float,
+    val valueRange: ClosedFloatingPointRange<Float>,
+    val steps: Int,
+    val rowSpacing: Dp,
+    val timeLabelWidth: Dp,
+    val timeLabelTone: SourceLibraryTone?,
+    val currentTimeAlpha: Float,
+    val durationTimeAlpha: Float,
+    val sliderHeight: Dp,
+    val sliderThumbTone: SourceLibraryTone,
+    val sliderActiveTrackTone: SourceLibraryTone,
+    val sliderInactiveTrackTone: SourceLibraryTone?,
+    val sliderInactiveTrackAlpha: Float,
+    val loadingTrackHeight: Dp,
+    val loadingTrackTone: SourceLibraryTone,
+    val loadingTrackBackgroundTone: SourceLibraryTone?,
+    val loadingTrackBackgroundAlpha: Float,
+)
+
 internal data class RoutePanelUiState(
     val recommendedRoute: RouteCandidate?,
     val selectedRoute: RouteCandidate?,
@@ -3083,6 +3109,57 @@ internal fun playerProgressPollDelayMs(
         controlsVisible -> 300L
         else -> 500L
     }
+}
+
+internal fun formatPlaybackTimeForUi(ms: Long): String {
+    val totalSeconds = (ms / 1000L).coerceAtLeast(0L)
+    val hours = totalSeconds / 3600L
+    val minutes = (totalSeconds % 3600L) / 60L
+    val seconds = totalSeconds % 60L
+    return if (hours > 0L) {
+        "%d:%02d:%02d".format(hours, minutes, seconds)
+    } else {
+        "%02d:%02d".format(minutes, seconds)
+    }
+}
+
+internal fun buildPlayerSeekBarUiState(
+    positionMs: Long,
+    durationMs: Long,
+    pendingSeekMs: Long? = null,
+): PlayerSeekBarUiState {
+    val normalizedDurationMs = durationMs.coerceAtLeast(0L)
+    val seekable = normalizedDurationMs > 0L
+    val displayPositionMs = if (seekable) {
+        (pendingSeekMs ?: positionMs).coerceIn(0L, normalizedDurationMs)
+    } else {
+        0L
+    }
+    return PlayerSeekBarUiState(
+        positionLabel = formatPlaybackTimeForUi(displayPositionMs),
+        durationLabel = if (seekable) formatPlaybackTimeForUi(normalizedDurationMs) else "--:--",
+        displayPositionMs = displayPositionMs,
+        durationMs = normalizedDurationMs,
+        progressFraction = if (seekable) displayPositionMs.toFloat() / normalizedDurationMs.toFloat() else null,
+        seekable = seekable,
+        value = if (seekable) displayPositionMs.toFloat() else 0f,
+        valueRange = if (seekable) 0f..normalizedDurationMs.toFloat() else 0f..1f,
+        steps = 0,
+        rowSpacing = 8.dp,
+        timeLabelWidth = 48.dp,
+        timeLabelTone = null,
+        currentTimeAlpha = 1f,
+        durationTimeAlpha = 0.78f,
+        sliderHeight = 30.dp,
+        sliderThumbTone = SourceLibraryTone.Primary,
+        sliderActiveTrackTone = SourceLibraryTone.Primary,
+        sliderInactiveTrackTone = null,
+        sliderInactiveTrackAlpha = 0.24f,
+        loadingTrackHeight = 3.dp,
+        loadingTrackTone = SourceLibraryTone.Online,
+        loadingTrackBackgroundTone = null,
+        loadingTrackBackgroundAlpha = 0.18f,
+    )
 }
 
 internal fun buildPlayerSelectableRowUiState(

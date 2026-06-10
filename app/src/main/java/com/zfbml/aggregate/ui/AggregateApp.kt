@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.100")
+                setRequestProperty("User-Agent", "ZFBML/0.5.101")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2866,7 +2866,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.100",
+            version = "0.5.101",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -5093,7 +5093,7 @@ private fun PlayerScreen(
         )
         engine.player.seekTo(target)
         val direction = if (deltaMs >= 0L) "快进" else "后退"
-        seekFeedbackText = "$direction ${kotlin.math.abs(deltaMs) / 1000L} 秒 · ${formatPlaybackTime(target)}"
+        seekFeedbackText = "$direction ${kotlin.math.abs(deltaMs) / 1000L} 秒 · ${formatPlaybackTimeForUi(target)}"
         seekFeedbackPlacement = playerSeekFeedbackPlacement(deltaMs, fromGesture)
         seekFeedbackSerial += 1
     }
@@ -6433,10 +6433,12 @@ private fun PlayerBottomControls(
     modifier: Modifier = Modifier,
 ) {
     var pendingSeekMs by remember(currentStream.id) { mutableStateOf<Long?>(null) }
-    val displayPositionMs = if (durationMs > 0L) {
-        (pendingSeekMs ?: positionMs).coerceIn(0L, durationMs)
-    } else {
-        0L
+    val seekBarState = remember(positionMs, durationMs, pendingSeekMs) {
+        buildPlayerSeekBarUiState(
+            positionMs = positionMs,
+            durationMs = durationMs,
+            pendingSeekMs = pendingSeekMs,
+        )
     }
     val routeName = currentRoute?.routeName.orEmpty().ifBlank { currentStream.protocol.displayName() }
     val sourceName = currentRoute?.sourceName ?: currentStream.metadata["routeProviderName"] ?: currentStream.providerId
@@ -6462,45 +6464,56 @@ private fun PlayerBottomControls(
         verticalArrangement = Arrangement.spacedBy(if (compact) 5.dp else 7.dp),
     ) {
         if (!compact) {
+            val timeLabelColor = seekBarState.timeLabelTone
+                ?.let { sourceLibraryToneColor(it) }
+                ?: Color.White
+            val sliderInactiveTrackColor = seekBarState.sliderInactiveTrackTone
+                ?.let { sourceLibraryToneColor(it) }
+                ?: Color.White
+            val loadingTrackColor = sourceLibraryToneColor(seekBarState.loadingTrackTone)
+            val loadingTrackBackgroundColor = seekBarState.loadingTrackBackgroundTone
+                ?.let { sourceLibraryToneColor(it) }
+                ?: Color.White
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(seekBarState.rowSpacing),
             ) {
                 Text(
-                    text = formatPlaybackTime(displayPositionMs),
+                    text = seekBarState.positionLabel,
                     style = MaterialTheme.typography.labelMedium,
-                    color = Color.White,
-                    modifier = Modifier.width(48.dp),
+                    color = timeLabelColor.copy(alpha = seekBarState.currentTimeAlpha),
+                    modifier = Modifier.width(seekBarState.timeLabelWidth),
                 )
-                if (durationMs > 0L) {
+                if (seekBarState.seekable) {
                     Slider(
-                        value = displayPositionMs.toFloat(),
+                        value = seekBarState.value,
                         onValueChange = { pendingSeekMs = it.toLong() },
                         onValueChangeFinished = {
                             pendingSeekMs?.let(onSeek)
                             pendingSeekMs = null
                         },
-                        valueRange = 0f..durationMs.toFloat(),
+                        valueRange = seekBarState.valueRange,
+                        steps = seekBarState.steps,
                         colors = SliderDefaults.colors(
-                            thumbColor = AnimeAccentPink,
-                            activeTrackColor = AnimeAccentPink,
-                            inactiveTrackColor = Color.White.copy(alpha = 0.24f),
+                            thumbColor = sourceLibraryToneColor(seekBarState.sliderThumbTone),
+                            activeTrackColor = sourceLibraryToneColor(seekBarState.sliderActiveTrackTone),
+                            inactiveTrackColor = sliderInactiveTrackColor.copy(alpha = seekBarState.sliderInactiveTrackAlpha),
                         ),
-                        modifier = Modifier.weight(1f).height(30.dp).focusable(),
+                        modifier = Modifier.weight(1f).height(seekBarState.sliderHeight).focusable(),
                     )
                 } else {
                     LinearProgressIndicator(
-                        modifier = Modifier.weight(1f).height(3.dp),
-                        color = AnimeAccentCyan,
-                        trackColor = Color.White.copy(alpha = 0.18f),
+                        modifier = Modifier.weight(1f).height(seekBarState.loadingTrackHeight),
+                        color = loadingTrackColor,
+                        trackColor = loadingTrackBackgroundColor.copy(alpha = seekBarState.loadingTrackBackgroundAlpha),
                     )
                 }
                 Text(
-                    text = if (durationMs > 0L) formatPlaybackTime(durationMs) else "--:--",
+                    text = seekBarState.durationLabel,
                     style = MaterialTheme.typography.labelMedium,
-                    color = Color.White.copy(alpha = 0.78f),
-                    modifier = Modifier.width(48.dp),
+                    color = timeLabelColor.copy(alpha = seekBarState.durationTimeAlpha),
+                    modifier = Modifier.width(seekBarState.timeLabelWidth),
                 )
             }
 
@@ -6518,7 +6531,7 @@ private fun PlayerBottomControls(
 
         } else {
             PlayerCompactInteractionRow(
-                progressFraction = if (durationMs > 0L) displayPositionMs.toFloat() / durationMs.toFloat() else null,
+                progressFraction = seekBarState.progressFraction,
                 danmakuEnabled = danmakuEnabled,
                 onToggleDanmaku = onToggleDanmaku,
                 onOpenDanmakuSettings = { onShowPanel(PlayerPanel.Danmaku) },
@@ -9029,18 +9042,6 @@ private fun formatPlaybackStateLabel(label: String): String {
         "READY" -> "播放就绪"
         "ENDED" -> "已播完"
         else -> label.ifBlank { "播放中" }
-    }
-}
-
-private fun formatPlaybackTime(ms: Long): String {
-    val totalSeconds = (ms / 1000L).coerceAtLeast(0L)
-    val hours = totalSeconds / 3600L
-    val minutes = (totalSeconds % 3600L) / 60L
-    val seconds = totalSeconds % 60L
-    return if (hours > 0L) {
-        "%d:%02d:%02d".format(hours, minutes, seconds)
-    } else {
-        "%02d:%02d".format(minutes, seconds)
     }
 }
 

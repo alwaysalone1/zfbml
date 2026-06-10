@@ -1940,19 +1940,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.100",
+            version = "0.5.101",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.100", state.version)
+        assertEquals("0.5.101", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.100" })
+        assertTrue(state.chips.any { it.label == "v0.5.101" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1966,7 +1966,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.100",
+            version = "0.5.101",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,
@@ -3400,6 +3400,65 @@ class PlaybackUiModelsTest {
             42_000L,
             playerSeekTargetMs(currentPositionMs = 32_000L, deltaMs = 10_000L, durationMs = 0L),
         )
+    }
+
+    @Test
+    fun playerSeekBarUiStateFormatsSeekableProgressAndChrome() {
+        val state = buildPlayerSeekBarUiState(
+            positionMs = 65_000L,
+            durationMs = 3_725_000L,
+        )
+
+        assertEquals("01:05", state.positionLabel)
+        assertEquals("1:02:05", state.durationLabel)
+        assertEquals(65_000L, state.displayPositionMs)
+        assertEquals(3_725_000L, state.durationMs)
+        assertEquals(65_000f / 3_725_000f, state.progressFraction ?: -1f, 0.001f)
+        assertTrue(state.seekable)
+        assertEquals(65_000f, state.value, 0.001f)
+        assertEquals(0f, state.valueRange.start, 0.001f)
+        assertEquals(3_725_000f, state.valueRange.endInclusive, 0.001f)
+        assertEquals(0, state.steps)
+        assertEquals(8.dp, state.rowSpacing)
+        assertEquals(48.dp, state.timeLabelWidth)
+        assertNull(state.timeLabelTone)
+        assertEquals(1f, state.currentTimeAlpha)
+        assertEquals(0.78f, state.durationTimeAlpha)
+        assertEquals(30.dp, state.sliderHeight)
+        assertEquals(SourceLibraryTone.Primary, state.sliderThumbTone)
+        assertEquals(SourceLibraryTone.Primary, state.sliderActiveTrackTone)
+        assertNull(state.sliderInactiveTrackTone)
+        assertEquals(0.24f, state.sliderInactiveTrackAlpha)
+        assertEquals(3.dp, state.loadingTrackHeight)
+        assertEquals(SourceLibraryTone.Online, state.loadingTrackTone)
+        assertNull(state.loadingTrackBackgroundTone)
+        assertEquals(0.18f, state.loadingTrackBackgroundAlpha)
+        assertEquals("00:00", formatPlaybackTimeForUi(-5_000L))
+    }
+
+    @Test
+    fun playerSeekBarUiStateUsesPendingSeekAndUnknownDuration() {
+        val pending = buildPlayerSeekBarUiState(
+            positionMs = 10_000L,
+            durationMs = 120_000L,
+            pendingSeekMs = 140_000L,
+        )
+        val unknown = buildPlayerSeekBarUiState(
+            positionMs = 42_000L,
+            durationMs = 0L,
+        )
+
+        assertEquals(120_000L, pending.displayPositionMs)
+        assertEquals("02:00", pending.positionLabel)
+        assertEquals(1f, pending.progressFraction ?: -1f, 0.001f)
+        assertFalse(unknown.seekable)
+        assertEquals("00:00", unknown.positionLabel)
+        assertEquals("--:--", unknown.durationLabel)
+        assertEquals(0L, unknown.displayPositionMs)
+        assertEquals(0f, unknown.value, 0.001f)
+        assertEquals(0f, unknown.valueRange.start, 0.001f)
+        assertEquals(1f, unknown.valueRange.endInclusive, 0.001f)
+        assertNull(unknown.progressFraction)
     }
 
     @Test

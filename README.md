@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.101
+
+English:
+
+- Player bottom seek bars now use `PlayerSeekBarUiState` for current/duration labels, seekability, pending seek clamping, compact progress fraction, time-label sizing/alpha, slider sizing, and track color semantics.
+- `PlayerBottomControls` now renders known-duration sliders and unknown-duration loading tracks from that model instead of deriving progress labels and seek-bar chrome locally in Compose.
+- Added unit coverage for seekable playback progress, pending seek clamping, unknown-duration fallback, and shared playback time formatting.
+- App version labels, request user agents, and README notes are now updated to `0.5.101`.
+
 ### v0.5.100
 
 English:
