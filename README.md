@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.100
+
+English:
+
+- Danmaku settings sliders now expose model-provided vertical spacing, slider height, title/value alpha, thumb/active-track tones, and inactive-track alpha through `PlayerDanmakuSliderUiState`.
+- `PlayerSliderSetting` now renders density, opacity, and font-size controls from those slider presentation fields instead of keeping slider chrome constants locally in Compose.
+- Added unit coverage for shared slider presentation fields and each danmaku slider's semantic color contract.
+- App version labels, request user agents, and README notes are now updated to `0.5.100`.
+
 ### v0.5.99
 
 English:

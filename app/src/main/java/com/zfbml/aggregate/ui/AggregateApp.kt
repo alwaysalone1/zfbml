@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.99")
+                setRequestProperty("User-Agent", "ZFBML/0.5.100")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2866,7 +2866,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.99",
+            version = "0.5.100",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -8607,11 +8607,28 @@ private fun PlayerSliderSetting(
     state: PlayerDanmakuSliderUiState,
     onValueChange: (Float) -> Unit,
 ) {
-    val accent = sourceLibraryToneColor(state.tone)
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    val titleColor = state.titleTone
+        ?.let { sourceLibraryToneColor(it) }
+        ?: Color.White
+    val valueColor = sourceLibraryToneColor(state.valueTone)
+    val thumbColor = sourceLibraryToneColor(state.thumbTone)
+    val activeTrackColor = sourceLibraryToneColor(state.activeTrackTone)
+    val inactiveTrackColor = state.inactiveTrackTone
+        ?.let { sourceLibraryToneColor(it) }
+        ?: Color.White
+    Column(verticalArrangement = Arrangement.spacedBy(state.verticalSpacing)) {
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text(state.title, style = MaterialTheme.typography.bodyMedium, color = Color.White, modifier = Modifier.weight(1f))
-            Text(state.valueText, style = MaterialTheme.typography.labelMedium, color = accent)
+            Text(
+                state.title,
+                style = MaterialTheme.typography.bodyMedium,
+                color = titleColor.copy(alpha = state.titleAlpha),
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                state.valueText,
+                style = MaterialTheme.typography.labelMedium,
+                color = valueColor.copy(alpha = state.valueAlpha),
+            )
         }
         Slider(
             value = state.value,
@@ -8619,11 +8636,11 @@ private fun PlayerSliderSetting(
             valueRange = state.valueRange,
             steps = state.steps,
             colors = SliderDefaults.colors(
-                thumbColor = accent,
-                activeTrackColor = accent,
-                inactiveTrackColor = Color.White.copy(alpha = 0.22f),
+                thumbColor = thumbColor,
+                activeTrackColor = activeTrackColor,
+                inactiveTrackColor = inactiveTrackColor.copy(alpha = state.inactiveTrackAlpha),
             ),
-            modifier = Modifier.fillMaxWidth().height(30.dp),
+            modifier = Modifier.fillMaxWidth().height(state.sliderHeight),
         )
     }
 }

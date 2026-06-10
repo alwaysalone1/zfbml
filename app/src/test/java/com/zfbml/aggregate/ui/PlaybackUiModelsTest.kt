@@ -1940,19 +1940,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.99",
+            version = "0.5.100",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.99", state.version)
+        assertEquals("0.5.100", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.99" })
+        assertTrue(state.chips.any { it.label == "v0.5.100" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1966,7 +1966,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.99",
+            version = "0.5.100",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,
@@ -2307,6 +2307,16 @@ class PlaybackUiModelsTest {
         assertEquals(1f, enabled.densitySlider.valueRange.endInclusive)
         assertEquals(2, enabled.densitySlider.steps)
         assertEquals(SourceLibraryTone.Online, enabled.densitySlider.tone)
+        assertEquals(4.dp, enabled.densitySlider.verticalSpacing)
+        assertEquals(30.dp, enabled.densitySlider.sliderHeight)
+        assertNull(enabled.densitySlider.titleTone)
+        assertEquals(1f, enabled.densitySlider.titleAlpha)
+        assertEquals(SourceLibraryTone.Online, enabled.densitySlider.valueTone)
+        assertEquals(1f, enabled.densitySlider.valueAlpha)
+        assertEquals(SourceLibraryTone.Online, enabled.densitySlider.thumbTone)
+        assertEquals(SourceLibraryTone.Online, enabled.densitySlider.activeTrackTone)
+        assertNull(enabled.densitySlider.inactiveTrackTone)
+        assertEquals(0.22f, enabled.densitySlider.inactiveTrackAlpha)
         assertEquals("透明度", enabled.alphaSlider.title)
         assertEquals("76%", enabled.alphaSlider.valueText)
         assertEquals(0.76f, enabled.alphaSlider.value)
@@ -2314,6 +2324,10 @@ class PlaybackUiModelsTest {
         assertEquals(1f, enabled.alphaSlider.valueRange.endInclusive)
         assertEquals(12, enabled.alphaSlider.steps)
         assertEquals(SourceLibraryTone.Cache, enabled.alphaSlider.tone)
+        assertEquals(SourceLibraryTone.Cache, enabled.alphaSlider.valueTone)
+        assertEquals(SourceLibraryTone.Cache, enabled.alphaSlider.thumbTone)
+        assertEquals(SourceLibraryTone.Cache, enabled.alphaSlider.activeTrackTone)
+        assertEquals(0.22f, enabled.alphaSlider.inactiveTrackAlpha)
         assertEquals("字号", enabled.fontScaleSlider.title)
         assertEquals("72%", enabled.fontScaleSlider.valueText)
         assertEquals(0.72f, enabled.fontScaleSlider.value)
@@ -2321,6 +2335,10 @@ class PlaybackUiModelsTest {
         assertEquals(1.08f, enabled.fontScaleSlider.valueRange.endInclusive)
         assertEquals(8, enabled.fontScaleSlider.steps)
         assertEquals(SourceLibraryTone.Backup, enabled.fontScaleSlider.tone)
+        assertEquals(SourceLibraryTone.Backup, enabled.fontScaleSlider.valueTone)
+        assertEquals(SourceLibraryTone.Backup, enabled.fontScaleSlider.thumbTone)
+        assertEquals(SourceLibraryTone.Backup, enabled.fontScaleSlider.activeTrackTone)
+        assertEquals(30.dp, enabled.fontScaleSlider.sliderHeight)
         assertTrue(enabled.safetySummary.contains("避让"))
         assertEquals(SourceLibraryTone.Primary, enabled.tone)
         assertEquals("弹幕已关闭", disabled.toggleTitle)
