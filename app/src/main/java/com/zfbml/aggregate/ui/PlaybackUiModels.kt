@@ -852,6 +852,7 @@ internal data class PlayerPanelSheetUiState(
     val subtitleAlpha: Float,
     val dismissLabelAlpha: Float,
     val context: PlayerPanelContextUiState,
+    val tabStrip: PlayerPanelTabStripUiState,
     val tabs: List<PlayerPanelTabUiState>,
 )
 
@@ -887,6 +888,12 @@ internal data class PlayerPanelContextUiState(
     val metadataAlpha: Float,
 )
 
+internal data class PlayerPanelTabStripUiState(
+    val height: Dp,
+    val itemSpacing: Dp,
+    val contentPaddingHorizontal: Dp,
+)
+
 internal data class PlayerPanelTabUiState(
     val kind: PlayerPanelKind,
     val label: String,
@@ -901,6 +908,13 @@ internal data class PlayerPanelTabUiState(
     val containerAlpha: Float,
     val contentAlpha: Float,
     val valueAlpha: Float,
+    val width: Dp,
+    val height: Dp,
+    val cornerRadius: Dp,
+    val horizontalPadding: Dp,
+    val verticalPadding: Dp,
+    val contentSpacing: Dp,
+    val iconSize: Dp,
     val tone: SourceLibraryTone,
 )
 
@@ -3697,6 +3711,13 @@ internal fun buildPlayerPanelSheetUiState(
                 else -> 0.32f
             },
             valueAlpha = if (actionEnabled) 0.76f else 0.48f,
+            width = 86.dp,
+            height = 36.dp,
+            cornerRadius = 999.dp,
+            horizontalPadding = 8.dp,
+            verticalPadding = 0.dp,
+            contentSpacing = 4.dp,
+            iconSize = 15.dp,
             tone = tone,
         )
     }
@@ -3718,6 +3739,11 @@ internal fun buildPlayerPanelSheetUiState(
             iconContainerAlpha = 0.18f,
             titleAlpha = 1f,
             metadataAlpha = 1f,
+        ),
+        tabStrip = PlayerPanelTabStripUiState(
+            height = 38.dp,
+            itemSpacing = 7.dp,
+            contentPaddingHorizontal = 1.dp,
         ),
         tabs = listOf(
             panelTab(

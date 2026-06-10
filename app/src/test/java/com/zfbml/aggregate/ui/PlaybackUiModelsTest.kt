@@ -2689,6 +2689,9 @@ class PlaybackUiModelsTest {
         assertEquals(0.18f, state.context.iconContainerAlpha)
         assertEquals(1f, state.context.titleAlpha)
         assertEquals(1f, state.context.metadataAlpha)
+        assertEquals(38.dp, state.tabStrip.height)
+        assertEquals(7.dp, state.tabStrip.itemSpacing)
+        assertEquals(1.dp, state.tabStrip.contentPaddingHorizontal)
         assertEquals(
             listOf(
                 PlayerPanelKind.Quality,
@@ -2711,6 +2714,13 @@ class PlaybackUiModelsTest {
         assertEquals(0.18f, routeTab.containerAlpha)
         assertEquals(1f, routeTab.contentAlpha)
         assertEquals(0.76f, routeTab.valueAlpha)
+        assertEquals(86.dp, routeTab.width)
+        assertEquals(36.dp, routeTab.height)
+        assertEquals(999.dp, routeTab.cornerRadius)
+        assertEquals(8.dp, routeTab.horizontalPadding)
+        assertEquals(0.dp, routeTab.verticalPadding)
+        assertEquals(4.dp, routeTab.contentSpacing)
+        assertEquals(15.dp, routeTab.iconSize)
         assertEquals("12集", state.tabs.first { it.kind == PlayerPanelKind.Episode }.value)
         assertTrue(state.tabs.first { it.kind == PlayerPanelKind.Danmaku }.highlighted)
         assertEquals("开", state.tabs.first { it.kind == PlayerPanelKind.Danmaku }.value)

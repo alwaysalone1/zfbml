@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.104")
+                setRequestProperty("User-Agent", "ZFBML/0.5.105")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2866,7 +2866,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.104",
+            version = "0.5.105",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -7470,7 +7470,7 @@ private fun PlayerOptionPanel(
                     modifier = Modifier.fillMaxWidth(),
                 )
                 PlayerPanelQuickTabs(
-                    tabs = panelSheetState.tabs,
+                    state = panelSheetState,
                     onSelected = { kind -> onShowPanel(kind.asPlayerPanel()) },
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -7607,16 +7607,16 @@ private fun PlayerPanelContextBar(
 
 @Composable
 private fun PlayerPanelQuickTabs(
-    tabs: List<PlayerPanelTabUiState>,
+    state: PlayerPanelSheetUiState,
     onSelected: (PlayerPanelKind) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     LazyRow(
-        modifier = modifier.height(38.dp),
-        horizontalArrangement = Arrangement.spacedBy(7.dp),
-        contentPadding = PaddingValues(horizontal = 1.dp),
+        modifier = modifier.height(state.tabStrip.height),
+        horizontalArrangement = Arrangement.spacedBy(state.tabStrip.itemSpacing),
+        contentPadding = PaddingValues(horizontal = state.tabStrip.contentPaddingHorizontal),
     ) {
-        items(tabs, key = { it.kind }) { tab ->
+        items(state.tabs, key = { it.kind }) { tab ->
             PlayerPanelQuickTab(
                 tab = tab,
                 icon = playerPanelTabIcon(tab.kind),
@@ -7641,22 +7641,22 @@ private fun PlayerPanelQuickTab(
     TextButton(
         onClick = onClick,
         enabled = tab.actionEnabled,
-        modifier = Modifier.width(86.dp).height(36.dp).focusable(),
-        shape = RoundedCornerShape(999.dp),
+        modifier = Modifier.width(tab.width).height(tab.height).focusable(),
+        shape = RoundedCornerShape(tab.cornerRadius),
         colors = ButtonDefaults.textButtonColors(
             containerColor = if (tab.prominent) sourceLibraryToneColor(tab.visualTone).copy(alpha = tab.containerAlpha) else Color.White.copy(alpha = tab.containerAlpha),
             contentColor = contentColor,
             disabledContainerColor = Color.White.copy(alpha = tab.containerAlpha),
             disabledContentColor = contentColor,
         ),
-        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+        contentPadding = PaddingValues(horizontal = tab.horizontalPadding, vertical = tab.verticalPadding),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(tab.contentSpacing),
         ) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(15.dp))
+            Icon(icon, contentDescription = null, modifier = Modifier.size(tab.iconSize))
             Text(
                 text = tab.label,
                 modifier = Modifier.weight(1f),

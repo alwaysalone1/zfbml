@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.105
+
+English:
+
+- Player option-panel quick tabs now use `PlayerPanelTabStripUiState` plus per-tab layout fields for strip height, spacing, content padding, tab sizing, corner radius, icon size, and internal content spacing.
+- `PlayerPanelQuickTabs` and `PlayerPanelQuickTab` now render the panel navigation strip from `PlayerPanelSheetUiState` instead of keeping navigation chrome constants in Compose.
+- Added unit coverage for tab strip sizing and route-tab button presentation fields.
+- App version labels, request user agents, and README notes are now updated to `0.5.105`.
+
 ### v0.5.104
 
 English:
