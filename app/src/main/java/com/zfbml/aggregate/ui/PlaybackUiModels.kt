@@ -577,6 +577,37 @@ internal data class PlayerCompactRecoveryActionUiState(
     val disabledContentAlpha: Float,
 )
 
+internal data class PlayerFullscreenSideDockUiState(
+    val actions: List<PlayerFullscreenDockActionUiState>,
+    val width: Dp,
+    val cornerRadius: Dp,
+    val containerAlpha: Float,
+    val borderAlpha: Float,
+    val verticalPadding: Dp,
+    val actionSpacing: Dp,
+)
+
+internal data class PlayerFullscreenDockActionUiState(
+    val kind: PlayerMoreActionKind,
+    val label: String,
+    val selected: Boolean,
+    val enabled: Boolean,
+    val tone: SourceLibraryTone,
+    val width: Dp,
+    val height: Dp,
+    val cornerRadius: Dp,
+    val iconSize: Dp,
+    val contentSpacing: Dp,
+    val containerTone: SourceLibraryTone?,
+    val containerAlpha: Float,
+    val contentTone: SourceLibraryTone?,
+    val contentAlpha: Float,
+    val disabledContainerTone: SourceLibraryTone?,
+    val disabledContainerAlpha: Float,
+    val disabledContentTone: SourceLibraryTone?,
+    val disabledContentAlpha: Float,
+)
+
 internal data class PortraitRouteInsightUiState(
     val chips: List<PortraitRouteInsightChipUiState>,
 )
@@ -908,6 +939,7 @@ internal enum class PlayerMoreActionKind {
     Route,
     Danmaku,
     Cache,
+    More,
 }
 
 internal data class PlayerDanmakuSafeAreaUiState(
@@ -4271,6 +4303,84 @@ internal fun buildPlayerCompactRecoveryUiState(
         actions = actions,
         rowHeight = 34.dp,
         actionSpacing = 8.dp,
+    )
+}
+
+internal fun buildPlayerFullscreenSideDockUiState(
+    danmakuEnabled: Boolean,
+    routeCount: Int,
+    episodeCount: Int,
+): PlayerFullscreenSideDockUiState {
+    fun dockAction(
+        kind: PlayerMoreActionKind,
+        label: String,
+        enabled: Boolean = true,
+        selected: Boolean = false,
+        tone: SourceLibraryTone,
+    ): PlayerFullscreenDockActionUiState {
+        return PlayerFullscreenDockActionUiState(
+            kind = kind,
+            label = label,
+            selected = selected,
+            enabled = enabled,
+            tone = tone,
+            width = 48.dp,
+            height = 48.dp,
+            cornerRadius = 8.dp,
+            iconSize = 18.dp,
+            contentSpacing = 3.dp,
+            containerTone = if (selected) SourceLibraryTone.Primary else null,
+            containerAlpha = if (selected) 0.16f else 0f,
+            contentTone = if (selected) SourceLibraryTone.Primary else null,
+            contentAlpha = if (selected) 1f else 0.82f,
+            disabledContainerTone = null,
+            disabledContainerAlpha = 0f,
+            disabledContentTone = null,
+            disabledContentAlpha = 0.32f,
+        )
+    }
+    return PlayerFullscreenSideDockUiState(
+        actions = listOf(
+            dockAction(
+                kind = PlayerMoreActionKind.Danmaku,
+                label = if (danmakuEnabled) "弹幕开" else "弹幕关",
+                selected = danmakuEnabled,
+                tone = if (danmakuEnabled) SourceLibraryTone.Primary else SourceLibraryTone.Muted,
+            ),
+            dockAction(
+                kind = PlayerMoreActionKind.Quality,
+                label = "清晰度",
+                tone = SourceLibraryTone.Primary,
+            ),
+            dockAction(
+                kind = PlayerMoreActionKind.Speed,
+                label = "倍速",
+                tone = SourceLibraryTone.Online,
+            ),
+            dockAction(
+                kind = PlayerMoreActionKind.Episode,
+                label = "选集",
+                enabled = episodeCount > 1,
+                tone = SourceLibraryTone.Backup,
+            ),
+            dockAction(
+                kind = PlayerMoreActionKind.Route,
+                label = "换源",
+                enabled = routeCount > 1,
+                tone = SourceLibraryTone.Online,
+            ),
+            dockAction(
+                kind = PlayerMoreActionKind.More,
+                label = "更多",
+                tone = SourceLibraryTone.Muted,
+            ),
+        ),
+        width = 56.dp,
+        cornerRadius = 8.dp,
+        containerAlpha = 0.34f,
+        borderAlpha = 0.08f,
+        verticalPadding = 6.dp,
+        actionSpacing = 4.dp,
     )
 }
 

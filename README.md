@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.104
+
+English:
+
+- Fullscreen side dock controls now use `PlayerFullscreenSideDockUiState` and `PlayerFullscreenDockActionUiState` for dock shell dimensions, action order, labels, enabled/selected state, tones, button sizing, and disabled alpha.
+- `PlayerFullscreenSideDock` and `PlayerFullscreenDockButton` now render danmaku, quality, speed, episode, route, and more shortcuts from dock action state instead of building the dock button list locally in Compose.
+- Added unit coverage for ordered dock actions, selected danmaku state, route/episode availability, and disabled dock action presentation.
+- App version labels, request user agents, and README notes are now updated to `0.5.104`.
+
 ### v0.5.103
 
 English:

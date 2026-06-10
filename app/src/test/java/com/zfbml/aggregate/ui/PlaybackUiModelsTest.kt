@@ -1940,19 +1940,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.103",
+            version = "0.5.104",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.103", state.version)
+        assertEquals("0.5.104", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.103" })
+        assertTrue(state.chips.any { it.label == "v0.5.104" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1966,7 +1966,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.103",
+            version = "0.5.104",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,
@@ -2590,6 +2590,72 @@ class PlaybackUiModelsTest {
         assertFalse(disabledCache.actionEnabled)
         assertEquals(0.42f, disabledCache.tileAlpha)
         assertEquals(0.38f, disabledCache.subtitleAlpha)
+    }
+
+    @Test
+    fun playerFullscreenSideDockUiStateBuildsOrderedDockActions() {
+        val rich = buildPlayerFullscreenSideDockUiState(
+            danmakuEnabled = true,
+            routeCount = 3,
+            episodeCount = 12,
+        )
+        val limited = buildPlayerFullscreenSideDockUiState(
+            danmakuEnabled = false,
+            routeCount = 1,
+            episodeCount = 1,
+        )
+
+        assertEquals(56.dp, rich.width)
+        assertEquals(8.dp, rich.cornerRadius)
+        assertEquals(0.34f, rich.containerAlpha)
+        assertEquals(0.08f, rich.borderAlpha)
+        assertEquals(6.dp, rich.verticalPadding)
+        assertEquals(4.dp, rich.actionSpacing)
+        assertEquals(
+            listOf(
+                PlayerMoreActionKind.Danmaku,
+                PlayerMoreActionKind.Quality,
+                PlayerMoreActionKind.Speed,
+                PlayerMoreActionKind.Episode,
+                PlayerMoreActionKind.Route,
+                PlayerMoreActionKind.More,
+            ),
+            rich.actions.map { it.kind },
+        )
+        val danmaku = rich.actions.first { it.kind == PlayerMoreActionKind.Danmaku }
+        assertEquals("弹幕开", danmaku.label)
+        assertTrue(danmaku.selected)
+        assertTrue(danmaku.enabled)
+        assertEquals(SourceLibraryTone.Primary, danmaku.tone)
+        assertEquals(48.dp, danmaku.width)
+        assertEquals(48.dp, danmaku.height)
+        assertEquals(8.dp, danmaku.cornerRadius)
+        assertEquals(18.dp, danmaku.iconSize)
+        assertEquals(3.dp, danmaku.contentSpacing)
+        assertEquals(SourceLibraryTone.Primary, danmaku.containerTone)
+        assertEquals(0.16f, danmaku.containerAlpha)
+        assertEquals(SourceLibraryTone.Primary, danmaku.contentTone)
+        assertEquals(1f, danmaku.contentAlpha)
+        assertNull(danmaku.disabledContainerTone)
+        assertEquals(0f, danmaku.disabledContainerAlpha)
+        assertNull(danmaku.disabledContentTone)
+        assertEquals(0.32f, danmaku.disabledContentAlpha)
+        assertEquals("选集", rich.actions.first { it.kind == PlayerMoreActionKind.Episode }.label)
+        assertTrue(rich.actions.first { it.kind == PlayerMoreActionKind.Episode }.enabled)
+        assertTrue(rich.actions.first { it.kind == PlayerMoreActionKind.Route }.enabled)
+        assertEquals("更多", rich.actions.last().label)
+
+        val disabledDanmaku = limited.actions.first { it.kind == PlayerMoreActionKind.Danmaku }
+        assertEquals("弹幕关", disabledDanmaku.label)
+        assertFalse(disabledDanmaku.selected)
+        assertTrue(disabledDanmaku.enabled)
+        assertEquals(SourceLibraryTone.Muted, disabledDanmaku.tone)
+        assertNull(disabledDanmaku.containerTone)
+        assertEquals(0f, disabledDanmaku.containerAlpha)
+        assertNull(disabledDanmaku.contentTone)
+        assertEquals(0.82f, disabledDanmaku.contentAlpha)
+        assertFalse(limited.actions.first { it.kind == PlayerMoreActionKind.Episode }.enabled)
+        assertFalse(limited.actions.first { it.kind == PlayerMoreActionKind.Route }.enabled)
     }
 
     @Test

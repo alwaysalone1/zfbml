@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.103")
+                setRequestProperty("User-Agent", "ZFBML/0.5.104")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2866,7 +2866,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.103",
+            version = "0.5.104",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -6875,87 +6875,98 @@ private fun PlayerFullscreenSideDock(
     onToggleDanmaku: () -> Unit,
     onShowPanel: (PlayerPanel) -> Unit,
 ) {
+    val state = remember(danmakuEnabled, routeCount, episodeCount) {
+        buildPlayerFullscreenSideDockUiState(
+            danmakuEnabled = danmakuEnabled,
+            routeCount = routeCount,
+            episodeCount = episodeCount,
+        )
+    }
     Column(
         modifier = Modifier
-            .width(56.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color.Black.copy(alpha = 0.34f))
-            .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(8.dp))
-            .padding(vertical = 6.dp),
+            .width(state.width)
+            .clip(RoundedCornerShape(state.cornerRadius))
+            .background(Color.Black.copy(alpha = state.containerAlpha))
+            .border(1.dp, Color.White.copy(alpha = state.borderAlpha), RoundedCornerShape(state.cornerRadius))
+            .padding(vertical = state.verticalPadding),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(state.actionSpacing),
     ) {
-        PlayerFullscreenDockButton(
-            icon = Icons.Filled.ClosedCaption,
-            label = if (danmakuEnabled) "弹幕开" else "弹幕关",
-            selected = danmakuEnabled,
-            onClick = onToggleDanmaku,
-        )
-        PlayerFullscreenDockButton(
-            icon = Icons.Filled.HighQuality,
-            label = "清晰度",
-            onClick = { onShowPanel(PlayerPanel.Quality) },
-        )
-        PlayerFullscreenDockButton(
-            icon = Icons.Filled.Speed,
-            label = "倍速",
-            onClick = { onShowPanel(PlayerPanel.Speed) },
-        )
-        PlayerFullscreenDockButton(
-            icon = Icons.AutoMirrored.Filled.PlaylistPlay,
-            label = "选集",
-            enabled = episodeCount > 1,
-            onClick = { onShowPanel(PlayerPanel.Episode) },
-        )
-        PlayerFullscreenDockButton(
-            icon = Icons.Filled.VideoLibrary,
-            label = "换源",
-            enabled = routeCount > 1,
-            onClick = { onShowPanel(PlayerPanel.Route) },
-        )
-        PlayerFullscreenDockButton(
-            icon = Icons.Filled.MoreVert,
-            label = "更多",
-            onClick = { onShowPanel(PlayerPanel.More) },
-        )
+        state.actions.forEach { action ->
+            PlayerFullscreenDockButton(
+                state = action,
+                icon = playerMoreActionIcon(action.kind),
+                onClick = playerFullscreenDockClick(
+                    kind = action.kind,
+                    onToggleDanmaku = onToggleDanmaku,
+                    onShowPanel = onShowPanel,
+                ),
+            )
+        }
     }
 }
 
 @Composable
 private fun PlayerFullscreenDockButton(
+    state: PlayerFullscreenDockActionUiState,
     icon: ImageVector,
-    label: String,
     onClick: () -> Unit,
-    selected: Boolean = false,
-    enabled: Boolean = true,
 ) {
-    val accent = if (selected) AnimeAccentPink else Color.White.copy(alpha = 0.82f)
+    val containerColor = state.containerTone
+        ?.let { sourceLibraryToneColor(it) }
+        ?: Color.White
+    val contentColor = state.contentTone
+        ?.let { sourceLibraryToneColor(it) }
+        ?: Color.White
+    val disabledContainerColor = state.disabledContainerTone
+        ?.let { sourceLibraryToneColor(it) }
+        ?: Color.White
+    val disabledContentColor = state.disabledContentTone
+        ?.let { sourceLibraryToneColor(it) }
+        ?: Color.White
     TextButton(
         onClick = onClick,
-        enabled = enabled,
-        modifier = Modifier.width(48.dp).height(48.dp).focusable(),
-        shape = RoundedCornerShape(8.dp),
+        enabled = state.enabled,
+        modifier = Modifier.width(state.width).height(state.height).focusable(),
+        shape = RoundedCornerShape(state.cornerRadius),
         colors = ButtonDefaults.textButtonColors(
-            containerColor = if (selected) AnimeAccentPink.copy(alpha = 0.16f) else Color.Transparent,
-            contentColor = accent,
-            disabledContainerColor = Color.Transparent,
-            disabledContentColor = Color.White.copy(alpha = 0.32f),
+            containerColor = containerColor.copy(alpha = state.containerAlpha),
+            contentColor = contentColor.copy(alpha = state.contentAlpha),
+            disabledContainerColor = disabledContainerColor.copy(alpha = state.disabledContainerAlpha),
+            disabledContentColor = disabledContentColor.copy(alpha = state.disabledContentAlpha),
         ),
         contentPadding = PaddingValues(0.dp),
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(3.dp),
+            verticalArrangement = Arrangement.spacedBy(state.contentSpacing),
         ) {
-            Icon(icon, contentDescription = label, modifier = Modifier.size(18.dp))
+            Icon(icon, contentDescription = state.label, modifier = Modifier.size(state.iconSize))
             Text(
-                label,
+                state.label,
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
         }
+    }
+}
+
+private fun playerFullscreenDockClick(
+    kind: PlayerMoreActionKind,
+    onToggleDanmaku: () -> Unit,
+    onShowPanel: (PlayerPanel) -> Unit,
+): () -> Unit {
+    fun show(panel: PlayerPanel): () -> Unit = { onShowPanel(panel) }
+    return when (kind) {
+        PlayerMoreActionKind.Danmaku -> onToggleDanmaku
+        PlayerMoreActionKind.Quality -> show(PlayerPanel.Quality)
+        PlayerMoreActionKind.Speed -> show(PlayerPanel.Speed)
+        PlayerMoreActionKind.Episode -> show(PlayerPanel.Episode)
+        PlayerMoreActionKind.Route -> show(PlayerPanel.Route)
+        PlayerMoreActionKind.Cache -> show(PlayerPanel.More)
+        PlayerMoreActionKind.More -> show(PlayerPanel.More)
     }
 }
 
@@ -7803,6 +7814,7 @@ private fun playerMoreActionIcon(kind: PlayerMoreActionKind): ImageVector {
         PlayerMoreActionKind.Route -> Icons.Filled.VideoLibrary
         PlayerMoreActionKind.Danmaku -> Icons.Filled.ClosedCaption
         PlayerMoreActionKind.Cache -> Icons.Filled.CloudDownload
+        PlayerMoreActionKind.More -> Icons.Filled.MoreVert
     }
 }
 
@@ -7830,6 +7842,7 @@ private fun playerMoreActionClick(
         PlayerMoreActionKind.Route -> show(PlayerPanel.Route)
         PlayerMoreActionKind.Danmaku -> show(PlayerPanel.Danmaku)
         PlayerMoreActionKind.Cache -> onOffline
+        PlayerMoreActionKind.More -> show(PlayerPanel.More)
     }
 }
 
