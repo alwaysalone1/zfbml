@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.111
+
+English:
+
+- Manual danmaku episode mappings are now persisted to app storage through `DanmakuManualMappingStore` so user calibration survives app restarts.
+- `AppGraph` now loads saved danmaku mappings before episode matching and writes candidate corrections through one synchronized mapping path before refreshing `DanmakuRegistry`.
+- Added unit coverage for persisted mapping reloads, same-episode replacement, and missing/corrupt mapping files.
+- App version labels, request user agents, and README notes are now updated to `0.5.111`.
+
 ### v0.5.110
 
 English:

@@ -227,3 +227,5 @@ This pass upgrades danmaku episode mapping. `DanmakuManualMapping` now represent
 This pass upgrades player danmaku mapping presentation. `PlayerDanmakuMappingUiState` now summarizes pending, automatic, manual, and loading mapping states, and the player tracks danmaku candidates separately from loaded timeline items so the danmaku panel can show candidate counts, loaded comment counts, calibrated status, and a manual search/calibration entry.
 
 This pass upgrades player danmaku candidate calibration. The danmaku settings panel now renders automatic match candidates with provider/platform badges and lets the user set any candidate as the current episode's manual mapping, then refreshes candidates and reloads the selected timeline immediately.
+
+This pass upgrades persisted danmaku calibration. Manual episode mappings are now serialized to app storage, loaded before episode matching, and written through a synchronized AppGraph path so user-selected danmaku corrections survive app restarts.

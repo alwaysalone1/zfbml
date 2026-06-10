@@ -1,5 +1,7 @@
 package com.zfbml.aggregate.danmaku
 
+import kotlinx.serialization.Serializable
+
 data class DanmakuItem(
     val timeMs: Long,
     val text: String,
@@ -27,6 +29,7 @@ data class DanmakuPosition(
     val durationMs: Long,
 )
 
+@Serializable
 enum class DanmakuPlatform {
     Bilibili,
     Tencent,
@@ -63,6 +66,7 @@ data class DanmakuSafeArea(
     val endInsetPx: Float = 0f,
 )
 
+@Serializable
 data class DanmakuMatch(
     val providerId: String,
     val platform: DanmakuPlatform,
@@ -73,6 +77,7 @@ data class DanmakuMatch(
     val source: DanmakuMatchSource = DanmakuMatchSource.Automatic,
 )
 
+@Serializable
 data class DanmakuManualMapping(
     val detailTitle: String,
     val detailProviderId: String? = null,
@@ -82,6 +87,7 @@ data class DanmakuManualMapping(
     val match: DanmakuMatch,
 )
 
+@Serializable
 enum class DanmakuMatchSource {
     Automatic,
     Manual,

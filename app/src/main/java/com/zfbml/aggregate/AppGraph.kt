@@ -2,6 +2,8 @@ package com.zfbml.aggregate
 
 import android.content.Context
 import com.zfbml.aggregate.danmaku.BilibiliDanmakuProvider
+import com.zfbml.aggregate.danmaku.DanmakuManualMapping
+import com.zfbml.aggregate.danmaku.DanmakuManualMappingStore
 import com.zfbml.aggregate.danmaku.DanmakuRegistry
 import com.zfbml.aggregate.danmaku.IqiyiDanmakuProvider
 import com.zfbml.aggregate.danmaku.TencentDanmakuProvider
@@ -22,11 +24,16 @@ import com.zfbml.aggregate.torrent.LibtorrentEngine
 import com.zfbml.aggregate.torrent.RssTorrentSourceProvider
 import com.zfbml.aggregate.torrent.TorrentSourceProvider
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import okhttp3.OkHttpClient
 
 class AppGraph(
     private val context: Context,
 ) {
+    private val danmakuManualMappingLock = Mutex()
+    private var danmakuManualMappingsLoaded = false
+
     private val httpClient = OkHttpClient.Builder()
         .dns(Ipv4FirstDns)
         .connectTimeout(8, TimeUnit.SECONDS)
@@ -76,6 +83,27 @@ class AppGraph(
                 YoukuDanmakuProvider(httpClient),
             ),
         )
+    }
+
+    private val danmakuManualMappingStore: DanmakuManualMappingStore by lazy {
+        DanmakuManualMappingStore.fromContext(context.applicationContext)
+    }
+
+    suspend fun ensureDanmakuManualMappingsLoaded() {
+        if (danmakuManualMappingsLoaded) return
+        danmakuManualMappingLock.withLock {
+            if (danmakuManualMappingsLoaded) return@withLock
+            danmakuRegistry.replaceManualMappings(danmakuManualMappingStore.load())
+            danmakuManualMappingsLoaded = true
+        }
+    }
+
+    suspend fun addOrReplaceDanmakuManualMapping(mapping: DanmakuManualMapping) {
+        danmakuManualMappingLock.withLock {
+            val mappings = danmakuManualMappingStore.addOrReplace(mapping)
+            danmakuRegistry.replaceManualMappings(mappings)
+            danmakuManualMappingsLoaded = true
+        }
     }
 
     val media3DownloadCoordinator: Media3DownloadCoordinator by lazy {
