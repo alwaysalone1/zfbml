@@ -219,3 +219,5 @@ This pass upgrades fullscreen side-dock presentation. `PlayerFullscreenSideDockU
 This pass upgrades player panel tab-strip presentation. `PlayerPanelTabStripUiState` and `PlayerPanelTabUiState` now own strip height, item spacing, content padding, tab width/height, corner radius, icon size, and internal spacing so the fullscreen player option-panel navigation strip follows a tested model contract instead of Compose-local layout constants.
 
 This pass upgrades player panel context-bar layout presentation. `PlayerPanelContextUiState` now owns the context card radius, row padding, row spacing, icon-box size, icon size, icon corner radius, and text spacing so the current-playback context strip can be tuned from the same tested UI model as the panel header, tabs, and shell.
+
+This pass upgrades player panel header layout presentation. `PlayerPanelSheetUiState` now owns header spacing, title/subtitle spacing, and dismiss-button height so the player option-panel header follows the same tested model contract as the panel shell, context strip, and tab navigation.

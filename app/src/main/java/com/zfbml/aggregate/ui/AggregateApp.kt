@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.106")
+                setRequestProperty("User-Agent", "ZFBML/0.5.107")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2866,7 +2866,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.106",
+            version = "0.5.107",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -7532,11 +7532,11 @@ private fun PlayerPanelHeader(state: PlayerPanelSheetUiState, onDismiss: () -> U
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.Top,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(state.headerSpacing),
     ) {
         Column(
             modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+            verticalArrangement = Arrangement.spacedBy(state.headerTextSpacing),
         ) {
             Text(
                 text = state.title,
@@ -7554,7 +7554,7 @@ private fun PlayerPanelHeader(state: PlayerPanelSheetUiState, onDismiss: () -> U
                 overflow = TextOverflow.Ellipsis,
             )
         }
-        TextButton(onClick = onDismiss, modifier = Modifier.height(34.dp)) {
+        TextButton(onClick = onDismiss, modifier = Modifier.height(state.dismissButtonHeight)) {
             Text(state.dismissLabel, color = Color.White.copy(alpha = state.dismissLabelAlpha), style = MaterialTheme.typography.labelMedium)
         }
     }
