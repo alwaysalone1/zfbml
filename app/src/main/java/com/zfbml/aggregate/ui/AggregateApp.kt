@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.101")
+                setRequestProperty("User-Agent", "ZFBML/0.5.102")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2866,7 +2866,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.101",
+            version = "0.5.102",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -6440,6 +6440,12 @@ private fun PlayerBottomControls(
             pendingSeekMs = pendingSeekMs,
         )
     }
+    val compactInteractionState = remember(seekBarState.progressFraction, danmakuEnabled) {
+        buildPlayerCompactInteractionUiState(
+            progressFraction = seekBarState.progressFraction,
+            danmakuEnabled = danmakuEnabled,
+        )
+    }
     val routeName = currentRoute?.routeName.orEmpty().ifBlank { currentStream.protocol.displayName() }
     val sourceName = currentRoute?.sourceName ?: currentStream.metadata["routeProviderName"] ?: currentStream.providerId
     val quality = currentStream.quality.orEmpty().ifBlank { "自动" }
@@ -6531,8 +6537,7 @@ private fun PlayerBottomControls(
 
         } else {
             PlayerCompactInteractionRow(
-                progressFraction = seekBarState.progressFraction,
-                danmakuEnabled = danmakuEnabled,
+                state = compactInteractionState,
                 onToggleDanmaku = onToggleDanmaku,
                 onOpenDanmakuSettings = { onShowPanel(PlayerPanel.Danmaku) },
                 onEnterFullscreen = onEnterFullscreen,
@@ -6620,8 +6625,7 @@ private fun PlayerFullscreenNoticeStrip(
 
 @Composable
 private fun PlayerCompactInteractionRow(
-    progressFraction: Float?,
-    danmakuEnabled: Boolean,
+    state: PlayerCompactInteractionUiState,
     onToggleDanmaku: () -> Unit,
     onOpenDanmakuSettings: () -> Unit,
     onEnterFullscreen: () -> Unit,
@@ -6629,25 +6633,25 @@ private fun PlayerCompactInteractionRow(
 ) {
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(7.dp),
+        verticalArrangement = Arrangement.spacedBy(state.columnSpacing),
     ) {
-        PlayerCompactProgressLine(progressFraction = progressFraction, modifier = Modifier.fillMaxWidth())
+        PlayerCompactProgressLine(state = state.progress, modifier = Modifier.fillMaxWidth())
         Row(
-            modifier = Modifier.fillMaxWidth().height(36.dp),
+            modifier = Modifier.fillMaxWidth().height(state.actionRowHeight),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(7.dp),
+            horizontalArrangement = Arrangement.spacedBy(state.actionRowSpacing),
         ) {
             PlayerCompactDanmakuInputBar(
-                danmakuEnabled = danmakuEnabled,
+                state = state.danmaku,
                 onOpenDanmakuSettings = onOpenDanmakuSettings,
                 onToggleDanmaku = onToggleDanmaku,
                 modifier = Modifier.weight(1f),
             )
             PlayerTinyIconAction(
                 icon = Icons.Filled.Fullscreen,
-                contentDescription = "全屏播放",
+                contentDescription = state.fullscreenContentDescription,
                 onClick = onEnterFullscreen,
-                modifier = Modifier.width(38.dp),
+                modifier = Modifier.width(state.fullscreenActionWidth),
             )
         }
     }
@@ -6655,52 +6659,64 @@ private fun PlayerCompactInteractionRow(
 
 @Composable
 private fun PlayerCompactDanmakuInputBar(
-    danmakuEnabled: Boolean,
+    state: PlayerCompactDanmakuUiState,
     onOpenDanmakuSettings: () -> Unit,
     onToggleDanmaku: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
+    val iconColor = state.iconTone
+        ?.let { sourceLibraryToneColor(it) }
+        ?: Color.White
+    val textColor = state.textTone
+        ?.let { sourceLibraryToneColor(it) }
+        ?: Color.White
+    val toggleContainerColor = state.toggleContainerTone
+        ?.let { sourceLibraryToneColor(it) }
+        ?: Color.White
+    val toggleContentColor = state.toggleContentTone
+        ?.let { sourceLibraryToneColor(it) }
+        ?: Color.White
     Row(
         modifier = modifier
             .fillMaxHeight()
-            .clip(RoundedCornerShape(999.dp))
-            .background(Color.Black.copy(alpha = 0.32f))
+            .clip(RoundedCornerShape(state.cornerRadius))
+            .background(Color.Black.copy(alpha = state.containerAlpha))
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
                 onClick = onOpenDanmakuSettings,
             )
-            .padding(start = 11.dp, end = 5.dp),
-        horizontalArrangement = Arrangement.spacedBy(7.dp),
+            .padding(start = state.startPadding, end = state.endPadding),
+        horizontalArrangement = Arrangement.spacedBy(state.contentSpacing),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
             Icons.Filled.ClosedCaption,
             contentDescription = null,
-            tint = if (danmakuEnabled) AnimeAccentPink else Color.White.copy(alpha = 0.42f),
-            modifier = Modifier.size(16.dp),
+            tint = iconColor.copy(alpha = state.iconAlpha),
+            modifier = Modifier.size(state.iconSize),
         )
         Text(
-            text = if (danmakuEnabled) "发条弹幕" else "弹幕关闭",
+            text = state.title,
             style = MaterialTheme.typography.bodySmall,
-            color = Color.White.copy(alpha = 0.76f),
+            color = textColor.copy(alpha = state.textAlpha),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
         TextButton(
             onClick = onToggleDanmaku,
-            modifier = Modifier.width(32.dp).height(26.dp).focusable(),
-            shape = RoundedCornerShape(999.dp),
+            modifier = Modifier.width(state.toggleWidth).height(state.toggleHeight).focusable(),
+            shape = RoundedCornerShape(state.cornerRadius),
             colors = ButtonDefaults.textButtonColors(
-                containerColor = if (danmakuEnabled) AnimeAccentPink.copy(alpha = 0.2f) else Color.White.copy(alpha = 0.08f),
-                contentColor = if (danmakuEnabled) AnimeAccentPink else Color.White.copy(alpha = 0.56f),
+                containerColor = toggleContainerColor.copy(alpha = state.toggleContainerAlpha),
+                contentColor = toggleContentColor.copy(alpha = state.toggleContentAlpha),
             ),
             contentPadding = PaddingValues(0.dp),
         ) {
             Text(
-                text = if (danmakuEnabled) "开" else "关",
+                text = state.toggleLabel,
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
@@ -6711,22 +6727,26 @@ private fun PlayerCompactDanmakuInputBar(
 
 @Composable
 private fun PlayerCompactProgressLine(
-    progressFraction: Float?,
+    state: PlayerCompactProgressUiState,
     modifier: Modifier = Modifier,
 ) {
+    val trackColor = state.trackTone
+        ?.let { sourceLibraryToneColor(it) }
+        ?: Color.White
+    val progressFraction = state.progressFraction
     if (progressFraction != null) {
         LinearProgressIndicator(
-            progress = { progressFraction.coerceIn(0f, 1f) },
-            modifier = modifier.height(3.dp).clip(RoundedCornerShape(999.dp)),
-            color = AnimeAccentPink,
-            trackColor = Color.White.copy(alpha = 0.18f),
+            progress = { progressFraction },
+            modifier = modifier.height(state.height).clip(RoundedCornerShape(state.cornerRadius)),
+            color = sourceLibraryToneColor(state.progressTone),
+            trackColor = trackColor.copy(alpha = state.trackAlpha),
         )
     } else {
         Box(
             modifier
-                .height(3.dp)
-                .clip(RoundedCornerShape(999.dp))
-                .background(Color.White.copy(alpha = 0.18f)),
+                .height(state.height)
+                .clip(RoundedCornerShape(state.cornerRadius))
+                .background(trackColor.copy(alpha = state.trackAlpha)),
         )
     }
 }

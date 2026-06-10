@@ -1940,19 +1940,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.101",
+            version = "0.5.102",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.101", state.version)
+        assertEquals("0.5.102", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.101" })
+        assertTrue(state.chips.any { it.label == "v0.5.102" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1966,7 +1966,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.101",
+            version = "0.5.102",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,
@@ -3459,6 +3459,60 @@ class PlaybackUiModelsTest {
         assertEquals(0f, unknown.valueRange.start, 0.001f)
         assertEquals(1f, unknown.valueRange.endInclusive, 0.001f)
         assertNull(unknown.progressFraction)
+    }
+
+    @Test
+    fun playerCompactInteractionUiStateFormatsProgressAndDanmakuEntry() {
+        val enabled = buildPlayerCompactInteractionUiState(
+            progressFraction = 1.2f,
+            danmakuEnabled = true,
+        )
+        val disabled = buildPlayerCompactInteractionUiState(
+            progressFraction = null,
+            danmakuEnabled = false,
+        )
+
+        assertEquals(1f, enabled.progress.progressFraction ?: -1f, 0.001f)
+        assertEquals(3.dp, enabled.progress.height)
+        assertEquals(999.dp, enabled.progress.cornerRadius)
+        assertEquals(SourceLibraryTone.Primary, enabled.progress.progressTone)
+        assertNull(enabled.progress.trackTone)
+        assertEquals(0.18f, enabled.progress.trackAlpha)
+        assertEquals(7.dp, enabled.columnSpacing)
+        assertEquals(36.dp, enabled.actionRowHeight)
+        assertEquals(7.dp, enabled.actionRowSpacing)
+        assertEquals(38.dp, enabled.fullscreenActionWidth)
+        assertEquals("全屏播放", enabled.fullscreenContentDescription)
+        assertEquals("发条弹幕", enabled.danmaku.title)
+        assertEquals("开", enabled.danmaku.toggleLabel)
+        assertTrue(enabled.danmaku.enabled)
+        assertEquals(0.32f, enabled.danmaku.containerAlpha)
+        assertEquals(999.dp, enabled.danmaku.cornerRadius)
+        assertEquals(11.dp, enabled.danmaku.startPadding)
+        assertEquals(5.dp, enabled.danmaku.endPadding)
+        assertEquals(7.dp, enabled.danmaku.contentSpacing)
+        assertEquals(SourceLibraryTone.Primary, enabled.danmaku.iconTone)
+        assertEquals(1f, enabled.danmaku.iconAlpha)
+        assertEquals(16.dp, enabled.danmaku.iconSize)
+        assertNull(enabled.danmaku.textTone)
+        assertEquals(0.76f, enabled.danmaku.textAlpha)
+        assertEquals(32.dp, enabled.danmaku.toggleWidth)
+        assertEquals(26.dp, enabled.danmaku.toggleHeight)
+        assertEquals(SourceLibraryTone.Primary, enabled.danmaku.toggleContainerTone)
+        assertEquals(0.2f, enabled.danmaku.toggleContainerAlpha)
+        assertEquals(SourceLibraryTone.Primary, enabled.danmaku.toggleContentTone)
+        assertEquals(1f, enabled.danmaku.toggleContentAlpha)
+
+        assertNull(disabled.progress.progressFraction)
+        assertEquals("弹幕关闭", disabled.danmaku.title)
+        assertEquals("关", disabled.danmaku.toggleLabel)
+        assertFalse(disabled.danmaku.enabled)
+        assertNull(disabled.danmaku.iconTone)
+        assertEquals(0.42f, disabled.danmaku.iconAlpha)
+        assertNull(disabled.danmaku.toggleContainerTone)
+        assertEquals(0.08f, disabled.danmaku.toggleContainerAlpha)
+        assertNull(disabled.danmaku.toggleContentTone)
+        assertEquals(0.56f, disabled.danmaku.toggleContentAlpha)
     }
 
     @Test

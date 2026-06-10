@@ -934,6 +934,47 @@ internal data class PlayerSeekBarUiState(
     val loadingTrackBackgroundAlpha: Float,
 )
 
+internal data class PlayerCompactInteractionUiState(
+    val progress: PlayerCompactProgressUiState,
+    val danmaku: PlayerCompactDanmakuUiState,
+    val columnSpacing: Dp,
+    val actionRowHeight: Dp,
+    val actionRowSpacing: Dp,
+    val fullscreenActionWidth: Dp,
+    val fullscreenContentDescription: String,
+)
+
+internal data class PlayerCompactProgressUiState(
+    val progressFraction: Float?,
+    val height: Dp,
+    val cornerRadius: Dp,
+    val progressTone: SourceLibraryTone,
+    val trackTone: SourceLibraryTone?,
+    val trackAlpha: Float,
+)
+
+internal data class PlayerCompactDanmakuUiState(
+    val title: String,
+    val toggleLabel: String,
+    val enabled: Boolean,
+    val containerAlpha: Float,
+    val cornerRadius: Dp,
+    val startPadding: Dp,
+    val endPadding: Dp,
+    val contentSpacing: Dp,
+    val iconTone: SourceLibraryTone?,
+    val iconAlpha: Float,
+    val iconSize: Dp,
+    val textTone: SourceLibraryTone?,
+    val textAlpha: Float,
+    val toggleWidth: Dp,
+    val toggleHeight: Dp,
+    val toggleContainerTone: SourceLibraryTone?,
+    val toggleContainerAlpha: Float,
+    val toggleContentTone: SourceLibraryTone?,
+    val toggleContentAlpha: Float,
+)
+
 internal data class RoutePanelUiState(
     val recommendedRoute: RouteCandidate?,
     val selectedRoute: RouteCandidate?,
@@ -3159,6 +3200,48 @@ internal fun buildPlayerSeekBarUiState(
         loadingTrackTone = SourceLibraryTone.Online,
         loadingTrackBackgroundTone = null,
         loadingTrackBackgroundAlpha = 0.18f,
+    )
+}
+
+internal fun buildPlayerCompactInteractionUiState(
+    progressFraction: Float?,
+    danmakuEnabled: Boolean,
+): PlayerCompactInteractionUiState {
+    return PlayerCompactInteractionUiState(
+        progress = PlayerCompactProgressUiState(
+            progressFraction = progressFraction?.coerceIn(0f, 1f),
+            height = 3.dp,
+            cornerRadius = 999.dp,
+            progressTone = SourceLibraryTone.Primary,
+            trackTone = null,
+            trackAlpha = 0.18f,
+        ),
+        danmaku = PlayerCompactDanmakuUiState(
+            title = if (danmakuEnabled) "发条弹幕" else "弹幕关闭",
+            toggleLabel = if (danmakuEnabled) "开" else "关",
+            enabled = danmakuEnabled,
+            containerAlpha = 0.32f,
+            cornerRadius = 999.dp,
+            startPadding = 11.dp,
+            endPadding = 5.dp,
+            contentSpacing = 7.dp,
+            iconTone = if (danmakuEnabled) SourceLibraryTone.Primary else null,
+            iconAlpha = if (danmakuEnabled) 1f else 0.42f,
+            iconSize = 16.dp,
+            textTone = null,
+            textAlpha = 0.76f,
+            toggleWidth = 32.dp,
+            toggleHeight = 26.dp,
+            toggleContainerTone = if (danmakuEnabled) SourceLibraryTone.Primary else null,
+            toggleContainerAlpha = if (danmakuEnabled) 0.2f else 0.08f,
+            toggleContentTone = if (danmakuEnabled) SourceLibraryTone.Primary else null,
+            toggleContentAlpha = if (danmakuEnabled) 1f else 0.56f,
+        ),
+        columnSpacing = 7.dp,
+        actionRowHeight = 36.dp,
+        actionRowSpacing = 7.dp,
+        fullscreenActionWidth = 38.dp,
+        fullscreenContentDescription = "全屏播放",
     )
 }
 
