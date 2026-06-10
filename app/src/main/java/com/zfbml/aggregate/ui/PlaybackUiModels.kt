@@ -554,6 +554,29 @@ internal data class PortraitRecoveryActionsUiState(
     val actions: List<PlayerActionUiState>,
 )
 
+internal data class PlayerCompactRecoveryUiState(
+    val visible: Boolean,
+    val actions: List<PlayerCompactRecoveryActionUiState>,
+    val rowHeight: Dp,
+    val actionSpacing: Dp,
+)
+
+internal data class PlayerCompactRecoveryActionUiState(
+    val action: PlayerActionUiState,
+    val label: String,
+    val weight: Float,
+    val height: Dp,
+    val cornerRadius: Dp,
+    val containerTone: SourceLibraryTone?,
+    val containerAlpha: Float,
+    val contentTone: SourceLibraryTone?,
+    val contentAlpha: Float,
+    val disabledContainerTone: SourceLibraryTone?,
+    val disabledContainerAlpha: Float,
+    val disabledContentTone: SourceLibraryTone?,
+    val disabledContentAlpha: Float,
+)
+
 internal data class PortraitRouteInsightUiState(
     val chips: List<PortraitRouteInsightChipUiState>,
 )
@@ -4186,6 +4209,68 @@ internal fun buildPortraitRecoveryActionsUiState(
                 tone = if (canSelectNextRoute) SourceLibraryTone.Online else SourceLibraryTone.Muted,
             ),
         ),
+    )
+}
+
+internal fun buildPlayerCompactRecoveryUiState(
+    hasPlaybackIssue: Boolean,
+    canSelectNextRoute: Boolean,
+): PlayerCompactRecoveryUiState {
+    val actions = if (hasPlaybackIssue) {
+        listOf(
+            PlayerCompactRecoveryActionUiState(
+                action = PlayerActionUiState(
+                    kind = PlayerActionKind.Retry,
+                    title = "重试",
+                    value = "当前",
+                    selected = true,
+                    enabled = true,
+                    tone = SourceLibraryTone.Primary,
+                ),
+                label = "重试",
+                weight = 1f,
+                height = 34.dp,
+                cornerRadius = 8.dp,
+                containerTone = SourceLibraryTone.Primary,
+                containerAlpha = 0.18f,
+                contentTone = SourceLibraryTone.Primary,
+                contentAlpha = 1f,
+                disabledContainerTone = null,
+                disabledContainerAlpha = 0.05f,
+                disabledContentTone = null,
+                disabledContentAlpha = 0.34f,
+            ),
+            PlayerCompactRecoveryActionUiState(
+                action = PlayerActionUiState(
+                    kind = PlayerActionKind.NextRoute,
+                    title = "换个源",
+                    value = if (canSelectNextRoute) "可切" else "无",
+                    selected = false,
+                    enabled = canSelectNextRoute,
+                    tone = if (canSelectNextRoute) SourceLibraryTone.Online else SourceLibraryTone.Muted,
+                ),
+                label = "换个源",
+                weight = 1f,
+                height = 34.dp,
+                cornerRadius = 8.dp,
+                containerTone = null,
+                containerAlpha = 0.08f,
+                contentTone = null,
+                contentAlpha = 0.68f,
+                disabledContainerTone = null,
+                disabledContainerAlpha = 0.05f,
+                disabledContentTone = null,
+                disabledContentAlpha = 0.34f,
+            ),
+        )
+    } else {
+        emptyList()
+    }
+    return PlayerCompactRecoveryUiState(
+        visible = hasPlaybackIssue,
+        actions = actions,
+        rowHeight = 34.dp,
+        actionSpacing = 8.dp,
     )
 }
 

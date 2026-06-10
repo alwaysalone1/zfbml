@@ -1940,19 +1940,19 @@ class PlaybackUiModelsTest {
         )
 
         val state = buildProfileCenterUiState(
-            version = "0.5.102",
+            version = "0.5.103",
             sourceCount = 4,
             danmakuCount = 3,
             cacheState = cacheState,
         )
 
-        assertEquals("0.5.102", state.version)
+        assertEquals("0.5.103", state.version)
         assertEquals("\u6211\u7684\u8ffd\u756a\u4e2d\u5fc3", state.headline)
         assertTrue(state.summary.contains("2 \u4e2a\u6765\u6e90"))
         assertEquals(4, state.sourceCount)
         assertEquals(3, state.danmakuCount)
         assertEquals(2, state.cacheableSourceCount)
-        assertTrue(state.chips.any { it.label == "v0.5.102" })
+        assertTrue(state.chips.any { it.label == "v0.5.103" })
         assertEquals(listOf("continue", "cache", "danmaku", "sources"), state.quickActions.map { it.id })
         assertEquals("2 \u6e90\u53ef\u7f13\u5b58", state.quickActions.first { it.id == "cache" }.subtitle)
         assertEquals(SourceLibraryTone.Cache, state.quickActions.first { it.id == "cache" }.tone)
@@ -1966,7 +1966,7 @@ class PlaybackUiModelsTest {
         val cacheState = buildCacheLibraryUiState(emptyList())
 
         val state = buildProfileCenterUiState(
-            version = "0.5.102",
+            version = "0.5.103",
             sourceCount = 0,
             danmakuCount = 0,
             cacheState = cacheState,
@@ -2999,6 +2999,58 @@ class PlaybackUiModelsTest {
         assertFalse(noFallback.actions[1].enabled)
         assertEquals("无", noFallback.actions[1].value)
         assertEquals(SourceLibraryTone.Muted, noFallback.actions[1].tone)
+    }
+
+    @Test
+    fun playerCompactRecoveryUiStateMirrorsPlaybackIssueActions() {
+        val hidden = buildPlayerCompactRecoveryUiState(
+            hasPlaybackIssue = false,
+            canSelectNextRoute = true,
+        )
+        val canFallback = buildPlayerCompactRecoveryUiState(
+            hasPlaybackIssue = true,
+            canSelectNextRoute = true,
+        )
+        val noFallback = buildPlayerCompactRecoveryUiState(
+            hasPlaybackIssue = true,
+            canSelectNextRoute = false,
+        )
+
+        assertFalse(hidden.visible)
+        assertTrue(hidden.actions.isEmpty())
+        assertEquals(34.dp, hidden.rowHeight)
+        assertEquals(8.dp, hidden.actionSpacing)
+        assertTrue(canFallback.visible)
+        assertEquals(listOf(PlayerActionKind.Retry, PlayerActionKind.NextRoute), canFallback.actions.map { it.action.kind })
+        val retry = canFallback.actions[0]
+        val next = canFallback.actions[1]
+        assertEquals("重试", retry.label)
+        assertEquals("当前", retry.action.value)
+        assertTrue(retry.action.selected)
+        assertTrue(retry.action.enabled)
+        assertEquals(SourceLibraryTone.Primary, retry.action.tone)
+        assertEquals(1f, retry.weight)
+        assertEquals(34.dp, retry.height)
+        assertEquals(8.dp, retry.cornerRadius)
+        assertEquals(SourceLibraryTone.Primary, retry.containerTone)
+        assertEquals(0.18f, retry.containerAlpha)
+        assertEquals(SourceLibraryTone.Primary, retry.contentTone)
+        assertEquals(1f, retry.contentAlpha)
+        assertNull(retry.disabledContainerTone)
+        assertEquals(0.05f, retry.disabledContainerAlpha)
+        assertNull(retry.disabledContentTone)
+        assertEquals(0.34f, retry.disabledContentAlpha)
+        assertEquals("换个源", next.label)
+        assertEquals("可切", next.action.value)
+        assertTrue(next.action.enabled)
+        assertEquals(SourceLibraryTone.Online, next.action.tone)
+        assertNull(next.containerTone)
+        assertEquals(0.08f, next.containerAlpha)
+        assertNull(next.contentTone)
+        assertEquals(0.68f, next.contentAlpha)
+        assertFalse(noFallback.actions[1].action.enabled)
+        assertEquals("无", noFallback.actions[1].action.value)
+        assertEquals(SourceLibraryTone.Muted, noFallback.actions[1].action.tone)
     }
 
     @Test

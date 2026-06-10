@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.103
+
+English:
+
+- Compact playback recovery now uses `PlayerCompactRecoveryUiState` and `PlayerCompactRecoveryActionUiState` for issue visibility, retry/next-route actions, row height, spacing, button sizing, enabled state, and selected/disabled color alpha.
+- `PlayerCompactRecoveryRow` and `PlayerTinyToggle` now render retry and fallback-route controls from recovery action state instead of hard-coding compact recovery chrome locally in Compose.
+- Added unit coverage for hidden recovery, retry action presentation, fallback availability, and disabled fallback-route presentation.
+- App version labels, request user agents, and README notes are now updated to `0.5.103`.
+
 ### v0.5.102
 
 English:

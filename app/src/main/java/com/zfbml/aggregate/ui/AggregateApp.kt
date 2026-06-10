@@ -2352,7 +2352,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.102")
+                setRequestProperty("User-Agent", "ZFBML/0.5.103")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2866,7 +2866,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.102",
+            version = "0.5.103",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -6446,6 +6446,12 @@ private fun PlayerBottomControls(
             danmakuEnabled = danmakuEnabled,
         )
     }
+    val compactRecoveryState = remember(hasPlaybackIssue, canSelectNextRoute) {
+        buildPlayerCompactRecoveryUiState(
+            hasPlaybackIssue = hasPlaybackIssue,
+            canSelectNextRoute = canSelectNextRoute,
+        )
+    }
     val routeName = currentRoute?.routeName.orEmpty().ifBlank { currentStream.protocol.displayName() }
     val sourceName = currentRoute?.sourceName ?: currentStream.metadata["routeProviderName"] ?: currentStream.providerId
     val quality = currentStream.quality.orEmpty().ifBlank { "自动" }
@@ -6545,9 +6551,9 @@ private fun PlayerBottomControls(
             )
         }
 
-        if (compact && hasPlaybackIssue) {
+        if (compact && compactRecoveryState.visible) {
             PlayerCompactRecoveryRow(
-                canSelectNextRoute = canSelectNextRoute,
+                state = compactRecoveryState,
                 onRetryRoute = onRetryRoute,
                 onNextRoute = onNextRoute,
                 modifier = Modifier.fillMaxWidth(),
@@ -6779,54 +6785,62 @@ private fun PlayerTinyIconAction(
 
 @Composable
 private fun PlayerTinyToggle(
-    text: String,
-    selected: Boolean,
+    state: PlayerCompactRecoveryActionUiState,
     onClick: () -> Unit,
     modifier: Modifier = Modifier.width(44.dp),
-    enabled: Boolean = true,
 ) {
+    val containerColor = state.containerTone
+        ?.let { sourceLibraryToneColor(it) }
+        ?: Color.White
+    val contentColor = state.contentTone
+        ?.let { sourceLibraryToneColor(it) }
+        ?: Color.White
+    val disabledContainerColor = state.disabledContainerTone
+        ?.let { sourceLibraryToneColor(it) }
+        ?: Color.White
+    val disabledContentColor = state.disabledContentTone
+        ?.let { sourceLibraryToneColor(it) }
+        ?: Color.White
     TextButton(
         onClick = onClick,
-        enabled = enabled,
-        modifier = modifier.height(34.dp).focusable(),
-        shape = RoundedCornerShape(8.dp),
+        enabled = state.action.enabled,
+        modifier = modifier.height(state.height).focusable(),
+        shape = RoundedCornerShape(state.cornerRadius),
         colors = ButtonDefaults.textButtonColors(
-            containerColor = if (selected) AnimeAccentPink.copy(alpha = 0.18f) else Color.White.copy(alpha = 0.08f),
-            contentColor = if (selected) AnimeAccentPink else Color.White.copy(alpha = 0.68f),
-            disabledContainerColor = Color.White.copy(alpha = 0.05f),
-            disabledContentColor = Color.White.copy(alpha = 0.34f),
+            containerColor = containerColor.copy(alpha = state.containerAlpha),
+            contentColor = contentColor.copy(alpha = state.contentAlpha),
+            disabledContainerColor = disabledContainerColor.copy(alpha = state.disabledContainerAlpha),
+            disabledContentColor = disabledContentColor.copy(alpha = state.disabledContentAlpha),
         ),
         contentPadding = PaddingValues(0.dp),
     ) {
-        Text(text, style = MaterialTheme.typography.labelMedium, maxLines = 1, fontWeight = FontWeight.Bold)
+        Text(state.label, style = MaterialTheme.typography.labelMedium, maxLines = 1, fontWeight = FontWeight.Bold)
     }
 }
 
 @Composable
 private fun PlayerCompactRecoveryRow(
-    canSelectNextRoute: Boolean,
+    state: PlayerCompactRecoveryUiState,
     onRetryRoute: () -> Unit,
     onNextRoute: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = modifier.height(34.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = modifier.height(state.rowHeight),
+        horizontalArrangement = Arrangement.spacedBy(state.actionSpacing),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        PlayerTinyToggle(
-            text = "重试",
-            selected = true,
-            onClick = onRetryRoute,
-            modifier = Modifier.weight(1f),
-        )
-        PlayerTinyToggle(
-            text = "换个源",
-            selected = false,
-            onClick = onNextRoute,
-            modifier = Modifier.weight(1f),
-            enabled = canSelectNextRoute,
-        )
+        state.actions.forEach { actionState ->
+            PlayerTinyToggle(
+                state = actionState,
+                onClick = when (actionState.action.kind) {
+                    PlayerActionKind.Retry -> onRetryRoute
+                    PlayerActionKind.NextRoute -> onNextRoute
+                    else -> onRetryRoute
+                },
+                modifier = Modifier.weight(actionState.weight),
+            )
+        }
     }
 }
 
