@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.129
+
+English:
+
+- Detail hero chrome now uses `DetailHeroChromeUiState` for title/summary fallback copy, poster metadata, current-episode chips, episode-count chips, layout dimensions, overlay alpha, and action sizing.
+- `DetailHero` now renders hero metadata chips and shell dimensions from the model while continuing to reuse the existing first-play, readiness, and route-entry models.
+- Added unit coverage for detail hero copy, missing-title/summary fallback, selected-episode chips, empty-episode chips, poster dimensions, button sizing, and overlay alpha.
+- App version labels, request user agents, and README notes are now updated to `0.5.129`.
+
 ### v0.5.128
 
 English:

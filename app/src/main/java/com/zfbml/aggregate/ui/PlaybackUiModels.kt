@@ -81,6 +81,33 @@ internal data class DetailHeroActionUiState(
     val routeTone: SourceLibraryTone,
 )
 
+internal data class DetailHeroChromeUiState(
+    val title: String,
+    val summary: String,
+    val posterUrl: String?,
+    val providerId: String,
+    val chips: List<SourceLibraryChipUiState>,
+    val minHeight: Dp,
+    val cornerRadius: Dp,
+    val backgroundPosterAlpha: Float,
+    val overlayTopAlpha: Float,
+    val overlayMiddleAlpha: Float,
+    val overlayBottomAlpha: Float,
+    val contentPadding: Dp,
+    val sectionSpacing: Dp,
+    val headerSpacing: Dp,
+    val posterWidth: Dp,
+    val posterHeight: Dp,
+    val posterCornerRadius: Dp,
+    val titleSpacing: Dp,
+    val chipSpacing: Dp,
+    val actionSpacing: Dp,
+    val primaryButtonHeight: Dp,
+    val routeButtonMinWidth: Dp,
+    val routeButtonMaxWidth: Dp,
+    val summaryMaxLines: Int,
+)
+
 internal data class DetailFirstPlayChipUiState(
     val label: String,
     val value: String,
@@ -1855,6 +1882,53 @@ internal fun buildDetailHeroActionUiState(
         routeTitle = routeTitle,
         routeValue = routeValue,
         routeTone = routeTone,
+    )
+}
+
+internal fun buildDetailHeroChromeUiState(
+    detail: MediaDetail,
+    selectedEpisode: Episode?,
+): DetailHeroChromeUiState {
+    val episodeCount = detail.episodes.size
+    val currentEpisodeLabel = selectedEpisode?.index?.takeIf { it > 0 }?.let { "\u7b2c $it \u96c6" }
+        ?: selectedEpisode?.title?.takeIf { it.isNotBlank() }
+        ?: "\u81ea\u52a8\u9009\u96c6"
+    val episodeCountLabel = if (episodeCount > 0) {
+        "$episodeCount \u96c6"
+    } else {
+        "\u5f85\u9009\u96c6"
+    }
+    return DetailHeroChromeUiState(
+        title = detail.title.ifBlank { "\u672a\u547d\u540d\u6761\u76ee" },
+        summary = detail.summary.orEmpty().ifBlank {
+            "\u5df2\u4e3a\u4f60\u81ea\u52a8\u5339\u914d\u64ad\u653e\u6e90\uff0c\u4f18\u5148\u9009\u62e9\u7a33\u5b9a\u7684\u5728\u7ebf\u64ad\u653e\u4f53\u9a8c\u3002"
+        },
+        posterUrl = detail.posterUrl,
+        providerId = detail.providerId,
+        chips = listOf(
+            SourceLibraryChipUiState(currentEpisodeLabel, SourceLibraryTone.Primary),
+            SourceLibraryChipUiState(episodeCountLabel, SourceLibraryTone.Online),
+            SourceLibraryChipUiState("\u81ea\u52a8\u5339\u914d", SourceLibraryTone.Cache),
+        ),
+        minHeight = 360.dp,
+        cornerRadius = 8.dp,
+        backgroundPosterAlpha = 0.34f,
+        overlayTopAlpha = 0.12f,
+        overlayMiddleAlpha = 0.78f,
+        overlayBottomAlpha = 0.96f,
+        contentPadding = 16.dp,
+        sectionSpacing = 14.dp,
+        headerSpacing = 14.dp,
+        posterWidth = 116.dp,
+        posterHeight = 164.dp,
+        posterCornerRadius = 8.dp,
+        titleSpacing = 9.dp,
+        chipSpacing = 8.dp,
+        actionSpacing = 10.dp,
+        primaryButtonHeight = 48.dp,
+        routeButtonMinWidth = 126.dp,
+        routeButtonMaxWidth = 156.dp,
+        summaryMaxLines = 3,
     )
 }
 

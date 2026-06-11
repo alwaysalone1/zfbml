@@ -304,6 +304,56 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun detailHeroChromeUiStateBuildsHeroCopyChipsAndLayout() {
+        val selectedEpisode = episode(id = "ep-3", index = 3)
+        val detail = MediaDetail(
+            providerId = "bangumi-catalog",
+            title = "Alpha",
+            url = "bangumi://subject/1",
+            posterUrl = "https://example.invalid/alpha.jpg",
+            summary = "Alpha summary",
+            episodes = listOf(episode(index = 1), selectedEpisode),
+        )
+
+        val state = buildDetailHeroChromeUiState(detail, selectedEpisode)
+
+        assertEquals("Alpha", state.title)
+        assertEquals("Alpha summary", state.summary)
+        assertEquals("https://example.invalid/alpha.jpg", state.posterUrl)
+        assertEquals("bangumi-catalog", state.providerId)
+        assertEquals(listOf("\u7b2c 3 \u96c6", "2 \u96c6", "\u81ea\u52a8\u5339\u914d"), state.chips.map { it.label })
+        assertEquals(listOf(SourceLibraryTone.Primary, SourceLibraryTone.Online, SourceLibraryTone.Cache), state.chips.map { it.tone })
+        assertEquals(360.dp, state.minHeight)
+        assertEquals(116.dp, state.posterWidth)
+        assertEquals(164.dp, state.posterHeight)
+        assertEquals(48.dp, state.primaryButtonHeight)
+        assertEquals(126.dp, state.routeButtonMinWidth)
+        assertEquals(156.dp, state.routeButtonMaxWidth)
+        assertEquals(3, state.summaryMaxLines)
+        assertEquals(0.34f, state.backgroundPosterAlpha, 0.001f)
+    }
+
+    @Test
+    fun detailHeroChromeUiStateFallsBackForMissingTitleSummaryAndEpisodes() {
+        val detail = MediaDetail(
+            providerId = "direct-url",
+            title = "",
+            url = "https://example.invalid/detail",
+            summary = null,
+            episodes = emptyList(),
+        )
+
+        val state = buildDetailHeroChromeUiState(detail, selectedEpisode = null)
+
+        assertEquals("\u672a\u547d\u540d\u6761\u76ee", state.title)
+        assertTrue(state.summary.contains("\u81ea\u52a8\u5339\u914d\u64ad\u653e\u6e90"))
+        assertEquals(listOf("\u81ea\u52a8\u9009\u96c6", "\u5f85\u9009\u96c6", "\u81ea\u52a8\u5339\u914d"), state.chips.map { it.label })
+        assertEquals("direct-url", state.providerId)
+        assertEquals(8.dp, state.cornerRadius)
+        assertEquals(16.dp, state.contentPadding)
+    }
+
+    @Test
     fun detailFirstPlayUiStateSummarizesReadyRecommendation() {
         val routeState = buildRouteUiState(
             selectedEpisode = episode(index = 8),

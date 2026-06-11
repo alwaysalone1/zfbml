@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.128")
+                setRequestProperty("User-Agent", "ZFBML/0.5.129")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2977,7 +2977,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.128",
+            version = "0.5.129",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -3997,18 +3997,22 @@ private fun DetailHero(
     onToggleRoutes: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val heroState = remember(media, selectedEpisode, routeUiState.status) {
+        buildDetailHeroChromeUiState(media, selectedEpisode)
+    }
+    val heroAccent = providerAccent(heroState.providerId)
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 360.dp)
-            .clip(RoundedCornerShape(8.dp))
+            .heightIn(min = heroState.minHeight)
+            .clip(RoundedCornerShape(heroState.cornerRadius))
             .background(AnimePanel),
     ) {
         PosterArtwork(
-            posterUrl = media.posterUrl,
-            accent = providerAccent(media.providerId),
-            modifier = Modifier.matchParentSize().alpha(0.34f),
-            shape = RoundedCornerShape(8.dp),
+            posterUrl = heroState.posterUrl,
+            accent = heroAccent,
+            modifier = Modifier.matchParentSize().alpha(heroState.backgroundPosterAlpha),
+            shape = RoundedCornerShape(heroState.cornerRadius),
             contentScale = ContentScale.Crop,
         )
         Box(
@@ -4017,31 +4021,139 @@ private fun DetailHero(
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
-                            Color.Black.copy(alpha = 0.12f),
-                            AnimeBackground.copy(alpha = 0.78f),
-                            AnimeBackground.copy(alpha = 0.96f),
+                            Color.Black.copy(alpha = heroState.overlayTopAlpha),
+                            AnimeBackground.copy(alpha = heroState.overlayMiddleAlpha),
+                            AnimeBackground.copy(alpha = heroState.overlayBottomAlpha),
                         ),
                     ),
                 ),
         )
         Column(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
+            modifier = Modifier.fillMaxWidth().padding(heroState.contentPadding),
+            verticalArrangement = Arrangement.spacedBy(heroState.sectionSpacing),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                horizontalArrangement = Arrangement.spacedBy(heroState.headerSpacing),
                 verticalAlignment = Alignment.Bottom,
             ) {
                 PosterArtwork(
-                    posterUrl = media.posterUrl,
-                    accent = providerAccent(media.providerId),
-                    modifier = Modifier.size(width = 116.dp, height = 164.dp),
-                    shape = RoundedCornerShape(8.dp),
+                    posterUrl = heroState.posterUrl,
+                    accent = heroAccent,
+                    modifier = Modifier.size(width = heroState.posterWidth, height = heroState.posterHeight),
+                    shape = RoundedCornerShape(heroState.posterCornerRadius),
                 )
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(heroState.titleSpacing)) {
                     Text(
-                        media.title,
+                        text = heroState.title,
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(heroState.chipSpacing)) {
+                        heroState.chips.forEach { chip ->
+                            RouteStatusBadge(chip.label, sourceLibraryToneColor(chip.tone))
+                        }
+                    }
+                    Text(
+                        text = heroState.summary,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.White.copy(alpha = 0.82f),
+                        maxLines = heroState.summaryMaxLines,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+            DetailFirstPlayStrip(state = firstPlayState)
+            DetailPlaybackReadinessStrip(state = playbackReadiness)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(heroState.actionSpacing),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Button(
+                    onClick = onPlay,
+                    colors = ButtonDefaults.buttonColors(containerColor = AnimeAccentPink, contentColor = Color.White),
+                    modifier = Modifier.weight(1f).height(heroState.primaryButtonHeight).focusable(),
+                    shape = RoundedCornerShape(heroState.cornerRadius),
+                ) {
+                    Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(20.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Text(actionState.primaryActionLabel)
+                }
+                DetailRouteEntryButton(
+                    state = actionState,
+                    onClick = onToggleRoutes,
+                    modifier = Modifier
+                        .widthIn(min = heroState.routeButtonMinWidth, max = heroState.routeButtonMaxWidth)
+                        .height(heroState.primaryButtonHeight),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun LegacyDetailHero(
+    media: MediaDetail,
+    selectedEpisode: Episode?,
+    routeUiState: RouteUiState,
+    playbackReadiness: DetailPlaybackReadinessUiState,
+    actionState: DetailHeroActionUiState,
+    firstPlayState: DetailFirstPlayUiState,
+    onPlay: () -> Unit,
+    onToggleRoutes: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val heroState = remember(media, selectedEpisode) { buildDetailHeroChromeUiState(media, selectedEpisode) }
+    val heroAccent = providerAccent(heroState.providerId)
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = heroState.minHeight)
+            .clip(RoundedCornerShape(heroState.cornerRadius))
+            .background(AnimePanel),
+    ) {
+        PosterArtwork(
+            posterUrl = heroState.posterUrl,
+            accent = heroAccent,
+            modifier = Modifier.matchParentSize().alpha(heroState.backgroundPosterAlpha),
+            shape = RoundedCornerShape(heroState.cornerRadius),
+            contentScale = ContentScale.Crop,
+        )
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Black.copy(alpha = heroState.overlayTopAlpha),
+                            AnimeBackground.copy(alpha = heroState.overlayMiddleAlpha),
+                            AnimeBackground.copy(alpha = heroState.overlayBottomAlpha),
+                        ),
+                    ),
+                ),
+        )
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(heroState.contentPadding),
+            verticalArrangement = Arrangement.spacedBy(heroState.sectionSpacing),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(heroState.headerSpacing),
+                verticalAlignment = Alignment.Bottom,
+            ) {
+                PosterArtwork(
+                    posterUrl = heroState.posterUrl,
+                    accent = heroAccent,
+                    modifier = Modifier.size(width = heroState.posterWidth, height = heroState.posterHeight),
+                    shape = RoundedCornerShape(heroState.posterCornerRadius),
+                )
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(heroState.titleSpacing)) {
+                    Text(
+                        heroState.title,
                         style = MaterialTheme.typography.headlineSmall,
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
