@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.130
+
+English:
+
+- Detail entry status cards now expose card chrome through `DetailEntryUiState`, including status tone, radius, padding, row spacing, icon box sizing, chip spacing, and side-column width.
+- `DetailEntryStatusCard` now renders status badges and layout from model fields instead of deriving status tone or dimensions inside Compose.
+- Added unit coverage for ready/loading/failed entry status tones and card layout dimensions.
+- App version labels, request user agents, and README notes are now updated to `0.5.130`.
+
 ### v0.5.129
 
 English:

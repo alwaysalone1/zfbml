@@ -1495,6 +1495,40 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun detailEntryUiStateExposesCardChromeAndStatusTone() {
+        val result = searchResult(providerId = "bangumi-catalog", title = "Alpha")
+        val ready = buildDetailEntryUiState(
+            result = result,
+            detail = MediaDetail(
+                providerId = "bangumi-catalog",
+                title = "Alpha",
+                url = "bangumi://subject/1",
+                episodes = listOf(episode(index = 1)),
+            ),
+            loading = false,
+            error = null,
+        )
+        val loading = buildDetailEntryUiState(result, detail = null, loading = true, error = null)
+        val failed = buildDetailEntryUiState(result, detail = null, loading = false, error = "HTTP 500")
+
+        assertEquals(SourceLibraryTone.Cache, ready.statusTone)
+        assertEquals(SourceLibraryTone.Backup, loading.statusTone)
+        assertEquals(SourceLibraryTone.Web, failed.statusTone)
+        assertEquals(8.dp, ready.cardCornerRadius)
+        assertEquals(14.dp, ready.cardPadding)
+        assertEquals(12.dp, ready.rowSpacing)
+        assertEquals(42.dp, ready.iconBoxSize)
+        assertEquals(22.dp, ready.iconSize)
+        assertEquals(8.dp, ready.iconCornerRadius)
+        assertEquals(0.18f, ready.iconContainerAlpha, 0.001f)
+        assertEquals(6.dp, ready.contentSpacing)
+        assertEquals(8.dp, ready.titleRowSpacing)
+        assertEquals(6.dp, ready.chipSpacing)
+        assertEquals(104.dp, ready.sideMaxWidth)
+        assertEquals(4.dp, ready.sideSpacing)
+    }
+
+    @Test
     fun searchIndexUiStateSummarizesSourcesResultsAndFailures() {
         val manifests = listOf(
             manifest("bangumi-catalog", "Bangumi", setOf(SourceCapability.SEARCH, SourceCapability.DETAIL, SourceCapability.EPISODES)),

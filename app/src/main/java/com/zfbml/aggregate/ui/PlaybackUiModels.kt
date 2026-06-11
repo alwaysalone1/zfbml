@@ -203,6 +203,19 @@ internal data class DetailEntryUiState(
     val actionLabel: String,
     val tone: SourceLibraryTone,
     val chips: List<SearchResultChipUiState>,
+    val statusTone: SourceLibraryTone,
+    val cardCornerRadius: Dp,
+    val cardPadding: Dp,
+    val rowSpacing: Dp,
+    val iconBoxSize: Dp,
+    val iconSize: Dp,
+    val iconCornerRadius: Dp,
+    val iconContainerAlpha: Float,
+    val contentSpacing: Dp,
+    val titleRowSpacing: Dp,
+    val chipSpacing: Dp,
+    val sideMaxWidth: Dp,
+    val sideSpacing: Dp,
 )
 
 internal enum class RoutePrefetchStatus {
@@ -3119,6 +3132,19 @@ internal fun buildDetailEntryUiState(
         actionLabel = actionLabel,
         tone = resultState.tone,
         chips = chips,
+        statusTone = statusTone,
+        cardCornerRadius = 8.dp,
+        cardPadding = 14.dp,
+        rowSpacing = 12.dp,
+        iconBoxSize = 42.dp,
+        iconSize = 22.dp,
+        iconCornerRadius = 8.dp,
+        iconContainerAlpha = 0.18f,
+        contentSpacing = 6.dp,
+        titleRowSpacing = 8.dp,
+        chipSpacing = 6.dp,
+        sideMaxWidth = 104.dp,
+        sideSpacing = 4.dp,
     )
 }
 

@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.129")
+                setRequestProperty("User-Agent", "ZFBML/0.5.130")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2977,7 +2977,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.129",
+            version = "0.5.130",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -4212,22 +4212,25 @@ private fun DetailEntryStatusCard(
     Surface(
         modifier = modifier.fillMaxWidth().focusable(),
         color = AnimePanel,
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(state.cardCornerRadius),
         border = BorderStroke(1.dp, accent.copy(alpha = 0.28f)),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(14.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxWidth().padding(state.cardPadding),
+            horizontalArrangement = Arrangement.spacedBy(state.rowSpacing),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
-                modifier = Modifier.size(42.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.18f)),
+                modifier = Modifier
+                    .size(state.iconBoxSize)
+                    .clip(RoundedCornerShape(state.iconCornerRadius))
+                    .background(accent.copy(alpha = state.iconContainerAlpha)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Filled.Movie, contentDescription = null, tint = accent, modifier = Modifier.size(22.dp))
+                Icon(Icons.Filled.Movie, contentDescription = null, tint = accent, modifier = Modifier.size(state.iconSize))
             }
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(state.contentSpacing)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(state.titleRowSpacing), verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = state.headline,
                         style = MaterialTheme.typography.titleMedium,
@@ -4237,19 +4240,19 @@ private fun DetailEntryStatusCard(
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f),
                     )
-                    RouteStatusBadge(state.detailStatusLabel, sourceLibraryToneColor(state.chips.getOrNull(1)?.tone ?: state.tone))
+                    RouteStatusBadge(state.detailStatusLabel, sourceLibraryToneColor(state.statusTone))
                 }
                 Text(state.summary, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(state.chipSpacing)) {
                     items(state.chips) { chip ->
                         RouteStatusBadge(chip.label, sourceLibraryToneColor(chip.tone))
                     }
                 }
             }
             Column(
-                modifier = Modifier.widthIn(max = 104.dp),
+                modifier = Modifier.widthIn(max = state.sideMaxWidth),
                 horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(4.dp),
+                verticalArrangement = Arrangement.spacedBy(state.sideSpacing),
             ) {
                 Text(state.providerLabel, style = MaterialTheme.typography.labelMedium, color = accent, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(state.episodeLabel, style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.72f), maxLines = 1)
