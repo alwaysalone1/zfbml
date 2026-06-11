@@ -924,6 +924,21 @@ internal data class PlayerRouteStatusUiState(
     val statusLabel: String,
     val tone: SourceLibraryTone,
     val error: Boolean,
+    val minWidth: Dp,
+    val maxWidth: Dp,
+    val height: Dp,
+    val cornerRadius: Dp,
+    val containerBaseColor: PlayerChromeBaseColor,
+    val containerAlpha: Float,
+    val borderWidth: Dp,
+    val borderAlpha: Float,
+    val horizontalPadding: Dp,
+    val contentSpacing: Dp,
+    val indicatorSize: Dp,
+    val indicatorAlpha: Float,
+    val statusTextAlpha: Float,
+    val routeTextBaseColor: PlayerChromeBaseColor,
+    val routeTextAlpha: Float,
 )
 
 internal data class PortraitWatchInfoUiState(
@@ -5606,6 +5621,21 @@ internal fun buildPlayerRouteStatusUiState(
             else -> SourceLibraryTone.Online
         },
         error = error,
+        minWidth = 142.dp,
+        maxWidth = 210.dp,
+        height = 36.dp,
+        cornerRadius = 999.dp,
+        containerBaseColor = PlayerChromeBaseColor.Black,
+        containerAlpha = 0.34f,
+        borderWidth = 1.dp,
+        borderAlpha = 0.26f,
+        horizontalPadding = 11.dp,
+        contentSpacing = 7.dp,
+        indicatorSize = 6.dp,
+        indicatorAlpha = 1f,
+        statusTextAlpha = 1f,
+        routeTextBaseColor = PlayerChromeBaseColor.White,
+        routeTextAlpha = 1f,
     )
 }
 

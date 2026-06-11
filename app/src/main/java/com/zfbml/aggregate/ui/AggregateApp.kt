@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.144")
+                setRequestProperty("User-Agent", "ZFBML/0.5.145")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2984,7 +2984,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.144",
+            version = "0.5.145",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -6534,7 +6534,10 @@ private fun PlayerTopOverlay(
                 PlayerTopRouteStatus(
                     state = topOverlayState.routeStatus,
                     onClick = onOpenRoutePanel,
-                    modifier = Modifier.widthIn(min = 142.dp, max = 210.dp),
+                    modifier = Modifier.widthIn(
+                        min = topOverlayState.routeStatus.minWidth,
+                        max = topOverlayState.routeStatus.maxWidth,
+                    ),
                 )
                 PlayerCircleButton(
                     icon = Icons.Filled.FullscreenExit,
@@ -6636,34 +6639,36 @@ private fun PlayerTopRouteStatus(
     modifier: Modifier = Modifier,
 ) {
     val accent = playerRouteStatusColor(state)
+    val containerColor = playerChromeBaseColor(state.containerBaseColor)
+    val routeTextColor = playerChromeBaseColor(state.routeTextBaseColor)
     Surface(
-        modifier = modifier.height(36.dp).clickable(onClick = onClick).focusable(),
-        shape = RoundedCornerShape(999.dp),
-        color = Color.Black.copy(alpha = 0.34f),
-        border = BorderStroke(1.dp, accent.copy(alpha = 0.26f)),
+        modifier = modifier.height(state.height).clickable(onClick = onClick).focusable(),
+        shape = RoundedCornerShape(state.cornerRadius),
+        color = containerColor.copy(alpha = state.containerAlpha),
+        border = BorderStroke(state.borderWidth, accent.copy(alpha = state.borderAlpha)),
     ) {
         Row(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 11.dp),
+            modifier = Modifier.fillMaxSize().padding(horizontal = state.horizontalPadding),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(7.dp),
+            horizontalArrangement = Arrangement.spacedBy(state.contentSpacing),
         ) {
             Box(
                 modifier = Modifier
-                    .size(6.dp)
+                    .size(state.indicatorSize)
                     .clip(CircleShape)
-                    .background(accent),
+                    .background(accent.copy(alpha = state.indicatorAlpha)),
             )
             Text(
                 text = state.statusLabel,
                 style = MaterialTheme.typography.labelSmall,
-                color = accent,
+                color = accent.copy(alpha = state.statusTextAlpha),
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
             )
             Text(
                 text = state.routeLabel,
                 style = MaterialTheme.typography.labelMedium,
-                color = Color.White,
+                color = routeTextColor.copy(alpha = state.routeTextAlpha),
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,

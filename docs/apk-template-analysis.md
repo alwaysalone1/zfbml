@@ -296,3 +296,5 @@ This pass upgrades shared route/status badge chrome. `RouteStatusBadgeChromeUiSt
 This pass upgrades route play-action pill chrome. `RoutePlayActionChromeUiState` now owns action-pill height, radius, container alpha, padding, spacing, icon size, icon alpha, and text alpha so route cards keep the primary play action aligned with the shared badge model and avoid local Compose constants.
 
 This pass upgrades fullscreen lock-button chrome. `PlayerFullscreenLockButtonUiState` now owns locked/unlocked content descriptions, sizing, radius, icon size, container tone/base color, content tone/base color, and alpha values so the fullscreen anti-mistouch control stays model-driven alongside side-dock, seek, status, and danmaku controls.
+
+This pass upgrades fullscreen route-status pill chrome. `PlayerRouteStatusUiState` now owns width bounds, height, radius, container base color, alpha, border width/alpha, spacing, indicator size/alpha, and route/status text alpha values so the top overlay's current-line feedback is model-driven alongside status chips, notices, and lock controls.

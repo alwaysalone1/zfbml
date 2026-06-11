@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.145
+
+English:
+
+- Top fullscreen route status now uses `PlayerRouteStatusUiState` for width bounds, height, radius, container base color, border, spacing, indicator size, and text alpha values.
+- `PlayerTopRouteStatus` now renders from model chrome instead of keeping route-status pill dimensions and color opacity constants inside Compose.
+- Added unit coverage for fullscreen route-status pill chrome.
+- App version labels, request user agents, and README notes are now updated to `0.5.145`.
+
 ### v0.5.144
 
 English:
