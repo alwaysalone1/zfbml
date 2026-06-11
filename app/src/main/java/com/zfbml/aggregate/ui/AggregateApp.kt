@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.145")
+                setRequestProperty("User-Agent", "ZFBML/0.5.146")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2984,7 +2984,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.145",
+            version = "0.5.146",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -6616,19 +6616,24 @@ private fun PlayerCompactStatusPill(
     modifier: Modifier = Modifier,
 ) {
     val accent = playerNoticeColor(state)
+    val containerColor = playerChromeBaseColor(state.compactContainerBaseColor)
     Text(
         text = state.message,
         style = MaterialTheme.typography.labelSmall,
-        color = accent,
+        color = accent.copy(alpha = state.compactTextAlpha),
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
         modifier = modifier
-            .widthIn(max = 132.dp)
-            .height(30.dp)
-            .clip(RoundedCornerShape(999.dp))
-            .background(Color.Black.copy(alpha = 0.32f))
-            .border(1.dp, accent.copy(alpha = 0.18f), RoundedCornerShape(999.dp))
-            .padding(horizontal = 10.dp, vertical = 7.dp),
+            .widthIn(max = state.compactMaxWidth)
+            .height(state.compactHeight)
+            .clip(RoundedCornerShape(state.compactCornerRadius))
+            .background(containerColor.copy(alpha = state.compactContainerAlpha))
+            .border(
+                state.compactBorderWidth,
+                accent.copy(alpha = state.compactBorderAlpha),
+                RoundedCornerShape(state.compactCornerRadius),
+            )
+            .padding(horizontal = state.compactHorizontalPadding, vertical = state.compactVerticalPadding),
     )
 }
 
@@ -6987,37 +6992,43 @@ private fun PlayerFullscreenNoticeStrip(
     modifier: Modifier = Modifier,
 ) {
     val accent = playerNoticeColor(state)
+    val containerColor = playerChromeBaseColor(state.fullscreenContainerBaseColor)
+    val titleColor = playerChromeBaseColor(state.fullscreenTitleBaseColor)
     Row(
         modifier = modifier
-            .height(34.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color.Black.copy(alpha = 0.34f))
-            .border(1.dp, accent.copy(alpha = 0.22f), RoundedCornerShape(8.dp))
-            .padding(horizontal = 10.dp),
+            .height(state.fullscreenHeight)
+            .clip(RoundedCornerShape(state.fullscreenCornerRadius))
+            .background(containerColor.copy(alpha = state.fullscreenContainerAlpha))
+            .border(
+                state.fullscreenBorderWidth,
+                accent.copy(alpha = state.fullscreenBorderAlpha),
+                RoundedCornerShape(state.fullscreenCornerRadius),
+            )
+            .padding(horizontal = state.fullscreenHorizontalPadding),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(state.fullscreenContentSpacing),
     ) {
         Box(
             modifier = Modifier
-                .size(6.dp)
+                .size(state.fullscreenIndicatorSize)
                 .clip(CircleShape)
-                .background(accent),
+                .background(accent.copy(alpha = state.fullscreenIndicatorAlpha)),
         )
         Text(
             text = state.title,
             style = MaterialTheme.typography.labelMedium,
-            color = Color.White,
+            color = titleColor.copy(alpha = state.fullscreenTitleAlpha),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(0.9f),
+            modifier = Modifier.weight(state.fullscreenTitleWeight),
         )
         Text(
             text = state.message,
             style = MaterialTheme.typography.labelSmall,
-            color = accent,
+            color = accent.copy(alpha = state.fullscreenMessageAlpha),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1.4f),
+            modifier = Modifier.weight(state.fullscreenMessageWeight),
         )
     }
 }
