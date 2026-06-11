@@ -4359,6 +4359,23 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun playerEdgeProgressUiStateClampsProgressAndExposesChrome() {
+        val normal = buildPlayerEdgeProgressUiState(positionMs = 30_000L, durationMs = 120_000L)
+        val overflow = buildPlayerEdgeProgressUiState(positionMs = 150_000L, durationMs = 120_000L)
+        val unknown = buildPlayerEdgeProgressUiState(positionMs = 30_000L, durationMs = 0L)
+        val negative = buildPlayerEdgeProgressUiState(positionMs = -10_000L, durationMs = 120_000L)
+
+        assertEquals(0.25f, normal.progressFraction, 0.001f)
+        assertEquals(2.dp, normal.height)
+        assertEquals(SourceLibraryTone.Primary, normal.progressTone)
+        assertNull(normal.trackTone)
+        assertEquals(0f, normal.trackAlpha, 0.001f)
+        assertEquals(1f, overflow.progressFraction, 0.001f)
+        assertEquals(0f, unknown.progressFraction, 0.001f)
+        assertEquals(0f, negative.progressFraction, 0.001f)
+    }
+
+    @Test
     fun playerCompactInteractionUiStateFormatsProgressAndDanmakuEntry() {
         val enabled = buildPlayerCompactInteractionUiState(
             progressFraction = 1.2f,

@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.135
+
+English:
+
+- Player edge progress now uses `PlayerEdgeProgressUiState` for clamped progress, height, progress tone, track tone, and track alpha.
+- `PlayerEdgeProgress` now renders from model state instead of computing progress and keeping edge-bar height/color constants inside Compose.
+- Added unit coverage for normal progress, overflow clamping, unknown duration, negative position, and edge-bar chrome.
+- App version labels, request user agents, and README notes are now updated to `0.5.135`.
+
 ### v0.5.134
 
 English:

@@ -276,3 +276,5 @@ This pass upgrades BT playback preparation chrome. `TorrentPlaybackPreparationUi
 This pass upgrades player bottom text-action chrome. `PlayerTextActionChromeUiState` now owns quick-action pill height, radius, padding, spacing, icon size, container tone and alpha, content tone and alpha, value alpha, and disabled presentation so fullscreen recovery, route, episode, cache, and settings shortcuts share a tested model-driven control contract.
 
 This pass upgrades player circular-control chrome. `PlayerCircleButtonChromeUiState` now owns normal versus prominent button sizing, selected state, disabled state, container tone/base color and alpha, plus icon tone/base color and alpha so top-bar, center-play, seek, and fullscreen controls follow the same tested model-driven player-control contract.
+
+This pass upgrades player edge-progress chrome. `PlayerEdgeProgressUiState` now owns clamped progress, unknown-duration fallback, edge-bar height, progress tone, track tone, and track alpha so the always-visible video progress line stays aligned with seek bar and compact progress models while minimizing overlay obstruction.

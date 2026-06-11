@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.134")
+                setRequestProperty("User-Agent", "ZFBML/0.5.135")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2984,7 +2984,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.134",
+            version = "0.5.135",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -9344,16 +9344,20 @@ private fun PlayerEdgeProgress(
     durationMs: Long,
     modifier: Modifier = Modifier,
 ) {
-    val progress = if (durationMs > 0L) {
-        (positionMs.toFloat() / durationMs.toFloat()).coerceIn(0f, 1f)
-    } else {
-        0f
+    val state = remember(positionMs, durationMs) {
+        buildPlayerEdgeProgressUiState(
+            positionMs = positionMs,
+            durationMs = durationMs,
+        )
     }
+    val trackColor = state.trackTone
+        ?.let(::sourceLibraryToneColor)
+        ?: Color.Transparent
     LinearProgressIndicator(
-        progress = { progress },
-        modifier = modifier.height(2.dp),
-        color = AnimeAccentPink,
-        trackColor = Color.Transparent,
+        progress = { state.progressFraction },
+        modifier = modifier.height(state.height),
+        color = sourceLibraryToneColor(state.progressTone),
+        trackColor = trackColor.copy(alpha = state.trackAlpha),
     )
 }
 

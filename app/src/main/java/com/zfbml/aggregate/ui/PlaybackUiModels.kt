@@ -1462,6 +1462,14 @@ internal data class PlayerSeekBarUiState(
     val loadingTrackBackgroundAlpha: Float,
 )
 
+internal data class PlayerEdgeProgressUiState(
+    val progressFraction: Float,
+    val height: Dp,
+    val progressTone: SourceLibraryTone,
+    val trackTone: SourceLibraryTone?,
+    val trackAlpha: Float,
+)
+
 internal data class PlayerCompactInteractionUiState(
     val progress: PlayerCompactProgressUiState,
     val danmaku: PlayerCompactDanmakuUiState,
@@ -4463,6 +4471,25 @@ internal fun buildPlayerSeekBarUiState(
         loadingTrackTone = SourceLibraryTone.Online,
         loadingTrackBackgroundTone = null,
         loadingTrackBackgroundAlpha = 0.18f,
+    )
+}
+
+internal fun buildPlayerEdgeProgressUiState(
+    positionMs: Long,
+    durationMs: Long,
+): PlayerEdgeProgressUiState {
+    val normalizedDurationMs = durationMs.coerceAtLeast(0L)
+    val progress = if (normalizedDurationMs > 0L) {
+        positionMs.toFloat() / normalizedDurationMs.toFloat()
+    } else {
+        0f
+    }
+    return PlayerEdgeProgressUiState(
+        progressFraction = progress.coerceIn(0f, 1f),
+        height = 2.dp,
+        progressTone = SourceLibraryTone.Primary,
+        trackTone = null,
+        trackAlpha = 0f,
     )
 }
 
