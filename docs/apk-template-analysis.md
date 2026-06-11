@@ -306,3 +306,5 @@ This pass upgrades fullscreen control-row layout chrome. `PlayerFullscreenContro
 This pass upgrades detail route-prefetch chip chrome. `RoutePrefetchItemUiState` now owns chip height, radius, container alpha, border width/alpha, padding, spacing, indicator size/alpha, title base color, title alpha, and status alpha so detail-page route warming and cache-hit feedback follows the same tested model contract as player route/status controls.
 
 This pass upgrades detail route-metric chip chrome. `DetailRouteMetricUiState` now owns metric-chip height, radius, container base color, alpha, padding, spacing, label tone, label alpha, and value alpha so detail-page route diagnostics render from a tested model contract instead of Compose-local dimensions and opacity constants.
+
+This pass upgrades detail route-prefetch card shell chrome. `RoutePrefetchUiState` now owns the route-warming card radius, container base color, alpha, border width/alpha, content padding/spacing, header spacing, icon-box sizing/radius/alpha, title and summary tones, progress track, and item spacing so adjacent-episode prefetch feedback is model-driven as a complete detail-page module.

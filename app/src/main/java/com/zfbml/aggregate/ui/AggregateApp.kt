@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.149")
+                setRequestProperty("User-Agent", "ZFBML/0.5.150")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2984,7 +2984,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.149",
+            version = "0.5.150",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -4543,45 +4543,68 @@ private fun DetailRoutePrefetchCard(
     modifier: Modifier = Modifier,
 ) {
     val accent = sourceLibraryToneColor(state.tone)
+    val cardContainerColor = playerChromeBaseColor(state.cardContainerBaseColor)
+    val headlineColor = playerChromeBaseColor(state.headlineBaseColor)
+    val summaryColor = sourceLibraryToneColor(state.summaryTone)
+    val progressTrackColor = playerChromeBaseColor(state.progressTrackBaseColor)
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        color = Color.White.copy(alpha = 0.055f),
-        border = BorderStroke(1.dp, accent.copy(alpha = 0.24f)),
+        shape = RoundedCornerShape(state.cardCornerRadius),
+        color = cardContainerColor.copy(alpha = state.cardContainerAlpha),
+        border = BorderStroke(state.cardBorderWidth, accent.copy(alpha = state.cardBorderAlpha)),
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.fillMaxWidth().padding(state.contentPadding),
+            verticalArrangement = Arrangement.spacedBy(state.contentSpacing),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(state.headerSpacing),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(
-                    modifier = Modifier.size(34.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.16f)),
+                    modifier = Modifier
+                        .size(state.iconBoxSize)
+                        .clip(RoundedCornerShape(state.iconBoxCornerRadius))
+                        .background(accent.copy(alpha = state.iconBoxContainerAlpha)),
                     contentAlignment = Alignment.Center,
                 ) {
                     if (state.showProgress) {
-                        CircularProgressIndicator(color = accent, modifier = Modifier.size(18.dp))
+                        CircularProgressIndicator(color = accent, modifier = Modifier.size(state.iconSize))
                     } else {
-                        Icon(Icons.Filled.CloudDownload, contentDescription = null, tint = accent, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Filled.CloudDownload, contentDescription = null, tint = accent, modifier = Modifier.size(state.iconSize))
                     }
                 }
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(state.headline, style = MaterialTheme.typography.titleSmall, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text(state.summary, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(
+                        state.headline,
+                        style = MaterialTheme.typography.titleSmall,
+                        color = headlineColor.copy(alpha = state.headlineAlpha),
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        state.summary,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = summaryColor.copy(alpha = state.summaryAlpha),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 }
                 RouteStatusBadge(state.badgeLabel, accent)
             }
             if (state.showProgress) {
                 LinearProgressIndicator(
-                    modifier = Modifier.fillMaxWidth().height(3.dp).clip(RoundedCornerShape(8.dp)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(state.progressHeight)
+                        .clip(RoundedCornerShape(state.progressCornerRadius)),
                     color = accent,
-                    trackColor = Color.White.copy(alpha = 0.08f),
+                    trackColor = progressTrackColor.copy(alpha = state.progressTrackAlpha),
                 )
             }
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(state.itemSpacing), modifier = Modifier.fillMaxWidth()) {
                 items(state.items, key = { it.episodeId }) { item ->
                     DetailRoutePrefetchChip(item)
                 }
