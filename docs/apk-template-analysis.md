@@ -302,3 +302,5 @@ This pass upgrades fullscreen route-status pill chrome. `PlayerRouteStatusUiStat
 This pass upgrades player notice chrome. `PlayerNoticeUiState` now owns compact status-pill and fullscreen notice-strip sizing, radius, container base color, alpha, border width/alpha, padding, indicator size/alpha, text alpha, and layout weights so route notices and playback errors stay model-driven across compact and fullscreen overlays.
 
 This pass upgrades fullscreen control-row layout chrome. `PlayerFullscreenControlRowUiState` now owns the fullscreen bottom overlay's vertical spacing, action-row spacing, danmaku input weight, and action-bar weight so status, danmaku, seek, and quick actions are composed by a tested layout contract instead of Compose-local constants.
+
+This pass upgrades detail route-prefetch chip chrome. `RoutePrefetchItemUiState` now owns chip height, radius, container alpha, border width/alpha, padding, spacing, indicator size/alpha, title base color, title alpha, and status alpha so detail-page route warming and cache-hit feedback follows the same tested model contract as player route/status controls.

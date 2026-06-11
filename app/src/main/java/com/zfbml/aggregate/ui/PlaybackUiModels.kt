@@ -229,6 +229,18 @@ internal data class RoutePrefetchItemUiState(
     val episodeId: String,
     val title: String,
     val status: RoutePrefetchStatus,
+    val chipHeight: Dp = 34.dp,
+    val chipCornerRadius: Dp = 8.dp,
+    val containerAlpha: Float = 0.1f,
+    val borderWidth: Dp = 1.dp,
+    val borderAlpha: Float = 0.22f,
+    val horizontalPadding: Dp = 9.dp,
+    val contentSpacing: Dp = 6.dp,
+    val indicatorSize: Dp = 6.dp,
+    val indicatorAlpha: Float = 1f,
+    val titleBaseColor: PlayerChromeBaseColor = PlayerChromeBaseColor.White,
+    val titleAlpha: Float = 1f,
+    val statusAlpha: Float = 1f,
 ) {
     val statusLabel: String
         get() = when (status) {

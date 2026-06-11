@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.148
+
+English:
+
+- Detail route prefetch chips now use `RoutePrefetchItemUiState` for chip height, radius, container alpha, border, padding, spacing, indicator size, and text alpha values.
+- `DetailRoutePrefetchChip` now renders from model chrome instead of keeping prefetch-chip dimensions and opacity constants inside Compose.
+- Added unit coverage for route-prefetch chip chrome.
+- App version labels, request user agents, and README notes are now updated to `0.5.148`.
+
 ### v0.5.147
 
 English:

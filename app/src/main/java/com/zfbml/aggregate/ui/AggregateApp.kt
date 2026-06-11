@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.147")
+                setRequestProperty("User-Agent", "ZFBML/0.5.148")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2984,7 +2984,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.147",
+            version = "0.5.148",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -4594,19 +4594,36 @@ private fun DetailRoutePrefetchCard(
 @Composable
 private fun DetailRoutePrefetchChip(item: RoutePrefetchItemUiState) {
     val accent = sourceLibraryToneColor(item.tone)
+    val titleColor = playerChromeBaseColor(item.titleBaseColor)
     Row(
         modifier = Modifier
-            .height(34.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(accent.copy(alpha = 0.1f))
-            .border(1.dp, accent.copy(alpha = 0.22f), RoundedCornerShape(8.dp))
-            .padding(horizontal = 9.dp),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+            .height(item.chipHeight)
+            .clip(RoundedCornerShape(item.chipCornerRadius))
+            .background(accent.copy(alpha = item.containerAlpha))
+            .border(item.borderWidth, accent.copy(alpha = item.borderAlpha), RoundedCornerShape(item.chipCornerRadius))
+            .padding(horizontal = item.horizontalPadding),
+        horizontalArrangement = Arrangement.spacedBy(item.contentSpacing),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.size(6.dp).clip(CircleShape).background(accent))
-        Text(item.title, style = MaterialTheme.typography.labelSmall, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1)
-        Text(item.statusLabel, style = MaterialTheme.typography.labelSmall, color = accent, maxLines = 1)
+        Box(
+            Modifier
+                .size(item.indicatorSize)
+                .clip(CircleShape)
+                .background(accent.copy(alpha = item.indicatorAlpha)),
+        )
+        Text(
+            item.title,
+            style = MaterialTheme.typography.labelSmall,
+            color = titleColor.copy(alpha = item.titleAlpha),
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+        )
+        Text(
+            item.statusLabel,
+            style = MaterialTheme.typography.labelSmall,
+            color = accent.copy(alpha = item.statusAlpha),
+            maxLines = 1,
+        )
     }
 }
 
