@@ -1396,6 +1396,14 @@ private fun HomeFeedPage(
         ?: remainder.firstOrNull()
         ?: feedSelection.spotlight.firstOrNull()
     val guessItems = remainder.rotatingWindow(start = guessBatch * 5, count = 6)
+    val recommendationCount = remainder.size.coerceAtLeast(feedSelection.spotlight.size)
+    val watchHubState = remember(continueItem, scheduleUiState.todayCount, recommendationCount) {
+        buildHomeWatchHubUiState(
+            continueItem = continueItem,
+            todayCount = scheduleUiState.todayCount,
+            recommendationCount = recommendationCount,
+        )
+    }
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 18.dp, vertical = 12.dp),
@@ -1410,9 +1418,7 @@ private fun HomeFeedPage(
         }
         item {
             HomeWatchHub(
-                continueItem = continueItem,
-                todayCount = scheduleUiState.todayCount,
-                recommendationCount = remainder.size.coerceAtLeast(feedSelection.spotlight.size),
+                state = watchHubState,
                 onContinue = { continueItem?.let(onOpenDetail) },
                 onCalendar = onToggleCalendar,
                 onRecommendation = { feedSelection.spotlight.firstOrNull()?.let(onOpenDetail) },
@@ -1587,70 +1593,53 @@ private fun CategoryFeedPage(
 
 @Composable
 private fun HomeWatchHub(
-    continueItem: SearchResult?,
-    todayCount: Int,
-    recommendationCount: Int,
+    state: HomeWatchHubUiState,
     onContinue: () -> Unit,
     onCalendar: () -> Unit,
     onRecommendation: () -> Unit,
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(state.cardSpacing),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        HomeWatchHubCard(
-            title = "\u7ee7\u7eed\u770b",
-            subtitle = continueItem?.title ?: "\u6682\u65e0\u8fdb\u5ea6",
-            icon = Icons.Filled.PlayArrow,
-            accent = AnimeAccentPink,
-            enabled = continueItem != null,
-            onClick = onContinue,
-            modifier = Modifier.weight(1.18f),
-        )
-        HomeWatchHubCard(
-            title = "\u4eca\u65e5\u66f4\u65b0",
-            subtitle = if (todayCount > 0) "${todayCount}\u90e8\u653e\u9001" else "\u67e5\u770b\u65e5\u5386",
-            icon = Icons.Filled.Bookmarks,
-            accent = AnimeAccentCyan,
-            onClick = onCalendar,
-            modifier = Modifier.weight(1f),
-        )
-        HomeWatchHubCard(
-            title = "\u70ed\u95e8\u63a8\u8350",
-            subtitle = if (recommendationCount > 0) "${recommendationCount}\u90e8\u53ef\u9009" else "\u5148\u53bb\u641c\u7d22",
-            icon = Icons.Filled.VideoLibrary,
-            accent = AnimeAccentGreen,
-            enabled = recommendationCount > 0,
-            onClick = onRecommendation,
-            modifier = Modifier.weight(1f),
-        )
+        state.cards.forEach { card ->
+            HomeWatchHubCard(
+                state = card,
+                hubState = state,
+                onClick = when (card.action) {
+                    HomeWatchHubAction.Continue -> onContinue
+                    HomeWatchHubAction.Calendar -> onCalendar
+                    HomeWatchHubAction.Recommendation -> onRecommendation
+                },
+                modifier = Modifier.weight(card.weight),
+            )
+        }
     }
 }
 
 @Composable
 private fun HomeWatchHubCard(
-    title: String,
-    subtitle: String,
-    icon: ImageVector,
-    accent: Color,
-    enabled: Boolean = true,
+    state: HomeWatchHubCardUiState,
+    hubState: HomeWatchHubUiState,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val accent = sourceLibraryToneColor(state.tone)
+    val icon = state.action.homeWatchHubIcon()
     Card(
         onClick = onClick,
-        enabled = enabled,
-        modifier = modifier.height(78.dp).focusable(),
-        shape = RoundedCornerShape(8.dp),
+        enabled = state.enabled,
+        modifier = modifier.height(hubState.cardHeight).focusable(),
+        shape = RoundedCornerShape(hubState.cardCornerRadius),
         colors = CardDefaults.cardColors(
-            containerColor = if (enabled) AnimePanel else Color.White.copy(alpha = 0.035f),
+            containerColor = if (state.enabled) AnimePanel else Color.White.copy(alpha = 0.035f),
             disabledContainerColor = Color.White.copy(alpha = 0.035f),
         ),
-        border = BorderStroke(1.dp, if (enabled) accent.copy(alpha = 0.28f) else Color.White.copy(alpha = 0.06f)),
+        border = BorderStroke(1.dp, if (state.enabled) accent.copy(alpha = 0.28f) else Color.White.copy(alpha = 0.06f)),
     ) {
         Column(
-            modifier = Modifier.fillMaxSize().padding(10.dp),
+            modifier = Modifier.fillMaxSize().padding(hubState.cardPadding),
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
             Row(
@@ -1659,9 +1648,9 @@ private fun HomeWatchHubCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    title,
+                    state.title,
                     style = MaterialTheme.typography.labelLarge,
-                    color = if (enabled) Color.White else Color.White.copy(alpha = 0.42f),
+                    color = if (state.enabled) Color.White else Color.White.copy(alpha = 0.42f),
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -1670,18 +1659,26 @@ private fun HomeWatchHubCard(
                 Icon(
                     icon,
                     contentDescription = null,
-                    tint = if (enabled) accent else Color.White.copy(alpha = 0.28f),
+                    tint = if (state.enabled) accent else Color.White.copy(alpha = 0.28f),
                     modifier = Modifier.size(18.dp),
                 )
             }
             Text(
-                subtitle,
+                state.subtitle,
                 style = MaterialTheme.typography.bodySmall,
-                color = if (enabled) AnimeMuted else Color.White.copy(alpha = 0.32f),
+                color = if (state.enabled) AnimeMuted else Color.White.copy(alpha = 0.32f),
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
         }
+    }
+}
+
+private fun HomeWatchHubAction.homeWatchHubIcon(): ImageVector {
+    return when (this) {
+        HomeWatchHubAction.Continue -> Icons.Filled.PlayArrow
+        HomeWatchHubAction.Calendar -> Icons.Filled.Bookmarks
+        HomeWatchHubAction.Recommendation -> Icons.Filled.VideoLibrary
     }
 }
 
@@ -2404,7 +2401,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.121")
+                setRequestProperty("User-Agent", "ZFBML/0.5.122")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2918,7 +2915,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.121",
+            version = "0.5.122",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,

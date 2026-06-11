@@ -389,6 +389,29 @@ internal data class HomeBrowseTabUiState(
     val tone: SourceLibraryTone,
 )
 
+internal enum class HomeWatchHubAction {
+    Continue,
+    Calendar,
+    Recommendation,
+}
+
+internal data class HomeWatchHubUiState(
+    val cardHeight: Dp,
+    val cardCornerRadius: Dp,
+    val cardPadding: Dp,
+    val cardSpacing: Dp,
+    val cards: List<HomeWatchHubCardUiState>,
+)
+
+internal data class HomeWatchHubCardUiState(
+    val action: HomeWatchHubAction,
+    val title: String,
+    val subtitle: String,
+    val enabled: Boolean,
+    val tone: SourceLibraryTone,
+    val weight: Float,
+)
+
 internal enum class SourceLibraryTone {
     Primary,
     Online,
@@ -2982,6 +3005,47 @@ private fun homeBrowseCategoryTone(categoryId: String): SourceLibraryTone {
         "high-score", "most-followed", "most-watched" -> SourceLibraryTone.Cache
         else -> SourceLibraryTone.Muted
     }
+}
+
+internal fun buildHomeWatchHubUiState(
+    continueItem: SearchResult?,
+    todayCount: Int,
+    recommendationCount: Int,
+): HomeWatchHubUiState {
+    val safeTodayCount = todayCount.coerceAtLeast(0)
+    val safeRecommendationCount = recommendationCount.coerceAtLeast(0)
+    return HomeWatchHubUiState(
+        cardHeight = 78.dp,
+        cardCornerRadius = 8.dp,
+        cardPadding = 10.dp,
+        cardSpacing = 8.dp,
+        cards = listOf(
+            HomeWatchHubCardUiState(
+                action = HomeWatchHubAction.Continue,
+                title = "继续看",
+                subtitle = continueItem?.title?.takeIf { it.isNotBlank() } ?: "暂无进度",
+                enabled = continueItem != null,
+                tone = SourceLibraryTone.Primary,
+                weight = 1.18f,
+            ),
+            HomeWatchHubCardUiState(
+                action = HomeWatchHubAction.Calendar,
+                title = "今日更新",
+                subtitle = if (safeTodayCount > 0) "${safeTodayCount}部放送" else "查看日历",
+                enabled = true,
+                tone = SourceLibraryTone.Online,
+                weight = 1f,
+            ),
+            HomeWatchHubCardUiState(
+                action = HomeWatchHubAction.Recommendation,
+                title = "热门推荐",
+                subtitle = if (safeRecommendationCount > 0) "${safeRecommendationCount}部可选" else "先去搜索",
+                enabled = safeRecommendationCount > 0,
+                tone = SourceLibraryTone.Cache,
+                weight = 1f,
+            ),
+        ),
+    )
 }
 
 internal fun buildCategoryBrowseUiState(

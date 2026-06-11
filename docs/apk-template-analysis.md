@@ -250,3 +250,5 @@ This pass upgrades brand splash presentation. `BrandSplashUiState` now owns star
 This pass upgrades main app chrome navigation. `AppNavigationChromeUiState` now owns shared brand copy, selected-page summary, semantic tone, rail dimensions, bottom-bar dimensions, spacing, and corner radius so wide and compact top-level navigation follow the same tested shell contract.
 
 This pass upgrades Discover content chrome. `HomeBrowseChromeUiState` now owns the home header copy, search entry copy, calendar action state, ordered category tabs, semantic tones, and tab/header dimensions so recommendation, schedule, and category browsing share one tested content-layout contract.
+
+This pass upgrades the Discover watch hub. `HomeWatchHubUiState` now owns the Continue, Calendar, and Recommendation action-card copy, enabled state, semantic tone, weights, sizing, padding, and spacing so the home decision row is model-driven instead of Compose-local.

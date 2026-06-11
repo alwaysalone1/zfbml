@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.122
+
+English:
+
+- The Discover watch hub is now driven by `HomeWatchHubUiState`, covering the Continue, Calendar, and Recommendation action cards with shared sizing, spacing, tone, enabled state, subtitles, and card weights.
+- `HomeWatchHubCard` now renders from model state while Compose only maps action kinds to icons and click handlers.
+- Added unit coverage for populated and unavailable watch-hub states.
+- App version labels, request user agents, and README notes are now updated to `0.5.122`.
+
 ### v0.5.121
 
 English:

@@ -1711,6 +1711,50 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun homeWatchHubUiStateBuildsContinueCalendarAndRecommendationCards() {
+        val state = buildHomeWatchHubUiState(
+            continueItem = searchResult("bangumi-catalog", "Alpha"),
+            todayCount = 3,
+            recommendationCount = 8,
+        )
+
+        assertEquals(78.dp, state.cardHeight)
+        assertEquals(8.dp, state.cardCornerRadius)
+        assertEquals(8.dp, state.cardSpacing)
+        assertEquals(
+            listOf(HomeWatchHubAction.Continue, HomeWatchHubAction.Calendar, HomeWatchHubAction.Recommendation),
+            state.cards.map { it.action },
+        )
+        assertEquals("Alpha", state.cards.first { it.action == HomeWatchHubAction.Continue }.subtitle)
+        assertTrue(state.cards.first { it.action == HomeWatchHubAction.Continue }.enabled)
+        assertEquals(1.18f, state.cards.first { it.action == HomeWatchHubAction.Continue }.weight, 0.001f)
+        assertEquals("3\u90e8\u653e\u9001", state.cards.first { it.action == HomeWatchHubAction.Calendar }.subtitle)
+        assertEquals(SourceLibraryTone.Online, state.cards.first { it.action == HomeWatchHubAction.Calendar }.tone)
+        assertEquals("8\u90e8\u53ef\u9009", state.cards.first { it.action == HomeWatchHubAction.Recommendation }.subtitle)
+        assertEquals(SourceLibraryTone.Cache, state.cards.first { it.action == HomeWatchHubAction.Recommendation }.tone)
+    }
+
+    @Test
+    fun homeWatchHubUiStateDisablesUnavailableContinueAndRecommendations() {
+        val state = buildHomeWatchHubUiState(
+            continueItem = null,
+            todayCount = -1,
+            recommendationCount = 0,
+        )
+
+        val continueCard = state.cards.first { it.action == HomeWatchHubAction.Continue }
+        val calendarCard = state.cards.first { it.action == HomeWatchHubAction.Calendar }
+        val recommendationCard = state.cards.first { it.action == HomeWatchHubAction.Recommendation }
+
+        assertEquals("\u6682\u65e0\u8fdb\u5ea6", continueCard.subtitle)
+        assertFalse(continueCard.enabled)
+        assertEquals("\u67e5\u770b\u65e5\u5386", calendarCard.subtitle)
+        assertTrue(calendarCard.enabled)
+        assertEquals("\u5148\u53bb\u641c\u7d22", recommendationCard.subtitle)
+        assertFalse(recommendationCard.enabled)
+    }
+
+    @Test
     fun categoryBrowseUiStateSummarizesCoverageRatingHeatAndSource() {
         val category = category(id = "hot", title = "\u70ed\u95e8")
         val items = listOf(
