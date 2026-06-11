@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.119
+
+English:
+
+- The brand splash screen is now driven by `BrandSplashUiState`, covering headline copy, readiness pills, poster ribbon tiles, danmaku streaks, signal rails, progress copy, and startup duration.
+- Splash readiness copy now reflects searchable source, cache, and danmaku-provider coverage instead of being hard-coded in Compose.
+- Added unit coverage for populated and empty splash readiness states.
+- App version labels, request user agents, and README notes are now updated to `0.5.119`.
+
 ### v0.5.118
 
 English:

@@ -243,3 +243,5 @@ This pass upgrades danmaku matching cache behavior. `DanmakuRegistry` now keeps 
 This pass upgrades danmaku anti-occlusion. `DanmakuSafeArea` now carries a center exclusion band for play buttons and seek feedback, `DanmakuLayoutEngine` skips lanes that would cross that band, and the player shares the same computed safe-area state with both rendering and the danmaku settings summary.
 
 This pass upgrades search result presentation. The all-sources search view now collapses normalized same-title hits to the strongest metadata-rich result while source filters continue to expose each provider's raw results for inspection.
+
+This pass upgrades brand splash presentation. `BrandSplashUiState` now owns startup duration, headline/tagline/progress copy, readiness pills, poster-ribbon tiles, danmaku streaks, and signal rails so the launch animation follows the same tested model-driven contract as navigation and player panels.

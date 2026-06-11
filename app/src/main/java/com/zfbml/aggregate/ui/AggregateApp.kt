@@ -166,13 +166,22 @@ fun AggregateApp(graph: AppGraph, initialQuery: String? = null) {
     }
     var screen by remember { mutableStateOf<AppScreen>(AppScreen.Main) }
     var showSplash by remember { mutableStateOf(true) }
-    LaunchedEffect(Unit) {
-        delay(1_100)
+    val splashState = remember(graph) {
+        val manifests = graph.sourceRegistry.manifests
+        buildBrandSplashUiState(
+            sourceCount = manifests.size,
+            searchableSourceCount = manifests.count { SourceCapability.SEARCH in it.capabilities },
+            cacheableSourceCount = manifests.count { it.supportsDownload || SourceCapability.DOWNLOAD in it.capabilities },
+            danmakuProviderCount = 4,
+        )
+    }
+    LaunchedEffect(splashState.startupDurationMillis) {
+        delay(splashState.startupDurationMillis.toLong())
         showSplash = false
     }
     Surface(modifier = Modifier.fillMaxSize(), color = AnimeBackground) {
         if (showSplash) {
-            BrandSplashScreen()
+            BrandSplashScreen(splashState)
         } else {
             when (val current = screen) {
                 AppScreen.Main -> MainScaffold(
@@ -202,7 +211,7 @@ fun AggregateApp(graph: AppGraph, initialQuery: String? = null) {
 }
 
 @Composable
-private fun BrandSplashScreen() {
+private fun BrandSplashScreen(state: BrandSplashUiState) {
     var started by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { started = true }
     val logoScale by animateFloatAsState(
@@ -255,6 +264,7 @@ private fun BrandSplashScreen() {
                 ),
         )
         SplashSignalRails(
+            rails = state.signalRails,
             progress = railProgress,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -262,6 +272,7 @@ private fun BrandSplashScreen() {
                 .alpha(contentAlpha),
         )
         SplashPosterRibbon(
+            tiles = state.posterTiles,
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(top = 74.dp)
@@ -274,84 +285,79 @@ private fun BrandSplashScreen() {
         ) {
             Box(contentAlignment = Alignment.Center) {
                 SplashDanmakuOrbit(
+                    streaks = state.danmakuStreaks,
                     progress = railProgress,
                     modifier = Modifier
-                        .size(190.dp)
+                        .size(state.orbitSize)
                         .scale(glowScale),
                 )
                 Box(
                     modifier = Modifier
-                        .size(152.dp)
+                        .size(state.glowSize)
                         .scale(glowScale)
                         .clip(CircleShape)
                         .background(AnimeAccentCyan.copy(alpha = 0.1f)),
                 )
                 BrandMark(
                     modifier = Modifier
-                        .size(112.dp)
+                        .size(state.logoSize)
                         .scale(logoScale),
                 )
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
                 Text(
-                    text = "\u8FFD\u756A\u4E0D\u8FF7\u8DEF",
+                    text = state.headline,
                     style = MaterialTheme.typography.headlineMedium,
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
-                    text = "ZFBML",
+                    text = state.brand,
                     style = MaterialTheme.typography.titleMedium,
                     color = AnimeAccentCyan,
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
-                    text = "\u4ECA\u665A\u7EE7\u7EED\u8FFD",
+                    text = state.tagline,
                     style = MaterialTheme.typography.bodyMedium,
                     color = AnimeMuted,
                 )
-                SplashStatusPills(progress = railProgress, modifier = Modifier.padding(top = 2.dp))
+                SplashStatusPills(pills = state.statusPills, progress = railProgress, modifier = Modifier.padding(top = 2.dp))
             }
-            SplashProgressRail(progress = railProgress, modifier = Modifier.width(164.dp))
+            SplashProgressRail(label = state.progressLabel, progress = railProgress, modifier = Modifier.width(state.progressWidth))
         }
     }
 }
 
 @Composable
-private fun SplashDanmakuOrbit(progress: Float, modifier: Modifier = Modifier) {
+private fun SplashDanmakuOrbit(
+    streaks: List<BrandSplashStreakUiState>,
+    progress: Float,
+    modifier: Modifier = Modifier,
+) {
     Box(modifier = modifier) {
-        SplashDanmakuStreak(
-            width = 78.dp,
-            color = AnimeAccentCyan,
-            alpha = 0.44f,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .offset(x = (22 + progress * 14).dp, y = 25.dp),
-        )
-        SplashDanmakuStreak(
-            width = 58.dp,
-            color = AnimeAccentPink,
-            alpha = 0.4f,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .offset(x = ((1f - progress) * -16).dp, y = 56.dp),
-        )
-        SplashDanmakuStreak(
-            width = 92.dp,
-            color = AnimeAccentAmber,
-            alpha = 0.34f,
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .offset(x = (10 + progress * 20).dp, y = (-48).dp),
-        )
-        SplashDanmakuStreak(
-            width = 68.dp,
-            color = AnimeAccentViolet,
-            alpha = 0.32f,
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .offset(x = ((1f - progress) * -18).dp, y = (-22).dp),
-        )
+        streaks.forEach { streak ->
+            SplashDanmakuStreak(
+                width = streak.width,
+                color = sourceLibraryToneColor(streak.tone),
+                alpha = streak.alpha,
+                modifier = Modifier
+                    .align(streak.anchor.toAlignment())
+                    .offset(
+                        x = (streak.baseOffsetX.value + progress * streak.progressOffsetX.value).dp,
+                        y = streak.offsetY,
+                    ),
+            )
+        }
+    }
+}
+
+private fun BrandSplashStreakAnchor.toAlignment(): Alignment {
+    return when (this) {
+        BrandSplashStreakAnchor.TopStart -> Alignment.TopStart
+        BrandSplashStreakAnchor.TopEnd -> Alignment.TopEnd
+        BrandSplashStreakAnchor.BottomStart -> Alignment.BottomStart
+        BrandSplashStreakAnchor.BottomEnd -> Alignment.BottomEnd
     }
 }
 
@@ -381,39 +387,36 @@ private fun SplashDanmakuStreak(
 }
 
 @Composable
-private fun SplashPosterRibbon(modifier: Modifier = Modifier) {
-    val tiles = listOf(
-        AnimeAccentPink,
-        AnimeAccentCyan,
-        AnimeAccentAmber,
-        AnimeAccentViolet,
-        AnimeAccentGreen,
-    )
+private fun SplashPosterRibbon(
+    tiles: List<BrandSplashPosterTileUiState>,
+    modifier: Modifier = Modifier,
+) {
     Row(
         modifier = modifier.height(58.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        tiles.forEachIndexed { index, color ->
+        tiles.forEach { tile ->
+            val color = sourceLibraryToneColor(tile.tone)
             Box(
                 modifier = Modifier
-                    .width(if (index == 2) 42.dp else 34.dp)
-                    .height(if (index == 2) 58.dp else 48.dp)
+                    .width(tile.width)
+                    .height(tile.height)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(color.copy(alpha = if (index == 2) 0.56f else 0.28f))
+                    .background(color.copy(alpha = if (tile.emphasized) 0.56f else 0.28f))
                     .border(1.dp, Color.White.copy(alpha = 0.1f), RoundedCornerShape(8.dp)),
                 contentAlignment = Alignment.BottomStart,
             ) {
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth(if (index == 2) 0.72f else 0.58f)
+                        .fillMaxWidth(if (tile.emphasized) 0.72f else 0.58f)
                         .height(3.dp)
                         .offset(x = 5.dp, y = (-8).dp)
                         .background(Color.White.copy(alpha = 0.62f), RoundedCornerShape(999.dp)),
                 )
                 Box(
                     modifier = Modifier
-                        .size(if (index == 2) 14.dp else 10.dp)
+                        .size(if (tile.emphasized) 14.dp else 10.dp)
                         .align(Alignment.Center)
                         .clip(CircleShape)
                         .background(Color.Black.copy(alpha = 0.24f)),
@@ -421,8 +424,8 @@ private fun SplashPosterRibbon(modifier: Modifier = Modifier) {
                 ) {
                     Box(
                         modifier = Modifier
-                            .width(if (index == 2) 6.dp else 4.dp)
-                            .height(if (index == 2) 8.dp else 6.dp)
+                            .width(if (tile.emphasized) 6.dp else 4.dp)
+                            .height(if (tile.emphasized) 8.dp else 6.dp)
                             .background(Color.White.copy(alpha = 0.72f), RoundedCornerShape(2.dp)),
                     )
                 }
@@ -431,30 +434,28 @@ private fun SplashPosterRibbon(modifier: Modifier = Modifier) {
     }
 }
 
-private data class SplashStatusPillSpec(val label: String, val color: Color)
-
 @Composable
-private fun SplashStatusPills(progress: Float, modifier: Modifier = Modifier) {
-    val pills = listOf(
-        SplashStatusPillSpec("\u4ECA\u65E5\u7247\u5355", AnimeAccentPink),
-        SplashStatusPillSpec("\u6E90\u7AD9\u5728\u7EBF", AnimeAccentCyan),
-        SplashStatusPillSpec("\u5F39\u5E55\u540C\u6B65", AnimeAccentAmber),
-    )
+private fun SplashStatusPills(
+    pills: List<BrandSplashStatusPillUiState>,
+    progress: Float,
+    modifier: Modifier = Modifier,
+) {
     Row(
         modifier = modifier.widthIn(max = 286.dp),
         horizontalArrangement = Arrangement.spacedBy(7.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        pills.forEachIndexed { index, pill ->
-            val visibleProgress = (progress - index * 0.14f).coerceIn(0.38f, 1f)
+        pills.forEach { pill ->
+            val color = sourceLibraryToneColor(pill.tone)
+            val visibleProgress = (progress - pill.revealDelayFraction).coerceIn(0.38f, 1f)
             Row(
                 modifier = Modifier
                     .height(26.dp)
                     .offset(y = ((1f - visibleProgress) * 4f).dp)
                     .alpha(0.62f + visibleProgress * 0.38f)
                     .clip(RoundedCornerShape(999.dp))
-                    .background(pill.color.copy(alpha = 0.08f + visibleProgress * 0.08f))
-                    .border(1.dp, pill.color.copy(alpha = 0.18f + visibleProgress * 0.2f), RoundedCornerShape(999.dp))
+                    .background(color.copy(alpha = 0.08f + visibleProgress * 0.08f))
+                    .border(1.dp, color.copy(alpha = 0.18f + visibleProgress * 0.2f), RoundedCornerShape(999.dp))
                     .padding(horizontal = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(5.dp),
@@ -463,7 +464,7 @@ private fun SplashStatusPills(progress: Float, modifier: Modifier = Modifier) {
                     modifier = Modifier
                         .size(5.dp)
                         .clip(CircleShape)
-                        .background(pill.color.copy(alpha = 0.78f + visibleProgress * 0.22f)),
+                        .background(color.copy(alpha = 0.78f + visibleProgress * 0.22f)),
                 )
                 Text(
                     text = pill.label,
@@ -479,29 +480,29 @@ private fun SplashStatusPills(progress: Float, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun SplashSignalRails(progress: Float, modifier: Modifier = Modifier) {
-    val rails = listOf(
-        Triple(132.dp, AnimeAccentCyan, 0.18f),
-        Triple(92.dp, AnimeAccentPink, 0.28f),
-        Triple(118.dp, AnimeAccentAmber, 0.12f),
-    )
+private fun SplashSignalRails(
+    rails: List<BrandSplashSignalRailUiState>,
+    progress: Float,
+    modifier: Modifier = Modifier,
+) {
     Column(
         modifier = modifier.fillMaxWidth().padding(horizontal = 28.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        rails.forEachIndexed { index, (width, color, startAlpha) ->
+        rails.forEach { rail ->
+            val color = sourceLibraryToneColor(rail.tone)
             Box(
                 modifier = Modifier
-                    .width(width)
+                    .width(rail.width)
                     .height(3.dp)
-                    .offset(x = ((progress - 0.5f) * (index + 1) * 18f).dp)
+                    .offset(x = ((progress.coerceIn(0f, 1f) - 0.5f) * rail.offsetRange.value).dp)
                     .clip(RoundedCornerShape(999.dp))
                     .background(
                         Brush.horizontalGradient(
                             listOf(
                                 Color.Transparent,
-                                color.copy(alpha = startAlpha + progress.coerceIn(0f, 1f) * 0.28f),
+                                color.copy(alpha = rail.startAlpha + progress.coerceIn(0f, 1f) * 0.28f),
                                 Color.White.copy(alpha = 0.12f),
                                 Color.Transparent,
                             ),
@@ -513,7 +514,11 @@ private fun SplashSignalRails(progress: Float, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun SplashProgressRail(progress: Float, modifier: Modifier = Modifier) {
+private fun SplashProgressRail(
+    label: String,
+    progress: Float,
+    modifier: Modifier = Modifier,
+) {
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -539,7 +544,7 @@ private fun SplashProgressRail(progress: Float, modifier: Modifier = Modifier) {
             )
         }
         Text(
-            text = "\u7247\u5355\u5DF2\u5C31\u7EEA",
+            text = label,
             style = MaterialTheme.typography.labelMedium,
             color = Color.White.copy(alpha = 0.72f),
             fontWeight = FontWeight.Bold,
@@ -2354,7 +2359,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.118")
+                setRequestProperty("User-Agent", "ZFBML/0.5.119")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2868,7 +2873,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.118",
+            version = "0.5.119",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,

@@ -355,6 +355,59 @@ internal enum class SourceLibraryTone {
     Muted,
 }
 
+internal data class BrandSplashUiState(
+    val headline: String,
+    val brand: String,
+    val tagline: String,
+    val progressLabel: String,
+    val startupDurationMillis: Int,
+    val logoSize: Dp,
+    val orbitSize: Dp,
+    val glowSize: Dp,
+    val progressWidth: Dp,
+    val statusPills: List<BrandSplashStatusPillUiState>,
+    val posterTiles: List<BrandSplashPosterTileUiState>,
+    val danmakuStreaks: List<BrandSplashStreakUiState>,
+    val signalRails: List<BrandSplashSignalRailUiState>,
+)
+
+internal data class BrandSplashStatusPillUiState(
+    val label: String,
+    val tone: SourceLibraryTone,
+    val revealDelayFraction: Float,
+)
+
+internal data class BrandSplashPosterTileUiState(
+    val tone: SourceLibraryTone,
+    val width: Dp,
+    val height: Dp,
+    val emphasized: Boolean,
+)
+
+internal enum class BrandSplashStreakAnchor {
+    TopStart,
+    TopEnd,
+    BottomStart,
+    BottomEnd,
+}
+
+internal data class BrandSplashStreakUiState(
+    val width: Dp,
+    val tone: SourceLibraryTone,
+    val alpha: Float,
+    val anchor: BrandSplashStreakAnchor,
+    val baseOffsetX: Dp,
+    val progressOffsetX: Dp,
+    val offsetY: Dp,
+)
+
+internal data class BrandSplashSignalRailUiState(
+    val width: Dp,
+    val tone: SourceLibraryTone,
+    val startAlpha: Float,
+    val offsetRange: Dp,
+)
+
 internal data class AppNavigationTabUiState(
     val id: String,
     val label: String,
@@ -2939,6 +2992,101 @@ internal fun buildAppNavigationUiState(
                     else -> SourceLibraryTone.Muted
                 },
             ),
+        ),
+    )
+}
+
+internal fun buildBrandSplashUiState(
+    sourceCount: Int,
+    searchableSourceCount: Int,
+    cacheableSourceCount: Int,
+    danmakuProviderCount: Int,
+): BrandSplashUiState {
+    val safeSourceCount = sourceCount.coerceAtLeast(0)
+    val safeSearchableCount = searchableSourceCount.coerceAtLeast(0)
+    val safeCacheableCount = cacheableSourceCount.coerceAtLeast(0)
+    val safeDanmakuCount = danmakuProviderCount.coerceAtLeast(0)
+    val tagline = when {
+        safeSearchableCount > 0 && safeDanmakuCount > 0 -> "$safeSearchableCount 个搜索源 · 弹幕自动匹配"
+        safeSearchableCount > 0 -> "$safeSearchableCount 个搜索源 · 线路自动优选"
+        safeSourceCount > 0 -> "$safeSourceCount 个来源待搜索"
+        else -> "今晚继续追"
+    }
+    val progressLabel = if (safeCacheableCount > 0) "缓存与片单已就绪" else "片单已就绪"
+    val sourcePill = if (safeSearchableCount > 0) {
+        BrandSplashStatusPillUiState("$safeSearchableCount 源搜索", SourceLibraryTone.Online, 0.14f)
+    } else {
+        BrandSplashStatusPillUiState("源站待接入", SourceLibraryTone.Muted, 0.14f)
+    }
+    val danmakuPill = if (safeDanmakuCount > 0) {
+        BrandSplashStatusPillUiState("$safeDanmakuCount 路弹幕", SourceLibraryTone.Backup, 0.28f)
+    } else {
+        BrandSplashStatusPillUiState("弹幕同步", SourceLibraryTone.Backup, 0.28f)
+    }
+    return BrandSplashUiState(
+        headline = "追番不迷路",
+        brand = "ZFBML",
+        tagline = tagline,
+        progressLabel = progressLabel,
+        startupDurationMillis = 1_100,
+        logoSize = 112.dp,
+        orbitSize = 190.dp,
+        glowSize = 152.dp,
+        progressWidth = 164.dp,
+        statusPills = listOf(
+            BrandSplashStatusPillUiState("今日片单", SourceLibraryTone.Primary, 0f),
+            sourcePill,
+            danmakuPill,
+        ),
+        posterTiles = listOf(
+            BrandSplashPosterTileUiState(SourceLibraryTone.Primary, 34.dp, 48.dp, false),
+            BrandSplashPosterTileUiState(SourceLibraryTone.Online, 34.dp, 48.dp, false),
+            BrandSplashPosterTileUiState(SourceLibraryTone.Backup, 42.dp, 58.dp, true),
+            BrandSplashPosterTileUiState(SourceLibraryTone.Web, 34.dp, 48.dp, false),
+            BrandSplashPosterTileUiState(SourceLibraryTone.Cache, 34.dp, 48.dp, false),
+        ),
+        danmakuStreaks = listOf(
+            BrandSplashStreakUiState(
+                width = 78.dp,
+                tone = SourceLibraryTone.Online,
+                alpha = 0.44f,
+                anchor = BrandSplashStreakAnchor.TopStart,
+                baseOffsetX = 22.dp,
+                progressOffsetX = 14.dp,
+                offsetY = 25.dp,
+            ),
+            BrandSplashStreakUiState(
+                width = 58.dp,
+                tone = SourceLibraryTone.Primary,
+                alpha = 0.4f,
+                anchor = BrandSplashStreakAnchor.TopEnd,
+                baseOffsetX = (-16).dp,
+                progressOffsetX = 16.dp,
+                offsetY = 56.dp,
+            ),
+            BrandSplashStreakUiState(
+                width = 92.dp,
+                tone = SourceLibraryTone.Backup,
+                alpha = 0.34f,
+                anchor = BrandSplashStreakAnchor.BottomStart,
+                baseOffsetX = 10.dp,
+                progressOffsetX = 20.dp,
+                offsetY = (-48).dp,
+            ),
+            BrandSplashStreakUiState(
+                width = 68.dp,
+                tone = SourceLibraryTone.Web,
+                alpha = 0.32f,
+                anchor = BrandSplashStreakAnchor.BottomEnd,
+                baseOffsetX = (-18).dp,
+                progressOffsetX = 18.dp,
+                offsetY = (-22).dp,
+            ),
+        ),
+        signalRails = listOf(
+            BrandSplashSignalRailUiState(132.dp, SourceLibraryTone.Online, 0.18f, 18.dp),
+            BrandSplashSignalRailUiState(92.dp, SourceLibraryTone.Primary, 0.28f, 36.dp),
+            BrandSplashSignalRailUiState(118.dp, SourceLibraryTone.Backup, 0.12f, 54.dp),
         ),
     )
 }

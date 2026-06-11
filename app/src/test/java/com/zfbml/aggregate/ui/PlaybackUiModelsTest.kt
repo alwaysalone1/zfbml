@@ -1807,6 +1807,49 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun brandSplashUiStateSummarizesSourceCacheAndDanmakuReadiness() {
+        val state = buildBrandSplashUiState(
+            sourceCount = 8,
+            searchableSourceCount = 5,
+            cacheableSourceCount = 2,
+            danmakuProviderCount = 4,
+        )
+
+        assertEquals("追番不迷路", state.headline)
+        assertEquals("ZFBML", state.brand)
+        assertEquals("5 个搜索源 · 弹幕自动匹配", state.tagline)
+        assertEquals("缓存与片单已就绪", state.progressLabel)
+        assertEquals(1_100, state.startupDurationMillis)
+        assertEquals(112.dp, state.logoSize)
+        assertEquals(190.dp, state.orbitSize)
+        assertEquals(164.dp, state.progressWidth)
+        assertEquals(listOf("今日片单", "5 源搜索", "4 路弹幕"), state.statusPills.map { it.label })
+        assertEquals(listOf(SourceLibraryTone.Primary, SourceLibraryTone.Online, SourceLibraryTone.Backup), state.statusPills.map { it.tone })
+        assertEquals(5, state.posterTiles.size)
+        assertEquals(1, state.posterTiles.count { it.emphasized })
+        assertEquals(4, state.danmakuStreaks.size)
+        assertEquals(BrandSplashStreakAnchor.TopStart, state.danmakuStreaks.first().anchor)
+        assertEquals(3, state.signalRails.size)
+        assertEquals(54.dp, state.signalRails.last().offsetRange)
+    }
+
+    @Test
+    fun brandSplashUiStateExplainsEmptySourceCoverage() {
+        val state = buildBrandSplashUiState(
+            sourceCount = -1,
+            searchableSourceCount = -1,
+            cacheableSourceCount = 0,
+            danmakuProviderCount = 0,
+        )
+
+        assertEquals("今晚继续追", state.tagline)
+        assertEquals("片单已就绪", state.progressLabel)
+        assertEquals("源站待接入", state.statusPills[1].label)
+        assertEquals(SourceLibraryTone.Muted, state.statusPills[1].tone)
+        assertEquals("弹幕同步", state.statusPills[2].label)
+    }
+
+    @Test
     fun sourceLibraryUiStateSummarizesStrategiesAndCards() {
         val manifests = listOf(
             manifest(
