@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.143")
+                setRequestProperty("User-Agent", "ZFBML/0.5.144")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2984,7 +2984,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.143",
+            version = "0.5.144",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -7246,20 +7246,29 @@ private fun PlayerFullscreenLockButton(
     locked: Boolean,
     onClick: () -> Unit,
 ) {
+    val state = remember(locked) {
+        buildPlayerFullscreenLockButtonUiState(locked = locked)
+    }
+    val containerColor = state.containerTone
+        ?.let { sourceLibraryToneColor(it) }
+        ?: playerChromeBaseColor(state.containerBaseColor)
+    val contentColor = state.contentTone
+        ?.let { sourceLibraryToneColor(it) }
+        ?: playerChromeBaseColor(state.contentBaseColor)
     TextButton(
         onClick = onClick,
-        modifier = Modifier.width(44.dp).height(44.dp).focusable(),
-        shape = RoundedCornerShape(999.dp),
+        modifier = Modifier.width(state.width).height(state.height).focusable(),
+        shape = RoundedCornerShape(state.cornerRadius),
         colors = ButtonDefaults.textButtonColors(
-            containerColor = if (locked) AnimeAccentPink.copy(alpha = 0.24f) else Color.Black.copy(alpha = 0.42f),
-            contentColor = if (locked) AnimeAccentPink else Color.White.copy(alpha = 0.88f),
+            containerColor = containerColor.copy(alpha = state.containerAlpha),
+            contentColor = contentColor.copy(alpha = state.contentAlpha),
         ),
         contentPadding = PaddingValues(0.dp),
     ) {
         Icon(
-            imageVector = if (locked) Icons.Filled.LockOpen else Icons.Filled.Lock,
-            contentDescription = if (locked) "解锁控制" else "锁定控制",
-            modifier = Modifier.size(21.dp),
+            imageVector = if (state.locked) Icons.Filled.LockOpen else Icons.Filled.Lock,
+            contentDescription = state.contentDescription,
+            modifier = Modifier.size(state.iconSize),
         )
     }
 }

@@ -1542,6 +1542,21 @@ internal data class PlayerFullscreenSeekButtonUiState(
     val iconAlpha: Float,
 )
 
+internal data class PlayerFullscreenLockButtonUiState(
+    val locked: Boolean,
+    val contentDescription: String,
+    val width: Dp,
+    val height: Dp,
+    val cornerRadius: Dp,
+    val iconSize: Dp,
+    val containerTone: SourceLibraryTone?,
+    val containerBaseColor: PlayerChromeBaseColor,
+    val containerAlpha: Float,
+    val contentTone: SourceLibraryTone?,
+    val contentBaseColor: PlayerChromeBaseColor,
+    val contentAlpha: Float,
+)
+
 internal data class PlayerSeekBarUiState(
     val positionLabel: String,
     val durationLabel: String,
@@ -6464,6 +6479,25 @@ internal fun buildPlayerFullscreenSeekClusterUiState(
         dividerHeight = 18.dp,
         dividerBaseColor = PlayerChromeBaseColor.White,
         dividerAlpha = 0.10f,
+    )
+}
+
+internal fun buildPlayerFullscreenLockButtonUiState(
+    locked: Boolean,
+): PlayerFullscreenLockButtonUiState {
+    return PlayerFullscreenLockButtonUiState(
+        locked = locked,
+        contentDescription = if (locked) "解锁控制" else "锁定控制",
+        width = 44.dp,
+        height = 44.dp,
+        cornerRadius = 999.dp,
+        iconSize = 21.dp,
+        containerTone = if (locked) SourceLibraryTone.Primary else null,
+        containerBaseColor = if (locked) PlayerChromeBaseColor.White else PlayerChromeBaseColor.Black,
+        containerAlpha = if (locked) 0.24f else 0.42f,
+        contentTone = if (locked) SourceLibraryTone.Primary else null,
+        contentBaseColor = PlayerChromeBaseColor.White,
+        contentAlpha = if (locked) 1f else 0.88f,
     )
 }
 

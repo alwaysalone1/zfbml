@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.144
+
+English:
+
+- Fullscreen lock controls now use `PlayerFullscreenLockButtonUiState` for locked/unlocked content descriptions, sizing, radius, icon size, container tone/base color, content tone/base color, and alpha values.
+- `PlayerFullscreenLockButton` now renders from model chrome instead of keeping lock-button dimensions and locked/unlocked color branches inside Compose.
+- Added unit coverage for locked and unlocked fullscreen lock-button chrome.
+- App version labels, request user agents, and README notes are now updated to `0.5.144`.
+
 ### v0.5.143
 
 English:

@@ -4575,6 +4575,34 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun playerFullscreenLockButtonUiStateExposesLockedAndUnlockedChrome() {
+        val unlocked = buildPlayerFullscreenLockButtonUiState(locked = false)
+        val locked = buildPlayerFullscreenLockButtonUiState(locked = true)
+
+        assertFalse(unlocked.locked)
+        assertEquals("锁定控制", unlocked.contentDescription)
+        assertEquals(44.dp, unlocked.width)
+        assertEquals(44.dp, unlocked.height)
+        assertEquals(999.dp, unlocked.cornerRadius)
+        assertEquals(21.dp, unlocked.iconSize)
+        assertNull(unlocked.containerTone)
+        assertEquals(PlayerChromeBaseColor.Black, unlocked.containerBaseColor)
+        assertEquals(0.42f, unlocked.containerAlpha, 0.001f)
+        assertNull(unlocked.contentTone)
+        assertEquals(PlayerChromeBaseColor.White, unlocked.contentBaseColor)
+        assertEquals(0.88f, unlocked.contentAlpha, 0.001f)
+
+        assertTrue(locked.locked)
+        assertEquals("解锁控制", locked.contentDescription)
+        assertEquals(SourceLibraryTone.Primary, locked.containerTone)
+        assertEquals(PlayerChromeBaseColor.White, locked.containerBaseColor)
+        assertEquals(0.24f, locked.containerAlpha, 0.001f)
+        assertEquals(SourceLibraryTone.Primary, locked.contentTone)
+        assertEquals(PlayerChromeBaseColor.White, locked.contentBaseColor)
+        assertEquals(1f, locked.contentAlpha, 0.001f)
+    }
+
+    @Test
     fun playerDoubleTapSeekDeltaUsesTapSide() {
         assertEquals(-10_000L, playerDoubleTapSeekDeltaMs(tapX = 120f, surfaceWidthPx = 400))
         assertEquals(10_000L, playerDoubleTapSeekDeltaMs(tapX = 280f, surfaceWidthPx = 400))
