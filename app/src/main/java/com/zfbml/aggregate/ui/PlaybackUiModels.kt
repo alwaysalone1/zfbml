@@ -1560,11 +1560,10 @@ internal data class PlayerEdgeProgressUiState(
 internal data class PlayerCompactInteractionUiState(
     val progress: PlayerCompactProgressUiState,
     val danmaku: PlayerCompactDanmakuUiState,
+    val fullscreenAction: PlayerCompactFullscreenActionUiState,
     val columnSpacing: Dp,
     val actionRowHeight: Dp,
     val actionRowSpacing: Dp,
-    val fullscreenActionWidth: Dp,
-    val fullscreenContentDescription: String,
 )
 
 internal data class PlayerCompactProgressUiState(
@@ -1596,6 +1595,26 @@ internal data class PlayerCompactDanmakuUiState(
     val toggleContainerAlpha: Float,
     val toggleContentTone: SourceLibraryTone?,
     val toggleContentAlpha: Float,
+)
+
+internal data class PlayerCompactFullscreenActionUiState(
+    val contentDescription: String,
+    val width: Dp,
+    val height: Dp,
+    val cornerRadius: Dp,
+    val iconSize: Dp,
+    val selected: Boolean,
+    val enabled: Boolean,
+    val containerTone: SourceLibraryTone?,
+    val containerBaseColor: PlayerChromeBaseColor,
+    val containerAlpha: Float,
+    val contentTone: SourceLibraryTone?,
+    val contentBaseColor: PlayerChromeBaseColor,
+    val contentAlpha: Float,
+    val disabledContainerBaseColor: PlayerChromeBaseColor,
+    val disabledContainerAlpha: Float,
+    val disabledContentBaseColor: PlayerChromeBaseColor,
+    val disabledContentAlpha: Float,
 )
 
 internal data class PlayerFullscreenDanmakuInputUiState(
@@ -4642,11 +4661,28 @@ internal fun buildPlayerCompactInteractionUiState(
             toggleContentTone = if (danmakuEnabled) SourceLibraryTone.Primary else null,
             toggleContentAlpha = if (danmakuEnabled) 1f else 0.56f,
         ),
+        fullscreenAction = PlayerCompactFullscreenActionUiState(
+            contentDescription = "全屏播放",
+            width = 38.dp,
+            height = 34.dp,
+            cornerRadius = 8.dp,
+            iconSize = 19.dp,
+            selected = false,
+            enabled = true,
+            containerTone = null,
+            containerBaseColor = PlayerChromeBaseColor.White,
+            containerAlpha = 0.08f,
+            contentTone = null,
+            contentBaseColor = PlayerChromeBaseColor.White,
+            contentAlpha = 0.72f,
+            disabledContainerBaseColor = PlayerChromeBaseColor.White,
+            disabledContainerAlpha = 0.05f,
+            disabledContentBaseColor = PlayerChromeBaseColor.White,
+            disabledContentAlpha = 0.34f,
+        ),
         columnSpacing = 7.dp,
         actionRowHeight = 36.dp,
         actionRowSpacing = 7.dp,
-        fullscreenActionWidth = 38.dp,
-        fullscreenContentDescription = "全屏播放",
     )
 }
 

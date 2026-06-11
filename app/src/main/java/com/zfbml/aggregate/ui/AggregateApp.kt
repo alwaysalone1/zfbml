@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.140")
+                setRequestProperty("User-Agent", "ZFBML/0.5.141")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2984,7 +2984,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.140",
+            version = "0.5.141",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -7025,10 +7025,9 @@ private fun PlayerCompactInteractionRow(
                 modifier = Modifier.weight(1f),
             )
             PlayerTinyIconAction(
+                state = state.fullscreenAction,
                 icon = Icons.Filled.Fullscreen,
-                contentDescription = state.fullscreenContentDescription,
                 onClick = onEnterFullscreen,
-                modifier = Modifier.width(state.fullscreenActionWidth),
             )
         }
     }
@@ -7130,27 +7129,37 @@ private fun PlayerCompactProgressLine(
 
 @Composable
 private fun PlayerTinyIconAction(
+    state: PlayerCompactFullscreenActionUiState,
     icon: ImageVector,
-    contentDescription: String,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier.width(38.dp),
-    selected: Boolean = false,
-    enabled: Boolean = true,
+    modifier: Modifier = Modifier,
 ) {
+    val containerColor = state.containerTone
+        ?.let { sourceLibraryToneColor(it) }
+        ?: playerChromeBaseColor(state.containerBaseColor)
+    val contentColor = state.contentTone
+        ?.let { sourceLibraryToneColor(it) }
+        ?: playerChromeBaseColor(state.contentBaseColor)
     TextButton(
         onClick = onClick,
-        enabled = enabled,
-        modifier = modifier.height(34.dp).focusable(),
-        shape = RoundedCornerShape(8.dp),
+        enabled = state.enabled,
+        modifier = modifier.width(state.width).height(state.height).focusable(),
+        shape = RoundedCornerShape(state.cornerRadius),
         colors = ButtonDefaults.textButtonColors(
-            containerColor = if (selected) AnimeAccentPink.copy(alpha = 0.18f) else Color.White.copy(alpha = 0.08f),
-            contentColor = if (selected) AnimeAccentPink else Color.White.copy(alpha = 0.72f),
-            disabledContainerColor = Color.White.copy(alpha = 0.05f),
-            disabledContentColor = Color.White.copy(alpha = 0.34f),
+            containerColor = containerColor.copy(alpha = state.containerAlpha),
+            contentColor = contentColor.copy(alpha = state.contentAlpha),
+            disabledContainerColor = playerChromeBaseColor(state.disabledContainerBaseColor)
+                .copy(alpha = state.disabledContainerAlpha),
+            disabledContentColor = playerChromeBaseColor(state.disabledContentBaseColor)
+                .copy(alpha = state.disabledContentAlpha),
         ),
         contentPadding = PaddingValues(0.dp),
     ) {
-        Icon(icon, contentDescription = contentDescription, modifier = Modifier.size(19.dp))
+        Icon(
+            icon,
+            contentDescription = state.contentDescription,
+            modifier = Modifier.size(state.iconSize),
+        )
     }
 }
 
