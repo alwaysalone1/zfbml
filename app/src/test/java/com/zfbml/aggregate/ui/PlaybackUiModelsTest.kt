@@ -1755,6 +1755,59 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun homeSpotlightCarouselUiStateBuildsCardsCompanionsAndLayout() {
+        val alpha = SearchResult(
+            providerId = "bangumi-catalog",
+            title = "Alpha",
+            url = "bangumi://subject/1",
+            subtitle = "Bangumi / TV",
+            raw = mapOf("subjectId" to "1", "categoryTitle" to "\u65b0\u756a", "rating" to "9.1"),
+        )
+        val duplicateAlpha = alpha.copy(title = "Alpha duplicate", url = "bangumi://subject/1?dup")
+        val beta = searchResult("direct-url", "Beta")
+
+        val state = buildHomeSpotlightCarouselUiState(
+            title = "\u7cbe\u9009\u9996\u63a8",
+            items = listOf(alpha, duplicateAlpha, beta),
+            maxItems = 8,
+        )
+
+        assertEquals("\u7cbe\u9009\u9996\u63a8", state.title)
+        assertEquals("\u6ed1\u52a8\u6311\u4e00\u90e8\u5f00\u59cb", state.helper)
+        assertEquals(12.dp, state.itemSpacing)
+        assertEquals(0.94f, state.cardWidthFraction, 0.001f)
+        assertEquals(320.dp, state.minCardWidth)
+        assertEquals(560.dp, state.maxCardWidth)
+        assertEquals(226.dp, state.cardHeight)
+        assertEquals(2, state.cards.size)
+
+        val first = state.cards.first()
+        assertEquals(alpha, first.result)
+        assertEquals(beta, first.companion)
+        assertEquals("#01 \u7126\u70b9", first.focusLabel)
+        assertEquals("\u65b0\u756a", first.primaryChip)
+        assertEquals("\u8bc4\u5206 9.1", first.secondaryChip)
+        assertEquals("Bangumi / TV", first.subtitle)
+        assertEquals("\u8fdb\u5165\u8be6\u60c5", first.actionLabel)
+    }
+
+    @Test
+    fun homeSpotlightCarouselUiStateUsesFallbackWhenItemsAreEmpty() {
+        val fallback = listOf(searchResult("bangumi-catalog", "Fallback"))
+
+        val state = buildHomeSpotlightCarouselUiState(
+            title = "\u7cbe\u9009",
+            items = emptyList(),
+            fallback = fallback,
+        )
+
+        assertEquals(1, state.cards.size)
+        assertEquals(fallback.first(), state.cards.single().result)
+        assertNull(state.cards.single().companion)
+        assertEquals("#01 \u7126\u70b9", state.cards.single().focusLabel)
+    }
+
+    @Test
     fun categoryBrowseUiStateSummarizesCoverageRatingHeatAndSource() {
         val category = category(id = "hot", title = "\u70ed\u95e8")
         val items = listOf(

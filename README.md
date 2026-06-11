@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.123
+
+English:
+
+- The Discover spotlight carousel is now driven by `HomeSpotlightCarouselUiState`, covering visible item selection, deduplication, helper copy, focus labels, chips, companion cards, and carousel layout dimensions.
+- `HeroCarouselCard` now renders from model state while Compose only handles artwork, colors, and click routing.
+- Added unit coverage for spotlight deduplication, companion selection, fallback items, focus labels, chips, and layout dimensions.
+- App version labels, request user agents, and README notes are now updated to `0.5.123`.
+
 ### v0.5.122
 
 English:

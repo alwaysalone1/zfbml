@@ -412,6 +412,36 @@ internal data class HomeWatchHubCardUiState(
     val weight: Float,
 )
 
+internal data class HomeSpotlightCarouselUiState(
+    val title: String,
+    val helper: String,
+    val itemSpacing: Dp,
+    val cardWidthFraction: Float,
+    val minCardWidth: Dp,
+    val maxCardWidth: Dp,
+    val cardHeight: Dp,
+    val cardCornerRadius: Dp,
+    val cardPadding: Dp,
+    val contentSpacing: Dp,
+    val companionMinWidth: Dp,
+    val companionColumnWidth: Dp,
+    val companionPosterWidth: Dp,
+    val companionPosterHeight: Dp,
+    val cards: List<HomeSpotlightCardUiState>,
+)
+
+internal data class HomeSpotlightCardUiState(
+    val result: SearchResult,
+    val companion: SearchResult?,
+    val focusLabel: String,
+    val primaryChip: String,
+    val secondaryChip: String,
+    val title: String,
+    val subtitle: String,
+    val actionLabel: String,
+    val companionLabel: String,
+)
+
 internal enum class SourceLibraryTone {
     Primary,
     Online,
@@ -3048,6 +3078,52 @@ internal fun buildHomeWatchHubUiState(
     )
 }
 
+internal fun buildHomeSpotlightCarouselUiState(
+    title: String,
+    items: List<SearchResult>,
+    fallback: List<SearchResult> = emptyList(),
+    maxItems: Int = 8,
+): HomeSpotlightCarouselUiState {
+    val uniqueItems = items.ifEmpty { fallback }
+        .distinctBy { it.homeStableMediaKey() }
+        .take(maxItems.coerceAtLeast(1))
+    return HomeSpotlightCarouselUiState(
+        title = title,
+        helper = "滑动挑一部开始",
+        itemSpacing = 12.dp,
+        cardWidthFraction = 0.94f,
+        minCardWidth = 320.dp,
+        maxCardWidth = 560.dp,
+        cardHeight = 226.dp,
+        cardCornerRadius = 8.dp,
+        cardPadding = 12.dp,
+        contentSpacing = 12.dp,
+        companionMinWidth = 380.dp,
+        companionColumnWidth = 68.dp,
+        companionPosterWidth = 58.dp,
+        companionPosterHeight = 82.dp,
+        cards = uniqueItems.mapIndexed { index, result ->
+            val companion = if (uniqueItems.size > 1) {
+                uniqueItems[(index + 1) % uniqueItems.size]
+            } else {
+                null
+            }
+            HomeSpotlightCardUiState(
+                result = result,
+                companion = companion,
+                focusLabel = "#%02d 焦点".format(index + 1),
+                primaryChip = result.raw["categoryTitle"]?.takeIf { it.isNotBlank() } ?: "今日首推",
+                secondaryChip = result.raw["rating"]?.takeIf { it.isNotBlank() }?.let { "评分 $it" }
+                    ?: result.providerKindForSearch().providerLabel,
+                title = result.title.ifBlank { "未命名条目" },
+                subtitle = result.subtitle?.takeIf { it.isNotBlank() } ?: result.providerKindForSearch().providerLabel,
+                actionLabel = "进入详情",
+                companionLabel = "NEXT",
+            )
+        },
+    )
+}
+
 internal fun buildCategoryBrowseUiState(
     category: BangumiCategory,
     items: List<SearchResult>,
@@ -3114,6 +3190,10 @@ internal fun buildCategoryBrowseUiState(
         },
         hasItems = items.isNotEmpty(),
     )
+}
+
+private fun SearchResult.homeStableMediaKey(): String {
+    return raw["subjectId"] ?: raw["id"] ?: url.ifBlank { title }
 }
 
 private const val NAV_DISCOVER_ID = "discover"

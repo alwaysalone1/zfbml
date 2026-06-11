@@ -252,3 +252,5 @@ This pass upgrades main app chrome navigation. `AppNavigationChromeUiState` now 
 This pass upgrades Discover content chrome. `HomeBrowseChromeUiState` now owns the home header copy, search entry copy, calendar action state, ordered category tabs, semantic tones, and tab/header dimensions so recommendation, schedule, and category browsing share one tested content-layout contract.
 
 This pass upgrades the Discover watch hub. `HomeWatchHubUiState` now owns the Continue, Calendar, and Recommendation action-card copy, enabled state, semantic tone, weights, sizing, padding, and spacing so the home decision row is model-driven instead of Compose-local.
+
+This pass upgrades the Discover spotlight carousel. `HomeSpotlightCarouselUiState` now owns visible item selection, stable-key deduplication, helper copy, focus labels, metadata chips, companion-card links, and carousel dimensions so the home hero rail is a tested content-layout model.

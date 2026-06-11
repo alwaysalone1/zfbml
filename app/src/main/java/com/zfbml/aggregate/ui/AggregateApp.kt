@@ -1688,24 +1688,29 @@ private fun HomeHeroCarousel(
     items: List<SearchResult>,
     onOpenDetail: (SearchResult) -> Unit,
 ) {
-    val visible = items.ifEmpty { featuredOnlineResults() }.distinctBy { it.stableMediaKey() }.take(8)
+    val state = remember(title, items) {
+        buildHomeSpotlightCarouselUiState(
+            title = title,
+            items = items,
+            fallback = featuredOnlineResults(),
+        )
+    }
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(title, style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold)
-            Text("\u6ed1\u52a8\u6311\u4e00\u90e8\u5f00\u59cb", style = MaterialTheme.typography.bodySmall, color = AnimeMuted)
+            Text(state.title, style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold)
+            Text(state.helper, style = MaterialTheme.typography.bodySmall, color = AnimeMuted)
         }
         BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-            val cardWidth = (maxWidth * 0.94f).coerceAtLeast(320.dp).coerceAtMost(560.dp)
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(visible.size) { index ->
-                    val result = visible[index]
-                    val companion = if (visible.size > 1) visible[(index + 1) % visible.size] else null
+            val cardWidth = (maxWidth * state.cardWidthFraction)
+                .coerceAtLeast(state.minCardWidth)
+                .coerceAtMost(state.maxCardWidth)
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(state.itemSpacing)) {
+                items(state.cards) { card ->
                     HeroCarouselCard(
-                        result = result,
-                        index = index,
-                        companion = companion,
-                        onClick = { onOpenDetail(result) },
-                        modifier = Modifier.width(cardWidth).height(226.dp),
+                        state = card,
+                        carouselState = state,
+                        onClick = { onOpenDetail(card.result) },
+                        modifier = Modifier.width(cardWidth).height(state.cardHeight),
                     )
                 }
             }
@@ -1715,22 +1720,22 @@ private fun HomeHeroCarousel(
 
 @Composable
 private fun HeroCarouselCard(
-    result: SearchResult,
-    index: Int,
-    companion: SearchResult?,
+    state: HomeSpotlightCardUiState,
+    carouselState: HomeSpotlightCarouselUiState,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val result = state.result
     val accent = providerAccent(result.providerId)
-    val subtitle = result.subtitle?.takeIf { it.isNotBlank() } ?: providerDisplayName(result.providerId)
     ElevatedCard(
         onClick = onClick,
         modifier = modifier.focusable(),
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(carouselState.cardCornerRadius),
         colors = CardDefaults.elevatedCardColors(containerColor = AnimePanel),
     ) {
         BoxWithConstraints(Modifier.fillMaxSize().background(AnimePanelSoft)) {
-            val showCompanion = companion != null && maxWidth >= 380.dp
+            val companion = state.companion
+            val showCompanion = companion != null && maxWidth >= carouselState.companionMinWidth
             val posterWidth = if (showCompanion) 126.dp else 118.dp
             val titleStyle = if (showCompanion) MaterialTheme.typography.headlineSmall else MaterialTheme.typography.titleLarge
             Box(
@@ -1741,8 +1746,8 @@ private fun HeroCarouselCard(
                     .align(Alignment.TopStart),
             )
             Row(
-                modifier = Modifier.fillMaxSize().padding(12.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxSize().padding(carouselState.cardPadding),
+                horizontalArrangement = Arrangement.spacedBy(carouselState.contentSpacing),
             ) {
                 Box(modifier = Modifier.width(posterWidth).fillMaxHeight()) {
                     PosterArtwork(
@@ -1759,7 +1764,7 @@ private fun HeroCarouselCard(
                             .padding(horizontal = 8.dp, vertical = 4.dp),
                     ) {
                         Text(
-                            text = "#%02d \u7126\u70b9".format(index + 1),
+                            text = state.focusLabel,
                             style = MaterialTheme.typography.labelSmall,
                             color = Color.White,
                             fontWeight = FontWeight.Bold,
@@ -1772,11 +1777,11 @@ private fun HeroCarouselCard(
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            VideoMetaChip(result.raw["categoryTitle"] ?: "\u4eca\u65e5\u9996\u63a8")
-                            VideoMetaChip(result.raw["rating"]?.let { "\u8bc4\u5206 $it" } ?: providerDisplayName(result.providerId))
+                            VideoMetaChip(state.primaryChip)
+                            VideoMetaChip(state.secondaryChip)
                         }
                         Text(
-                            result.title,
+                            state.title,
                             style = titleStyle,
                             color = Color.White,
                             fontWeight = FontWeight.Bold,
@@ -1784,7 +1789,7 @@ private fun HeroCarouselCard(
                             overflow = TextOverflow.Ellipsis,
                         )
                         Text(
-                            subtitle,
+                            state.subtitle,
                             style = MaterialTheme.typography.bodyMedium,
                             color = AnimeMuted,
                             maxLines = 2,
@@ -1793,20 +1798,23 @@ private fun HeroCarouselCard(
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = AnimeAccentCyan, modifier = Modifier.size(22.dp))
-                        Text("\u8fdb\u5165\u8be6\u60c5", style = MaterialTheme.typography.labelLarge, color = AnimeAccentCyan)
+                        Text(state.actionLabel, style = MaterialTheme.typography.labelLarge, color = AnimeAccentCyan)
                     }
                 }
                 companion?.takeIf { showCompanion }?.let { next ->
                     Column(
-                        modifier = Modifier.width(68.dp).fillMaxHeight(),
+                        modifier = Modifier.width(carouselState.companionColumnWidth).fillMaxHeight(),
                         verticalArrangement = Arrangement.SpaceBetween,
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        Text("NEXT", style = MaterialTheme.typography.labelSmall, color = AnimeMuted, fontWeight = FontWeight.Bold)
+                        Text(state.companionLabel, style = MaterialTheme.typography.labelSmall, color = AnimeMuted, fontWeight = FontWeight.Bold)
                         PosterArtwork(
                             posterUrl = next.posterUrl,
                             accent = providerAccent(next.providerId),
-                            modifier = Modifier.size(width = 58.dp, height = 82.dp),
+                            modifier = Modifier.size(
+                                width = carouselState.companionPosterWidth,
+                                height = carouselState.companionPosterHeight,
+                            ),
                             shape = RoundedCornerShape(7.dp),
                         )
                         Text(
@@ -2401,7 +2409,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.122")
+                setRequestProperty("User-Agent", "ZFBML/0.5.123")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2915,7 +2923,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.122",
+            version = "0.5.123",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
