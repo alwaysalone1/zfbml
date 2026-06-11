@@ -278,3 +278,5 @@ This pass upgrades player bottom text-action chrome. `PlayerTextActionChromeUiSt
 This pass upgrades player circular-control chrome. `PlayerCircleButtonChromeUiState` now owns normal versus prominent button sizing, selected state, disabled state, container tone/base color and alpha, plus icon tone/base color and alpha so top-bar, center-play, seek, and fullscreen controls follow the same tested model-driven player-control contract.
 
 This pass upgrades player edge-progress chrome. `PlayerEdgeProgressUiState` now owns clamped progress, unknown-duration fallback, edge-bar height, progress tone, track tone, and track alpha so the always-visible video progress line stays aligned with seek bar and compact progress models while minimizing overlay obstruction.
+
+This pass upgrades player seek-feedback chrome. `PlayerSeekFeedbackUiState` now owns feedback text, placement, anti-obstruction margins, compact/fullscreen vertical offsets, radius, border, padding, icon visibility/size/tone, container alpha, and text alpha so double-tap seeking feedback stays predictable without covering the main video area.

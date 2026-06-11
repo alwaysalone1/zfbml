@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.136
+
+English:
+
+- Player seek feedback now uses `PlayerSeekFeedbackUiState` for text, placement, anti-obstruction margins, vertical offsets, radius, border, padding, icon visibility, icon size, tones, and text alpha.
+- `PlayerSeekFeedbackPill` and its overlay position now render from model state instead of keeping double-tap feedback spacing and chrome constants inside Compose.
+- Added unit coverage for center/button seek feedback and compact side-gesture feedback chrome.
+- App version labels, request user agents, and README notes are now updated to `0.5.136`.
+
 ### v0.5.135
 
 English:

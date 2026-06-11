@@ -1436,6 +1436,27 @@ internal enum class PlayerSeekFeedbackPlacement {
     End,
 }
 
+internal data class PlayerSeekFeedbackUiState(
+    val text: String,
+    val placement: PlayerSeekFeedbackPlacement,
+    val horizontalMargin: Dp,
+    val verticalOffset: Dp,
+    val cornerRadius: Dp,
+    val containerBaseColor: PlayerChromeBaseColor,
+    val containerAlpha: Float,
+    val borderWidth: Dp,
+    val borderTone: SourceLibraryTone,
+    val borderAlpha: Float,
+    val horizontalPadding: Dp,
+    val verticalPadding: Dp,
+    val contentSpacing: Dp,
+    val iconVisible: Boolean,
+    val iconSize: Dp,
+    val iconTone: SourceLibraryTone,
+    val textBaseColor: PlayerChromeBaseColor,
+    val textAlpha: Float,
+)
+
 internal data class PlayerSeekBarUiState(
     val positionLabel: String,
     val durationLabel: String,
@@ -6144,6 +6165,33 @@ internal fun playerSeekFeedbackPlacement(
         deltaMs < 0L -> PlayerSeekFeedbackPlacement.Start
         else -> PlayerSeekFeedbackPlacement.End
     }
+}
+
+internal fun buildPlayerSeekFeedbackUiState(
+    text: String,
+    placement: PlayerSeekFeedbackPlacement,
+    compact: Boolean,
+): PlayerSeekFeedbackUiState {
+    return PlayerSeekFeedbackUiState(
+        text = text,
+        placement = placement,
+        horizontalMargin = if (placement == PlayerSeekFeedbackPlacement.Center) 0.dp else 28.dp,
+        verticalOffset = if (compact) 74.dp else 96.dp,
+        cornerRadius = 8.dp,
+        containerBaseColor = PlayerChromeBaseColor.Black,
+        containerAlpha = 0.58f,
+        borderWidth = 1.dp,
+        borderTone = SourceLibraryTone.Primary,
+        borderAlpha = 0.32f,
+        horizontalPadding = 12.dp,
+        verticalPadding = 7.dp,
+        contentSpacing = 7.dp,
+        iconVisible = placement != PlayerSeekFeedbackPlacement.Center,
+        iconSize = 18.dp,
+        iconTone = SourceLibraryTone.Primary,
+        textBaseColor = PlayerChromeBaseColor.White,
+        textAlpha = 1f,
+    )
 }
 
 internal fun playerSeekShouldRevealControls(fromGesture: Boolean): Boolean {

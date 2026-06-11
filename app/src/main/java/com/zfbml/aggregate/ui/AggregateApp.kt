@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.135")
+                setRequestProperty("User-Agent", "ZFBML/0.5.136")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2984,7 +2984,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.135",
+            version = "0.5.136",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -5812,19 +5812,25 @@ private fun PlayerScreen(
                     },
                 )
             }
+            val seekFeedbackState = remember(seekFeedbackText, seekFeedbackPlacement, compact) {
+                buildPlayerSeekFeedbackUiState(
+                    text = seekFeedbackText.orEmpty(),
+                    placement = seekFeedbackPlacement,
+                    compact = compact,
+                )
+            }
             AnimatedVisibility(
                 visible = seekFeedbackText != null && activePanel == null && !controlsLocked,
                 enter = fadeIn(),
                 exit = fadeOut(),
                 modifier = Modifier
-                    .align(seekFeedbackPlacement.feedbackAlignment())
-                    .padding(horizontal = if (seekFeedbackPlacement == PlayerSeekFeedbackPlacement.Center) 0.dp else 28.dp)
-                    .offset(y = if (compact) 74.dp else 96.dp)
+                    .align(seekFeedbackState.placement.feedbackAlignment())
+                    .padding(horizontal = seekFeedbackState.horizontalMargin)
+                    .offset(y = seekFeedbackState.verticalOffset)
                     .zIndex(4.6f),
             ) {
                 PlayerSeekFeedbackPill(
-                    text = seekFeedbackText.orEmpty(),
-                    placement = seekFeedbackPlacement,
+                    state = seekFeedbackState,
                 )
             }
             AnimatedVisibility(
@@ -6714,31 +6720,35 @@ private fun PlayerCenterControls(
 
 @Composable
 private fun PlayerSeekFeedbackPill(
-    text: String,
-    placement: PlayerSeekFeedbackPlacement,
+    state: PlayerSeekFeedbackUiState,
     modifier: Modifier = Modifier,
 ) {
+    val containerColor = playerChromeBaseColor(state.containerBaseColor)
+    val textColor = playerChromeBaseColor(state.textBaseColor)
+    val accent = sourceLibraryToneColor(state.borderTone)
     Row(
         modifier = modifier
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color.Black.copy(alpha = 0.58f))
-            .border(1.dp, AnimeAccentPink.copy(alpha = 0.32f), RoundedCornerShape(8.dp))
-            .padding(horizontal = 12.dp, vertical = 7.dp),
+            .clip(RoundedCornerShape(state.cornerRadius))
+            .background(containerColor.copy(alpha = state.containerAlpha))
+            .border(state.borderWidth, accent.copy(alpha = state.borderAlpha), RoundedCornerShape(state.cornerRadius))
+            .padding(horizontal = state.horizontalPadding, vertical = state.verticalPadding),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(7.dp),
+        horizontalArrangement = Arrangement.spacedBy(state.contentSpacing),
     ) {
-        placement.feedbackIcon()?.let { icon ->
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = AnimeAccentPink,
-                modifier = Modifier.size(18.dp),
-            )
+        if (state.iconVisible) {
+            state.placement.feedbackIcon()?.let { icon ->
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = sourceLibraryToneColor(state.iconTone),
+                    modifier = Modifier.size(state.iconSize),
+                )
+            }
         }
         Text(
-            text = text,
+            text = state.text,
             style = MaterialTheme.typography.labelLarge,
-            color = Color.White,
+            color = textColor.copy(alpha = state.textAlpha),
             fontWeight = FontWeight.Bold,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,

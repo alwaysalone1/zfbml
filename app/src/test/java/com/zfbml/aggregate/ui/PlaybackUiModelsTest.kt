@@ -4447,6 +4447,42 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun playerSeekFeedbackUiStateExposesAntiObstructionChrome() {
+        val center = buildPlayerSeekFeedbackUiState(
+            text = "快进 10 秒",
+            placement = PlayerSeekFeedbackPlacement.Center,
+            compact = false,
+        )
+        val start = buildPlayerSeekFeedbackUiState(
+            text = "后退 10 秒",
+            placement = PlayerSeekFeedbackPlacement.Start,
+            compact = true,
+        )
+
+        assertEquals("快进 10 秒", center.text)
+        assertEquals(PlayerSeekFeedbackPlacement.Center, center.placement)
+        assertEquals(0.dp, center.horizontalMargin)
+        assertEquals(96.dp, center.verticalOffset)
+        assertEquals(8.dp, center.cornerRadius)
+        assertEquals(PlayerChromeBaseColor.Black, center.containerBaseColor)
+        assertEquals(0.58f, center.containerAlpha, 0.001f)
+        assertEquals(1.dp, center.borderWidth)
+        assertEquals(SourceLibraryTone.Primary, center.borderTone)
+        assertEquals(0.32f, center.borderAlpha, 0.001f)
+        assertEquals(12.dp, center.horizontalPadding)
+        assertEquals(7.dp, center.verticalPadding)
+        assertEquals(7.dp, center.contentSpacing)
+        assertFalse(center.iconVisible)
+        assertEquals(18.dp, center.iconSize)
+        assertEquals(SourceLibraryTone.Primary, center.iconTone)
+        assertEquals(PlayerChromeBaseColor.White, center.textBaseColor)
+        assertEquals(1f, center.textAlpha, 0.001f)
+        assertEquals(28.dp, start.horizontalMargin)
+        assertEquals(74.dp, start.verticalOffset)
+        assertTrue(start.iconVisible)
+    }
+
+    @Test
     fun playerSeekRevealPolicyKeepsGestureSeekLightweight() {
         assertTrue(playerSeekShouldRevealControls(fromGesture = false))
         assertFalse(playerSeekShouldRevealControls(fromGesture = true))
