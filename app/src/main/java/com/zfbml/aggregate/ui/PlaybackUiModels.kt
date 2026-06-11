@@ -165,6 +165,15 @@ internal data class DetailRouteMetricUiState(
     val value: String,
     val tone: SourceLibraryTone,
     val critical: Boolean = false,
+    val height: Dp = 34.dp,
+    val cornerRadius: Dp = 8.dp,
+    val containerBaseColor: PlayerChromeBaseColor = PlayerChromeBaseColor.White,
+    val containerAlpha: Float = 0.06f,
+    val horizontalPadding: Dp = 10.dp,
+    val contentSpacing: Dp = 6.dp,
+    val labelTone: SourceLibraryTone = SourceLibraryTone.Muted,
+    val labelAlpha: Float = 1f,
+    val valueAlpha: Float = 1f,
 )
 
 internal data class DetailRouteRecommendationUiState(

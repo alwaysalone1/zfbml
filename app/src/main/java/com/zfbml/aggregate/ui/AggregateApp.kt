@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.148")
+                setRequestProperty("User-Agent", "ZFBML/0.5.149")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2984,7 +2984,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.148",
+            version = "0.5.149",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -4526,8 +4526,7 @@ private fun DetailRouteStatusCard(
                 ) {
                     state.metrics.forEach { metric ->
                         RouteMetricChip(
-                            title = metric.label,
-                            value = metric.value,
+                            state = metric,
                             accent = if (metric.critical) MaterialTheme.colorScheme.error else sourceLibraryToneColor(metric.tone),
                             modifier = Modifier.weight(1f),
                         )
@@ -4752,22 +4751,35 @@ private fun RouteDiagnosticStep(
 
 @Composable
 private fun RouteMetricChip(
-    title: String,
-    value: String,
+    state: DetailRouteMetricUiState,
     accent: Color,
     modifier: Modifier = Modifier,
 ) {
+    val containerColor = playerChromeBaseColor(state.containerBaseColor)
+    val labelColor = sourceLibraryToneColor(state.labelTone)
     Row(
         modifier = modifier
-            .height(34.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color.White.copy(alpha = 0.06f))
-            .padding(horizontal = 10.dp),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+            .height(state.height)
+            .clip(RoundedCornerShape(state.cornerRadius))
+            .background(containerColor.copy(alpha = state.containerAlpha))
+            .padding(horizontal = state.horizontalPadding),
+        horizontalArrangement = Arrangement.spacedBy(state.contentSpacing),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(title, style = MaterialTheme.typography.labelSmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Text(value, style = MaterialTheme.typography.labelLarge, color = accent, fontWeight = FontWeight.Bold, maxLines = 1)
+        Text(
+            state.label,
+            style = MaterialTheme.typography.labelSmall,
+            color = labelColor.copy(alpha = state.labelAlpha),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            state.value,
+            style = MaterialTheme.typography.labelLarge,
+            color = accent.copy(alpha = state.valueAlpha),
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+        )
     }
 }
 

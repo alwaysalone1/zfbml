@@ -304,3 +304,5 @@ This pass upgrades player notice chrome. `PlayerNoticeUiState` now owns compact 
 This pass upgrades fullscreen control-row layout chrome. `PlayerFullscreenControlRowUiState` now owns the fullscreen bottom overlay's vertical spacing, action-row spacing, danmaku input weight, and action-bar weight so status, danmaku, seek, and quick actions are composed by a tested layout contract instead of Compose-local constants.
 
 This pass upgrades detail route-prefetch chip chrome. `RoutePrefetchItemUiState` now owns chip height, radius, container alpha, border width/alpha, padding, spacing, indicator size/alpha, title base color, title alpha, and status alpha so detail-page route warming and cache-hit feedback follows the same tested model contract as player route/status controls.
+
+This pass upgrades detail route-metric chip chrome. `DetailRouteMetricUiState` now owns metric-chip height, radius, container base color, alpha, padding, spacing, label tone, label alpha, and value alpha so detail-page route diagnostics render from a tested model contract instead of Compose-local dimensions and opacity constants.
