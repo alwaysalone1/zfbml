@@ -745,6 +745,17 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun routeStatusBadgeChromeUiStateExposesSharedBadgeChrome() {
+        val state = buildRouteStatusBadgeChromeUiState()
+
+        assertEquals(24.dp, state.height)
+        assertEquals(8.dp, state.cornerRadius)
+        assertEquals(0.16f, state.containerAlpha, 0.001f)
+        assertEquals(8.dp, state.horizontalPadding)
+        assertEquals(1f, state.textAlpha, 0.001f)
+    }
+
+    @Test
     fun routePanelUiStateSummarizesRecommendationAndFailures() {
         val failed = route("failed", StreamProtocol.HLS, 900, quality = "1080p")
         val bt = route("bt", StreamProtocol.BITTORRENT, 800, quality = "1080p")

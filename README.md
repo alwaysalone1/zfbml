@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.142
+
+English:
+
+- Shared route/status badges now use `RouteStatusBadgeChromeUiState` for height, radius, container alpha, horizontal padding, and text alpha.
+- `RouteStatusBadge` now renders from the shared model chrome instead of keeping badge dimensions and opacity constants inside Compose.
+- Added unit coverage for the shared route/status badge chrome used across detail, search, source, and player surfaces.
+- App version labels, request user agents, and README notes are now updated to `0.5.142`.
+
 ### v0.5.141
 
 English:

@@ -721,6 +721,14 @@ internal data class SourceLibraryChipUiState(
     val tone: SourceLibraryTone,
 )
 
+internal data class RouteStatusBadgeChromeUiState(
+    val height: Dp,
+    val cornerRadius: Dp,
+    val containerAlpha: Float,
+    val horizontalPadding: Dp,
+    val textAlpha: Float,
+)
+
 internal data class SourceStrategyUiState(
     val id: String,
     val title: String,
@@ -4064,6 +4072,16 @@ private fun buildAppNavigationChromeUiState(
         bottomPaddingVertical = 8.dp,
         itemSpacing = 6.dp,
         itemCornerRadius = 8.dp,
+    )
+}
+
+internal fun buildRouteStatusBadgeChromeUiState(): RouteStatusBadgeChromeUiState {
+    return RouteStatusBadgeChromeUiState(
+        height = 24.dp,
+        cornerRadius = 8.dp,
+        containerAlpha = 0.16f,
+        horizontalPadding = 8.dp,
+        textAlpha = 1f,
     )
 }
 

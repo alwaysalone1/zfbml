@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.141")
+                setRequestProperty("User-Agent", "ZFBML/0.5.142")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2984,7 +2984,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.141",
+            version = "0.5.142",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -5122,15 +5122,21 @@ private fun RouteSourceFilterPill(
 
 @Composable
 private fun RouteStatusBadge(label: String, color: Color) {
+    val chrome = remember { buildRouteStatusBadgeChromeUiState() }
     Box(
         modifier = Modifier
-            .height(24.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(color.copy(alpha = 0.16f))
-            .padding(horizontal = 8.dp),
+            .height(chrome.height)
+            .clip(RoundedCornerShape(chrome.cornerRadius))
+            .background(color.copy(alpha = chrome.containerAlpha))
+            .padding(horizontal = chrome.horizontalPadding),
         contentAlignment = Alignment.Center,
     ) {
-        Text(label, style = MaterialTheme.typography.labelSmall, color = color, maxLines = 1)
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            color = color.copy(alpha = chrome.textAlpha),
+            maxLines = 1,
+        )
     }
 }
 
