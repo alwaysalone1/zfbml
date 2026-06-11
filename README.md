@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.124
+
+English:
+
+- The Discover schedule surface now has model-driven digest, hero, day-chip, and anime-row presentation states for timetable browsing.
+- Schedule cards now render title/subtitle, loading/error tone, metric chips, metadata chips, row sizing, poster sizing, and action copy from UI models instead of Compose-local constants.
+- Added unit coverage for schedule digest states, day-chip chrome, hero metadata chips, row metadata fallbacks, and layout dimensions.
+- App version labels, request user agents, and README notes are now updated to `0.5.124`.
+
 ### v0.5.123
 
 English:

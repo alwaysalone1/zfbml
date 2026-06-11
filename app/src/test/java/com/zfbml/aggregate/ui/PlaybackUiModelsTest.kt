@@ -1665,6 +1665,69 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun homeSchedulePresentationUiStateBuildsDigestHeroRowsAndDayChrome() {
+        val alpha = SearchResult(
+            providerId = "bangumi-catalog",
+            title = "Alpha",
+            url = "bangumi://subject/alpha",
+            subtitle = "\u5468\u4e00 23:00",
+            raw = mapOf("rating" to "9.4", "doing" to "1234"),
+        )
+        val state = buildHomeScheduleUiState(
+            schedule = listOf(scheduleDay(1, "\u661f\u671f\u4e00", listOf(alpha))),
+            selectedDayId = 1,
+            currentDayId = 1,
+        )
+
+        val digest = buildHomeScheduleDigestUiState(state, loading = false, error = null)
+        val dayChip = state.dayChips.single()
+        val hero = buildHomeScheduleHeroUiState(alpha, state.selectedDayTitle)
+        val row = buildHomeScheduleAnimeRowUiState(alpha)
+
+        assertEquals(state.headline, digest.title)
+        assertEquals(SourceLibraryTone.Online, digest.tone)
+        assertFalse(digest.showProgress)
+        assertEquals(listOf("\u4eca\u65e5 1", "\u672c\u5468 1", "\u4e0b\u4e00\u6279 \u4eca\u65e5 1 \u90e8"), digest.chips.map { it.label })
+        assertEquals(38.dp, digest.iconBoxSize)
+        assertEquals(8.dp, digest.cornerRadius)
+        assertEquals("1", dayChip.countLabel)
+        assertEquals(SourceLibraryTone.Online, dayChip.tone)
+        assertEquals(76.dp, dayChip.width)
+        assertEquals(5.dp, dayChip.todayDotSize)
+        assertEquals("Alpha", hero.title)
+        assertEquals("\u8fdb\u5165\u8be6\u60c5", hero.actionLabel)
+        assertEquals(listOf("\u8bc4\u5206 9.4", "1234 \u5728\u770b"), hero.chips.map { it.label })
+        assertEquals(210.dp, hero.height)
+        assertEquals("Alpha", row.title)
+        assertEquals("\u5468\u4e00 23:00", row.subtitle)
+        assertEquals(listOf("9.4", "1234 \u5728\u770b"), row.chips.map { it.label })
+        assertEquals("\u8be6\u60c5", row.actionLabel)
+        assertEquals(72.dp, row.posterWidth)
+    }
+
+    @Test
+    fun homeSchedulePresentationUiStateHandlesLoadingErrorAndMissingMetadata() {
+        val emptySchedule = buildHomeScheduleUiState(
+            schedule = emptyList(),
+            selectedDayId = 1,
+            currentDayId = 1,
+        )
+        val loading = buildHomeScheduleDigestUiState(emptySchedule, loading = true, error = null)
+        val failed = buildHomeScheduleDigestUiState(emptySchedule, loading = false, error = "timeout")
+        val row = buildHomeScheduleAnimeRowUiState(searchResult("direct-url", "Direct"))
+
+        assertTrue(loading.showProgress)
+        assertEquals(SourceLibraryTone.Backup, loading.tone)
+        assertEquals("\u65f6\u95f4\u8868\u540c\u6b65\u5f02\u5e38", failed.title)
+        assertEquals("timeout", failed.subtitle)
+        assertEquals(SourceLibraryTone.Web, failed.tone)
+        assertEquals("Direct", row.title)
+        assertTrue(row.subtitle.isNotBlank())
+        assertEquals(1, row.chips.size)
+        assertEquals(SourceLibraryTone.Muted, row.chips.single().tone)
+    }
+
+    @Test
     fun homeBrowseChromeUiStateBuildsOrderedCategoryTabsAndHeaderCopy() {
         val categories = listOf(
             category("recommend", "\u63a8\u8350"),

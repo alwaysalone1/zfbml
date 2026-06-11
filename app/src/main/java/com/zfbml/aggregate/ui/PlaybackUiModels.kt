@@ -311,6 +311,14 @@ internal data class ScheduleDayChipUiState(
     val count: Int,
     val selected: Boolean,
     val today: Boolean,
+    val countLabel: String = count.toString(),
+    val tone: SourceLibraryTone = SourceLibraryTone.Muted,
+    val width: Dp = 76.dp,
+    val height: Dp = 50.dp,
+    val cornerRadius: Dp = 8.dp,
+    val todayDotSize: Dp = 5.dp,
+    val horizontalPadding: Dp = 8.dp,
+    val verticalPadding: Dp = 6.dp,
 )
 
 internal data class HomeScheduleUiState(
@@ -326,6 +334,52 @@ internal data class HomeScheduleUiState(
     val todayCount: Int,
     val weekCount: Int,
     val nextUpdateLabel: String,
+)
+
+internal data class HomeScheduleDigestUiState(
+    val title: String,
+    val subtitle: String,
+    val showProgress: Boolean,
+    val tone: SourceLibraryTone,
+    val chips: List<SourceLibraryChipUiState>,
+    val cornerRadius: Dp,
+    val padding: Dp,
+    val contentSpacing: Dp,
+    val iconBoxSize: Dp,
+    val iconSize: Dp,
+    val chipSpacing: Dp,
+)
+
+internal data class HomeScheduleHeroUiState(
+    val result: SearchResult,
+    val dayLabel: String,
+    val title: String,
+    val subtitle: String,
+    val actionLabel: String,
+    val chips: List<SourceLibraryChipUiState>,
+    val height: Dp,
+    val posterWidth: Dp,
+    val cornerRadius: Dp,
+    val contentPadding: Dp,
+    val contentSpacing: Dp,
+    val actionSpacing: Dp,
+)
+
+internal data class HomeScheduleAnimeRowUiState(
+    val result: SearchResult,
+    val title: String,
+    val subtitle: String,
+    val chips: List<SourceLibraryChipUiState>,
+    val actionLabel: String,
+    val cornerRadius: Dp,
+    val rowPadding: Dp,
+    val rowSpacing: Dp,
+    val contentSpacing: Dp,
+    val actionSpacing: Dp,
+    val posterWidth: Dp,
+    val posterHeight: Dp,
+    val posterCornerRadius: Dp,
+    val actionIconSize: Dp,
 )
 
 internal data class CategoryBrowseUiState(
@@ -2937,6 +2991,12 @@ internal fun buildHomeScheduleUiState(
             count = day.items.size,
             selected = day.weekdayId == selectedDay?.weekdayId,
             today = day.weekdayId == currentDayId,
+            tone = when {
+                day.weekdayId == selectedDay?.weekdayId -> SourceLibraryTone.Online
+                day.weekdayId == currentDayId -> SourceLibraryTone.Primary
+                day.items.isNotEmpty() -> SourceLibraryTone.Backup
+                else -> SourceLibraryTone.Muted
+            },
         )
     }
     val selectedDayName = selectedDay?.weekdayCn ?: "\u8ffd\u756a\u65e5\u5386"
@@ -2969,6 +3029,98 @@ internal fun buildHomeScheduleUiState(
         todayCount = todayCount,
         weekCount = weekCount,
         nextUpdateLabel = nextUpdateLabel,
+    )
+}
+
+internal fun buildHomeScheduleDigestUiState(
+    state: HomeScheduleUiState,
+    loading: Boolean,
+    error: String?,
+): HomeScheduleDigestUiState {
+    val cleanError = error?.takeIf { it.isNotBlank() }
+    val tone = when {
+        cleanError != null -> SourceLibraryTone.Web
+        loading -> SourceLibraryTone.Backup
+        state.weekCount > 0 -> SourceLibraryTone.Online
+        else -> SourceLibraryTone.Muted
+    }
+    return HomeScheduleDigestUiState(
+        title = cleanError?.let { "\u65f6\u95f4\u8868\u540c\u6b65\u5f02\u5e38" } ?: state.headline,
+        subtitle = cleanError ?: state.summary,
+        showProgress = loading,
+        tone = tone,
+        chips = listOf(
+            SourceLibraryChipUiState("\u4eca\u65e5 ${state.todayCount}", SourceLibraryTone.Primary),
+            SourceLibraryChipUiState("\u672c\u5468 ${state.weekCount}", SourceLibraryTone.Online),
+            SourceLibraryChipUiState("\u4e0b\u4e00\u6279 ${state.nextUpdateLabel}", SourceLibraryTone.Backup),
+        ),
+        cornerRadius = 8.dp,
+        padding = 14.dp,
+        contentSpacing = 10.dp,
+        iconBoxSize = 38.dp,
+        iconSize = 20.dp,
+        chipSpacing = 8.dp,
+    )
+}
+
+internal fun buildHomeScheduleHeroUiState(
+    result: SearchResult,
+    dayLabel: String,
+): HomeScheduleHeroUiState {
+    return HomeScheduleHeroUiState(
+        result = result,
+        dayLabel = dayLabel,
+        title = result.title,
+        subtitle = result.subtitle.orEmpty().ifBlank {
+            "\u65b0\u756a\u65f6\u95f4\u8868 / \u756a\u5267\u8be6\u60c5 / \u591a\u7ebf\u8def\u64ad\u653e"
+        },
+        actionLabel = "\u8fdb\u5165\u8be6\u60c5",
+        chips = listOf(
+            SourceLibraryChipUiState(
+                result.raw["rating"]?.let { "\u8bc4\u5206 $it" } ?: "\u4eca\u65e5\u653e\u9001",
+                SourceLibraryTone.Primary,
+            ),
+            SourceLibraryChipUiState(
+                result.raw["doing"]?.let { "$it \u5728\u770b" } ?: "\u53ef\u9009\u7ebf\u8def",
+                SourceLibraryTone.Online,
+            ),
+        ),
+        height = 210.dp,
+        posterWidth = 188.dp,
+        cornerRadius = 8.dp,
+        contentPadding = 18.dp,
+        contentSpacing = 8.dp,
+        actionSpacing = 10.dp,
+    )
+}
+
+internal fun buildHomeScheduleAnimeRowUiState(result: SearchResult): HomeScheduleAnimeRowUiState {
+    val chips = buildList {
+        result.raw["rating"]?.takeIf { it.isNotBlank() }?.let {
+            add(SourceLibraryChipUiState(it, SourceLibraryTone.Primary))
+        }
+        result.raw["doing"]?.takeIf { it.isNotBlank() }?.let {
+            add(SourceLibraryChipUiState("$it \u5728\u770b", SourceLibraryTone.Online))
+        }
+        if (isEmpty()) {
+            add(SourceLibraryChipUiState(result.providerKindForSearch().providerLabel, SourceLibraryTone.Muted))
+        }
+    }
+    return HomeScheduleAnimeRowUiState(
+        result = result,
+        title = result.title,
+        subtitle = result.subtitle.orEmpty().ifBlank { result.providerKindForSearch().providerLabel },
+        chips = chips.take(2),
+        actionLabel = "\u8be6\u60c5",
+        cornerRadius = 8.dp,
+        rowPadding = 10.dp,
+        rowSpacing = 12.dp,
+        contentSpacing = 5.dp,
+        actionSpacing = 6.dp,
+        posterWidth = 72.dp,
+        posterHeight = 96.dp,
+        posterCornerRadius = 6.dp,
+        actionIconSize = 26.dp,
     )
 }
 

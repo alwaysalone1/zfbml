@@ -2061,37 +2061,38 @@ private fun FeaturedBanner(result: SearchResult, onClick: () -> Unit) {
 
 @Composable
 private fun ScheduleHeroBanner(result: SearchResult, dayLabel: String, onClick: () -> Unit) {
+    val state = remember(result, dayLabel) { buildHomeScheduleHeroUiState(result, dayLabel) }
     ElevatedCard(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth().height(210.dp).focusable(),
-        shape = RoundedCornerShape(8.dp),
+        modifier = Modifier.fillMaxWidth().height(state.height).focusable(),
+        shape = RoundedCornerShape(state.cornerRadius),
         colors = CardDefaults.elevatedCardColors(containerColor = Color(0xFF1D2028)),
     ) {
         Box(Modifier.fillMaxSize()) {
             PosterArtwork(
-                posterUrl = result.posterUrl,
+                posterUrl = state.result.posterUrl,
                 accent = AnimeAccentViolet.copy(alpha = 0.34f),
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .size(width = 188.dp, height = 210.dp),
-                shape = RoundedCornerShape(topEnd = 8.dp, bottomEnd = 8.dp),
+                    .size(width = state.posterWidth, height = state.height),
+                shape = RoundedCornerShape(topEnd = state.cornerRadius, bottomEnd = state.cornerRadius),
             )
             Column(
-                modifier = Modifier.fillMaxSize().padding(18.dp),
+                modifier = Modifier.fillMaxSize().padding(state.contentPadding),
                 verticalArrangement = Arrangement.SpaceBetween,
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(dayLabel, style = MaterialTheme.typography.labelLarge, color = AnimeAccentAmber)
-                    Text(result.title, style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 2)
+                Column(verticalArrangement = Arrangement.spacedBy(state.contentSpacing)) {
+                    Text(state.dayLabel, style = MaterialTheme.typography.labelLarge, color = AnimeAccentAmber)
+                    Text(state.title, style = MaterialTheme.typography.headlineMedium, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 2)
                     Text(
-                        result.subtitle.orEmpty().ifBlank { "\u65b0\u756a\u65f6\u95f4\u8868 / \u756a\u5267\u8be6\u60c5 / \u591a\u7ebf\u8def\u64ad\u653e" },
+                        state.subtitle,
                         style = MaterialTheme.typography.bodyMedium,
                         color = AnimeMuted,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(horizontalArrangement = Arrangement.spacedBy(state.actionSpacing), verticalAlignment = Alignment.CenterVertically) {
                     Button(
                         onClick = onClick,
                         colors = ButtonDefaults.buttonColors(containerColor = AnimeAccentPink, contentColor = Color.White),
@@ -2099,10 +2100,11 @@ private fun ScheduleHeroBanner(result: SearchResult, dayLabel: String, onClick: 
                     ) {
                         Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text("\u8fdb\u5165\u8be6\u60c5")
+                        Text(state.actionLabel)
                     }
-                    VideoMetaChip("\u4eca\u65e5\u653e\u9001")
-                    VideoMetaChip("\u53ef\u9009\u7ebf\u8def")
+                    state.chips.forEach { chip ->
+                        RouteStatusBadge(chip.label, sourceLibraryToneColor(chip.tone))
+                    }
                 }
             }
         }
@@ -2115,42 +2117,39 @@ private fun ScheduleDigestCard(
     loading: Boolean,
     error: String?,
 ) {
-    val accent = when {
-        error != null -> MaterialTheme.colorScheme.error
-        loading -> AnimeAccentAmber
-        else -> AnimeAccentCyan
-    }
+    val digestState = remember(state, loading, error) { buildHomeScheduleDigestUiState(state, loading, error) }
+    val accent = if (error != null) MaterialTheme.colorScheme.error else sourceLibraryToneColor(digestState.tone)
     Surface(
         modifier = Modifier.fillMaxWidth().focusable(),
         color = AnimePanel,
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(digestState.cornerRadius),
         border = BorderStroke(1.dp, accent.copy(alpha = 0.28f)),
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.fillMaxWidth().padding(digestState.padding),
+            verticalArrangement = Arrangement.spacedBy(digestState.contentSpacing),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(digestState.contentSpacing),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(
                     modifier = Modifier
-                        .size(38.dp)
-                        .clip(RoundedCornerShape(8.dp))
+                        .size(digestState.iconBoxSize)
+                        .clip(RoundedCornerShape(digestState.cornerRadius))
                         .background(accent.copy(alpha = 0.16f)),
                     contentAlignment = Alignment.Center,
                 ) {
-                    if (loading) {
-                        CircularProgressIndicator(color = accent, strokeWidth = 2.dp, modifier = Modifier.size(18.dp))
+                    if (digestState.showProgress) {
+                        CircularProgressIndicator(color = accent, strokeWidth = 2.dp, modifier = Modifier.size(digestState.iconSize))
                     } else {
-                        Icon(Icons.Filled.Bookmarks, contentDescription = null, tint = accent, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Filled.Bookmarks, contentDescription = null, tint = accent, modifier = Modifier.size(digestState.iconSize))
                     }
                 }
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Text(
-                        text = if (error != null) "\u65f6\u95f4\u8868\u540c\u6b65\u5f02\u5e38" else state.headline,
+                        text = digestState.title,
                         style = MaterialTheme.typography.titleMedium,
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
@@ -2158,7 +2157,7 @@ private fun ScheduleDigestCard(
                         overflow = TextOverflow.Ellipsis,
                     )
                     Text(
-                        text = error ?: state.summary,
+                        text = digestState.subtitle,
                         style = MaterialTheme.typography.bodySmall,
                         color = AnimeMuted,
                         maxLines = 2,
@@ -2166,10 +2165,10 @@ private fun ScheduleDigestCard(
                     )
                 }
             }
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                item { RouteStatusBadge("\u4eca\u65e5 ${state.todayCount}", AnimeAccentPink) }
-                item { RouteStatusBadge("\u672c\u5468 ${state.weekCount}", AnimeAccentCyan) }
-                item { RouteStatusBadge("\u4e0b\u4e00\u6279 ${state.nextUpdateLabel}", AnimeAccentAmber) }
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(digestState.chipSpacing)) {
+                items(digestState.chips) { chip ->
+                    RouteStatusBadge(chip.label, sourceLibraryToneColor(chip.tone))
+                }
             }
         }
     }
@@ -2182,15 +2181,16 @@ private fun ScheduleDaySelector(
 ) {
     LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         items(dayChips) { day ->
+            val accent = sourceLibraryToneColor(day.tone)
             Card(
                 onClick = { onSelected(day.weekdayId) },
-                modifier = Modifier.width(76.dp).height(50.dp).focusable(),
-                shape = RoundedCornerShape(8.dp),
+                modifier = Modifier.width(day.width).height(day.height).focusable(),
+                shape = RoundedCornerShape(day.cornerRadius),
                 colors = CardDefaults.cardColors(containerColor = if (day.selected) AnimePanelSoft else AnimePanel),
-                border = BorderStroke(1.dp, if (day.selected) AnimeAccentCyan else AnimeBorder),
+                border = BorderStroke(1.dp, if (day.selected || day.today) accent else AnimeBorder),
             ) {
                 Column(
-                    modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp, vertical = 6.dp),
+                    modifier = Modifier.fillMaxSize().padding(horizontal = day.horizontalPadding, vertical = day.verticalPadding),
                     verticalArrangement = Arrangement.SpaceBetween,
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
@@ -2198,14 +2198,14 @@ private fun ScheduleDaySelector(
                         if (day.today) {
                             Box(
                                 modifier = Modifier
-                                    .size(5.dp)
+                                    .size(day.todayDotSize)
                                     .clip(CircleShape)
                                     .background(AnimeAccentPink),
                             )
                         }
                         Text(day.label, style = MaterialTheme.typography.labelLarge, color = Color.White, maxLines = 1)
                     }
-                    Text("${day.count}", style = MaterialTheme.typography.bodySmall, color = if (day.selected) AnimeAccentCyan else AnimeMuted, maxLines = 1)
+                    Text(day.countLabel, style = MaterialTheme.typography.bodySmall, color = if (day.selected) accent else AnimeMuted, maxLines = 1)
                 }
             }
         }
@@ -2232,35 +2232,37 @@ private fun ScheduleStatusPanel(title: String, subtitle: String) {
 
 @Composable
 private fun ScheduleAnimeRow(result: SearchResult, onClick: () -> Unit) {
+    val state = remember(result) { buildHomeScheduleAnimeRowUiState(result) }
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth().focusable(),
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(state.cornerRadius),
         colors = CardDefaults.cardColors(containerColor = AnimePanel),
         border = BorderStroke(1.dp, AnimeBorder),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(10.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxWidth().padding(state.rowPadding),
+            horizontalArrangement = Arrangement.spacedBy(state.rowSpacing),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             PosterArtwork(
-                posterUrl = result.posterUrl,
+                posterUrl = state.result.posterUrl,
                 accent = AnimeAccentViolet,
-                modifier = Modifier.size(width = 72.dp, height = 96.dp),
-                shape = RoundedCornerShape(6.dp),
+                modifier = Modifier.size(width = state.posterWidth, height = state.posterHeight),
+                shape = RoundedCornerShape(state.posterCornerRadius),
             )
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                Text(result.title, style = MaterialTheme.typography.titleMedium, color = Color.White, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                Text(result.subtitle.orEmpty(), style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(state.contentSpacing)) {
+                Text(state.title, style = MaterialTheme.typography.titleMedium, color = Color.White, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(state.subtitle, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    result.raw["rating"]?.let { VideoMetaChip(it) }
-                    result.raw["doing"]?.let { VideoMetaChip("$it \u5728\u770b") }
+                    state.chips.forEach { chip ->
+                        RouteStatusBadge(chip.label, sourceLibraryToneColor(chip.tone))
+                    }
                 }
             }
-            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = AnimeAccentCyan, modifier = Modifier.size(26.dp))
-                Text("\u8be6\u60c5", style = MaterialTheme.typography.labelLarge, color = AnimeAccentCyan)
+            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(state.actionSpacing)) {
+                Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = AnimeAccentCyan, modifier = Modifier.size(state.actionIconSize))
+                Text(state.actionLabel, style = MaterialTheme.typography.labelLarge, color = AnimeAccentCyan)
             }
         }
     }
@@ -2297,6 +2299,11 @@ private fun fallbackScheduleDayChips(
             count = 0,
             selected = day.weekdayId == selectedDayId,
             today = day.weekdayId == currentDayId,
+            tone = when {
+                day.weekdayId == selectedDayId -> SourceLibraryTone.Online
+                day.weekdayId == currentDayId -> SourceLibraryTone.Primary
+                else -> SourceLibraryTone.Muted
+            },
         )
     }
 }
@@ -2409,7 +2416,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.123")
+                setRequestProperty("User-Agent", "ZFBML/0.5.124")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2923,7 +2930,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.123",
+            version = "0.5.124",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
