@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.137
+
+English:
+
+- Player top status strips now expose strip height, spacing, end padding, chip width, chip height, radius, container alpha, border alpha, padding, label alpha, and value alpha through `PlayerTopStatusStripUiState` and `PlayerStatusChipUiState`.
+- `PlayerTopStatusStrip` and `PlayerTopStatusChip` now render from model chrome instead of keeping top-overlay chip dimensions and colors inside Compose.
+- Added unit coverage for top status strip and chip chrome alongside episode/source/quality/speed values.
+- App version labels, request user agents, and README notes are now updated to `0.5.137`.
+
 ### v0.5.136
 
 English:

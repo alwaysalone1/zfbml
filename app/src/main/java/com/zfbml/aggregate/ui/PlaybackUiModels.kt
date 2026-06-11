@@ -827,12 +827,28 @@ internal data class PlayerTopOverlayUiState(
 
 internal data class PlayerTopStatusStripUiState(
     val chips: List<PlayerStatusChipUiState>,
+    val stripHeight: Dp,
+    val itemSpacing: Dp,
+    val endPadding: Dp,
 )
 
 internal data class PlayerStatusChipUiState(
     val label: String,
     val value: String,
     val tone: SourceLibraryTone,
+    val height: Dp,
+    val minWidth: Dp,
+    val maxWidth: Dp,
+    val cornerRadius: Dp,
+    val containerBaseColor: PlayerChromeBaseColor,
+    val containerAlpha: Float,
+    val borderWidth: Dp,
+    val borderAlpha: Float,
+    val horizontalPadding: Dp,
+    val contentSpacing: Dp,
+    val labelAlpha: Float,
+    val valueBaseColor: PlayerChromeBaseColor,
+    val valueAlpha: Float,
 )
 
 internal data class PlayerFullscreenStatusStripUiState(
@@ -5223,12 +5239,12 @@ internal fun buildPlayerTopStatusStripUiState(
 ): PlayerTopStatusStripUiState {
     return PlayerTopStatusStripUiState(
         chips = listOf(
-            PlayerStatusChipUiState(
+            playerStatusChipUiState(
                 label = "本集",
                 value = episodeValue.ifBlank { overlayState.episodeTitle.ifBlank { "当前集" } },
                 tone = SourceLibraryTone.Primary,
             ),
-            PlayerStatusChipUiState(
+            playerStatusChipUiState(
                 label = "来源",
                 value = playerSourceStatusValueForUi(
                     sourceLabel = overlayState.sourceLabel,
@@ -5237,17 +5253,45 @@ internal fun buildPlayerTopStatusStripUiState(
                 ),
                 tone = SourceLibraryTone.Online,
             ),
-            PlayerStatusChipUiState(
+            playerStatusChipUiState(
                 label = "清晰度",
                 value = overlayState.qualityLabel.ifBlank { "自动" },
                 tone = SourceLibraryTone.Backup,
             ),
-            PlayerStatusChipUiState(
+            playerStatusChipUiState(
                 label = "倍速",
                 value = formatPlaybackSpeedForUi(playbackSpeed),
                 tone = SourceLibraryTone.Cache,
             ),
         ),
+        stripHeight = 32.dp,
+        itemSpacing = 7.dp,
+        endPadding = 2.dp,
+    )
+}
+
+private fun playerStatusChipUiState(
+    label: String,
+    value: String,
+    tone: SourceLibraryTone,
+): PlayerStatusChipUiState {
+    return PlayerStatusChipUiState(
+        label = label,
+        value = value.ifBlank { "自动" },
+        tone = tone,
+        height = 30.dp,
+        minWidth = 88.dp,
+        maxWidth = 210.dp,
+        cornerRadius = 999.dp,
+        containerBaseColor = PlayerChromeBaseColor.Black,
+        containerAlpha = 0.28f,
+        borderWidth = 1.dp,
+        borderAlpha = 0.2f,
+        horizontalPadding = 10.dp,
+        contentSpacing = 5.dp,
+        labelAlpha = 1f,
+        valueBaseColor = PlayerChromeBaseColor.White,
+        valueAlpha = 0.86f,
     )
 }
 

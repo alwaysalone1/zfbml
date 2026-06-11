@@ -3529,6 +3529,23 @@ class PlaybackUiModelsTest {
         assertEquals("1080p", state.chips.first { it.label == "清晰度" }.value)
         assertEquals("1.5x", state.chips.first { it.label == "倍速" }.value)
         assertEquals(SourceLibraryTone.Cache, state.chips.first { it.label == "倍速" }.tone)
+        assertEquals(32.dp, state.stripHeight)
+        assertEquals(7.dp, state.itemSpacing)
+        assertEquals(2.dp, state.endPadding)
+        val episodeChip = state.chips.first()
+        assertEquals(30.dp, episodeChip.height)
+        assertEquals(88.dp, episodeChip.minWidth)
+        assertEquals(210.dp, episodeChip.maxWidth)
+        assertEquals(999.dp, episodeChip.cornerRadius)
+        assertEquals(PlayerChromeBaseColor.Black, episodeChip.containerBaseColor)
+        assertEquals(0.28f, episodeChip.containerAlpha, 0.001f)
+        assertEquals(1.dp, episodeChip.borderWidth)
+        assertEquals(0.2f, episodeChip.borderAlpha, 0.001f)
+        assertEquals(10.dp, episodeChip.horizontalPadding)
+        assertEquals(5.dp, episodeChip.contentSpacing)
+        assertEquals(1f, episodeChip.labelAlpha, 0.001f)
+        assertEquals(PlayerChromeBaseColor.White, episodeChip.valueBaseColor)
+        assertEquals(0.86f, episodeChip.valueAlpha, 0.001f)
     }
 
     @Test

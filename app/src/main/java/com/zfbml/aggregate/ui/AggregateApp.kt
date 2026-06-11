@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.136")
+                setRequestProperty("User-Agent", "ZFBML/0.5.137")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2984,7 +2984,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.136",
+            version = "0.5.137",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -6541,15 +6541,13 @@ private fun PlayerTopStatusStrip(
     modifier: Modifier = Modifier,
 ) {
     LazyRow(
-        modifier = modifier.height(32.dp),
-        horizontalArrangement = Arrangement.spacedBy(7.dp),
-        contentPadding = PaddingValues(end = 2.dp),
+        modifier = modifier.height(state.stripHeight),
+        horizontalArrangement = Arrangement.spacedBy(state.itemSpacing),
+        contentPadding = PaddingValues(end = state.endPadding),
     ) {
         items(state.chips, key = { it.label }) { chip ->
             PlayerTopStatusChip(
-                label = chip.label,
-                value = chip.value,
-                color = sourceLibraryToneColor(chip.tone),
+                state = chip,
             )
         }
     }
@@ -6557,34 +6555,35 @@ private fun PlayerTopStatusStrip(
 
 @Composable
 private fun PlayerTopStatusChip(
-    label: String,
-    value: String,
-    color: Color,
+    state: PlayerStatusChipUiState,
     modifier: Modifier = Modifier,
 ) {
+    val accent = sourceLibraryToneColor(state.tone)
+    val containerColor = playerChromeBaseColor(state.containerBaseColor)
+    val valueColor = playerChromeBaseColor(state.valueBaseColor)
     Row(
         modifier = modifier
-            .height(30.dp)
-            .widthIn(min = 88.dp, max = 210.dp)
-            .clip(RoundedCornerShape(999.dp))
-            .background(Color.Black.copy(alpha = 0.28f))
-            .border(1.dp, color.copy(alpha = 0.2f), RoundedCornerShape(999.dp))
-            .padding(horizontal = 10.dp),
-        horizontalArrangement = Arrangement.spacedBy(5.dp),
+            .height(state.height)
+            .widthIn(min = state.minWidth, max = state.maxWidth)
+            .clip(RoundedCornerShape(state.cornerRadius))
+            .background(containerColor.copy(alpha = state.containerAlpha))
+            .border(state.borderWidth, accent.copy(alpha = state.borderAlpha), RoundedCornerShape(state.cornerRadius))
+            .padding(horizontal = state.horizontalPadding),
+        horizontalArrangement = Arrangement.spacedBy(state.contentSpacing),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
-            text = label,
+            text = state.label,
             style = MaterialTheme.typography.labelSmall,
-            color = color,
+            color = accent.copy(alpha = state.labelAlpha),
             fontWeight = FontWeight.Bold,
             maxLines = 1,
         )
         Text(
-            text = value.ifBlank { "自动" },
+            text = state.value,
             modifier = Modifier.weight(1f, fill = false),
             style = MaterialTheme.typography.labelSmall,
-            color = Color.White.copy(alpha = 0.86f),
+            color = valueColor.copy(alpha = state.valueAlpha),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )

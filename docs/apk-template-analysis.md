@@ -280,3 +280,5 @@ This pass upgrades player circular-control chrome. `PlayerCircleButtonChromeUiSt
 This pass upgrades player edge-progress chrome. `PlayerEdgeProgressUiState` now owns clamped progress, unknown-duration fallback, edge-bar height, progress tone, track tone, and track alpha so the always-visible video progress line stays aligned with seek bar and compact progress models while minimizing overlay obstruction.
 
 This pass upgrades player seek-feedback chrome. `PlayerSeekFeedbackUiState` now owns feedback text, placement, anti-obstruction margins, compact/fullscreen vertical offsets, radius, border, padding, icon visibility/size/tone, container alpha, and text alpha so double-tap seeking feedback stays predictable without covering the main video area.
+
+This pass upgrades player top-status strip chrome. `PlayerTopStatusStripUiState` and `PlayerStatusChipUiState` now own strip height, chip spacing, end padding, chip width/height, radius, container alpha, border alpha, padding, label alpha, and value alpha so fullscreen playback metadata remains compact, scannable, and model-driven.
