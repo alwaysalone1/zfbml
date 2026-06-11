@@ -4504,6 +4504,37 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun playerFullscreenSeekClusterUiStateExposesShortcutChrome() {
+        val state = buildPlayerFullscreenSeekClusterUiState()
+
+        assertEquals(36.dp, state.height)
+        assertEquals(999.dp, state.cornerRadius)
+        assertEquals(PlayerChromeBaseColor.Black, state.containerBaseColor)
+        assertEquals(0.30f, state.containerAlpha, 0.001f)
+        assertEquals(1.dp, state.borderWidth)
+        assertEquals(PlayerChromeBaseColor.White, state.borderBaseColor)
+        assertEquals(0.08f, state.borderAlpha, 0.001f)
+        assertEquals(1.dp, state.dividerWidth)
+        assertEquals(18.dp, state.dividerHeight)
+        assertEquals(PlayerChromeBaseColor.White, state.dividerBaseColor)
+        assertEquals(0.10f, state.dividerAlpha, 0.001f)
+        assertEquals(listOf(PlayerSeekShortcutKind.Backward, PlayerSeekShortcutKind.Forward), state.buttons.map { it.kind })
+
+        val backward = state.buttons.first()
+        assertEquals("后退 10 秒", backward.contentDescription)
+        assertEquals(-10_000L, backward.deltaMs)
+        assertEquals(42.dp, backward.width)
+        assertEquals(36.dp, backward.height)
+        assertEquals(18.dp, backward.iconSize)
+        assertEquals(PlayerChromeBaseColor.White, backward.iconBaseColor)
+        assertEquals(0.84f, backward.iconAlpha, 0.001f)
+
+        val forward = state.buttons.last()
+        assertEquals("快进 10 秒", forward.contentDescription)
+        assertEquals(10_000L, forward.deltaMs)
+    }
+
+    @Test
     fun playerDoubleTapSeekDeltaUsesTapSide() {
         assertEquals(-10_000L, playerDoubleTapSeekDeltaMs(tapX = 120f, surfaceWidthPx = 400))
         assertEquals(10_000L, playerDoubleTapSeekDeltaMs(tapX = 280f, surfaceWidthPx = 400))

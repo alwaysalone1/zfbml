@@ -1492,6 +1492,37 @@ internal data class PlayerSeekFeedbackUiState(
     val textAlpha: Float,
 )
 
+internal enum class PlayerSeekShortcutKind {
+    Backward,
+    Forward,
+}
+
+internal data class PlayerFullscreenSeekClusterUiState(
+    val buttons: List<PlayerFullscreenSeekButtonUiState>,
+    val height: Dp,
+    val cornerRadius: Dp,
+    val containerBaseColor: PlayerChromeBaseColor,
+    val containerAlpha: Float,
+    val borderWidth: Dp,
+    val borderBaseColor: PlayerChromeBaseColor,
+    val borderAlpha: Float,
+    val dividerWidth: Dp,
+    val dividerHeight: Dp,
+    val dividerBaseColor: PlayerChromeBaseColor,
+    val dividerAlpha: Float,
+)
+
+internal data class PlayerFullscreenSeekButtonUiState(
+    val kind: PlayerSeekShortcutKind,
+    val contentDescription: String,
+    val deltaMs: Long,
+    val width: Dp,
+    val height: Dp,
+    val iconSize: Dp,
+    val iconBaseColor: PlayerChromeBaseColor,
+    val iconAlpha: Float,
+)
+
 internal data class PlayerSeekBarUiState(
     val positionLabel: String,
     val durationLabel: String,
@@ -6309,6 +6340,53 @@ internal fun playerSeekFeedbackPlacement(
         deltaMs < 0L -> PlayerSeekFeedbackPlacement.Start
         else -> PlayerSeekFeedbackPlacement.End
     }
+}
+
+internal fun buildPlayerFullscreenSeekClusterUiState(
+    stepMs: Long = 10_000L,
+): PlayerFullscreenSeekClusterUiState {
+    val safeStepMs = stepMs.coerceAtLeast(1L)
+    fun button(
+        kind: PlayerSeekShortcutKind,
+        deltaMs: Long,
+        contentDescription: String,
+    ): PlayerFullscreenSeekButtonUiState {
+        return PlayerFullscreenSeekButtonUiState(
+            kind = kind,
+            contentDescription = contentDescription,
+            deltaMs = deltaMs,
+            width = 42.dp,
+            height = 36.dp,
+            iconSize = 18.dp,
+            iconBaseColor = PlayerChromeBaseColor.White,
+            iconAlpha = 0.84f,
+        )
+    }
+    return PlayerFullscreenSeekClusterUiState(
+        buttons = listOf(
+            button(
+                kind = PlayerSeekShortcutKind.Backward,
+                deltaMs = -safeStepMs,
+                contentDescription = "后退 ${safeStepMs / 1000L} 秒",
+            ),
+            button(
+                kind = PlayerSeekShortcutKind.Forward,
+                deltaMs = safeStepMs,
+                contentDescription = "快进 ${safeStepMs / 1000L} 秒",
+            ),
+        ),
+        height = 36.dp,
+        cornerRadius = 999.dp,
+        containerBaseColor = PlayerChromeBaseColor.Black,
+        containerAlpha = 0.30f,
+        borderWidth = 1.dp,
+        borderBaseColor = PlayerChromeBaseColor.White,
+        borderAlpha = 0.08f,
+        dividerWidth = 1.dp,
+        dividerHeight = 18.dp,
+        dividerBaseColor = PlayerChromeBaseColor.White,
+        dividerAlpha = 0.10f,
+    )
 }
 
 internal fun buildPlayerSeekFeedbackUiState(

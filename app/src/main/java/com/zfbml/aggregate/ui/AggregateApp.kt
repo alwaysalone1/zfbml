@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.139")
+                setRequestProperty("User-Agent", "ZFBML/0.5.140")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2984,7 +2984,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.139",
+            version = "0.5.140",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -7567,49 +7567,66 @@ private fun PlayerFullscreenSeekCluster(
     onSeekForward: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val state = remember { buildPlayerFullscreenSeekClusterUiState() }
     Row(
         modifier = modifier
-            .height(36.dp)
-            .clip(RoundedCornerShape(999.dp))
-            .background(Color.Black.copy(alpha = 0.30f))
-            .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(999.dp)),
+            .height(state.height)
+            .clip(RoundedCornerShape(state.cornerRadius))
+            .background(playerChromeBaseColor(state.containerBaseColor).copy(alpha = state.containerAlpha))
+            .border(
+                state.borderWidth,
+                playerChromeBaseColor(state.borderBaseColor).copy(alpha = state.borderAlpha),
+                RoundedCornerShape(state.cornerRadius),
+            ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        PlayerFullscreenSeekButton(
-            icon = Icons.Filled.Replay10,
-            contentDescription = "后退 10 秒",
-            onClick = onSeekBackward,
-        )
-        Box(
-            modifier = Modifier
-                .width(1.dp)
-                .height(18.dp)
-                .background(Color.White.copy(alpha = 0.10f)),
-        )
-        PlayerFullscreenSeekButton(
-            icon = Icons.Filled.Forward10,
-            contentDescription = "快进 10 秒",
-            onClick = onSeekForward,
-        )
+        state.buttons.forEachIndexed { index, button ->
+            PlayerFullscreenSeekButton(
+                state = button,
+                icon = playerFullscreenSeekIcon(button.kind),
+                onClick = when (button.kind) {
+                    PlayerSeekShortcutKind.Backward -> onSeekBackward
+                    PlayerSeekShortcutKind.Forward -> onSeekForward
+                },
+            )
+            if (index < state.buttons.lastIndex) {
+                Box(
+                    modifier = Modifier
+                        .width(state.dividerWidth)
+                        .height(state.dividerHeight)
+                        .background(
+                            playerChromeBaseColor(state.dividerBaseColor)
+                                .copy(alpha = state.dividerAlpha),
+                        ),
+                )
+            }
+        }
     }
 }
 
 @Composable
 private fun PlayerFullscreenSeekButton(
+    state: PlayerFullscreenSeekButtonUiState,
     icon: ImageVector,
-    contentDescription: String,
     onClick: () -> Unit,
 ) {
     IconButton(
         onClick = onClick,
-        modifier = Modifier.size(width = 42.dp, height = 36.dp).focusable(),
+        modifier = Modifier.size(width = state.width, height = state.height).focusable(),
     ) {
         Icon(
             imageVector = icon,
-            contentDescription = contentDescription,
-            tint = Color.White.copy(alpha = 0.84f),
-            modifier = Modifier.size(18.dp),
+            contentDescription = state.contentDescription,
+            tint = playerChromeBaseColor(state.iconBaseColor).copy(alpha = state.iconAlpha),
+            modifier = Modifier.size(state.iconSize),
         )
+    }
+}
+
+private fun playerFullscreenSeekIcon(kind: PlayerSeekShortcutKind): ImageVector {
+    return when (kind) {
+        PlayerSeekShortcutKind.Backward -> Icons.Filled.Replay10
+        PlayerSeekShortcutKind.Forward -> Icons.Filled.Forward10
     }
 }
 

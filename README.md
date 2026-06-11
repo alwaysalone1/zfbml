@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.140
+
+English:
+
+- Fullscreen seek shortcuts now use `PlayerFullscreenSeekClusterUiState` and `PlayerFullscreenSeekButtonUiState` for 10-second backward/forward semantics, content descriptions, deltas, cluster sizing, border, divider, button sizing, icon sizing, and alpha values.
+- `PlayerFullscreenSeekCluster` and `PlayerFullscreenSeekButton` now render from model chrome instead of keeping the shortcut capsule dimensions and opacity constants inside Compose.
+- Added unit coverage for fullscreen seek shortcut semantics and chrome.
+- App version labels, request user agents, and README notes are now updated to `0.5.140`.
+
 ### v0.5.139
 
 English:
