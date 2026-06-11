@@ -496,6 +496,46 @@ internal data class HomeSpotlightCardUiState(
     val companionLabel: String,
 )
 
+internal data class HomeSectionHeaderUiState(
+    val title: String,
+    val actionLabel: String,
+    val height: Dp,
+    val titleTone: SourceLibraryTone,
+    val actionTone: SourceLibraryTone,
+)
+
+internal data class HomeContinueWatchingUiState(
+    val result: SearchResult,
+    val eyebrow: String,
+    val title: String,
+    val subtitle: String,
+    val progressFraction: Float,
+    val progressLabel: String,
+    val cardCornerRadius: Dp,
+    val contentPadding: Dp,
+    val rowSpacing: Dp,
+    val textSpacing: Dp,
+    val posterWidth: Dp,
+    val posterHeight: Dp,
+    val posterCornerRadius: Dp,
+)
+
+internal data class HomePosterRailUiState(
+    val itemSpacing: Dp,
+    val cardWidth: Dp,
+    val posterHeight: Dp,
+    val cardCornerRadius: Dp,
+    val cardContentSpacing: Dp,
+    val items: List<HomePosterCardUiState>,
+)
+
+internal data class HomePosterCardUiState(
+    val result: SearchResult,
+    val title: String,
+    val subtitle: String,
+    val tone: SourceLibraryTone,
+)
+
 internal enum class SourceLibraryTone {
     Primary,
     Online,
@@ -3227,6 +3267,67 @@ internal fun buildHomeWatchHubUiState(
                 weight = 1f,
             ),
         ),
+    )
+}
+
+internal fun buildHomeSectionHeaderUiState(
+    title: String,
+    actionLabel: String = "",
+): HomeSectionHeaderUiState {
+    return HomeSectionHeaderUiState(
+        title = title,
+        actionLabel = actionLabel,
+        height = 38.dp,
+        titleTone = SourceLibraryTone.Primary,
+        actionTone = SourceLibraryTone.Online,
+    )
+}
+
+internal fun buildHomeContinueWatchingUiState(
+    result: SearchResult,
+    progressFraction: Float = 0.36f,
+): HomeContinueWatchingUiState {
+    val safeProgress = progressFraction.coerceIn(0f, 1f)
+    return HomeContinueWatchingUiState(
+        result = result,
+        eyebrow = "\u7ee7\u7eed\u89c2\u770b",
+        title = result.title.ifBlank { "\u672a\u547d\u540d\u6761\u76ee" },
+        subtitle = result.subtitle?.takeIf { it.isNotBlank() } ?: result.providerKindForSearch().providerLabel,
+        progressFraction = safeProgress,
+        progressLabel = "\u5df2\u770b\u81f3 ${(safeProgress * 100f).toInt()}%",
+        cardCornerRadius = 8.dp,
+        contentPadding = 14.dp,
+        rowSpacing = 14.dp,
+        textSpacing = 6.dp,
+        posterWidth = 112.dp,
+        posterHeight = 68.dp,
+        posterCornerRadius = 6.dp,
+    )
+}
+
+internal fun buildHomePosterRailUiState(
+    items: List<SearchResult>,
+    fallback: List<SearchResult> = emptyList(),
+    maxItems: Int = 8,
+): HomePosterRailUiState {
+    val visibleItems = items.ifEmpty { fallback }
+        .distinctBy { it.homeStableMediaKey() }
+        .take(maxItems.coerceAtLeast(1))
+    return HomePosterRailUiState(
+        itemSpacing = 12.dp,
+        cardWidth = 132.dp,
+        posterHeight = 176.dp,
+        cardCornerRadius = 8.dp,
+        cardContentSpacing = 8.dp,
+        items = visibleItems.map { result ->
+            val kind = result.providerKindForSearch()
+            HomePosterCardUiState(
+                result = result,
+                title = result.title.ifBlank { "\u672a\u547d\u540d\u6761\u76ee" },
+                subtitle = result.subtitle?.takeIf { it.isNotBlank() } ?: kind.providerLabel,
+                tone = kind.tone,
+            )
+        },
     )
 }
 

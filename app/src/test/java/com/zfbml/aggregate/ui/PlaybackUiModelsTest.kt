@@ -1818,6 +1818,79 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun homeSectionHeaderUiStateBuildsSharedHeaderChrome() {
+        val state = buildHomeSectionHeaderUiState(
+            title = "\u731c\u4f60\u60f3\u8ffd",
+            actionLabel = "\u6362\u4e00\u6279",
+        )
+
+        assertEquals("\u731c\u4f60\u60f3\u8ffd", state.title)
+        assertEquals("\u6362\u4e00\u6279", state.actionLabel)
+        assertEquals(38.dp, state.height)
+        assertEquals(SourceLibraryTone.Primary, state.titleTone)
+        assertEquals(SourceLibraryTone.Online, state.actionTone)
+    }
+
+    @Test
+    fun homeContinueWatchingUiStateBuildsProgressAndLayoutContract() {
+        val result = SearchResult(
+            providerId = "bangumi-catalog",
+            title = "Alpha",
+            url = "bangumi://subject/1",
+            subtitle = "\u7b2c 3 \u96c6",
+        )
+
+        val state = buildHomeContinueWatchingUiState(result, progressFraction = 1.4f)
+
+        assertEquals(result, state.result)
+        assertEquals("\u7ee7\u7eed\u89c2\u770b", state.eyebrow)
+        assertEquals("Alpha", state.title)
+        assertEquals("\u7b2c 3 \u96c6", state.subtitle)
+        assertEquals(1f, state.progressFraction, 0.001f)
+        assertEquals("\u5df2\u770b\u81f3 100%", state.progressLabel)
+        assertEquals(112.dp, state.posterWidth)
+        assertEquals(68.dp, state.posterHeight)
+        assertEquals(14.dp, state.contentPadding)
+    }
+
+    @Test
+    fun homePosterRailUiStateDeduplicatesItemsAndUsesFallback() {
+        val alpha = SearchResult(
+            providerId = "bangumi-catalog",
+            title = "Alpha",
+            url = "bangumi://subject/1",
+            raw = mapOf("subjectId" to "1"),
+        )
+        val duplicateAlpha = alpha.copy(title = "Alpha duplicate", url = "bangumi://subject/1?dup")
+        val beta = SearchResult(
+            providerId = "direct-url",
+            title = "Beta",
+            url = "https://example.invalid/beta",
+            subtitle = "\u76f4\u94fe",
+        )
+
+        val state = buildHomePosterRailUiState(
+            items = listOf(alpha, duplicateAlpha, beta),
+            fallback = listOf(searchResult("bangumi-catalog", "Fallback")),
+            maxItems = 8,
+        )
+        val fallbackState = buildHomePosterRailUiState(
+            items = emptyList(),
+            fallback = listOf(beta),
+        )
+
+        assertEquals(12.dp, state.itemSpacing)
+        assertEquals(132.dp, state.cardWidth)
+        assertEquals(176.dp, state.posterHeight)
+        assertEquals(2, state.items.size)
+        assertEquals(listOf("Alpha", "Beta"), state.items.map { it.title })
+        assertEquals("\u76f4\u94fe", state.items.last().subtitle)
+        assertEquals(SourceLibraryTone.Online, state.items.first().tone)
+        assertEquals(SourceLibraryTone.Primary, state.items.last().tone)
+        assertEquals(listOf("Beta"), fallbackState.items.map { it.title })
+    }
+
+    @Test
     fun homeSpotlightCarouselUiStateBuildsCardsCompanionsAndLayout() {
         val alpha = SearchResult(
             providerId = "bangumi-catalog",

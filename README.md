@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.125
+
+English:
+
+- The Discover home content modules now use model-driven section headers, continue-watching rows, and poster rails.
+- Continue-watching progress, source fallback subtitles, poster-rail deduplication, fallback items, card sizing, poster sizing, and action chrome now come from UI models instead of Compose-local constants.
+- Added unit coverage for section header chrome, continue-watching progress clamping, poster-rail deduplication, fallback selection, source tones, and layout dimensions.
+- App version labels, request user agents, and README notes are now updated to `0.5.125`.
+
 ### v0.5.124
 
 English:

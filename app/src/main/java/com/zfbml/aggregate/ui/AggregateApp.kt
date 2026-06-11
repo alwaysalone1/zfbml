@@ -1833,9 +1833,15 @@ private fun HeroCarouselCard(
 
 @Composable
 private fun PosterRail(items: List<SearchResult>, onOpenDetail: (SearchResult) -> Unit) {
-    LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        items(items.ifEmpty { featuredOnlineResults() }.take(8)) { item ->
-            PosterVideoCard(result = item, onClick = { onOpenDetail(item) })
+    val state = remember(items) {
+        buildHomePosterRailUiState(
+            items = items,
+            fallback = featuredOnlineResults(),
+        )
+    }
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(state.itemSpacing)) {
+        items(state.items) { item ->
+            PosterVideoCard(state = item, railState = state, onClick = { onOpenDetail(item.result) })
         }
     }
 }
@@ -2310,30 +2316,32 @@ private fun fallbackScheduleDayChips(
 
 @Composable
 private fun ContinueWatchingRow(result: SearchResult, onClick: () -> Unit) {
+    val state = remember(result) { buildHomeContinueWatchingUiState(result) }
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth().focusable(),
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(state.cardCornerRadius),
         colors = CardDefaults.cardColors(containerColor = AnimePanel),
         border = BorderStroke(1.dp, AnimeBorder),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(14.dp),
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            modifier = Modifier.fillMaxWidth().padding(state.contentPadding),
+            horizontalArrangement = Arrangement.spacedBy(state.rowSpacing),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             PosterArtwork(
-                posterUrl = result.posterUrl,
+                posterUrl = state.result.posterUrl,
                 accent = AnimeAccentCyan,
-                modifier = Modifier.size(width = 112.dp, height = 68.dp),
-                shape = RoundedCornerShape(6.dp),
+                modifier = Modifier.size(width = state.posterWidth, height = state.posterHeight),
+                shape = RoundedCornerShape(state.posterCornerRadius),
                 icon = Icons.Filled.PlayArrow,
             )
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("\u7EE7\u7EED\u89C2\u770B", style = MaterialTheme.typography.labelLarge, color = AnimeAccentCyan)
-                Text(result.title, style = MaterialTheme.typography.titleMedium, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                LinearProgressIndicator(progress = { 0.36f }, modifier = Modifier.fillMaxWidth(), color = AnimeAccentPink)
-                Text("\u5DF2\u770B\u81F3 36%", style = MaterialTheme.typography.bodySmall, color = AnimeMuted)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(state.textSpacing)) {
+                Text(state.eyebrow, style = MaterialTheme.typography.labelLarge, color = AnimeAccentCyan)
+                Text(state.title, style = MaterialTheme.typography.titleMedium, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(state.subtitle, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                LinearProgressIndicator(progress = { state.progressFraction }, modifier = Modifier.fillMaxWidth(), color = AnimeAccentPink)
+                Text(state.progressLabel, style = MaterialTheme.typography.bodySmall, color = AnimeMuted)
             }
         }
     }
@@ -2346,15 +2354,16 @@ private fun SectionHeader(
     onAction: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val state = remember(title, action) { buildHomeSectionHeaderUiState(title, action) }
     Row(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().heightIn(min = state.height),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(title, style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold)
-        if (action.isNotBlank()) {
+        Text(state.title, style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold)
+        if (state.actionLabel.isNotBlank()) {
             TextButton(onClick = onAction, modifier = Modifier.focusable()) {
-                Text(action, color = AnimeAccentCyan)
+                Text(state.actionLabel, color = sourceLibraryToneColor(state.actionTone))
             }
         }
     }
@@ -2416,7 +2425,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.124")
+                setRequestProperty("User-Agent", "ZFBML/0.5.125")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2428,23 +2437,27 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
 }
 
 @Composable
-private fun PosterVideoCard(result: SearchResult, onClick: () -> Unit) {
+private fun PosterVideoCard(
+    state: HomePosterCardUiState,
+    railState: HomePosterRailUiState,
+    onClick: () -> Unit,
+) {
     Card(
         onClick = onClick,
-        modifier = Modifier.width(132.dp).focusable(),
-        shape = RoundedCornerShape(8.dp),
+        modifier = Modifier.width(railState.cardWidth).focusable(),
+        shape = RoundedCornerShape(railState.cardCornerRadius),
         colors = CardDefaults.cardColors(containerColor = Color.Transparent),
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(railState.cardContentSpacing)) {
             PosterArtwork(
-                posterUrl = result.posterUrl,
-                accent = providerAccent(result.providerId),
+                posterUrl = state.result.posterUrl,
+                accent = sourceLibraryToneColor(state.tone),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(176.dp),
+                    .height(railState.posterHeight),
             )
-            Text(result.title, style = MaterialTheme.typography.titleSmall, color = Color.White, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            Text(result.subtitle.orEmpty(), style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(state.title, style = MaterialTheme.typography.titleSmall, color = Color.White, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(state.subtitle, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }
@@ -2930,7 +2943,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.124",
+            version = "0.5.125",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
