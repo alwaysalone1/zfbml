@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.132")
+                setRequestProperty("User-Agent", "ZFBML/0.5.133")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2977,7 +2977,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.132",
+            version = "0.5.133",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -9262,35 +9262,38 @@ private fun PlayerTextAction(
     selected: Boolean = false,
     enabled: Boolean = true,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier.widthIn(min = 58.dp, max = 112.dp),
+    modifier: Modifier = Modifier,
 ) {
-    val contentColor = when {
-        !enabled -> Color.White.copy(alpha = 0.34f)
-        selected -> AnimeAccentPink
-        else -> Color.White.copy(alpha = 0.9f)
+    val chrome = remember(selected, enabled) {
+        buildPlayerTextActionChromeUiState(selected = selected, enabled = enabled)
     }
+    val containerBaseColor = chrome.containerTone?.let(::sourceLibraryToneColor) ?: Color.Black
+    val disabledContainerBaseColor = chrome.disabledContainerTone?.let(::sourceLibraryToneColor) ?: Color.Black
+    val contentBaseColor = chrome.contentTone?.let(::sourceLibraryToneColor) ?: Color.White
+    val disabledContentBaseColor = chrome.disabledButtonContentTone?.let(::sourceLibraryToneColor) ?: Color.White
+    val contentColor = contentBaseColor.copy(alpha = chrome.contentAlpha)
     TextButton(
         onClick = onClick,
         enabled = enabled,
         modifier = modifier
-            .height(34.dp)
+            .height(chrome.height)
             .focusable(),
-        shape = RoundedCornerShape(999.dp),
+        shape = RoundedCornerShape(chrome.cornerRadius),
         colors = ButtonDefaults.textButtonColors(
-            containerColor = if (selected) AnimeAccentPink.copy(alpha = 0.18f) else Color.Black.copy(alpha = 0.16f),
+            containerColor = containerBaseColor.copy(alpha = chrome.containerAlpha),
             contentColor = contentColor,
-            disabledContainerColor = Color.Black.copy(alpha = 0.1f),
-            disabledContentColor = Color.White.copy(alpha = 0.36f),
+            disabledContainerColor = disabledContainerBaseColor.copy(alpha = chrome.disabledContainerAlpha),
+            disabledContentColor = disabledContentBaseColor.copy(alpha = chrome.disabledButtonContentAlpha),
         ),
-        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
+        contentPadding = PaddingValues(horizontal = chrome.horizontalPadding, vertical = chrome.verticalPadding),
     ) {
         Row(
             modifier = Modifier,
-            horizontalArrangement = Arrangement.spacedBy(5.dp),
+            horizontalArrangement = Arrangement.spacedBy(chrome.contentSpacing),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (icon != null) {
-                Icon(icon, contentDescription = null, modifier = Modifier.size(15.dp))
+                Icon(icon, contentDescription = null, modifier = Modifier.size(chrome.iconSize))
             }
             Text(
                 text = title,
@@ -9304,7 +9307,7 @@ private fun PlayerTextAction(
                 Text(
                     text = it,
                     style = MaterialTheme.typography.labelSmall,
-                    color = contentColor.copy(alpha = if (enabled) 0.68f else 0.5f),
+                    color = contentBaseColor.copy(alpha = chrome.valueAlpha),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )

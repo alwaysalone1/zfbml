@@ -3723,6 +3723,33 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun playerTextActionChromeUiStateTracksSelectedAndDisabledPresentation() {
+        val selected = buildPlayerTextActionChromeUiState(selected = true, enabled = true)
+        val normal = buildPlayerTextActionChromeUiState(selected = false, enabled = true)
+        val disabled = buildPlayerTextActionChromeUiState(selected = false, enabled = false)
+
+        assertEquals(34.dp, selected.height)
+        assertEquals(999.dp, selected.cornerRadius)
+        assertEquals(10.dp, selected.horizontalPadding)
+        assertEquals(0.dp, selected.verticalPadding)
+        assertEquals(5.dp, selected.contentSpacing)
+        assertEquals(15.dp, selected.iconSize)
+        assertEquals(SourceLibraryTone.Primary, selected.containerTone)
+        assertEquals(0.18f, selected.containerAlpha, 0.001f)
+        assertEquals(SourceLibraryTone.Primary, selected.contentTone)
+        assertEquals(1f, selected.contentAlpha, 0.001f)
+        assertEquals(0.68f, selected.valueAlpha, 0.001f)
+        assertNull(normal.containerTone)
+        assertEquals(0.16f, normal.containerAlpha, 0.001f)
+        assertNull(normal.contentTone)
+        assertEquals(0.9f, normal.contentAlpha, 0.001f)
+        assertEquals(0.1f, disabled.containerAlpha, 0.001f)
+        assertEquals(0.34f, disabled.contentAlpha, 0.001f)
+        assertEquals(0.36f, disabled.disabledButtonContentAlpha, 0.001f)
+        assertEquals(0.5f, disabled.valueAlpha, 0.001f)
+    }
+
+    @Test
     fun portraitRecoveryActionsUiStateOnlyShowsForPlaybackIssues() {
         val hidden = buildPortraitRecoveryActionsUiState(
             hasPlaybackIssue = false,

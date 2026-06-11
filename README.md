@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.133
+
+English:
+
+- Player bottom text-action pills now use `PlayerTextActionChromeUiState` for height, radius, padding, spacing, icon size, container tone/alpha, content alpha, value alpha, and disabled presentation.
+- `PlayerTextAction` now renders quick controls from model chrome instead of keeping selected, normal, and disabled visual constants inside Compose.
+- Added unit coverage for selected, normal, and disabled text-action pill chrome.
+- App version labels, request user agents, and README notes are now updated to `0.5.133`.
+
 ### v0.5.132
 
 English:

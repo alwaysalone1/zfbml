@@ -1012,6 +1012,24 @@ internal data class PlayerActionBarUiState(
     val actions: List<PlayerActionUiState>,
 )
 
+internal data class PlayerTextActionChromeUiState(
+    val height: Dp,
+    val cornerRadius: Dp,
+    val horizontalPadding: Dp,
+    val verticalPadding: Dp,
+    val contentSpacing: Dp,
+    val iconSize: Dp,
+    val containerTone: SourceLibraryTone?,
+    val containerAlpha: Float,
+    val disabledContainerTone: SourceLibraryTone?,
+    val disabledContainerAlpha: Float,
+    val contentTone: SourceLibraryTone?,
+    val contentAlpha: Float,
+    val disabledButtonContentTone: SourceLibraryTone?,
+    val disabledButtonContentAlpha: Float,
+    val valueAlpha: Float,
+)
+
 internal data class PlayerActionUiState(
     val kind: PlayerActionKind,
     val title: String,
@@ -5426,6 +5444,37 @@ internal fun buildPlayerActionBarUiState(
         )
     }
     return PlayerActionBarUiState(actions = actions)
+}
+
+internal fun buildPlayerTextActionChromeUiState(
+    selected: Boolean,
+    enabled: Boolean,
+): PlayerTextActionChromeUiState {
+    return PlayerTextActionChromeUiState(
+        height = 34.dp,
+        cornerRadius = 999.dp,
+        horizontalPadding = 10.dp,
+        verticalPadding = 0.dp,
+        contentSpacing = 5.dp,
+        iconSize = 15.dp,
+        containerTone = if (selected) SourceLibraryTone.Primary else null,
+        containerAlpha = when {
+            !enabled -> 0.1f
+            selected -> 0.18f
+            else -> 0.16f
+        },
+        disabledContainerTone = null,
+        disabledContainerAlpha = 0.1f,
+        contentTone = if (selected) SourceLibraryTone.Primary else null,
+        contentAlpha = when {
+            !enabled -> 0.34f
+            selected -> 1f
+            else -> 0.9f
+        },
+        disabledButtonContentTone = null,
+        disabledButtonContentAlpha = 0.36f,
+        valueAlpha = if (enabled) 0.68f else 0.5f,
+    )
 }
 
 private fun Episode?.playerNextEpisodeValueForUi(): String {
