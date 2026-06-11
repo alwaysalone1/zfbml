@@ -756,6 +756,20 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun routePlayActionChromeUiStateExposesActionPillChrome() {
+        val state = buildRoutePlayActionChromeUiState()
+
+        assertEquals(32.dp, state.height)
+        assertEquals(8.dp, state.cornerRadius)
+        assertEquals(0.13f, state.containerAlpha, 0.001f)
+        assertEquals(10.dp, state.horizontalPadding)
+        assertEquals(4.dp, state.contentSpacing)
+        assertEquals(14.dp, state.iconSize)
+        assertEquals(1f, state.iconAlpha, 0.001f)
+        assertEquals(1f, state.textAlpha, 0.001f)
+    }
+
+    @Test
     fun routePanelUiStateSummarizesRecommendationAndFailures() {
         val failed = route("failed", StreamProtocol.HLS, 900, quality = "1080p")
         val bt = route("bt", StreamProtocol.BITTORRENT, 800, quality = "1080p")

@@ -729,6 +729,17 @@ internal data class RouteStatusBadgeChromeUiState(
     val textAlpha: Float,
 )
 
+internal data class RoutePlayActionChromeUiState(
+    val height: Dp,
+    val cornerRadius: Dp,
+    val containerAlpha: Float,
+    val horizontalPadding: Dp,
+    val contentSpacing: Dp,
+    val iconSize: Dp,
+    val iconAlpha: Float,
+    val textAlpha: Float,
+)
+
 internal data class SourceStrategyUiState(
     val id: String,
     val title: String,
@@ -4081,6 +4092,19 @@ internal fun buildRouteStatusBadgeChromeUiState(): RouteStatusBadgeChromeUiState
         cornerRadius = 8.dp,
         containerAlpha = 0.16f,
         horizontalPadding = 8.dp,
+        textAlpha = 1f,
+    )
+}
+
+internal fun buildRoutePlayActionChromeUiState(): RoutePlayActionChromeUiState {
+    return RoutePlayActionChromeUiState(
+        height = 32.dp,
+        cornerRadius = 8.dp,
+        containerAlpha = 0.13f,
+        horizontalPadding = 10.dp,
+        contentSpacing = 4.dp,
+        iconSize = 14.dp,
+        iconAlpha = 1f,
         textAlpha = 1f,
     )
 }

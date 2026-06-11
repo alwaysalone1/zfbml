@@ -292,3 +292,5 @@ This pass upgrades fullscreen seek shortcut chrome. `PlayerFullscreenSeekCluster
 This pass upgrades compact fullscreen-entry chrome. `PlayerCompactFullscreenActionUiState` now owns the compact fullscreen button's content description, width, height, radius, icon size, selected/enabled state, container/content colors, and disabled alpha values so portrait playback keeps the compact control row model-driven instead of leaving the fullscreen action as a local Compose button.
 
 This pass upgrades shared route/status badge chrome. `RouteStatusBadgeChromeUiState` now owns badge height, radius, container alpha, horizontal padding, and text alpha so detail cards, source chips, search results, and player panels share the same tested small-badge presentation contract instead of each depending on local Compose constants.
+
+This pass upgrades route play-action pill chrome. `RoutePlayActionChromeUiState` now owns action-pill height, radius, container alpha, padding, spacing, icon size, icon alpha, and text alpha so route cards keep the primary play action aligned with the shared badge model and avoid local Compose constants.

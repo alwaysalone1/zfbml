@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.142")
+                setRequestProperty("User-Agent", "ZFBML/0.5.143")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2984,7 +2984,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.142",
+            version = "0.5.143",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -5143,17 +5143,28 @@ private fun RouteStatusBadge(label: String, color: Color) {
 @Composable
 private fun RoutePlayActionLabel(label: String, tone: SourceLibraryTone) {
     val color = sourceLibraryToneColor(tone)
+    val chrome = remember { buildRoutePlayActionChromeUiState() }
     Row(
         modifier = Modifier
-            .height(32.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(color.copy(alpha = 0.13f))
-            .padding(horizontal = 10.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+            .height(chrome.height)
+            .clip(RoundedCornerShape(chrome.cornerRadius))
+            .background(color.copy(alpha = chrome.containerAlpha))
+            .padding(horizontal = chrome.horizontalPadding),
+        horizontalArrangement = Arrangement.spacedBy(chrome.contentSpacing),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = color, modifier = Modifier.size(14.dp))
-        Text(label, style = MaterialTheme.typography.labelSmall, color = color, maxLines = 1)
+        Icon(
+            Icons.Filled.PlayArrow,
+            contentDescription = null,
+            tint = color.copy(alpha = chrome.iconAlpha),
+            modifier = Modifier.size(chrome.iconSize),
+        )
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            color = color.copy(alpha = chrome.textAlpha),
+            maxLines = 1,
+        )
     }
 }
 
