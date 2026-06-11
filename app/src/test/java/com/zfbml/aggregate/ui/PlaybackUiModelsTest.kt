@@ -1516,6 +1516,26 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun searchResultsForProviderDeduplicatesAllSourcesButKeepsSourceFiltersRaw() {
+        val results = listOf(
+            searchResult("animeko-online", "Alpha!!", raw = mapOf("mediaKind" to "online")),
+            searchResult(
+                "bangumi-catalog",
+                "Alpha",
+                raw = mapOf("subjectId" to "1", "rating" to "8.2", "episodeCount" to "12"),
+            ),
+            searchResult("bt", "Beta"),
+            searchResult("bt", "beta"),
+        )
+
+        val allSources = searchResultsForProvider(results, null)
+
+        assertEquals(listOf("Alpha", "Beta"), allSources.map { it.title })
+        assertEquals(listOf("Alpha!!"), searchResultsForProvider(results, "animeko-online").map { it.title })
+        assertEquals(listOf("Beta", "beta"), searchResultsForProvider(results, "bt").map { it.title })
+    }
+
+    @Test
     fun searchResultsSectionUiStateSummarizesLoadingAndSelectedSource() {
         val manifests = listOf(
             manifest("bangumi-catalog", "Bangumi"),

@@ -241,3 +241,5 @@ This pass upgrades danmaku episode-number parsing. The shared matcher now recogn
 This pass upgrades danmaku matching cache behavior. `DanmakuRegistry` now keeps a bounded LRU cache for automatic candidate matches and coalesces concurrent provider searches, while timeline fetching still retries empty timelines so a stale missing danmaku body does not permanently block later playback.
 
 This pass upgrades danmaku anti-occlusion. `DanmakuSafeArea` now carries a center exclusion band for play buttons and seek feedback, `DanmakuLayoutEngine` skips lanes that would cross that band, and the player shares the same computed safe-area state with both rendering and the danmaku settings summary.
+
+This pass upgrades search result presentation. The all-sources search view now collapses normalized same-title hits to the strongest metadata-rich result while source filters continue to expose each provider's raw results for inspection.

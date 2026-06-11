@@ -18,6 +18,7 @@ import com.zfbml.aggregate.source.StreamProtocol
 import com.zfbml.aggregate.source.catalog.BangumiCategory
 import com.zfbml.aggregate.source.catalog.BangumiScheduleDay
 import com.zfbml.aggregate.torrent.TorrentEngineState
+import java.text.Normalizer
 
 internal enum class RouteLoadStatus {
     Idle,
@@ -2437,7 +2438,71 @@ internal fun searchResultsForProvider(
 ): List<SearchResult> {
     return selectedProviderId
         ?.let { providerId -> results.filter { it.providerId == providerId } }
-        ?: results
+        ?: results.deduplicatedSearchResults()
+}
+
+private fun List<SearchResult>.deduplicatedSearchResults(): List<SearchResult> {
+    if (size < 2) return this
+    return withIndex()
+        .groupBy { it.value.searchDeduplicationKey() }
+        .values
+        .map { group ->
+            val best = group
+                .sortedWith(
+                    compareByDescending<IndexedValue<SearchResult>> { it.value.searchDeduplicationScore() }
+                        .thenBy { it.index },
+                )
+                .first()
+            SearchResultGroup(firstIndex = group.minOf { it.index }, result = best.value)
+        }
+        .sortedBy { it.firstIndex }
+        .map { it.result }
+}
+
+private data class SearchResultGroup(
+    val firstIndex: Int,
+    val result: SearchResult,
+)
+
+private fun SearchResult.searchDeduplicationKey(): String {
+    return title.searchNormalizedTitleKey()
+        .ifBlank { raw["subjectNameCn"].orEmpty().searchNormalizedTitleKey() }
+        .ifBlank { raw["subjectName"].orEmpty().searchNormalizedTitleKey() }
+        .ifBlank { url.searchNormalizedTitleKey() }
+        .ifBlank { "$providerId:$url" }
+}
+
+private fun SearchResult.searchDeduplicationScore(): Int {
+    val lowerTitle = title.lowercase()
+    var score = when (providerId.lowercase()) {
+        "bangumi-catalog" -> 260
+        "animeko-online" -> 230
+        "direct-url", "direct", "bt" -> 200
+        "mikan", "dmhy", "nyaa", "acg-rip", "bangumi-moe" -> 190
+        else -> if (raw["mediaKind"] == "online") 230 else 120
+    }
+    raw["sourceTier"]?.toIntOrNull()?.let { score -= it * 8 }
+    if (!posterUrl.isNullOrBlank()) score += 20
+    if (!subtitle.isNullOrBlank()) score += 8
+    if (raw["subjectId"]?.isNotBlank() == true) score += 30
+    if (raw["rating"]?.toDoubleOrNull() != null) score += 18
+    if ((raw["episodeCount"]?.toIntOrNull() ?: 0) > 0) score += 16
+    if (raw["torrentUrl"]?.startsWith("http", ignoreCase = true) == true) score += 40
+    if (raw["torrentUrl"]?.startsWith("magnet:", ignoreCase = true) == true) score += 20
+    if ("1080" in lowerTitle) score += 12
+    if ("720" in lowerTitle) score += 7
+    if ("batch" in lowerTitle || "\u5408\u96c6" in lowerTitle) score -= 35
+    raw["seeders"]?.toIntOrNull()?.let { score += it.coerceAtMost(300) / 6 }
+    return score
+}
+
+private fun String.searchNormalizedTitleKey(): String {
+    val normalized = Normalizer.normalize(trim(), Normalizer.Form.NFKC).lowercase()
+    return buildString(normalized.length) {
+        normalized.forEach { char ->
+            if (char.isLetterOrDigit()) append(char)
+        }
+    }
 }
 
 internal fun buildSearchLandingUiState(
