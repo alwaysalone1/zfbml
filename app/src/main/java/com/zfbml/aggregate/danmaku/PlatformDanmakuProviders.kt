@@ -281,6 +281,90 @@ private fun String.containsDanmakuCjkText(): Boolean {
     }
 }
 
+internal fun danmakuCandidateMatchScore(
+    baseScore: Int,
+    queryTitle: String,
+    candidateTitle: String,
+    candidateEpisodeTitle: String?,
+    candidateEpisodeOrder: Int?,
+    requestedEpisodeTitle: String,
+    requestedEpisodeNumber: Int,
+): Int {
+    return baseScore +
+        danmakuTitleMatchScore(queryTitle, candidateTitle) +
+        danmakuEpisodeMatchScore(
+            candidateEpisodeTitle = candidateEpisodeTitle,
+            candidateEpisodeOrder = candidateEpisodeOrder,
+            requestedEpisodeTitle = requestedEpisodeTitle,
+            requestedEpisodeNumber = requestedEpisodeNumber,
+        )
+}
+
+internal fun danmakuTitleMatchScore(queryTitle: String, candidateTitle: String): Int {
+    val query = normalizeDanmakuMatchText(queryTitle)
+    val candidate = normalizeDanmakuMatchText(candidateTitle)
+    if (query.isBlank() || candidate.isBlank()) return 0
+    return when {
+        candidate == query -> 36
+        candidate.contains(query) -> 28
+        candidate.length >= maxOf(4, (query.length * 0.65f).toInt()) && query.contains(candidate) -> 20
+        else -> 0
+    }
+}
+
+internal fun danmakuEpisodeMatchScore(
+    candidateEpisodeTitle: String?,
+    candidateEpisodeOrder: Int?,
+    requestedEpisodeTitle: String,
+    requestedEpisodeNumber: Int,
+): Int {
+    val requestedTitle = normalizeDanmakuMatchText(requestedEpisodeTitle)
+    val candidateTitle = normalizeDanmakuMatchText(candidateEpisodeTitle.orEmpty())
+    val requestedTitleNumber = danmakuEpisodeNumberFromText(requestedEpisodeTitle)
+    val candidateTitleNumber = danmakuEpisodeNumberFromText(candidateEpisodeTitle.orEmpty())
+    val titleNumbersAgree = requestedTitleNumber == null || candidateTitleNumber == null || requestedTitleNumber == candidateTitleNumber
+    var score = 0
+    if (requestedTitle.isNotBlank() && candidateTitle.isNotBlank()) {
+        score += when {
+            candidateTitle == requestedTitle -> 24
+            titleNumbersAgree && candidateTitle.length >= 4 && requestedTitle.contains(candidateTitle) -> 16
+            titleNumbersAgree && requestedTitle.length >= 4 && candidateTitle.contains(requestedTitle) -> 16
+            else -> 0
+        }
+    }
+    if (requestedEpisodeNumber > 0 && candidateEpisodeOrder == requestedEpisodeNumber) {
+        score += 18
+    }
+    if (requestedEpisodeNumber > 0 && candidateTitleNumber == requestedEpisodeNumber) {
+        score += 12
+    }
+    return score
+}
+
+private fun normalizeDanmakuMatchText(value: String): String {
+    return htmlDecodeDanmakuText(value.replace(Regex("""<[^>]+>"""), ""))
+        .lowercase()
+        .replace("\u6d77\u8d3c\u738b", "\u822a\u6d77\u738b")
+        .replace(Regex("""[\s\p{P}\p{S}]"""), "")
+}
+
+private fun danmakuEpisodeNumberFromText(value: String): Int? {
+    return Regex("""\b0*(\d{1,4})\b""")
+        .find(value)
+        ?.groupValues
+        ?.getOrNull(1)
+        ?.toIntOrNull()
+}
+
+private fun htmlDecodeDanmakuText(value: String): String {
+    return value
+        .replace("&amp;", "&")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&quot;", "\"")
+        .replace("&#39;", "'")
+}
+
 private fun DanmakuManualMapping.matches(detail: MediaDetail, episode: Episode): Boolean {
     if (episodeId.isNullOrBlank() && episodeIndex == null) return false
     if (!detailProviderId.isNullOrBlank() && detailProviderId != detail.providerId) return false
@@ -396,7 +480,15 @@ class WebDanmakuService(
                 platform = DanmakuPlatform.Bilibili,
                 title = candidate.title,
                 episodeTitle = episode.title,
-                score = candidate.score,
+                score = danmakuCandidateMatchScore(
+                    baseScore = candidate.score,
+                    queryTitle = title,
+                    candidateTitle = candidate.title,
+                    candidateEpisodeTitle = episode.title,
+                    candidateEpisodeOrder = episode.order,
+                    requestedEpisodeTitle = episodeTitle,
+                    requestedEpisodeNumber = episodeNumber,
+                ),
                 token = "bilibili|${episode.id}",
             )
         }
@@ -460,7 +552,15 @@ class WebDanmakuService(
                 platform = DanmakuPlatform.Tencent,
                 title = candidate.title,
                 episodeTitle = episode.title,
-                score = candidate.score,
+                score = danmakuCandidateMatchScore(
+                    baseScore = candidate.score,
+                    queryTitle = title,
+                    candidateTitle = candidate.title,
+                    candidateEpisodeTitle = episode.title,
+                    candidateEpisodeOrder = episode.order,
+                    requestedEpisodeTitle = episodeTitle,
+                    requestedEpisodeNumber = episodeNumber,
+                ),
                 token = "tencent|${episode.id}",
             )
         }
@@ -528,7 +628,22 @@ class WebDanmakuService(
                 listOf(PlatformEpisode(id, 1, cleanTitle, pageUrl.ifBlank { id }))
             }
             val episode = pickEpisode(episodes, episodeTitle, episodeNumber) ?: return@mapNotNull null
-            DanmakuMatch("danmaku-iqiyi", DanmakuPlatform.Iqiyi, cleanTitle, episode.title, 74, "iqiyi|${episode.url ?: episode.id}")
+            DanmakuMatch(
+                providerId = "danmaku-iqiyi",
+                platform = DanmakuPlatform.Iqiyi,
+                title = cleanTitle,
+                episodeTitle = episode.title,
+                score = danmakuCandidateMatchScore(
+                    baseScore = 74,
+                    queryTitle = title,
+                    candidateTitle = cleanTitle,
+                    candidateEpisodeTitle = episode.title,
+                    candidateEpisodeOrder = episode.order,
+                    requestedEpisodeTitle = episodeTitle,
+                    requestedEpisodeNumber = episodeNumber,
+                ),
+                token = "iqiyi|${episode.url ?: episode.id}",
+            )
         }
         return matches.take(5)
     }
@@ -590,7 +705,22 @@ class WebDanmakuService(
             if (displayName.isBlank() || showId.isBlank() || !looksLikeSameTitle(displayName, normalized)) return@mapNotNull null
             val episodes = fetchYoukuEpisodes(showId)
             val episode = pickEpisode(episodes, episodeTitle, episodeNumber) ?: return@mapNotNull null
-            DanmakuMatch("danmaku-youku", DanmakuPlatform.Youku, displayName, episode.title, 68, "youku|${episode.id}")
+            DanmakuMatch(
+                providerId = "danmaku-youku",
+                platform = DanmakuPlatform.Youku,
+                title = displayName,
+                episodeTitle = episode.title,
+                score = danmakuCandidateMatchScore(
+                    baseScore = 68,
+                    queryTitle = title,
+                    candidateTitle = displayName,
+                    candidateEpisodeTitle = episode.title,
+                    candidateEpisodeOrder = episode.order,
+                    requestedEpisodeTitle = episodeTitle,
+                    requestedEpisodeNumber = episodeNumber,
+                ),
+                token = "youku|${episode.id}",
+            )
         }.take(5)
     }
 
@@ -659,11 +789,21 @@ class WebDanmakuService(
 
     private fun pickEpisode(episodes: List<PlatformEpisode>, episodeTitle: String, episodeNumber: Int): PlatformEpisode? {
         if (episodes.isEmpty()) return null
-        val nameSignal = normalizeForMatch(episodeTitle)
-        if (nameSignal.isNotBlank()) {
-            episodes.firstOrNull { normalizeForMatch(it.title).contains(nameSignal) || nameSignal.contains(normalizeForMatch(it.title)) }?.let { return it }
+        var bestEpisode: PlatformEpisode? = null
+        var bestScore = 0
+        episodes.forEach { candidate ->
+            val score = danmakuEpisodeMatchScore(
+                candidateEpisodeTitle = candidate.title,
+                candidateEpisodeOrder = candidate.order,
+                requestedEpisodeTitle = episodeTitle,
+                requestedEpisodeNumber = episodeNumber,
+            )
+            if (score > bestScore) {
+                bestScore = score
+                bestEpisode = candidate
+            }
         }
-        episodes.firstOrNull { it.order == episodeNumber }?.let { return it }
+        bestEpisode?.let { return it }
         return episodes.getOrNull(episodeNumber - 1) ?: episodes.firstOrNull()
     }
 
@@ -680,9 +820,7 @@ class WebDanmakuService(
     }
 
     private fun normalizeForMatch(value: String): String = stripHtml(value)
-        .lowercase()
-        .replace("海贼王", "航海王")
-        .replace(Regex("""[\s\p{P}\p{S}]"""), "")
+        .let(::normalizeDanmakuMatchText)
 
     private fun episodeNumberFromText(value: String): Int? {
         Regex("""第\s*0*(\d+)\s*[集话話期]""").find(value)?.groupValues?.getOrNull(1)?.toIntOrNull()?.let { return it }

@@ -130,6 +130,49 @@ class DanmakuRegistryTest {
     }
 
     @Test
+    fun candidateScoreRewardsExactTitleAndEpisodeSignals() {
+        val exactLowerBase = danmakuCandidateMatchScore(
+            baseScore = 82,
+            queryTitle = "One Piece",
+            candidateTitle = "One Piece",
+            candidateEpisodeTitle = "Episode 12",
+            candidateEpisodeOrder = 12,
+            requestedEpisodeTitle = "Episode 12",
+            requestedEpisodeNumber = 12,
+        )
+        val looseHigherBase = danmakuCandidateMatchScore(
+            baseScore = 90,
+            queryTitle = "One Piece",
+            candidateTitle = "One Piece Special",
+            candidateEpisodeTitle = "Episode 1",
+            candidateEpisodeOrder = 1,
+            requestedEpisodeTitle = "Episode 12",
+            requestedEpisodeNumber = 12,
+        )
+
+        assertTrue(exactLowerBase > looseHigherBase)
+        assertEquals(
+            0,
+            danmakuEpisodeMatchScore(
+                candidateEpisodeTitle = "Episode 1",
+                candidateEpisodeOrder = 1,
+                requestedEpisodeTitle = "Episode 12",
+                requestedEpisodeNumber = 12,
+            ),
+        )
+    }
+
+    @Test
+    fun titleScoreNormalizesCommonAnimeAliases() {
+        val score = danmakuTitleMatchScore(
+            queryTitle = "\u6d77\u8d3c\u738b",
+            candidateTitle = "\u822a\u6d77\u738b",
+        )
+
+        assertTrue(score > 0)
+    }
+
+    @Test
     fun fetchBestTimelineFallsBackWhenBestMatchIsEmpty() = runTest {
         val emptyBest = CountingDanmakuProvider(
             id = "empty-best",

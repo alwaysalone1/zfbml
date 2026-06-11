@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.114
+
+English:
+
+- Danmaku platform candidates now add title-match and episode-match scoring on top of provider base scores, making exact anime and episode matches outrank loose high-platform hits.
+- Automatic episode selection now scores candidate episode titles and order numbers before falling back to positional selection.
+- Added unit coverage for candidate scoring and common anime title alias normalization.
+- App version labels, request user agents, and README notes are now updated to `0.5.114`.
+
 ### v0.5.113
 
 English:

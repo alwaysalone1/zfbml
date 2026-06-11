@@ -233,3 +233,5 @@ This pass upgrades persisted danmaku calibration. Manual episode mappings are no
 This pass upgrades manual danmaku search. The player danmaku panel now exposes an editable anime-title query for Chinese names, original names, and aliases, and `DanmakuRegistry.searchCandidates()` searches providers with the entered title while keeping candidate selection wired to the persisted calibration flow.
 
 This pass upgrades automatic danmaku title matching. `DanmakuRegistry` now expands automatic provider searches across Bangumi subject Chinese names, aliases, original names, and detail titles with CJK names prioritized and a small candidate cap, while explicit manual searches remain isolated to the user's entered query.
+
+This pass upgrades automatic danmaku candidate ranking. Platform matches now combine provider base weight with title exactness, known anime-title alias normalization, episode-title similarity, and episode-order agreement so automatic loading is less likely to pick a loose high-platform result when a lower-base provider has the precise anime and episode mapping.
