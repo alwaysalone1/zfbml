@@ -849,6 +849,22 @@ internal data class PlayerNoticeUiState(
     val error: Boolean,
 )
 
+internal data class PlayerStartupOverlayUiState(
+    val title: String,
+    val metadataLine: String,
+    val progressTone: SourceLibraryTone,
+    val width: Dp,
+    val cornerRadius: Dp,
+    val borderWidth: Dp,
+    val containerAlpha: Float,
+    val borderAlpha: Float,
+    val contentPadding: Dp,
+    val contentSpacing: Dp,
+    val progressSize: Dp,
+    val titleAlpha: Float,
+    val metadataAlpha: Float,
+)
+
 internal data class PlayerRouteStatusUiState(
     val routeLabel: String,
     val statusLabel: String,
@@ -5261,6 +5277,34 @@ internal fun buildPlayerFullscreenNoticeUiState(
         message = message,
         tone = if (error) SourceLibraryTone.Web else SourceLibraryTone.Backup,
         error = error,
+    )
+}
+
+internal fun buildPlayerStartupOverlayUiState(
+    playbackState: String,
+    videoSize: String?,
+    protocol: StreamProtocol,
+): PlayerStartupOverlayUiState {
+    val playbackLabel = playbackState.trim().ifBlank { "\u7f13\u51b2\u4e2d" }
+    val metadataLine = listOfNotNull(
+        playbackLabel,
+        protocol.uiProtocolName(),
+        videoSize?.trim()?.takeIf { it.isNotBlank() },
+    ).joinToString(" / ")
+    return PlayerStartupOverlayUiState(
+        title = "\u6b63\u5728\u52a0\u8f7d\u753b\u9762",
+        metadataLine = metadataLine,
+        progressTone = SourceLibraryTone.Online,
+        width = 300.dp,
+        cornerRadius = 8.dp,
+        borderWidth = 1.dp,
+        containerAlpha = 0.84f,
+        borderAlpha = 0.08f,
+        contentPadding = 18.dp,
+        contentSpacing = 10.dp,
+        progressSize = 30.dp,
+        titleAlpha = 1f,
+        metadataAlpha = 1f,
     )
 }
 

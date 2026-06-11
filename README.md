@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.131
+
+English:
+
+- Player first-frame loading overlays now use `PlayerStartupOverlayUiState` for title, metadata, semantic progress tone, sizing, radius, border, alpha, padding, spacing, and progress sizing.
+- `VideoStartupOverlay` now renders ordinary-stream startup state from the model instead of assembling protocol/status copy and chrome constants inside Compose.
+- Added unit coverage for startup-overlay metadata fallback, video-size cleanup, protocol labels, and layout chrome.
+- App version labels, request user agents, and README notes are now updated to `0.5.131`.
+
 ### v0.5.130
 
 English:

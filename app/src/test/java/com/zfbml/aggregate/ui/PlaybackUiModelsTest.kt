@@ -4128,6 +4128,35 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun playerStartupOverlayUiStateFormatsMetadataAndChrome() {
+        val loading = buildPlayerStartupOverlayUiState(
+            playbackState = " ",
+            videoSize = " 1920x1080 ",
+            protocol = StreamProtocol.HLS,
+        )
+        val progressive = buildPlayerStartupOverlayUiState(
+            playbackState = "Buffering",
+            videoSize = " ",
+            protocol = StreamProtocol.PROGRESSIVE,
+        )
+
+        assertEquals("\u6b63\u5728\u52a0\u8f7d\u753b\u9762", loading.title)
+        assertEquals("\u7f13\u51b2\u4e2d / HLS / 1920x1080", loading.metadataLine)
+        assertEquals(SourceLibraryTone.Online, loading.progressTone)
+        assertEquals(300.dp, loading.width)
+        assertEquals(8.dp, loading.cornerRadius)
+        assertEquals(1.dp, loading.borderWidth)
+        assertEquals(0.84f, loading.containerAlpha, 0.001f)
+        assertEquals(0.08f, loading.borderAlpha, 0.001f)
+        assertEquals(18.dp, loading.contentPadding)
+        assertEquals(10.dp, loading.contentSpacing)
+        assertEquals(30.dp, loading.progressSize)
+        assertEquals(1f, loading.titleAlpha, 0.001f)
+        assertEquals(1f, loading.metadataAlpha, 0.001f)
+        assertEquals("Buffering / MP4", progressive.metadataLine)
+    }
+
+    @Test
     fun torrentPlaybackPreparationUiStateSummarizesPlanAndNetwork() {
         val stream = MediaStream(
             id = "bt",

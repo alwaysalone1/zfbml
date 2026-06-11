@@ -268,3 +268,5 @@ This pass upgrades category browse list selection. `CategoryBrowseListUiState` n
 This pass upgrades detail hero chrome. `DetailHeroChromeUiState` now owns title and summary fallback copy, poster metadata, selected-episode chips, episode-count chips, shell dimensions, poster sizing, overlay alpha, and action sizing so the detail landing area follows the same tested model contract as route readiness and first-play guidance.
 
 This pass upgrades detail entry-card chrome. `DetailEntryUiState` now owns status tone, radius, padding, row spacing, icon-box sizing, chip spacing, and side-column dimensions so the search-to-detail handoff card follows the same model-driven presentation contract as the detail hero and playback readiness surfaces.
+
+This pass upgrades the player first-frame loading overlay. `PlayerStartupOverlayUiState` now owns loading title, protocol/status metadata, progress tone, width, corner radius, border width, alpha, padding, spacing, and progress sizing so ordinary-stream startup presentation follows the same tested player-state contract as BT preparation, seek bars, and route diagnostics.

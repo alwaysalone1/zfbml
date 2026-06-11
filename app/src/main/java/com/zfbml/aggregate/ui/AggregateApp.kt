@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.130")
+                setRequestProperty("User-Agent", "ZFBML/0.5.131")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2977,7 +2977,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.130",
+            version = "0.5.131",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -9459,27 +9459,35 @@ private fun VideoStartupOverlay(
     protocol: StreamProtocol,
     modifier: Modifier = Modifier,
 ) {
+    val state = remember(playbackState, videoSize, protocol) {
+        buildPlayerStartupOverlayUiState(
+            playbackState = playbackState,
+            videoSize = videoSize,
+            protocol = protocol,
+        )
+    }
     Surface(
-        modifier = modifier.width(300.dp),
-        shape = RoundedCornerShape(8.dp),
-        color = AnimePanel.copy(alpha = 0.84f),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.08f)),
+        modifier = modifier.width(state.width),
+        shape = RoundedCornerShape(state.cornerRadius),
+        color = AnimePanel.copy(alpha = state.containerAlpha),
+        border = BorderStroke(state.borderWidth, Color.White.copy(alpha = state.borderAlpha)),
     ) {
         Column(
-            modifier = Modifier.padding(18.dp),
+            modifier = Modifier.padding(state.contentPadding),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(state.contentSpacing),
         ) {
-            CircularProgressIndicator(color = AnimeAccentCyan, modifier = Modifier.size(30.dp))
-            Text("正在加载画面", style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold)
+            CircularProgressIndicator(color = sourceLibraryToneColor(state.progressTone), modifier = Modifier.size(state.progressSize))
             Text(
-                listOfNotNull(
-                    playbackState,
-                    protocol.displayName(),
-                    videoSize,
-                ).joinToString(" / "),
+                state.title,
+                style = MaterialTheme.typography.titleMedium,
+                color = Color.White.copy(alpha = state.titleAlpha),
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                state.metadataLine,
                 style = MaterialTheme.typography.bodySmall,
-                color = AnimeMuted,
+                color = AnimeMuted.copy(alpha = state.metadataAlpha),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
