@@ -282,3 +282,5 @@ This pass upgrades player edge-progress chrome. `PlayerEdgeProgressUiState` now 
 This pass upgrades player seek-feedback chrome. `PlayerSeekFeedbackUiState` now owns feedback text, placement, anti-obstruction margins, compact/fullscreen vertical offsets, radius, border, padding, icon visibility/size/tone, container alpha, and text alpha so double-tap seeking feedback stays predictable without covering the main video area.
 
 This pass upgrades player top-status strip chrome. `PlayerTopStatusStripUiState` and `PlayerStatusChipUiState` now own strip height, chip spacing, end padding, chip width/height, radius, container alpha, border alpha, padding, label alpha, and value alpha so fullscreen playback metadata remains compact, scannable, and model-driven.
+
+This pass upgrades player fullscreen-status strip chrome. `PlayerFullscreenStatusStripUiState` and `PlayerFullscreenStatusTagUiState` now own strip height, radius, container base color, alpha, border width/alpha, padding, spacing, status tone, route text alpha, and tag text alpha so bottom playback metadata follows the same tested model-driven contract as the top status chips.

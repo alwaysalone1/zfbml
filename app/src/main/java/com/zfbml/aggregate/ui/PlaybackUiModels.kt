@@ -854,8 +854,27 @@ internal data class PlayerStatusChipUiState(
 internal data class PlayerFullscreenStatusStripUiState(
     val statusLabel: String,
     val routeSummary: String,
-    val tags: List<String>,
+    val tags: List<PlayerFullscreenStatusTagUiState>,
     val error: Boolean,
+    val height: Dp,
+    val cornerRadius: Dp,
+    val containerBaseColor: PlayerChromeBaseColor,
+    val containerAlpha: Float,
+    val borderWidth: Dp,
+    val borderBaseColor: PlayerChromeBaseColor,
+    val borderAlpha: Float,
+    val errorBorderAlpha: Float,
+    val horizontalPadding: Dp,
+    val itemSpacing: Dp,
+    val statusTone: SourceLibraryTone,
+    val routeTextBaseColor: PlayerChromeBaseColor,
+    val routeTextAlpha: Float,
+)
+
+internal data class PlayerFullscreenStatusTagUiState(
+    val label: String,
+    val textBaseColor: PlayerChromeBaseColor,
+    val textAlpha: Float,
 )
 
 internal data class PlayerNoticeUiState(
@@ -5363,8 +5382,29 @@ internal fun buildPlayerFullscreenStatusStripUiState(
             formatPlaybackSpeedForUi(playbackSpeed),
             routeCoverageLabel.takeIf { routeCount > 1 && it.isNotBlank() },
             episodeCount.takeIf { it > 1 }?.let { "$it 集" },
-        ),
+        ).map(::playerFullscreenStatusTagUiState),
         error = hasPlaybackIssue,
+        height = 32.dp,
+        cornerRadius = 8.dp,
+        containerBaseColor = PlayerChromeBaseColor.Black,
+        containerAlpha = 0.26f,
+        borderWidth = 1.dp,
+        borderBaseColor = PlayerChromeBaseColor.White,
+        borderAlpha = 0.08f,
+        errorBorderAlpha = 0.28f,
+        horizontalPadding = 10.dp,
+        itemSpacing = 8.dp,
+        statusTone = SourceLibraryTone.Cache,
+        routeTextBaseColor = PlayerChromeBaseColor.White,
+        routeTextAlpha = 0.86f,
+    )
+}
+
+private fun playerFullscreenStatusTagUiState(label: String): PlayerFullscreenStatusTagUiState {
+    return PlayerFullscreenStatusTagUiState(
+        label = label,
+        textBaseColor = PlayerChromeBaseColor.White,
+        textAlpha = 0.62f,
     )
 }
 

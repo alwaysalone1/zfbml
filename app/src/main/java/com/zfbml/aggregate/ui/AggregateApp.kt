@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.137")
+                setRequestProperty("User-Agent", "ZFBML/0.5.138")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2984,7 +2984,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.137",
+            version = "0.5.138",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -7448,24 +7448,31 @@ private fun PlayerFullscreenStatusStrip(
     }
     Row(
         modifier = modifier
-            .height(32.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color.Black.copy(alpha = 0.26f))
+            .height(state.height)
+            .clip(RoundedCornerShape(state.cornerRadius))
+            .background(playerChromeBaseColor(state.containerBaseColor).copy(alpha = state.containerAlpha))
             .border(
-                1.dp,
-                if (state.error) MaterialTheme.colorScheme.error.copy(alpha = 0.28f) else Color.White.copy(alpha = 0.08f),
-                RoundedCornerShape(8.dp),
+                state.borderWidth,
+                if (state.error) {
+                    MaterialTheme.colorScheme.error.copy(alpha = state.errorBorderAlpha)
+                } else {
+                    playerChromeBaseColor(state.borderBaseColor).copy(alpha = state.borderAlpha)
+                },
+                RoundedCornerShape(state.cornerRadius),
             )
-            .padding(horizontal = 10.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+            .padding(horizontal = state.horizontalPadding),
+        horizontalArrangement = Arrangement.spacedBy(state.itemSpacing),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        RouteStatusBadge(state.statusLabel, if (state.error) MaterialTheme.colorScheme.error else AnimeAccentGreen)
+        RouteStatusBadge(
+            state.statusLabel,
+            if (state.error) MaterialTheme.colorScheme.error else sourceLibraryToneColor(state.statusTone),
+        )
         Text(
             text = state.routeSummary,
             modifier = Modifier.weight(1f),
             style = MaterialTheme.typography.labelMedium,
-            color = Color.White.copy(alpha = 0.86f),
+            color = playerChromeBaseColor(state.routeTextBaseColor).copy(alpha = state.routeTextAlpha),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
@@ -7476,11 +7483,11 @@ private fun PlayerFullscreenStatusStrip(
 }
 
 @Composable
-private fun PlayerStatusTinyText(text: String) {
+private fun PlayerStatusTinyText(state: PlayerFullscreenStatusTagUiState) {
     Text(
-        text = text,
+        text = state.label,
         style = MaterialTheme.typography.labelSmall,
-        color = Color.White.copy(alpha = 0.62f),
+        color = playerChromeBaseColor(state.textBaseColor).copy(alpha = state.textAlpha),
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
     )
