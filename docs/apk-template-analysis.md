@@ -270,3 +270,5 @@ This pass upgrades detail hero chrome. `DetailHeroChromeUiState` now owns title 
 This pass upgrades detail entry-card chrome. `DetailEntryUiState` now owns status tone, radius, padding, row spacing, icon-box sizing, chip spacing, and side-column dimensions so the search-to-detail handoff card follows the same model-driven presentation contract as the detail hero and playback readiness surfaces.
 
 This pass upgrades the player first-frame loading overlay. `PlayerStartupOverlayUiState` now owns loading title, protocol/status metadata, progress tone, width, corner radius, border width, alpha, padding, spacing, and progress sizing so ordinary-stream startup presentation follows the same tested player-state contract as BT preparation, seek bars, and route diagnostics.
+
+This pass upgrades BT playback preparation chrome. `TorrentPlaybackPreparationUiState` now owns content width, padding, spacing, progress tone, progress-track tone and alpha, title/description/line alpha, and error tone so edge-cache startup presentation follows the same model-driven player contract as ordinary-stream loading overlays and cache diagnostics.

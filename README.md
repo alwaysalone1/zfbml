@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.132
+
+English:
+
+- BT playback preparation now exposes layout chrome through `TorrentPlaybackPreparationUiState`, including content width, padding, spacing, progress tones, track alpha, text alpha, and error tone.
+- `TorrentPlaceholderSurface` now renders edge-cache startup presentation from model fields instead of keeping BT preparation sizing and progress styling in Compose.
+- Added unit coverage for BT preparation chrome, progress tone, track tone, text alpha, and error tone.
+- App version labels, request user agents, and README notes are now updated to `0.5.132`.
+
 ### v0.5.131
 
 English:

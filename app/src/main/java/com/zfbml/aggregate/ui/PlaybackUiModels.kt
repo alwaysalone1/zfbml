@@ -995,6 +995,17 @@ internal data class TorrentPlaybackPreparationUiState(
     val fileLine: String?,
     val sizeLine: String?,
     val errorMessage: String?,
+    val contentWidth: Dp,
+    val contentPadding: Dp,
+    val contentSpacing: Dp,
+    val progressTone: SourceLibraryTone,
+    val progressTrackTone: SourceLibraryTone?,
+    val progressTrackAlpha: Float,
+    val titleAlpha: Float,
+    val descriptionAlpha: Float,
+    val primaryLineAlpha: Float,
+    val secondaryLineAlpha: Float,
+    val errorTone: SourceLibraryTone,
 )
 
 internal data class PlayerActionBarUiState(
@@ -5776,6 +5787,17 @@ internal fun buildTorrentPlaybackPreparationUiState(
         fileLine = plan?.selectedFileName?.let { "文件: $it" },
         sizeLine = plan?.selectedFileSizeBytes?.let { "大小: ${formatBytesForUi(it)}" },
         errorMessage = state.errorMessage,
+        contentWidth = 560.dp,
+        contentPadding = 24.dp,
+        contentSpacing = 12.dp,
+        progressTone = SourceLibraryTone.Cache,
+        progressTrackTone = SourceLibraryTone.Muted,
+        progressTrackAlpha = 0.22f,
+        titleAlpha = 1f,
+        descriptionAlpha = 1f,
+        primaryLineAlpha = 1f,
+        secondaryLineAlpha = 1f,
+        errorTone = SourceLibraryTone.Web,
     )
 }
 

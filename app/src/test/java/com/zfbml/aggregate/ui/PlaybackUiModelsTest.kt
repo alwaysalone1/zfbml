@@ -4197,6 +4197,17 @@ class PlaybackUiModelsTest {
         assertEquals("文件: episode-01.mkv", state.fileLine)
         assertEquals("大小: 1.0 GB", state.sizeLine)
         assertNull(state.errorMessage)
+        assertEquals(560.dp, state.contentWidth)
+        assertEquals(24.dp, state.contentPadding)
+        assertEquals(12.dp, state.contentSpacing)
+        assertEquals(SourceLibraryTone.Cache, state.progressTone)
+        assertEquals(SourceLibraryTone.Muted, state.progressTrackTone)
+        assertEquals(0.22f, state.progressTrackAlpha, 0.001f)
+        assertEquals(1f, state.titleAlpha, 0.001f)
+        assertEquals(1f, state.descriptionAlpha, 0.001f)
+        assertEquals(1f, state.primaryLineAlpha, 0.001f)
+        assertEquals(1f, state.secondaryLineAlpha, 0.001f)
+        assertEquals(SourceLibraryTone.Web, state.errorTone)
     }
 
     @Test

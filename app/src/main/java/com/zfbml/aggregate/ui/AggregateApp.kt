@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.131")
+                setRequestProperty("User-Agent", "ZFBML/0.5.132")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2977,7 +2977,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.131",
+            version = "0.5.132",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -9507,35 +9507,51 @@ private fun TorrentPlaceholderSurface(
         modifier = modifier.background(AnimeBackground),
         contentAlignment = Alignment.Center,
     ) {
+        val progressTrackColor = preparationState.progressTrackTone
+            ?.let(::sourceLibraryToneColor)
+            ?: Color.White
         Column(
-            modifier = Modifier.width(560.dp).padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.width(preparationState.contentWidth).padding(preparationState.contentPadding),
+            verticalArrangement = Arrangement.spacedBy(preparationState.contentSpacing),
             horizontalAlignment = Alignment.Start,
         ) {
-            Text(preparationState.title, style = MaterialTheme.typography.headlineSmall, color = Color.White, fontWeight = FontWeight.Bold)
+            Text(
+                preparationState.title,
+                style = MaterialTheme.typography.headlineSmall,
+                color = Color.White.copy(alpha = preparationState.titleAlpha),
+                fontWeight = FontWeight.Bold,
+            )
             Text(
                 preparationState.description,
                 style = MaterialTheme.typography.bodyLarge,
-                color = AnimeMuted,
+                color = AnimeMuted.copy(alpha = preparationState.descriptionAlpha),
             )
             LinearProgressIndicator(
                 progress = { preparationState.bufferingProgress },
                 modifier = Modifier.fillMaxWidth(),
+                color = sourceLibraryToneColor(preparationState.progressTone),
+                trackColor = progressTrackColor.copy(alpha = preparationState.progressTrackAlpha),
             )
-            Text(preparationState.statusLine, color = Color.White)
-            Text(preparationState.readinessLine, color = Color.White)
-            Text(preparationState.progressLine, color = Color.White)
+            Text(preparationState.statusLine, color = Color.White.copy(alpha = preparationState.primaryLineAlpha))
+            Text(preparationState.readinessLine, color = Color.White.copy(alpha = preparationState.primaryLineAlpha))
+            Text(preparationState.progressLine, color = Color.White.copy(alpha = preparationState.primaryLineAlpha))
             preparationState.bufferingLine?.let { line ->
-                Text(line, color = Color.White)
+                Text(line, color = Color.White.copy(alpha = preparationState.primaryLineAlpha))
             }
-            Text(preparationState.connectionLine, color = Color.White)
+            Text(preparationState.connectionLine, color = Color.White.copy(alpha = preparationState.primaryLineAlpha))
             preparationState.fileLine?.let { line ->
-                Text(line, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(
+                    line,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = AnimeMuted.copy(alpha = preparationState.secondaryLineAlpha),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
             preparationState.sizeLine?.let { line ->
-                Text(line, style = MaterialTheme.typography.bodySmall, color = AnimeMuted)
+                Text(line, style = MaterialTheme.typography.bodySmall, color = AnimeMuted.copy(alpha = preparationState.secondaryLineAlpha))
             }
-            preparationState.errorMessage?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            preparationState.errorMessage?.let { Text(it, color = sourceLibraryToneColor(preparationState.errorTone)) }
         }
     }
 }
