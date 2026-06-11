@@ -300,3 +300,5 @@ This pass upgrades fullscreen lock-button chrome. `PlayerFullscreenLockButtonUiS
 This pass upgrades fullscreen route-status pill chrome. `PlayerRouteStatusUiState` now owns width bounds, height, radius, container base color, alpha, border width/alpha, spacing, indicator size/alpha, and route/status text alpha values so the top overlay's current-line feedback is model-driven alongside status chips, notices, and lock controls.
 
 This pass upgrades player notice chrome. `PlayerNoticeUiState` now owns compact status-pill and fullscreen notice-strip sizing, radius, container base color, alpha, border width/alpha, padding, indicator size/alpha, text alpha, and layout weights so route notices and playback errors stay model-driven across compact and fullscreen overlays.
+
+This pass upgrades fullscreen control-row layout chrome. `PlayerFullscreenControlRowUiState` now owns the fullscreen bottom overlay's vertical spacing, action-row spacing, danmaku input weight, and action-bar weight so status, danmaku, seek, and quick actions are composed by a tested layout contract instead of Compose-local constants.

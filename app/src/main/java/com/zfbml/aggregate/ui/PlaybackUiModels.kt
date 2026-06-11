@@ -896,6 +896,13 @@ internal data class PlayerFullscreenStatusTagUiState(
     val textAlpha: Float,
 )
 
+internal data class PlayerFullscreenControlRowUiState(
+    val verticalSpacing: Dp,
+    val actionRowSpacing: Dp,
+    val danmakuInputWeight: Float,
+    val actionBarWeight: Float,
+)
+
 internal data class PlayerNoticeUiState(
     val title: String,
     val message: String,
@@ -5629,6 +5636,15 @@ private fun playerFullscreenStatusTagUiState(label: String): PlayerFullscreenSta
         label = label,
         textBaseColor = PlayerChromeBaseColor.White,
         textAlpha = 0.62f,
+    )
+}
+
+internal fun buildPlayerFullscreenControlRowUiState(): PlayerFullscreenControlRowUiState {
+    return PlayerFullscreenControlRowUiState(
+        verticalSpacing = 8.dp,
+        actionRowSpacing = 10.dp,
+        danmakuInputWeight = 0.78f,
+        actionBarWeight = 2.34f,
     )
 }
 

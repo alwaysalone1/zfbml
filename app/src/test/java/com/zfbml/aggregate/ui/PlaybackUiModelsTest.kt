@@ -3695,6 +3695,16 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun playerFullscreenControlRowUiStateExposesLayoutWeightsAndSpacing() {
+        val state = buildPlayerFullscreenControlRowUiState()
+
+        assertEquals(8.dp, state.verticalSpacing)
+        assertEquals(10.dp, state.actionRowSpacing)
+        assertEquals(0.78f, state.danmakuInputWeight, 0.001f)
+        assertEquals(2.34f, state.actionBarWeight, 0.001f)
+    }
+
+    @Test
     fun playerActionBarUiStateBuildsDefaultPlaybackActions() {
         val state = buildPlayerActionBarUiState(
             quality = "1080p",

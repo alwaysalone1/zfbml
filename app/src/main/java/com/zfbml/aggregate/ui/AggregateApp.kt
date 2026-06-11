@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.146")
+                setRequestProperty("User-Agent", "ZFBML/0.5.147")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2984,7 +2984,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.146",
+            version = "0.5.147",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -7416,9 +7416,10 @@ private fun PlayerFullscreenControlRow(
     onNextRoute: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val controlRowState = remember { buildPlayerFullscreenControlRowUiState() }
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(controlRowState.verticalSpacing),
     ) {
         PlayerFullscreenStatusStrip(
             routeSummary = routeSummary,
@@ -7432,14 +7433,14 @@ private fun PlayerFullscreenControlRow(
         )
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(controlRowState.actionRowSpacing),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             PlayerDanmakuInputBar(
                 danmakuEnabled = danmakuEnabled,
                 onToggleDanmaku = onToggleDanmaku,
                 onOpenDanmakuSettings = { onShowPanel(PlayerPanel.Danmaku) },
-                modifier = Modifier.weight(0.78f),
+                modifier = Modifier.weight(controlRowState.danmakuInputWeight),
             )
             PlayerFullscreenSeekCluster(
                 onSeekBackward = onSeekBackward,
@@ -7461,7 +7462,7 @@ private fun PlayerFullscreenControlRow(
                 onOffline = onOffline,
                 onRetryRoute = onRetryRoute,
                 onNextRoute = onNextRoute,
-                modifier = Modifier.weight(2.34f),
+                modifier = Modifier.weight(controlRowState.actionBarWeight),
             )
         }
     }
