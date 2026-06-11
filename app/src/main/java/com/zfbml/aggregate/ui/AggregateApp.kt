@@ -1167,23 +1167,34 @@ private fun DiscoverScreen(
     }
 
     val featured = homePicks.ifEmpty { fallbackFeatured }
+    val selectedHomePage = pages.getOrNull(pagerState.currentPage) ?: HomePage.Home
+    val homeChromeState = remember(categories, selectedHomePage, showCalendar) {
+        buildHomeBrowseChromeUiState(
+            categories = categories,
+            selectedTabId = selectedHomePage.homeBrowseTabId(),
+            calendarExpanded = showCalendar,
+        )
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(AnimeBackground),
     ) {
         HomePinnedHeader(
+            state = homeChromeState,
             onSearch = onSearch,
-            calendarExpanded = showCalendar,
             onCalendar = {
                 showCalendar = !showCalendar
                 scope.launch { pagerState.animateScrollToPage(0) }
             },
         )
         HomeCategoryBar(
-            pages = pages,
-            selectedIndex = pagerState.currentPage,
-            onSelected = { index -> scope.launch { pagerState.animateScrollToPage(index) } },
+            state = homeChromeState,
+            onSelected = { tabId ->
+                pages.indexOfFirst { page -> page.homeBrowseTabId() == tabId }
+                    .takeIf { it >= 0 }
+                    ?.let { index -> scope.launch { pagerState.animateScrollToPage(index) } }
+            },
         )
         HorizontalPager(
             state = pagerState,
@@ -1225,51 +1236,40 @@ private sealed interface HomePage {
 
 private fun homePages(categories: List<BangumiCategory>): List<HomePage> {
     val byId = categories.associateBy { it.id }
-    val orderedCategoryIds = listOf(
-        "chinese",
-        "japanese",
-        "american",
-        "movie",
-        "hot",
-        "recommend",
-        "high-score",
-        "most-followed",
-        "most-watched",
-    )
-    return listOf(HomePage.Home) + orderedCategoryIds.mapNotNull { id ->
+    return listOf(HomePage.Home) + HomeBrowseCategoryOrder.mapNotNull { id ->
         byId[id]?.let { HomePage.Category(it) }
     }
 }
 
-private fun HomePage.title(): String {
+private fun HomePage.homeBrowseTabId(): String {
     return when (this) {
-        HomePage.Home -> "\u9996\u9875"
-        is HomePage.Category -> category.title
+        HomePage.Home -> HomeBrowseHomeTabId
+        is HomePage.Category -> category.id
     }
 }
 
 @Composable
 private fun HomePinnedHeader(
+    state: HomeBrowseChromeUiState,
     onSearch: () -> Unit,
-    calendarExpanded: Boolean,
     onCalendar: () -> Unit,
 ) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .background(AnimeBackground)
-            .padding(horizontal = 18.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+            .padding(horizontal = state.headerHorizontalPadding, vertical = state.headerVerticalPadding),
+        verticalArrangement = Arrangement.spacedBy(state.headerSpacing),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            BrandMark(Modifier.size(42.dp))
+            BrandMark(Modifier.size(state.brandMarkSize))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(1.dp)) {
                 Text(
-                    text = "\u8ffd\u756a\u4e0d\u8ff7\u8def",
+                    text = state.headline,
                     style = MaterialTheme.typography.titleLarge,
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
@@ -1277,18 +1277,26 @@ private fun HomePinnedHeader(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = "ZFBML",
+                    text = state.brandLabel,
                     style = MaterialTheme.typography.labelLarge,
                     color = AnimeAccentCyan,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                 )
+                Text(
+                    text = state.subtitle,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = AnimeMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
+            val calendarColor = sourceLibraryToneColor(state.calendarTone)
             Button(
                 onClick = onCalendar,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (calendarExpanded) AnimeAccentCyan else AnimePanelSoft,
-                    contentColor = if (calendarExpanded) AnimeBackground else Color.White,
+                    containerColor = if (state.calendarExpanded) calendarColor else AnimePanelSoft,
+                    contentColor = if (state.calendarExpanded) AnimeBackground else Color.White,
                 ),
                 modifier = Modifier.height(42.dp).focusable(),
                 shape = RoundedCornerShape(8.dp),
@@ -1296,12 +1304,12 @@ private fun HomePinnedHeader(
             ) {
                 Icon(Icons.Filled.Bookmarks, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(5.dp))
-                Text("\u65e5\u5386", maxLines = 1)
+                Text(state.calendarActionLabel, maxLines = 1)
             }
         }
         Card(
             onClick = onSearch,
-            modifier = Modifier.fillMaxWidth().height(48.dp).focusable(),
+            modifier = Modifier.fillMaxWidth().height(state.searchHeight).focusable(),
             shape = RoundedCornerShape(8.dp),
             colors = CardDefaults.cardColors(containerColor = AnimePanel),
             border = BorderStroke(1.dp, AnimeBorder),
@@ -1313,14 +1321,14 @@ private fun HomePinnedHeader(
             ) {
                 Icon(Icons.Filled.Search, contentDescription = null, tint = AnimeAccentCyan, modifier = Modifier.size(22.dp))
                 Text(
-                    text = "\u641c\u756a\u540d\u3001\u7c98\u8d34\u94fe\u63a5\u6216\u627e\u64ad\u653e\u7ebf\u8def",
+                    text = state.searchPlaceholder,
                     style = MaterialTheme.typography.bodyMedium,
                     color = AnimeMuted,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f),
                 )
-                Text("\u641c\u7d22", style = MaterialTheme.typography.labelLarge, color = AnimeAccentCyan)
+                Text(state.searchActionLabel, style = MaterialTheme.typography.labelLarge, color = AnimeAccentCyan)
             }
         }
     }
@@ -1328,34 +1336,34 @@ private fun HomePinnedHeader(
 
 @Composable
 private fun HomeCategoryBar(
-    pages: List<HomePage>,
-    selectedIndex: Int,
-    onSelected: (Int) -> Unit,
+    state: HomeBrowseChromeUiState,
+    onSelected: (String) -> Unit,
 ) {
     LazyRow(
         modifier = Modifier
             .fillMaxWidth()
             .background(AnimeBackground)
-            .padding(start = 18.dp, end = 18.dp, bottom = 10.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+            .padding(start = state.headerHorizontalPadding, end = state.headerHorizontalPadding, bottom = state.categoryBottomPadding),
+        horizontalArrangement = Arrangement.spacedBy(state.categoryTabSpacing),
     ) {
-        items(pages.size) { index ->
-            val selected = selectedIndex == index
+        items(state.tabs) { tab ->
+            val selected = tab.selected
+            val accent = sourceLibraryToneColor(tab.tone)
             Card(
-                onClick = { onSelected(index) },
-                modifier = Modifier.height(42.dp).focusable(),
-                shape = RoundedCornerShape(8.dp),
+                onClick = { onSelected(tab.id) },
+                modifier = Modifier.height(state.categoryTabHeight).focusable(),
+                shape = RoundedCornerShape(state.categoryTabCornerRadius),
                 colors = CardDefaults.cardColors(containerColor = if (selected) AnimePanelSoft else Color.Transparent),
-                border = BorderStroke(1.dp, if (selected) AnimeAccentCyan else AnimeBorder),
+                border = BorderStroke(1.dp, if (selected) accent else AnimeBorder),
             ) {
                 Box(
-                    modifier = Modifier.padding(horizontal = 14.dp).fillMaxHeight(),
+                    modifier = Modifier.padding(horizontal = state.categoryTabHorizontalPadding).fillMaxHeight(),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        text = pages[index].title(),
+                        text = tab.title,
                         style = MaterialTheme.typography.labelLarge,
-                        color = if (selected) AnimeAccentCyan else AnimeMuted,
+                        color = if (selected) accent else AnimeMuted,
                         fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
                         maxLines = 1,
                     )
@@ -2396,7 +2404,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.120")
+                setRequestProperty("User-Agent", "ZFBML/0.5.121")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2910,7 +2918,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.120",
+            version = "0.5.121",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,

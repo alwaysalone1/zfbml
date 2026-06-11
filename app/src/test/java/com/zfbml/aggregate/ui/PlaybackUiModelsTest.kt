@@ -1665,6 +1665,52 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun homeBrowseChromeUiStateBuildsOrderedCategoryTabsAndHeaderCopy() {
+        val categories = listOf(
+            category("recommend", "\u63a8\u8350"),
+            category("japanese", "\u65e5\u672c"),
+            category("movie", "\u5267\u573a\u7248"),
+            category("chinese", "\u56fd\u4ea7"),
+        )
+
+        val state = buildHomeBrowseChromeUiState(
+            categories = categories,
+            selectedTabId = "japanese",
+            calendarExpanded = true,
+        )
+
+        assertEquals("\u8ffd\u756a\u4e0d\u8ff7\u8def", state.headline)
+        assertEquals("ZFBML", state.brandLabel)
+        assertEquals("\u6536\u8d77", state.calendarActionLabel)
+        assertEquals(SourceLibraryTone.Online, state.calendarTone)
+        assertEquals(42.dp, state.brandMarkSize)
+        assertEquals(48.dp, state.searchHeight)
+        assertEquals(
+            listOf(HomeBrowseHomeTabId, "chinese", "japanese", "movie", "recommend"),
+            state.tabs.map { it.id },
+        )
+        assertTrue(state.tabs.first { it.id == "japanese" }.selected)
+        assertEquals(SourceLibraryTone.Online, state.tabs.first { it.id == "japanese" }.tone)
+        assertTrue(state.subtitle.contains("\u65e5\u5386"))
+        assertTrue(state.searchPlaceholder.contains("\u64ad\u653e\u7ebf\u8def"))
+    }
+
+    @Test
+    fun homeBrowseChromeUiStateExplainsHomeFallbackWithoutCategories() {
+        val state = buildHomeBrowseChromeUiState(
+            categories = emptyList(),
+            selectedTabId = "",
+            calendarExpanded = false,
+        )
+
+        assertEquals(listOf(HomeBrowseHomeTabId), state.tabs.map { it.id })
+        assertTrue(state.tabs.single().selected)
+        assertEquals("\u65e5\u5386", state.calendarActionLabel)
+        assertEquals(SourceLibraryTone.Muted, state.calendarTone)
+        assertTrue(state.subtitle.contains("\u5206\u7c7b\u6d4f\u89c8"))
+    }
+
+    @Test
     fun categoryBrowseUiStateSummarizesCoverageRatingHeatAndSource() {
         val category = category(id = "hot", title = "\u70ed\u95e8")
         val items = listOf(

@@ -248,3 +248,5 @@ This pass upgrades search result presentation. The all-sources search view now c
 This pass upgrades brand splash presentation. `BrandSplashUiState` now owns startup duration, headline/tagline/progress copy, readiness pills, poster-ribbon tiles, danmaku streaks, and signal rails so the launch animation follows the same tested model-driven contract as navigation and player panels.
 
 This pass upgrades main app chrome navigation. `AppNavigationChromeUiState` now owns shared brand copy, selected-page summary, semantic tone, rail dimensions, bottom-bar dimensions, spacing, and corner radius so wide and compact top-level navigation follow the same tested shell contract.
+
+This pass upgrades Discover content chrome. `HomeBrowseChromeUiState` now owns the home header copy, search entry copy, calendar action state, ordered category tabs, semantic tones, and tab/header dimensions so recommendation, schedule, and category browsing share one tested content-layout contract.

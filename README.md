@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.121
+
+English:
+
+- The Discover tab header and category strip are now driven by `HomeBrowseChromeUiState`, covering brand copy, contextual subtitle, search entry copy, calendar action state, ordered category tabs, and shared layout dimensions.
+- Category ordering now reuses `HomeBrowseCategoryOrder` for both pager pages and tab presentation, keeping content layout and navigation tabs aligned.
+- Added unit coverage for populated category tabs, calendar-expanded copy, category tone selection, and empty-category fallback.
+- App version labels, request user agents, and README notes are now updated to `0.5.121`.
+
 ### v0.5.120
 
 English:

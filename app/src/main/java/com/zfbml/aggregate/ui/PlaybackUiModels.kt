@@ -346,6 +346,49 @@ internal data class CategoryBrowseUiState(
     val hasItems: Boolean,
 )
 
+internal const val HomeBrowseHomeTabId = "home"
+
+internal val HomeBrowseCategoryOrder = listOf(
+    "chinese",
+    "japanese",
+    "american",
+    "movie",
+    "hot",
+    "recommend",
+    "high-score",
+    "most-followed",
+    "most-watched",
+)
+
+internal data class HomeBrowseChromeUiState(
+    val headline: String,
+    val brandLabel: String,
+    val subtitle: String,
+    val searchPlaceholder: String,
+    val searchActionLabel: String,
+    val calendarActionLabel: String,
+    val calendarExpanded: Boolean,
+    val calendarTone: SourceLibraryTone,
+    val brandMarkSize: Dp,
+    val headerHorizontalPadding: Dp,
+    val headerVerticalPadding: Dp,
+    val headerSpacing: Dp,
+    val searchHeight: Dp,
+    val categoryBottomPadding: Dp,
+    val categoryTabHeight: Dp,
+    val categoryTabHorizontalPadding: Dp,
+    val categoryTabSpacing: Dp,
+    val categoryTabCornerRadius: Dp,
+    val tabs: List<HomeBrowseTabUiState>,
+)
+
+internal data class HomeBrowseTabUiState(
+    val id: String,
+    val title: String,
+    val selected: Boolean,
+    val tone: SourceLibraryTone,
+)
+
 internal enum class SourceLibraryTone {
     Primary,
     Online,
@@ -2874,6 +2917,71 @@ internal fun buildHomeScheduleUiState(
         weekCount = weekCount,
         nextUpdateLabel = nextUpdateLabel,
     )
+}
+
+internal fun buildHomeBrowseChromeUiState(
+    categories: List<BangumiCategory>,
+    selectedTabId: String,
+    calendarExpanded: Boolean,
+): HomeBrowseChromeUiState {
+    val selectedId = selectedTabId.takeIf { it.isNotBlank() } ?: HomeBrowseHomeTabId
+    val byId = categories.associateBy { it.id }
+    val categoryTabs = HomeBrowseCategoryOrder.mapNotNull { id ->
+        byId[id]?.let { category ->
+            HomeBrowseTabUiState(
+                id = category.id,
+                title = category.title,
+                selected = category.id == selectedId,
+                tone = homeBrowseCategoryTone(category.id),
+            )
+        }
+    }
+    val tabs = listOf(
+        HomeBrowseTabUiState(
+            id = HomeBrowseHomeTabId,
+            title = "首页",
+            selected = selectedId == HomeBrowseHomeTabId,
+            tone = SourceLibraryTone.Primary,
+        ),
+    ) + categoryTabs
+    val selectedTab = tabs.firstOrNull { it.selected } ?: tabs.first()
+    val subtitle = when {
+        calendarExpanded -> "日历已展开 · 今日更新和推荐同屏查看"
+        selectedTab.id == HomeBrowseHomeTabId -> "推荐、日程和分类浏览统一入口"
+        else -> "${selectedTab.title}频道 · 按评分、热度和来源整理"
+    }
+    return HomeBrowseChromeUiState(
+        headline = "追番不迷路",
+        brandLabel = "ZFBML",
+        subtitle = subtitle,
+        searchPlaceholder = "搜番名、粘贴链接或找播放线路",
+        searchActionLabel = "搜索",
+        calendarActionLabel = if (calendarExpanded) "收起" else "日历",
+        calendarExpanded = calendarExpanded,
+        calendarTone = if (calendarExpanded) SourceLibraryTone.Online else SourceLibraryTone.Muted,
+        brandMarkSize = 42.dp,
+        headerHorizontalPadding = 18.dp,
+        headerVerticalPadding = 12.dp,
+        headerSpacing = 12.dp,
+        searchHeight = 48.dp,
+        categoryBottomPadding = 10.dp,
+        categoryTabHeight = 42.dp,
+        categoryTabHorizontalPadding = 14.dp,
+        categoryTabSpacing = 8.dp,
+        categoryTabCornerRadius = 8.dp,
+        tabs = tabs,
+    )
+}
+
+private fun homeBrowseCategoryTone(categoryId: String): SourceLibraryTone {
+    return when (categoryId) {
+        "chinese", "movie" -> SourceLibraryTone.Backup
+        "japanese" -> SourceLibraryTone.Online
+        "american" -> SourceLibraryTone.Web
+        "hot", "recommend" -> SourceLibraryTone.Primary
+        "high-score", "most-followed", "most-watched" -> SourceLibraryTone.Cache
+        else -> SourceLibraryTone.Muted
+    }
 }
 
 internal fun buildCategoryBrowseUiState(
