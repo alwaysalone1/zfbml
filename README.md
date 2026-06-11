@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.139
+
+English:
+
+- Fullscreen danmaku input now uses `PlayerFullscreenDanmakuInputUiState` for entry copy, toggle labels, enabled state, height, radius, padding, spacing, icon/text/toggle tones, and alpha values.
+- `PlayerDanmakuInputBar` now renders from model chrome instead of keeping fullscreen danmaku-entry dimensions, colors, and enabled/disabled copy inside Compose.
+- Added unit coverage for enabled and disabled fullscreen danmaku input chrome.
+- App version labels, request user agents, and README notes are now updated to `0.5.139`.
+
 ### v0.5.138
 
 English:

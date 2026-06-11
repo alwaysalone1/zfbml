@@ -284,3 +284,5 @@ This pass upgrades player seek-feedback chrome. `PlayerSeekFeedbackUiState` now 
 This pass upgrades player top-status strip chrome. `PlayerTopStatusStripUiState` and `PlayerStatusChipUiState` now own strip height, chip spacing, end padding, chip width/height, radius, container alpha, border alpha, padding, label alpha, and value alpha so fullscreen playback metadata remains compact, scannable, and model-driven.
 
 This pass upgrades player fullscreen-status strip chrome. `PlayerFullscreenStatusStripUiState` and `PlayerFullscreenStatusTagUiState` now own strip height, radius, container base color, alpha, border width/alpha, padding, spacing, status tone, route text alpha, and tag text alpha so bottom playback metadata follows the same tested model-driven contract as the top status chips.
+
+This pass upgrades fullscreen danmaku input chrome. `PlayerFullscreenDanmakuInputUiState` now owns entry copy, toggle labels, enabled state, height, radius, container alpha, padding, spacing, icon/text/toggle tones, and alpha values so the fullscreen danmaku entry keeps the same model-driven control contract as compact playback, status strips, and player panels.

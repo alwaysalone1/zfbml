@@ -4462,6 +4462,48 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun playerFullscreenDanmakuInputUiStateExposesChrome() {
+        val enabled = buildPlayerFullscreenDanmakuInputUiState(danmakuEnabled = true)
+        val disabled = buildPlayerFullscreenDanmakuInputUiState(danmakuEnabled = false)
+
+        assertEquals("点我发弹幕", enabled.title)
+        assertEquals("开", enabled.toggleLabel)
+        assertTrue(enabled.enabled)
+        assertEquals(36.dp, enabled.height)
+        assertEquals(999.dp, enabled.cornerRadius)
+        assertEquals(PlayerChromeBaseColor.Black, enabled.containerBaseColor)
+        assertEquals(0.32f, enabled.containerAlpha, 0.001f)
+        assertEquals(10.dp, enabled.startPadding)
+        assertEquals(6.dp, enabled.endPadding)
+        assertEquals(8.dp, enabled.contentSpacing)
+        assertEquals(SourceLibraryTone.Primary, enabled.iconTone)
+        assertEquals(PlayerChromeBaseColor.White, enabled.iconBaseColor)
+        assertEquals(1f, enabled.iconAlpha, 0.001f)
+        assertEquals(18.dp, enabled.iconSize)
+        assertEquals(PlayerChromeBaseColor.White, enabled.textBaseColor)
+        assertEquals(0.7f, enabled.textAlpha, 0.001f)
+        assertEquals(42.dp, enabled.toggleWidth)
+        assertEquals(26.dp, enabled.toggleHeight)
+        assertEquals(999.dp, enabled.toggleCornerRadius)
+        assertEquals(SourceLibraryTone.Primary, enabled.toggleContainerTone)
+        assertEquals(PlayerChromeBaseColor.White, enabled.toggleContainerBaseColor)
+        assertEquals(0.22f, enabled.toggleContainerAlpha, 0.001f)
+        assertEquals(SourceLibraryTone.Primary, enabled.toggleContentTone)
+        assertEquals(PlayerChromeBaseColor.White, enabled.toggleContentBaseColor)
+        assertEquals(1f, enabled.toggleContentAlpha, 0.001f)
+
+        assertEquals("弹幕已关闭", disabled.title)
+        assertEquals("关", disabled.toggleLabel)
+        assertFalse(disabled.enabled)
+        assertNull(disabled.iconTone)
+        assertEquals(0.46f, disabled.iconAlpha, 0.001f)
+        assertNull(disabled.toggleContainerTone)
+        assertEquals(0.08f, disabled.toggleContainerAlpha, 0.001f)
+        assertNull(disabled.toggleContentTone)
+        assertEquals(0.56f, disabled.toggleContentAlpha, 0.001f)
+    }
+
+    @Test
     fun playerDoubleTapSeekDeltaUsesTapSide() {
         assertEquals(-10_000L, playerDoubleTapSeekDeltaMs(tapX = 120f, surfaceWidthPx = 400))
         assertEquals(10_000L, playerDoubleTapSeekDeltaMs(tapX = 280f, surfaceWidthPx = 400))

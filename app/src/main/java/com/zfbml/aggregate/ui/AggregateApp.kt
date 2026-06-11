@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.138")
+                setRequestProperty("User-Agent", "ZFBML/0.5.139")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2984,7 +2984,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.138",
+            version = "0.5.139",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -7501,46 +7501,58 @@ private fun PlayerDanmakuInputBar(
     modifier: Modifier = Modifier,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
+    val state = remember(danmakuEnabled) {
+        buildPlayerFullscreenDanmakuInputUiState(danmakuEnabled = danmakuEnabled)
+    }
+    val iconColor = state.iconTone
+        ?.let { sourceLibraryToneColor(it) }
+        ?: playerChromeBaseColor(state.iconBaseColor)
+    val toggleContainerColor = state.toggleContainerTone
+        ?.let { sourceLibraryToneColor(it) }
+        ?: playerChromeBaseColor(state.toggleContainerBaseColor)
+    val toggleContentColor = state.toggleContentTone
+        ?.let { sourceLibraryToneColor(it) }
+        ?: playerChromeBaseColor(state.toggleContentBaseColor)
     Row(
         modifier = modifier
-            .height(36.dp)
-            .clip(RoundedCornerShape(999.dp))
-            .background(Color.Black.copy(alpha = 0.32f))
+            .height(state.height)
+            .clip(RoundedCornerShape(state.cornerRadius))
+            .background(playerChromeBaseColor(state.containerBaseColor).copy(alpha = state.containerAlpha))
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
                 onClick = onOpenDanmakuSettings,
             )
-            .padding(start = 10.dp, end = 6.dp),
+            .padding(start = state.startPadding, end = state.endPadding),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(state.contentSpacing),
     ) {
         Icon(
             Icons.Filled.ClosedCaption,
             contentDescription = null,
-            tint = if (danmakuEnabled) AnimeAccentPink else Color.White.copy(alpha = 0.46f),
-            modifier = Modifier.size(18.dp),
+            tint = iconColor.copy(alpha = state.iconAlpha),
+            modifier = Modifier.size(state.iconSize),
         )
         Text(
-            text = if (danmakuEnabled) "点我发弹幕" else "弹幕已关闭",
+            text = state.title,
             style = MaterialTheme.typography.bodyMedium,
-            color = Color.White.copy(alpha = 0.7f),
+            color = playerChromeBaseColor(state.textBaseColor).copy(alpha = state.textAlpha),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
         TextButton(
             onClick = onToggleDanmaku,
-            modifier = Modifier.width(42.dp).height(26.dp).focusable(),
-            shape = RoundedCornerShape(999.dp),
+            modifier = Modifier.width(state.toggleWidth).height(state.toggleHeight).focusable(),
+            shape = RoundedCornerShape(state.toggleCornerRadius),
             colors = ButtonDefaults.textButtonColors(
-                containerColor = if (danmakuEnabled) AnimeAccentPink.copy(alpha = 0.22f) else Color.White.copy(alpha = 0.08f),
-                contentColor = if (danmakuEnabled) AnimeAccentPink else Color.White.copy(alpha = 0.56f),
+                containerColor = toggleContainerColor.copy(alpha = state.toggleContainerAlpha),
+                contentColor = toggleContentColor.copy(alpha = state.toggleContentAlpha),
             ),
             contentPadding = PaddingValues(horizontal = 0.dp, vertical = 0.dp),
         ) {
             Text(
-                text = if (danmakuEnabled) "开" else "关",
+                text = state.toggleLabel,
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,

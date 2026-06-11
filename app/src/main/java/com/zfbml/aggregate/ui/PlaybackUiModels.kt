@@ -1567,6 +1567,34 @@ internal data class PlayerCompactDanmakuUiState(
     val toggleContentAlpha: Float,
 )
 
+internal data class PlayerFullscreenDanmakuInputUiState(
+    val title: String,
+    val toggleLabel: String,
+    val enabled: Boolean,
+    val height: Dp,
+    val cornerRadius: Dp,
+    val containerBaseColor: PlayerChromeBaseColor,
+    val containerAlpha: Float,
+    val startPadding: Dp,
+    val endPadding: Dp,
+    val contentSpacing: Dp,
+    val iconTone: SourceLibraryTone?,
+    val iconBaseColor: PlayerChromeBaseColor,
+    val iconAlpha: Float,
+    val iconSize: Dp,
+    val textBaseColor: PlayerChromeBaseColor,
+    val textAlpha: Float,
+    val toggleWidth: Dp,
+    val toggleHeight: Dp,
+    val toggleCornerRadius: Dp,
+    val toggleContainerTone: SourceLibraryTone?,
+    val toggleContainerBaseColor: PlayerChromeBaseColor,
+    val toggleContainerAlpha: Float,
+    val toggleContentTone: SourceLibraryTone?,
+    val toggleContentBaseColor: PlayerChromeBaseColor,
+    val toggleContentAlpha: Float,
+)
+
 internal data class RoutePanelUiState(
     val recommendedRoute: RouteCandidate?,
     val selectedRoute: RouteCandidate?,
@@ -4588,6 +4616,38 @@ internal fun buildPlayerCompactInteractionUiState(
         actionRowSpacing = 7.dp,
         fullscreenActionWidth = 38.dp,
         fullscreenContentDescription = "全屏播放",
+    )
+}
+
+internal fun buildPlayerFullscreenDanmakuInputUiState(
+    danmakuEnabled: Boolean,
+): PlayerFullscreenDanmakuInputUiState {
+    return PlayerFullscreenDanmakuInputUiState(
+        title = if (danmakuEnabled) "点我发弹幕" else "弹幕已关闭",
+        toggleLabel = if (danmakuEnabled) "开" else "关",
+        enabled = danmakuEnabled,
+        height = 36.dp,
+        cornerRadius = 999.dp,
+        containerBaseColor = PlayerChromeBaseColor.Black,
+        containerAlpha = 0.32f,
+        startPadding = 10.dp,
+        endPadding = 6.dp,
+        contentSpacing = 8.dp,
+        iconTone = if (danmakuEnabled) SourceLibraryTone.Primary else null,
+        iconBaseColor = PlayerChromeBaseColor.White,
+        iconAlpha = if (danmakuEnabled) 1f else 0.46f,
+        iconSize = 18.dp,
+        textBaseColor = PlayerChromeBaseColor.White,
+        textAlpha = 0.7f,
+        toggleWidth = 42.dp,
+        toggleHeight = 26.dp,
+        toggleCornerRadius = 999.dp,
+        toggleContainerTone = if (danmakuEnabled) SourceLibraryTone.Primary else null,
+        toggleContainerBaseColor = PlayerChromeBaseColor.White,
+        toggleContainerAlpha = if (danmakuEnabled) 0.22f else 0.08f,
+        toggleContentTone = if (danmakuEnabled) SourceLibraryTone.Primary else null,
+        toggleContentBaseColor = PlayerChromeBaseColor.White,
+        toggleContentAlpha = if (danmakuEnabled) 1f else 0.56f,
     )
 }
 
