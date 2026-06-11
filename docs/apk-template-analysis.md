@@ -262,3 +262,5 @@ This pass upgrades Discover home content modules. `HomeSectionHeaderUiState`, `H
 This pass upgrades category browse insight presentation. `CategoryBrowseUiState` now emits ordered metric tiles with semantic tones, sizing, padding, and spacing for coverage, rating, heat, and source summaries, so category channels behave like a tested browsing surface rather than four hand-built Compose cards.
 
 This pass upgrades category browse list rows. `CategoryBrowseItemUiState` now owns source-aware tone, rating and heat chips, provider fallback subtitles, action copy, poster dimensions, row spacing, and card chrome so category channels no longer reuse timetable rows for ordinary browsing results.
+
+This pass upgrades category browse list selection. `CategoryBrowseListUiState` now owns row selection, hero de-duplication, fallback recommendation rows, list headers, fallback actions, empty-state copy, and row spacing so category pages still show useful browse content when a direct category feed is empty.

@@ -1533,10 +1533,14 @@ private fun CategoryFeedPage(
     }
     val feedSelection = splitSpotlightFeed(items, fallback = fallback, spotlightCount = 5)
     val heroItems = feedSelection.spotlight
-    val listItems = if (items.isEmpty()) {
-        emptyList()
-    } else {
-        feedSelection.remainder.ifEmpty { items.distinctBy { it.stableMediaKey() } }
+    val listState = remember(category, items, fallback, heroItems, loading) {
+        buildCategoryBrowseListUiState(
+            category = category,
+            items = items,
+            fallback = fallback,
+            heroItems = heroItems,
+            loading = loading,
+        )
     }
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -1571,21 +1575,21 @@ private fun CategoryFeedPage(
         }
         item {
             SectionHeader(
-                title = browseState.listTitle,
-                action = browseState.listAction,
+                title = listState.title,
+                action = listState.actionLabel,
                 onAction = {},
             )
         }
-        if (listItems.isEmpty() && !loading) {
+        if (listState.showEmptyState) {
             item {
                 ScheduleStatusPanel(
-                    title = browseState.emptyTitle,
-                    subtitle = browseState.emptySubtitle,
+                    title = listState.emptyTitle,
+                    subtitle = listState.emptySubtitle,
                 )
             }
         } else {
-            items(listItems) { item ->
-                CategoryBrowseItemRow(result = item, onClick = { onOpenDetail(item) })
+            items(listState.rows) { item ->
+                CategoryBrowseItemRow(state = item, onClick = { onOpenDetail(item.result) })
             }
         }
     }
@@ -1891,8 +1895,7 @@ private fun InsightTile(state: CategoryBrowseMetricUiState) {
 }
 
 @Composable
-private fun CategoryBrowseItemRow(result: SearchResult, onClick: () -> Unit) {
-    val state = remember(result) { buildCategoryBrowseItemUiState(result) }
+private fun CategoryBrowseItemRow(state: CategoryBrowseItemUiState, onClick: () -> Unit) {
     val accent = sourceLibraryToneColor(state.tone)
     Card(
         onClick = onClick,
@@ -2456,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.127")
+                setRequestProperty("User-Agent", "ZFBML/0.5.128")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2974,7 +2977,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.127",
+            version = "0.5.128",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,

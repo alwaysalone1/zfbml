@@ -2070,6 +2070,75 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun categoryBrowseListUiStateSkipsHeroItemsButKeepsRowsAvailable() {
+        val category = category(id = "hot", title = "\u70ed\u95e8")
+        val alpha = SearchResult(
+            providerId = "bangumi-catalog",
+            title = "Alpha",
+            url = "bangumi://subject/1",
+            raw = mapOf("subjectId" to "1"),
+        )
+        val beta = SearchResult(
+            providerId = "bangumi-catalog",
+            title = "Beta",
+            url = "bangumi://subject/2",
+            raw = mapOf("subjectId" to "2"),
+        )
+
+        val state = buildCategoryBrowseListUiState(
+            category = category,
+            items = listOf(alpha, beta),
+            heroItems = listOf(alpha),
+        )
+        val allHero = buildCategoryBrowseListUiState(
+            category = category,
+            items = listOf(alpha),
+            heroItems = listOf(alpha),
+        )
+
+        assertFalse(state.usesFallback)
+        assertFalse(state.showEmptyState)
+        assertEquals("\u7cbe\u9009\u70ed\u64ad\u70ed\u95e8", state.title)
+        assertEquals("\u5168\u90e8 2", state.actionLabel)
+        assertEquals(listOf("Beta"), state.rows.map { it.title })
+        assertEquals(listOf("Alpha"), allHero.rows.map { it.title })
+        assertEquals(10.dp, state.itemSpacing)
+    }
+
+    @Test
+    fun categoryBrowseListUiStateUsesFallbackRowsWhenCategoryIsEmpty() {
+        val category = category(id = "movie", title = "\u5267\u573a\u7248")
+        val fallback = listOf(
+            SearchResult(
+                providerId = "direct-url",
+                title = "Fallback",
+                url = "https://example.invalid/fallback",
+            ),
+        )
+
+        val state = buildCategoryBrowseListUiState(
+            category = category,
+            items = emptyList(),
+            fallback = fallback,
+            heroItems = emptyList(),
+        )
+        val empty = buildCategoryBrowseListUiState(
+            category = category,
+            items = emptyList(),
+            fallback = emptyList(),
+        )
+
+        assertTrue(state.usesFallback)
+        assertFalse(state.showEmptyState)
+        assertEquals("\u5267\u573a\u7248\u515c\u5e95\u63a8\u8350", state.title)
+        assertEquals("\u515c\u5e95 1", state.actionLabel)
+        assertEquals(listOf("Fallback"), state.rows.map { it.title })
+        assertFalse(empty.usesFallback)
+        assertTrue(empty.showEmptyState)
+        assertEquals("\u6682\u65e0\u53ef\u5c55\u793a\u6761\u76ee", empty.emptyTitle)
+    }
+
+    @Test
     fun appNavigationUiStateSummarizesSelectedTabAndCapabilities() {
         val state = buildAppNavigationUiState(
             selectedTabId = "search",

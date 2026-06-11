@@ -431,6 +431,17 @@ internal data class CategoryBrowseItemUiState(
     val actionIconSize: Dp,
 )
 
+internal data class CategoryBrowseListUiState(
+    val title: String,
+    val actionLabel: String,
+    val emptyTitle: String,
+    val emptySubtitle: String,
+    val rows: List<CategoryBrowseItemUiState>,
+    val usesFallback: Boolean,
+    val showEmptyState: Boolean,
+    val itemSpacing: Dp,
+)
+
 internal const val HomeBrowseHomeTabId = "home"
 
 internal val HomeBrowseCategoryOrder = listOf(
@@ -3546,6 +3557,48 @@ internal fun buildCategoryBrowseItemUiState(result: SearchResult): CategoryBrows
         posterHeight = 118.dp,
         posterCornerRadius = 6.dp,
         actionIconSize = 24.dp,
+    )
+}
+
+internal fun buildCategoryBrowseListUiState(
+    category: BangumiCategory,
+    items: List<SearchResult>,
+    fallback: List<SearchResult> = emptyList(),
+    heroItems: List<SearchResult> = emptyList(),
+    loading: Boolean = false,
+): CategoryBrowseListUiState {
+    val heroKeys = heroItems.map { it.homeStableMediaKey() }.toSet()
+    val sourceItems = items.distinctBy { it.homeStableMediaKey() }
+    val fallbackItems = fallback.distinctBy { it.homeStableMediaKey() }
+    val usesFallback = sourceItems.isEmpty() && fallbackItems.isNotEmpty()
+    val sourceRows = if (usesFallback) fallbackItems else sourceItems
+    val rows = sourceRows
+        .filterNot { it.homeStableMediaKey() in heroKeys }
+        .ifEmpty { sourceRows }
+        .map(::buildCategoryBrowseItemUiState)
+    val title = when {
+        category.id == "recommend" -> "\u7cbe\u9009\u63a8\u8350"
+        usesFallback -> "${category.title}\u515c\u5e95\u63a8\u8350"
+        else -> "\u7cbe\u9009\u70ed\u64ad${category.title}"
+    }
+    val actionLabel = when {
+        sourceItems.isNotEmpty() -> "\u5168\u90e8 ${sourceItems.size}"
+        usesFallback -> "\u515c\u5e95 ${rows.size}"
+        else -> ""
+    }
+    return CategoryBrowseListUiState(
+        title = title,
+        actionLabel = actionLabel,
+        emptyTitle = if (usesFallback) "\u6682\u65e0\u66f4\u591a\u515c\u5e95\u5185\u5bb9" else "\u6682\u65e0\u53ef\u5c55\u793a\u6761\u76ee",
+        emptySubtitle = if (usesFallback) {
+            "\u4e0a\u65b9\u5df2\u5c55\u793a\u515c\u5e95\u5185\u5bb9\uff0c\u53ef\u5207\u6362\u5206\u7c7b\u6216\u76f4\u63a5\u641c\u7d22\u3002"
+        } else {
+            "\u53ef\u4ee5\u5207\u5230\u5176\u4ed6\u5206\u7c7b\uff0c\u6216\u76f4\u63a5\u641c\u7d22\u756a\u540d\u3002"
+        },
+        rows = rows,
+        usesFallback = usesFallback,
+        showEmptyState = rows.isEmpty() && !loading,
+        itemSpacing = 10.dp,
     )
 }
 

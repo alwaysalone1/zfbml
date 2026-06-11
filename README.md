@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.128
+
+English:
+
+- Category browse lists now use `CategoryBrowseListUiState` to choose visible rows, avoid hero duplication, and surface fallback recommendations when a category has no direct results.
+- Category list headers, fallback actions, empty-state copy, row spacing, and row models are now generated together instead of being split between Compose and local list filtering.
+- Added unit coverage for hero-row de-duplication, all-hero fallback behavior, empty category fallback rows, and true empty states.
+- App version labels, request user agents, and README notes are now updated to `0.5.128`.
+
 ### v0.5.127
 
 English:
