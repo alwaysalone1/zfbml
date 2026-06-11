@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.120
+
+English:
+
+- Main navigation now includes `AppNavigationChromeUiState` for shared brand copy, selected-page summary, semantic tone, rail sizing, bottom-bar sizing, spacing, and corner radius.
+- The wide navigation rail renders the shared brand subtitle and selected-tab summary from the navigation model instead of hard-coded Compose chrome.
+- Added unit coverage for populated and empty navigation chrome summaries and dimensions.
+- App version labels, request user agents, and README notes are now updated to `0.5.120`.
+
 ### v0.5.119
 
 English:

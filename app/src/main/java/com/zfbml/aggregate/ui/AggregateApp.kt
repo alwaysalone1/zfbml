@@ -926,14 +926,18 @@ private fun AppNavigationBar(
     navigationState: AppNavigationUiState,
     onTabSelected: (AppTab) -> Unit,
 ) {
+    val chrome = navigationState.chrome
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = AnimePanel,
         border = BorderStroke(1.dp, AnimeBorder),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(72.dp).padding(horizontal = 10.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(chrome.bottomBarHeight)
+                .padding(horizontal = chrome.bottomPaddingHorizontal, vertical = chrome.bottomPaddingVertical),
+            horizontalArrangement = Arrangement.spacedBy(chrome.itemSpacing),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             AppTab.entries.forEach { tab ->
@@ -942,6 +946,7 @@ private fun AppNavigationBar(
                     tab = tab,
                     state = itemState,
                     selected = itemState.selected,
+                    chrome = chrome,
                     onClick = { onTabSelected(tab) },
                     modifier = Modifier.weight(1f),
                 )
@@ -955,17 +960,36 @@ private fun AppNavigationRail(
     navigationState: AppNavigationUiState,
     onTabSelected: (AppTab) -> Unit,
 ) {
+    val chrome = navigationState.chrome
+    val selectedColor = sourceLibraryToneColor(chrome.selectedTone)
     Surface(
-        modifier = Modifier.width(92.dp).fillMaxHeight(),
+        modifier = Modifier.width(chrome.railWidth).fillMaxHeight(),
         color = AnimePanel,
         border = BorderStroke(1.dp, AnimeBorder),
     ) {
         Column(
-            modifier = Modifier.fillMaxHeight().padding(horizontal = 8.dp, vertical = 16.dp),
+            modifier = Modifier
+                .fillMaxHeight()
+                .padding(horizontal = chrome.railPaddingHorizontal, vertical = chrome.railPaddingVertical),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            BrandMark(Modifier.size(48.dp))
+            BrandMark(Modifier.size(chrome.railBrandSize))
+            Text(
+                chrome.brandLabel,
+                style = MaterialTheme.typography.labelMedium,
+                color = AnimeAccentCyan,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+            )
+            Text(
+                chrome.brandSubtitle,
+                style = MaterialTheme.typography.labelSmall,
+                color = AnimeMuted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center,
+            )
             Spacer(Modifier.height(6.dp))
             AppTab.entries.forEach { tab ->
                 val itemState = navigationState.tabState(tab)
@@ -973,15 +997,26 @@ private fun AppNavigationRail(
                     tab = tab,
                     state = itemState,
                     selected = itemState.selected,
+                    chrome = chrome,
                     onClick = { onTabSelected(tab) },
                 )
             }
             Spacer(Modifier.weight(1f))
             Text(
-                "ZFBML",
+                chrome.selectedTitle,
                 style = MaterialTheme.typography.labelSmall,
-                color = AnimeAccentCyan,
+                color = selectedColor,
                 fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                chrome.selectedSummary,
+                style = MaterialTheme.typography.labelSmall,
+                color = AnimeMuted,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }
@@ -992,6 +1027,7 @@ private fun AppBottomNavItem(
     tab: AppTab,
     state: AppNavigationTabUiState,
     selected: Boolean,
+    chrome: AppNavigationChromeUiState,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -999,8 +1035,8 @@ private fun AppBottomNavItem(
     val accent = if (selected) selectedAccent else Color.White.copy(alpha = 0.62f)
     TextButton(
         onClick = onClick,
-        modifier = modifier.height(56.dp).focusable(),
-        shape = RoundedCornerShape(8.dp),
+        modifier = modifier.height(chrome.bottomItemHeight).focusable(),
+        shape = RoundedCornerShape(chrome.itemCornerRadius),
         colors = ButtonDefaults.textButtonColors(
             containerColor = if (selected) selectedAccent.copy(alpha = 0.16f) else Color.Transparent,
             contentColor = accent,
@@ -1040,14 +1076,15 @@ private fun AppRailNavItem(
     tab: AppTab,
     state: AppNavigationTabUiState,
     selected: Boolean,
+    chrome: AppNavigationChromeUiState,
     onClick: () -> Unit,
 ) {
     val selectedAccent = sourceLibraryToneColor(state.tone)
     val accent = if (selected) selectedAccent else Color.White.copy(alpha = 0.62f)
     TextButton(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth().height(72.dp).focusable(),
-        shape = RoundedCornerShape(8.dp),
+        modifier = Modifier.fillMaxWidth().height(chrome.railItemHeight).focusable(),
+        shape = RoundedCornerShape(chrome.itemCornerRadius),
         colors = ButtonDefaults.textButtonColors(
             containerColor = if (selected) selectedAccent.copy(alpha = 0.16f) else Color.Transparent,
             contentColor = accent,
@@ -2359,7 +2396,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.119")
+                setRequestProperty("User-Agent", "ZFBML/0.5.120")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2873,7 +2910,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.119",
+            version = "0.5.120",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,

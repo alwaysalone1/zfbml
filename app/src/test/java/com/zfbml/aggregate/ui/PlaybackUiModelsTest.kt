@@ -1752,6 +1752,12 @@ class PlaybackUiModelsTest {
         assertEquals(SourceLibraryTone.Backup, sources.tone)
         assertEquals("2 可缓存", settings.statusLabel)
         assertEquals(SourceLibraryTone.Cache, settings.tone)
+        assertEquals("ZFBML", state.chrome.brandLabel)
+        assertEquals("搜索", state.chrome.selectedTitle)
+        assertTrue(state.chrome.selectedSummary.contains("3 个搜索源"))
+        assertEquals(SourceLibraryTone.Online, state.chrome.selectedTone)
+        assertEquals(108.dp, state.chrome.railWidth)
+        assertEquals(76.dp, state.chrome.bottomBarHeight)
     }
 
     @Test
@@ -1773,6 +1779,9 @@ class PlaybackUiModelsTest {
         assertEquals(SourceLibraryTone.Muted, state.tabs.first { it.id == "sources" }.tone)
         assertEquals("我的", state.tabs.first { it.id == "settings" }.statusLabel)
         assertEquals(SourceLibraryTone.Muted, state.tabs.first { it.id == "settings" }.tone)
+        assertEquals("首页", state.chrome.selectedTitle)
+        assertTrue(state.chrome.selectedSummary.contains("推荐"))
+        assertEquals(SourceLibraryTone.Online, state.chrome.selectedTone)
     }
 
     @Test

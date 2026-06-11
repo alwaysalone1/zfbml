@@ -419,10 +419,30 @@ internal data class AppNavigationTabUiState(
 internal data class AppNavigationUiState(
     val selectedTabId: String,
     val tabs: List<AppNavigationTabUiState>,
+    val chrome: AppNavigationChromeUiState,
 ) {
     val selectedTab: AppNavigationTabUiState?
         get() = tabs.firstOrNull { it.selected }
 }
+
+internal data class AppNavigationChromeUiState(
+    val brandLabel: String,
+    val brandSubtitle: String,
+    val selectedTitle: String,
+    val selectedSummary: String,
+    val selectedTone: SourceLibraryTone,
+    val railWidth: Dp,
+    val railBrandSize: Dp,
+    val railItemHeight: Dp,
+    val railPaddingHorizontal: Dp,
+    val railPaddingVertical: Dp,
+    val bottomBarHeight: Dp,
+    val bottomItemHeight: Dp,
+    val bottomPaddingHorizontal: Dp,
+    val bottomPaddingVertical: Dp,
+    val itemSpacing: Dp,
+    val itemCornerRadius: Dp,
+)
 
 internal data class SourceLibraryChipUiState(
     val label: String,
@@ -2993,6 +3013,80 @@ internal fun buildAppNavigationUiState(
                 },
             ),
         ),
+        chrome = buildAppNavigationChromeUiState(
+            selectedId = selectedId,
+            today = today,
+            searchable = searchable,
+            sources = sources,
+            cacheable = cacheable,
+        ),
+    )
+}
+
+private fun buildAppNavigationChromeUiState(
+    selectedId: String,
+    today: Int,
+    searchable: Int,
+    sources: Int,
+    cacheable: Int,
+): AppNavigationChromeUiState {
+    val selectedTitle = when (selectedId) {
+        NAV_SEARCH_ID -> "搜索"
+        NAV_SOURCES_ID -> "频道"
+        NAV_SETTINGS_ID -> "我的"
+        else -> "首页"
+    }
+    val selectedTone = when (selectedId) {
+        NAV_DISCOVER_ID -> if (today > 0) SourceLibraryTone.Primary else SourceLibraryTone.Online
+        NAV_SEARCH_ID -> if (searchable > 0) SourceLibraryTone.Online else SourceLibraryTone.Muted
+        NAV_SOURCES_ID -> if (sources > 0) SourceLibraryTone.Backup else SourceLibraryTone.Muted
+        NAV_SETTINGS_ID -> when {
+            cacheable > 0 -> SourceLibraryTone.Cache
+            sources > 0 -> SourceLibraryTone.Web
+            else -> SourceLibraryTone.Muted
+        }
+        else -> SourceLibraryTone.Muted
+    }
+    val selectedSummary = when (selectedId) {
+        NAV_DISCOVER_ID -> if (today > 0) {
+            "今日 $today 部更新，先看日程和推荐"
+        } else {
+            "推荐、日程和分类保持在同一首页"
+        }
+        NAV_SEARCH_ID -> if (searchable > 0) {
+            "$searchable 个搜索源并行索引，进详情后继续匹配线路"
+        } else {
+            "搜索源待接入，可先从推荐和分类进入详情"
+        }
+        NAV_SOURCES_ID -> if (sources > 0) {
+            "$sources 个来源已接入，在线优先，BT 和规则源兜底"
+        } else {
+            "等待接入在线、BT 或规则来源"
+        }
+        NAV_SETTINGS_ID -> if (cacheable > 0) {
+            "$cacheable 个来源可缓存，管理离线、弹幕和线路策略"
+        } else {
+            "管理缓存、弹幕校准和运行状态"
+        }
+        else -> ""
+    }
+    return AppNavigationChromeUiState(
+        brandLabel = "ZFBML",
+        brandSubtitle = "追番 · 搜索 · 线路 · 弹幕",
+        selectedTitle = selectedTitle,
+        selectedSummary = selectedSummary,
+        selectedTone = selectedTone,
+        railWidth = 108.dp,
+        railBrandSize = 48.dp,
+        railItemHeight = 72.dp,
+        railPaddingHorizontal = 10.dp,
+        railPaddingVertical = 16.dp,
+        bottomBarHeight = 76.dp,
+        bottomItemHeight = 56.dp,
+        bottomPaddingHorizontal = 10.dp,
+        bottomPaddingVertical = 8.dp,
+        itemSpacing = 6.dp,
+        itemCornerRadius = 8.dp,
     )
 }
 

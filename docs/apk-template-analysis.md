@@ -29,6 +29,7 @@ Tooling: Android SDK `apkanalyzer.bat` for manifest, resource, file, and dex pac
 3. Borrow Dandanplay's anime utility clarity: detail, search, history/cache, player setting, and danmaku source concepts should be visible but not overwhelming.
 4. Borrow Tencent/Youku's preload mindset: source matching and next-episode route warming should be treated as a first-class playback surface, not hidden diagnostics.
 5. Keep source/route decisions explainable: users should see why the app recommends a route, when the next episode is warmed, and when fallback sources are being used.
+6. Keep the product ad-free: do not add ad SDKs, ad identifiers, promoted-content slots, monetization feeds, or advertising interfaces when borrowing large-app patterns.
 
 ## App Shell And Navigation Findings
 
@@ -245,3 +246,5 @@ This pass upgrades danmaku anti-occlusion. `DanmakuSafeArea` now carries a cente
 This pass upgrades search result presentation. The all-sources search view now collapses normalized same-title hits to the strongest metadata-rich result while source filters continue to expose each provider's raw results for inspection.
 
 This pass upgrades brand splash presentation. `BrandSplashUiState` now owns startup duration, headline/tagline/progress copy, readiness pills, poster-ribbon tiles, danmaku streaks, and signal rails so the launch animation follows the same tested model-driven contract as navigation and player panels.
+
+This pass upgrades main app chrome navigation. `AppNavigationChromeUiState` now owns shared brand copy, selected-page summary, semantic tone, rail dimensions, bottom-bar dimensions, spacing, and corner radius so wide and compact top-level navigation follow the same tested shell contract.
