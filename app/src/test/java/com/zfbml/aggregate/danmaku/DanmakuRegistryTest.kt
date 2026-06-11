@@ -9,6 +9,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -170,6 +171,33 @@ class DanmakuRegistryTest {
         )
 
         assertTrue(score > 0)
+    }
+
+    @Test
+    fun episodeNumberParserReadsChineseAndNumericEpisodeText() {
+        assertEquals(12, danmakuEpisodeNumberFromText("\u7b2c\u5341\u4e8c\u8bdd"))
+        assertEquals(3, danmakuEpisodeNumberFromText("\u7b2c\u4e09\u96c6"))
+        assertEquals(24, danmakuEpisodeNumberFromText("\u7b2c24\u96c6"))
+        assertEquals(7, danmakuEpisodeNumberFromText("EP.07"))
+        assertNull(danmakuEpisodeNumberFromText("OVA"))
+    }
+
+    @Test
+    fun episodeScoreUsesChineseEpisodeNumbers() {
+        val chineseEpisodeScore = danmakuEpisodeMatchScore(
+            candidateEpisodeTitle = "\u7b2c\u5341\u4e8c\u8bdd",
+            candidateEpisodeOrder = null,
+            requestedEpisodeTitle = "\u7b2c12\u8bdd",
+            requestedEpisodeNumber = 12,
+        )
+        val wrongEpisodeScore = danmakuEpisodeMatchScore(
+            candidateEpisodeTitle = "\u7b2c\u4e00\u8bdd",
+            candidateEpisodeOrder = null,
+            requestedEpisodeTitle = "\u7b2c12\u8bdd",
+            requestedEpisodeNumber = 12,
+        )
+
+        assertTrue(chineseEpisodeScore > wrongEpisodeScore)
     }
 
     @Test

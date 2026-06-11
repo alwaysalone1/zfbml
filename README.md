@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.115
+
+English:
+
+- Danmaku episode-number parsing now recognizes Chinese-number episode labels such as `第十二话` and `第三集`, plus `EP.07` style titles.
+- Platform danmaku matching now reuses one episode-number parser for target episode detection, candidate scoring, and episode list ordering.
+- Added unit coverage for Chinese episode-number parsing and scoring against wrong numbered episode titles.
+- App version labels, request user agents, and README notes are now updated to `0.5.115`.
+
 ### v0.5.114
 
 English:

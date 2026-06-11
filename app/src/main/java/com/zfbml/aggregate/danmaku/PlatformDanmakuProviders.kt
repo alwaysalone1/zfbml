@@ -348,12 +348,84 @@ private fun normalizeDanmakuMatchText(value: String): String {
         .replace(Regex("""[\s\p{P}\p{S}]"""), "")
 }
 
-private fun danmakuEpisodeNumberFromText(value: String): Int? {
-    return Regex("""\b0*(\d{1,4})\b""")
-        .find(value)
+internal fun danmakuEpisodeNumberFromText(value: String): Int? {
+    val clean = htmlDecodeDanmakuText(value.replace(Regex("""<[^>]+>"""), "")).trim()
+    Regex("""第\s*([零〇一二三四五六七八九十百两\d]+)\s*[集话話期]""")
+        .find(clean)
+        ?.groupValues
+        ?.getOrNull(1)
+        ?.let(::parseDanmakuEpisodeNumberToken)
+        ?.let { return it }
+    Regex("""(?i)\b(?:ep|episode)\.?\s*0*(\d{1,4})\b""")
+        .find(clean)
         ?.groupValues
         ?.getOrNull(1)
         ?.toIntOrNull()
+        ?.let { return it }
+    Regex("""\b0*(\d{1,4})\b""")
+        .find(clean)
+        ?.groupValues
+        ?.getOrNull(1)
+        ?.toIntOrNull()
+        ?.let { return it }
+    return Regex("""([零〇一二三四五六七八九十百两]{1,8})\s*[集话話期]""")
+        .find(clean)
+        ?.groupValues
+        ?.getOrNull(1)
+        ?.let(::parseDanmakuEpisodeNumberToken)
+}
+
+private fun parseDanmakuEpisodeNumberToken(value: String): Int? {
+    val clean = value.trim().trimStart('0')
+    if (clean.isBlank()) return 0
+    clean.toIntOrNull()?.let { return it }
+    return parseDanmakuChineseNumber(clean)
+}
+
+private fun parseDanmakuChineseNumber(value: String): Int? {
+    if (value.none { it == '十' || it == '百' }) {
+        val digits = value.map { danmakuChineseDigitValue(it) ?: return null }
+        return digits.joinToString("").toIntOrNull()
+    }
+    var total = 0
+    var current = 0
+    var hasValue = false
+    for (char in value) {
+        when (char) {
+            '零', '〇' -> Unit
+            '十' -> {
+                total += (if (current == 0) 1 else current) * 10
+                current = 0
+                hasValue = true
+            }
+            '百' -> {
+                total += (if (current == 0) 1 else current) * 100
+                current = 0
+                hasValue = true
+            }
+            else -> {
+                current = danmakuChineseDigitValue(char) ?: return null
+                hasValue = true
+            }
+        }
+    }
+    return (total + current).takeIf { hasValue && it > 0 }
+}
+
+private fun danmakuChineseDigitValue(char: Char): Int? {
+    return when (char) {
+        '零', '〇' -> 0
+        '一' -> 1
+        '二', '两' -> 2
+        '三' -> 3
+        '四' -> 4
+        '五' -> 5
+        '六' -> 6
+        '七' -> 7
+        '八' -> 8
+        '九' -> 9
+        else -> null
+    }
 }
 
 private fun htmlDecodeDanmakuText(value: String): String {
@@ -822,10 +894,7 @@ class WebDanmakuService(
     private fun normalizeForMatch(value: String): String = stripHtml(value)
         .let(::normalizeDanmakuMatchText)
 
-    private fun episodeNumberFromText(value: String): Int? {
-        Regex("""第\s*0*(\d+)\s*[集话話期]""").find(value)?.groupValues?.getOrNull(1)?.toIntOrNull()?.let { return it }
-        return Regex("""\b0*(\d{1,4})\b""").find(value)?.groupValues?.getOrNull(1)?.toIntOrNull()
-    }
+    private fun episodeNumberFromText(value: String): Int? = danmakuEpisodeNumberFromText(value)
 
     private fun stripHtml(value: String): String = htmlDecode(value.replace(Regex("""<[^>]+>"""), "")).trim()
 

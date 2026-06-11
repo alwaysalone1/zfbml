@@ -235,3 +235,5 @@ This pass upgrades manual danmaku search. The player danmaku panel now exposes a
 This pass upgrades automatic danmaku title matching. `DanmakuRegistry` now expands automatic provider searches across Bangumi subject Chinese names, aliases, original names, and detail titles with CJK names prioritized and a small candidate cap, while explicit manual searches remain isolated to the user's entered query.
 
 This pass upgrades automatic danmaku candidate ranking. Platform matches now combine provider base weight with title exactness, known anime-title alias normalization, episode-title similarity, and episode-order agreement so automatic loading is less likely to pick a loose high-platform result when a lower-base provider has the precise anime and episode mapping.
+
+This pass upgrades danmaku episode-number parsing. The shared matcher now recognizes Arabic digits, `EP.07` style labels, and Chinese-number episode names such as `第十二话` or `第三集`, and the platform matcher uses that same parser for target episode detection, candidate scoring, and episode list ordering.
