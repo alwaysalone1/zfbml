@@ -2,6 +2,7 @@ package com.zfbml.aggregate.danmaku
 
 import com.zfbml.aggregate.source.Episode
 import com.zfbml.aggregate.source.MediaDetail
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -79,13 +80,53 @@ class DanmakuRegistryTest {
     fun searchCandidatesUsesManualQueryTitle() = runTest {
         val provider = CountingDanmakuProvider(id = "manual-search")
         val registry = DanmakuRegistry(listOf(provider))
+        val autoAliasEpisode = episode(
+            id = "9",
+            raw = mapOf(
+                "subjectId" to "subject-9",
+                "episodeId" to "9",
+                "subjectNameCn" to "Auto Title",
+                "subjectAliases" to "Auto Alias|Another Alias",
+                "subjectName" to "Original Auto Title",
+            ),
+        )
 
-        val matches = registry.searchCandidates(detail(), episode("9"), "  Manual Alias  ")
-        val blankMatches = registry.searchCandidates(detail(), episode("9"), "   ")
+        val matches = registry.searchCandidates(detail(), autoAliasEpisode, "  Manual Alias  ")
+        val blankMatches = registry.searchCandidates(detail(), autoAliasEpisode, "   ")
 
         assertEquals(listOf("Manual Alias"), matches.map { it.title })
         assertEquals(emptyList<DanmakuMatch>(), blankMatches)
+        assertEquals(listOf("Manual Alias"), provider.matchedTitles.toList())
         assertEquals(1, provider.matchCount.get())
+    }
+
+    @Test
+    fun matchAllSearchesSubjectAliasesBeforeDetailTitle() = runTest {
+        val provider = CountingDanmakuProvider(tokenFromTitle = true)
+        val registry = DanmakuRegistry(listOf(provider))
+        val chineseTitle = "\u4e2d\u6587\u6807\u9898"
+        val chineseAlias = "\u4e2d\u6587\u522b\u540d"
+        val expectedTitles = listOf(chineseTitle, chineseAlias, "Display Title", "Alias One")
+
+        val matches = registry.matchAll(
+            detail(title = "Fallback Detail"),
+            episode(
+                id = "10",
+                raw = mapOf(
+                    "subjectId" to "subject-10",
+                    "episodeId" to "10",
+                    "subjectNameCn" to chineseTitle,
+                    "subjectTitle" to "Display Title",
+                    "subjectAliases" to "$chineseAlias|Alias One|Alias Two|Alias Three",
+                    "subjectName" to "Original Title",
+                ),
+            ),
+        )
+
+        assertEquals(expectedTitles, matches.map { it.title })
+        assertEquals(expectedTitles.size, provider.matchedTitles.size)
+        assertEquals(expectedTitles.toSet(), provider.matchedTitles.toSet())
+        assertEquals(4, provider.matchCount.get())
     }
 
     @Test
@@ -177,22 +218,25 @@ class DanmakuRegistryTest {
         assertEquals(1, manual.fetchCount.get())
     }
 
-    private fun detail(): MediaDetail {
+    private fun detail(title: String = "Test Anime"): MediaDetail {
         return MediaDetail(
             providerId = "detail",
-            title = "Test Anime",
+            title = title,
             url = "detail://anime",
         )
     }
 
-    private fun episode(id: String): Episode {
+    private fun episode(
+        id: String,
+        raw: Map<String, String> = mapOf("subjectId" to "subject-1", "episodeId" to id),
+    ): Episode {
         return Episode(
             providerId = "detail",
             id = "ep-$id",
             title = "Episode $id",
             url = "detail://anime/episode/$id",
             index = id.toInt(),
-            raw = mapOf("subjectId" to "subject-1", "episodeId" to id),
+            raw = raw,
         )
     }
 
@@ -221,11 +265,13 @@ class DanmakuRegistryTest {
         private val score: Int = 100,
         private val delayMs: Long = 0L,
         private val returnEmptyTimeline: Boolean = false,
+        private val tokenFromTitle: Boolean = false,
         private val activeMatches: AtomicInteger? = null,
         private val maxConcurrentMatches: AtomicInteger? = null,
     ) : DanmakuProvider {
         val matchCount = AtomicInteger(0)
         val fetchCount = AtomicInteger(0)
+        val matchedTitles = CopyOnWriteArrayList<String>()
 
         override val platform = DanmakuPlatform.Local
         override val profile = DanmakuProfile(DanmakuPlatform.Local)
@@ -233,6 +279,7 @@ class DanmakuRegistryTest {
 
         override suspend fun match(detail: MediaDetail, episode: Episode): List<DanmakuMatch> {
             matchCount.incrementAndGet()
+            matchedTitles += detail.title
             activeMatches?.incrementAndGet()?.let { active ->
                 updateMaxConcurrentMatches(active)
             }
@@ -245,7 +292,7 @@ class DanmakuRegistryTest {
                         title = detail.title,
                         episodeTitle = episode.title,
                         score = score,
-                        token = episode.id,
+                        token = if (tokenFromTitle) "${episode.id}-${detail.title}" else episode.id,
                     ),
                 )
             } finally {

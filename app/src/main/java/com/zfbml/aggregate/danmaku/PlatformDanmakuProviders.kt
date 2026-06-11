@@ -24,6 +24,8 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 
+private const val MAX_AUTOMATIC_TITLE_SEARCH_COUNT = 4
+
 abstract class WebDanmakuProvider(
     final override val id: String,
     final override val platform: DanmakuPlatform,
@@ -104,7 +106,7 @@ class DanmakuRegistry(
     suspend fun searchCandidates(detail: MediaDetail, episode: Episode, query: String): List<DanmakuMatch> {
         val cleanQuery = query.trim()
         if (cleanQuery.isBlank()) return emptyList()
-        return automaticMatches(detail.copy(title = cleanQuery), episode)
+        return automaticMatches(detail.copy(title = cleanQuery), episode, includeAliases = false)
             .distinctBy { it.providerId to it.token }
             .sortedByDescending { it.score }
     }
@@ -125,13 +127,25 @@ class DanmakuRegistry(
         clearTimelineCache()
     }
 
-    private suspend fun automaticMatches(detail: MediaDetail, episode: Episode): List<DanmakuMatch> = coroutineScope {
-        byId.values.map { provider ->
-            async {
-                runCatching { provider.match(detail, episode) }.getOrDefault(emptyList())
+    private suspend fun automaticMatches(
+        detail: MediaDetail,
+        episode: Episode,
+        includeAliases: Boolean = true,
+    ): List<DanmakuMatch> = coroutineScope {
+        val titles = if (includeAliases) {
+            danmakuAutomaticSearchTitles(detail, episode)
+        } else {
+            listOf(detail.title.trim()).filter { it.isNotBlank() }
+        }
+        titles.flatMap { title ->
+            byId.values.map { provider ->
+                async {
+                    runCatching { provider.match(detail.copy(title = title), episode) }.getOrDefault(emptyList())
+                }
             }
         }.awaitAll()
             .flatten()
+            .distinctBy { it.providerId to it.token }
             .sortedByDescending { it.score }
     }
 
@@ -226,6 +240,44 @@ class DanmakuRegistry(
     private companion object {
         const val DEFAULT_TIMELINE_CACHE_SIZE = 48
         const val MANUAL_MAPPING_SCORE = 100_000
+    }
+}
+
+private fun danmakuAutomaticSearchTitles(detail: MediaDetail, episode: Episode): List<String> {
+    val candidates = buildList {
+        add(episode.raw["subjectNameCn"])
+        add(episode.raw["subjectTitle"])
+        episode.raw["subjectAliases"]
+            ?.split("|")
+            ?.forEach { add(it) }
+        add(episode.raw["subjectName"])
+        add(detail.title)
+    }
+        .filterNotNull()
+        .map { it.trim() }
+        .filter { it.length >= 2 }
+        .distinctBy { it.normalizedDanmakuTitleKey() }
+    val cjkTitles = candidates.filter { it.containsDanmakuCjkText() }
+    val nonCjkTitles = candidates.filterNot { candidate ->
+        cjkTitles.any { it.normalizedDanmakuTitleKey() == candidate.normalizedDanmakuTitleKey() }
+    }
+    return (cjkTitles + nonCjkTitles).take(MAX_AUTOMATIC_TITLE_SEARCH_COUNT)
+}
+
+private fun String.normalizedDanmakuTitleKey(): String {
+    return lowercase().filter { char ->
+        char.isLetterOrDigit() ||
+            char in '\u4e00'..'\u9fff' ||
+            char in '\u3040'..'\u30ff' ||
+            char in '\u3400'..'\u4dbf'
+    }
+}
+
+private fun String.containsDanmakuCjkText(): Boolean {
+    return any { char ->
+        char in '\u4e00'..'\u9fff' ||
+            char in '\u3040'..'\u30ff' ||
+            char in '\u3400'..'\u4dbf'
     }
 }
 

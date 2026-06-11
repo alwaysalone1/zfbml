@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.113
+
+English:
+
+- Automatic danmaku matching now searches Bangumi-derived anime title aliases, prioritizing CJK names and falling back to original/detail titles.
+- Explicit manual danmaku searches still honor the entered query directly, while automatic episode loading can try multiple title candidates before user calibration.
+- Added unit coverage for alias search ordering/limits and explicit manual-search query isolation.
+- App version labels, request user agents, and README notes are now updated to `0.5.113`.
+
 ### v0.5.112
 
 English:
