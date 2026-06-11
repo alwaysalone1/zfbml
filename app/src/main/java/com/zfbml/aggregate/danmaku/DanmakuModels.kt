@@ -64,6 +64,7 @@ data class DanmakuSafeArea(
     val bottomInsetPx: Float = 0f,
     val startInsetPx: Float = 0f,
     val endInsetPx: Float = 0f,
+    val centerExcludedHeightPx: Float = 0f,
 )
 
 @Serializable

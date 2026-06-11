@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.117
+
+English:
+
+- Danmaku safe areas now support a center exclusion band so scrolling and advanced comments can avoid fullscreen play buttons and seek feedback instead of only avoiding screen edges.
+- The player computes one current danmaku safe-area state and shares it with both the renderer and the danmaku settings panel, keeping the visible avoidance summary aligned with rendering.
+- Added unit coverage for center safe-area lane skipping, advanced comment dropping inside the center band, and settings-panel safe-area summaries.
+- App version labels, request user agents, and README notes are now updated to `0.5.117`.
+
 ### v0.5.116
 
 English:

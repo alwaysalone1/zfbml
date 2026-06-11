@@ -2237,17 +2237,28 @@ class PlaybackUiModelsTest {
             panelOpen = false,
             noticeVisible = true,
         )
+        val centerBlocked = buildPlayerDanmakuSafeAreaUiState(
+            compact = false,
+            controlsVisible = true,
+            controlsLocked = false,
+            panelOpen = false,
+            centerOverlayVisible = true,
+            seekFeedbackVisible = true,
+        )
 
         assertEquals(8, hidden.topInsetDp)
         assertEquals(8, hidden.bottomInsetDp)
+        assertEquals(0, hidden.centerExcludedHeightDp)
         assertEquals(84, fullscreenControls.endInsetDp)
         assertEquals(72, fullscreenControls.startInsetDp)
         assertTrue(fullscreenPanel.endInsetDp > fullscreenControls.endInsetDp)
         assertTrue(fullscreenPanel.bottomInsetDp > hidden.bottomInsetDp)
+        assertEquals(0, fullscreenPanel.centerExcludedHeightDp)
         assertEquals(72, locked.startInsetDp)
         assertEquals(0, locked.endInsetDp)
         assertEquals(0, compact.endInsetDp)
         assertTrue(compact.bottomInsetDp > hidden.bottomInsetDp)
+        assertEquals(172, centerBlocked.centerExcludedHeightDp)
     }
 
     @Test
@@ -2351,6 +2362,7 @@ class PlaybackUiModelsTest {
         assertEquals(SourceLibraryTone.Muted, enabled.mapping.trailingTone)
         assertEquals(48.dp, enabled.mapping.rowState.minHeight)
         assertTrue(enabled.safetySummary.contains("避让"))
+        assertTrue(enabled.safetySummary.contains("\u4e2d0"))
         assertEquals(SourceLibraryTone.Primary, enabled.tone)
         assertEquals("弹幕已关闭", disabled.toggleTitle)
         assertEquals("点击开启弹幕显示", disabled.toggleSubtitle)

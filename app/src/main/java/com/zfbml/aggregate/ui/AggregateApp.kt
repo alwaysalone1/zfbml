@@ -2354,7 +2354,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.116")
+                setRequestProperty("User-Agent", "ZFBML/0.5.117")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2868,7 +2868,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.116",
+            version = "0.5.117",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -5449,21 +5449,19 @@ private fun PlayerScreen(
     }
 
     @Composable
-    fun VideoStage(modifier: Modifier, compact: Boolean) {
+    fun VideoStage(
+        modifier: Modifier,
+        compact: Boolean,
+        safeAreaState: PlayerDanmakuSafeAreaUiState,
+    ) {
         val currentDensity = LocalDensity.current
-        val safeAreaState = buildPlayerDanmakuSafeAreaUiState(
-            compact = compact,
-            controlsVisible = controlsVisible,
-            controlsLocked = controlsLocked,
-            panelOpen = activePanel != null,
-            noticeVisible = routeNotice != null || effectiveErrorMessage != null,
-        )
         val danmakuSafeArea = with(currentDensity) {
             DanmakuSafeArea(
                 topInsetPx = safeAreaState.topInsetDp.dp.toPx(),
                 bottomInsetPx = safeAreaState.bottomInsetDp.dp.toPx(),
                 startInsetPx = safeAreaState.startInsetDp.dp.toPx(),
                 endInsetPx = safeAreaState.endInsetDp.dp.toPx(),
+                centerExcludedHeightPx = safeAreaState.centerExcludedHeightDp.dp.toPx(),
             )
         }
         Box(modifier.background(Color.Black)) {
@@ -5695,6 +5693,15 @@ private fun PlayerScreen(
 
     BoxWithConstraints(Modifier.fillMaxSize().background(AnimeBackground)) {
         val portrait = maxHeight > maxWidth
+        val currentDanmakuSafeAreaState = buildPlayerDanmakuSafeAreaUiState(
+            compact = portrait,
+            controlsVisible = controlsVisible,
+            controlsLocked = controlsLocked,
+            panelOpen = activePanel != null,
+            noticeVisible = routeNotice != null || effectiveErrorMessage != null,
+            centerOverlayVisible = controlsVisible && activePanel == null && !controlsLocked,
+            seekFeedbackVisible = seekFeedbackText != null,
+        )
         LaunchedEffect(activity, portrait) {
             activity?.setPlayerImmersive(!portrait)
         }
@@ -5716,6 +5723,7 @@ private fun PlayerScreen(
                         .fillMaxWidth()
                         .aspectRatio(16f / 9f),
                     compact = true,
+                    safeAreaState = currentDanmakuSafeAreaState,
                 )
                 PortraitWatchInfoPanel(
                     detail = detail,
@@ -5743,6 +5751,7 @@ private fun PlayerScreen(
             VideoStage(
                 modifier = Modifier.fillMaxSize(),
                 compact = false,
+                safeAreaState = currentDanmakuSafeAreaState,
             )
         }
         AnimatedVisibility(
@@ -5768,6 +5777,7 @@ private fun PlayerScreen(
                     density = density,
                     danmakuAlpha = danmakuAlpha,
                     danmakuFontScale = danmakuFontScale,
+                    danmakuSafeAreaState = currentDanmakuSafeAreaState,
                     playbackSpeed = playbackSpeed,
                     episodeLoadingId = episodeLoadingId,
                     routeNotice = routeNotice,
@@ -7483,6 +7493,7 @@ private fun PlayerOptionPanel(
     density: Float,
     danmakuAlpha: Float,
     danmakuFontScale: Float,
+    danmakuSafeAreaState: PlayerDanmakuSafeAreaUiState,
     playbackSpeed: Float,
     episodeLoadingId: String?,
     routeNotice: String?,
@@ -7625,6 +7636,7 @@ private fun PlayerOptionPanel(
                             density = density,
                             alpha = danmakuAlpha,
                             fontScale = danmakuFontScale,
+                            safeArea = danmakuSafeAreaState,
                             onToggleDanmaku = onToggleDanmaku,
                             onSearchDanmaku = onSearchDanmaku,
                             onSearchQueryChange = onDanmakuSearchQueryChange,
@@ -8069,6 +8081,7 @@ private fun PlayerDanmakuSettingsPanel(
     density: Float,
     alpha: Float,
     fontScale: Float,
+    safeArea: PlayerDanmakuSafeAreaUiState,
     onToggleDanmaku: () -> Unit,
     onSearchDanmaku: (String) -> Unit,
     onSearchQueryChange: (String) -> Unit,
@@ -8077,7 +8090,7 @@ private fun PlayerDanmakuSettingsPanel(
     onAlphaChange: (Float) -> Unit,
     onFontScaleChange: (Float) -> Unit,
 ) {
-    val state = remember(danmakuEnabled, density, alpha, fontScale, matches, matching, timelineCount) {
+    val state = remember(danmakuEnabled, density, alpha, fontScale, matches, matching, timelineCount, safeArea) {
         buildPlayerDanmakuSettingsUiState(
             enabled = danmakuEnabled,
             density = density,
@@ -8086,6 +8099,7 @@ private fun PlayerDanmakuSettingsPanel(
             matches = matches,
             matching = matching,
             timelineCount = timelineCount,
+            safeArea = safeArea,
         )
     }
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {

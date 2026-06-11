@@ -239,3 +239,5 @@ This pass upgrades automatic danmaku candidate ranking. Platform matches now com
 This pass upgrades danmaku episode-number parsing. The shared matcher now recognizes Arabic digits, `EP.07` style labels, and Chinese-number episode names such as `第十二话` or `第三集`, and the platform matcher uses that same parser for target episode detection, candidate scoring, and episode list ordering.
 
 This pass upgrades danmaku matching cache behavior. `DanmakuRegistry` now keeps a bounded LRU cache for automatic candidate matches and coalesces concurrent provider searches, while timeline fetching still retries empty timelines so a stale missing danmaku body does not permanently block later playback.
+
+This pass upgrades danmaku anti-occlusion. `DanmakuSafeArea` now carries a center exclusion band for play buttons and seek feedback, `DanmakuLayoutEngine` skips lanes that would cross that band, and the player shares the same computed safe-area state with both rendering and the danmaku settings summary.

@@ -170,11 +170,16 @@ private fun DanmakuSafeArea.coerceWithin(widthPx: Float, heightPx: Float): Danma
     val bottom = bottomInsetPx.coerceFiniteAtLeast(0f).coerceAtMost(safeHeight - top - 1f)
     val start = startInsetPx.coerceFiniteAtLeast(0f).coerceAtMost(safeWidth - 1f)
     val end = endInsetPx.coerceFiniteAtLeast(0f).coerceAtMost(safeWidth - start - 1f)
+    val remainingHeight = safeHeight - top - bottom
+    val centerExcludedHeight = centerExcludedHeightPx
+        .coerceFiniteAtLeast(0f)
+        .coerceAtMost((remainingHeight - 1f).coerceAtLeast(0f))
     return DanmakuSafeArea(
         topInsetPx = top,
         bottomInsetPx = bottom,
         startInsetPx = start,
         endInsetPx = end,
+        centerExcludedHeightPx = centerExcludedHeight,
     )
 }
 
@@ -255,6 +260,24 @@ class DanmakuLayoutEngine {
         val bottomSlots = LongArray(max(1, bottomReserve)) { Long.MIN_VALUE }
         val gapPx = (lineHeight * 0.72f).coerceAtLeast(24f)
         val scheduledEntries = mutableListOf<ScheduledDanmakuEntry>()
+        fun laneAvoidsCenter(globalLane: Int, metrics: DanmakuTextMetrics): Boolean {
+            return baselineAvoidsCenter(
+                baselineY = boundedSafeArea.topInsetPx + baselineForLane(globalLane, lineHeight, metrics),
+                metrics = metrics,
+                safeTopPx = boundedSafeArea.topInsetPx,
+                safeHeightPx = safeHeightPx,
+                centerExcludedHeightPx = boundedSafeArea.centerExcludedHeightPx,
+            )
+        }
+        fun bottomLaneAvoidsCenter(lane: Int, metrics: DanmakuTextMetrics): Boolean {
+            return baselineAvoidsCenter(
+                baselineY = boundedSafeArea.topInsetPx + bottomBaselineForLane(lane, safeHeightPx, lineHeight, metrics),
+                metrics = metrics,
+                safeTopPx = boundedSafeArea.topInsetPx,
+                safeHeightPx = safeHeightPx,
+                centerExcludedHeightPx = boundedSafeArea.centerExcludedHeightPx,
+            )
+        }
 
         measured.forEach { entry ->
             val item = entry.item
@@ -269,6 +292,7 @@ class DanmakuLayoutEngine {
                         textWidthPx = metrics.widthPx,
                         durationMs = entry.durationMs,
                         gapPx = gapPx,
+                        laneAllowed = { lane -> laneAvoidsCenter(movingStartLane + lane, metrics) },
                     )?.let { lane ->
                         val globalLane = movingStartLane + lane
                         ScheduledDanmaku(
@@ -288,6 +312,7 @@ class DanmakuLayoutEngine {
                         textWidthPx = metrics.widthPx,
                         durationMs = entry.durationMs,
                         gapPx = gapPx,
+                        laneAllowed = { lane -> laneAvoidsCenter(movingStartLane + lane, metrics) },
                     )?.let { lane ->
                         val globalLane = movingStartLane + lane
                         ScheduledDanmaku(
@@ -298,7 +323,12 @@ class DanmakuLayoutEngine {
                         )
                     }
                 }
-                DanmakuMode.Top -> allocateFixedLane(topSlots, item.timeMs, entry.durationMs)?.let { lane ->
+                DanmakuMode.Top -> allocateFixedLane(
+                    slots = topSlots,
+                    startMs = item.timeMs,
+                    durationMs = entry.durationMs,
+                    laneAllowed = { lane -> laneAvoidsCenter(lane, metrics) },
+                )?.let { lane ->
                     val x = safeStartX + (safeWidthPx - metrics.widthPx) / 2f
                     ScheduledDanmaku(
                         lane = lane,
@@ -307,7 +337,12 @@ class DanmakuLayoutEngine {
                         y = boundedSafeArea.topInsetPx + baselineForLane(lane, lineHeight, metrics),
                     )
                 }
-                DanmakuMode.Bottom -> allocateFixedLane(bottomSlots, item.timeMs, entry.durationMs)?.let { lane ->
+                DanmakuMode.Bottom -> allocateFixedLane(
+                    slots = bottomSlots,
+                    startMs = item.timeMs,
+                    durationMs = entry.durationMs,
+                    laneAllowed = { lane -> bottomLaneAvoidsCenter(lane, metrics) },
+                )?.let { lane ->
                     val globalLane = totalTracks - 1 - lane
                     val x = safeStartX + (safeWidthPx - metrics.widthPx) / 2f
                     ScheduledDanmaku(
@@ -320,13 +355,25 @@ class DanmakuLayoutEngine {
                 DanmakuMode.Advanced -> {
                     val position = item.position
                     val x = position?.let { safeStartX + it.x * safeWidthPx } ?: (safeStartX + (safeWidthPx - metrics.widthPx) / 2f)
-                    ScheduledDanmaku(
-                        lane = 0,
-                        startX = x,
-                        endX = x,
-                        y = position?.let { boundedSafeArea.topInsetPx + it.y * safeHeightPx }
-                            ?: (boundedSafeArea.topInsetPx + baselineForLane(0, lineHeight, metrics)),
-                    )
+                    val y = position?.let { boundedSafeArea.topInsetPx + it.y * safeHeightPx }
+                        ?: (boundedSafeArea.topInsetPx + baselineForLane(0, lineHeight, metrics))
+                    if (!baselineAvoidsCenter(
+                            baselineY = y,
+                            metrics = metrics,
+                            safeTopPx = boundedSafeArea.topInsetPx,
+                            safeHeightPx = safeHeightPx,
+                            centerExcludedHeightPx = boundedSafeArea.centerExcludedHeightPx,
+                        )
+                    ) {
+                        null
+                    } else {
+                        ScheduledDanmaku(
+                            lane = 0,
+                            startX = x,
+                            endX = x,
+                            y = y,
+                        )
+                    }
                 }
                 DanmakuMode.Script -> null
             }
@@ -371,8 +418,10 @@ class DanmakuLayoutEngine {
         textWidthPx: Float,
         durationMs: Long,
         gapPx: Float,
+        laneAllowed: (Int) -> Boolean = { true },
     ): Int? {
         slots.indices.forEach { index ->
+            if (!laneAllowed(index)) return@forEach
             if (canUseMovingLane(slots[index], direction, startMs, screenWidthPx, textWidthPx, durationMs, gapPx)) {
                 slots[index] = MovingSlot(
                     direction = direction,
@@ -419,8 +468,14 @@ class DanmakuLayoutEngine {
         return catchUpMs >= min((slot.durationMs - elapsedMs).toFloat(), durationMs.toFloat())
     }
 
-    private fun allocateFixedLane(slots: LongArray, startMs: Long, durationMs: Long): Int? {
+    private fun allocateFixedLane(
+        slots: LongArray,
+        startMs: Long,
+        durationMs: Long,
+        laneAllowed: (Int) -> Boolean = { true },
+    ): Int? {
         slots.indices.forEach { index ->
+            if (!laneAllowed(index)) return@forEach
             if (startMs >= slots[index]) {
                 slots[index] = startMs + durationMs + 220L
                 return index
@@ -436,6 +491,21 @@ class DanmakuLayoutEngine {
     private fun bottomBaselineForLane(lane: Int, heightPx: Float, lineHeight: Float, metrics: DanmakuTextMetrics): Float {
         val lineTop = heightPx - (lane + 1) * lineHeight
         return lineTop + metrics.baselineOffsetPx
+    }
+
+    private fun baselineAvoidsCenter(
+        baselineY: Float,
+        metrics: DanmakuTextMetrics,
+        safeTopPx: Float,
+        safeHeightPx: Float,
+        centerExcludedHeightPx: Float,
+    ): Boolean {
+        if (centerExcludedHeightPx <= 0f) return true
+        val centerTop = safeTopPx + ((safeHeightPx - centerExcludedHeightPx) / 2f).coerceAtLeast(0f)
+        val centerBottom = centerTop + centerExcludedHeightPx
+        val lineTop = baselineY - metrics.baselineOffsetPx
+        val lineBottom = lineTop + metrics.lineHeightPx
+        return lineBottom <= centerTop || lineTop >= centerBottom
     }
 
     private fun maxWindow(item: DanmakuItem, profile: DanmakuProfile): Long = durationFor(item, profile) + 500

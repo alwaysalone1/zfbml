@@ -1012,6 +1012,7 @@ internal data class PlayerDanmakuSafeAreaUiState(
     val bottomInsetDp: Int,
     val startInsetDp: Int,
     val endInsetDp: Int,
+    val centerExcludedHeightDp: Int,
 )
 
 internal data class PlayerCacheActionUiState(
@@ -3408,7 +3409,7 @@ internal fun buildPlayerDanmakuSettingsUiState(
     val alphaLabel = formatPercentForUi(alpha)
     val fontScaleLabel = formatScaleForUi(fontScale)
     val safetySummary = safeArea?.let { area ->
-        "避让 顶${area.topInsetDp} / 底${area.bottomInsetDp} / 侧${area.startInsetDp + area.endInsetDp}"
+        "避让 顶${area.topInsetDp} / 底${area.bottomInsetDp} / 侧${area.startInsetDp + area.endInsetDp} / 中${area.centerExcludedHeightDp}"
     } ?: "自动避让播放器控制区"
     val tone = if (enabled) SourceLibraryTone.Primary else SourceLibraryTone.Muted
     val toggleHighlighted = enabled
@@ -4725,6 +4726,8 @@ internal fun buildPlayerDanmakuSafeAreaUiState(
     controlsLocked: Boolean,
     panelOpen: Boolean,
     noticeVisible: Boolean = false,
+    centerOverlayVisible: Boolean = false,
+    seekFeedbackVisible: Boolean = false,
 ): PlayerDanmakuSafeAreaUiState {
     val visibleControls = controlsVisible && !controlsLocked
     val topInset = when {
@@ -4749,11 +4752,21 @@ internal fun buildPlayerDanmakuSafeAreaUiState(
         panelOpen -> 414
         else -> 84
     }
+    val centerExcludedHeight = when {
+        panelOpen -> 0
+        centerOverlayVisible && seekFeedbackVisible && compact -> 132
+        centerOverlayVisible && seekFeedbackVisible -> 172
+        centerOverlayVisible && compact -> 96
+        centerOverlayVisible -> 132
+        seekFeedbackVisible -> 72
+        else -> 0
+    }
     return PlayerDanmakuSafeAreaUiState(
         topInsetDp = topInset,
         bottomInsetDp = bottomInset,
         startInsetDp = startInset,
         endInsetDp = endInset,
+        centerExcludedHeightDp = centerExcludedHeight,
     )
 }
 

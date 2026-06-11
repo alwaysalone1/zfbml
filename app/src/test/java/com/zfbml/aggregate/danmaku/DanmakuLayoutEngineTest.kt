@@ -129,6 +129,49 @@ class DanmakuLayoutEngineTest {
     }
 
     @Test
+    fun centerSafeAreaSkipsLanesBehindPlayerControls() {
+        val scrollingItems = (0 until 6).map { index ->
+            DanmakuItem(
+                timeMs = 1_000L,
+                text = "scroll-$index",
+                mode = DanmakuMode.Scroll,
+                platform = DanmakuPlatform.Local,
+            )
+        }
+        val advancedAtCenter = DanmakuItem(
+            timeMs = 1_000L,
+            text = "advanced-center",
+            mode = DanmakuMode.Advanced,
+            position = DanmakuPosition(0.5f, 0.5f, 4_500L),
+            platform = DanmakuPlatform.Local,
+        )
+
+        val rendered = DanmakuLayoutEngine().layout(
+            items = scrollingItems + advancedAtCenter,
+            playbackMs = 1_500,
+            widthPx = 1_000f,
+            heightPx = 500f,
+            profile = DanmakuProfile(DanmakuPlatform.Local, maxTracks = 10, supportsAdvanced = true),
+            settings = DanmakuSettings(),
+            safeArea = DanmakuSafeArea(centerExcludedHeightPx = 120f),
+            measureText = { DanmakuTextMetrics(textSizePx = 40f, widthPx = 120f, lineHeightPx = 50f, baselineOffsetPx = 40f) },
+        )
+
+        val centerTop = 190f
+        val centerBottom = 310f
+
+        assertEquals(6, rendered.size)
+        assertTrue(rendered.none { it.item.text == "advanced-center" })
+        assertTrue(
+            rendered.all { item ->
+                val lineTop = item.y - item.metrics.baselineOffsetPx
+                val lineBottom = lineTop + item.metrics.lineHeightPx
+                lineBottom <= centerTop || lineTop >= centerBottom
+            },
+        )
+    }
+
+    @Test
     fun dropsScrollingDanmakuWhenNoLaneCanAvoidCollision() {
         val items = (0 until 5).map { index ->
             DanmakuItem(
