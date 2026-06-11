@@ -1030,6 +1030,22 @@ internal data class PlayerTextActionChromeUiState(
     val valueAlpha: Float,
 )
 
+internal enum class PlayerChromeBaseColor {
+    Black,
+    White,
+}
+
+internal data class PlayerCircleButtonChromeUiState(
+    val size: Dp,
+    val iconSize: Dp,
+    val containerTone: SourceLibraryTone?,
+    val containerBaseColor: PlayerChromeBaseColor,
+    val containerAlpha: Float,
+    val iconTone: SourceLibraryTone?,
+    val iconBaseColor: PlayerChromeBaseColor,
+    val iconAlpha: Float,
+)
+
 internal data class PlayerActionUiState(
     val kind: PlayerActionKind,
     val title: String,
@@ -5474,6 +5490,31 @@ internal fun buildPlayerTextActionChromeUiState(
         disabledButtonContentTone = null,
         disabledButtonContentAlpha = 0.36f,
         valueAlpha = if (enabled) 0.68f else 0.5f,
+    )
+}
+
+internal fun buildPlayerCircleButtonChromeUiState(
+    selected: Boolean,
+    prominent: Boolean,
+    enabled: Boolean,
+): PlayerCircleButtonChromeUiState {
+    return PlayerCircleButtonChromeUiState(
+        size = if (prominent) 62.dp else 44.dp,
+        iconSize = if (prominent) 34.dp else 22.dp,
+        containerTone = if (enabled && selected) SourceLibraryTone.Primary else null,
+        containerBaseColor = if (!enabled) PlayerChromeBaseColor.White else PlayerChromeBaseColor.Black,
+        containerAlpha = when {
+            !enabled -> 0.08f
+            selected -> 1f
+            else -> 0.46f
+        },
+        iconTone = null,
+        iconBaseColor = PlayerChromeBaseColor.White,
+        iconAlpha = when {
+            !enabled -> 0.3f
+            selected -> 1f
+            else -> 0.9f
+        },
     )
 }
 

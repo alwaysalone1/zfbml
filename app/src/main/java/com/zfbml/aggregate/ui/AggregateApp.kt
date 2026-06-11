@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.133")
+                setRequestProperty("User-Agent", "ZFBML/0.5.134")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2934,6 +2934,13 @@ private fun sourceLibraryToneColor(tone: SourceLibraryTone): Color {
     }
 }
 
+private fun playerChromeBaseColor(color: PlayerChromeBaseColor): Color {
+    return when (color) {
+        PlayerChromeBaseColor.Black -> Color.Black
+        PlayerChromeBaseColor.White -> Color.White
+    }
+}
+
 @Composable
 private fun playerNoticeColor(state: PlayerNoticeUiState): Color {
     return if (state.error) MaterialTheme.colorScheme.error else sourceLibraryToneColor(state.tone)
@@ -2977,7 +2984,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.133",
+            version = "0.5.134",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -9360,24 +9367,25 @@ private fun PlayerCircleButton(
     prominent: Boolean = false,
     enabled: Boolean = true,
 ) {
-    val size = if (prominent) 62.dp else 44.dp
-    val iconSize = if (prominent) 34.dp else 22.dp
-    val backgroundColor = when {
-        !enabled -> Color.White.copy(alpha = 0.08f)
-        selected -> AnimeAccentPink
-        else -> Color.Black.copy(alpha = 0.46f)
+    val chrome = remember(selected, prominent, enabled) {
+        buildPlayerCircleButtonChromeUiState(
+            selected = selected,
+            prominent = prominent,
+            enabled = enabled,
+        )
     }
-    val iconColor = when {
-        !enabled -> Color.White.copy(alpha = 0.3f)
-        selected -> Color.White
-        else -> Color.White.copy(alpha = 0.9f)
-    }
+    val containerBaseColor = chrome.containerTone?.let(::sourceLibraryToneColor)
+        ?: playerChromeBaseColor(chrome.containerBaseColor)
+    val iconBaseColor = chrome.iconTone?.let(::sourceLibraryToneColor)
+        ?: playerChromeBaseColor(chrome.iconBaseColor)
+    val backgroundColor = containerBaseColor.copy(alpha = chrome.containerAlpha)
+    val iconColor = iconBaseColor.copy(alpha = chrome.iconAlpha)
 
     IconButton(
         onClick = onClick,
         enabled = enabled,
         modifier = modifier
-            .size(size)
+            .size(chrome.size)
             .clip(CircleShape)
             .background(backgroundColor)
             .focusable(),
@@ -9386,7 +9394,7 @@ private fun PlayerCircleButton(
             imageVector = icon,
             contentDescription = contentDescription,
             tint = iconColor,
-            modifier = Modifier.size(iconSize),
+            modifier = Modifier.size(chrome.iconSize),
         )
     }
 }

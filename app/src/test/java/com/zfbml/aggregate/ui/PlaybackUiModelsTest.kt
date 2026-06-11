@@ -3750,6 +3750,32 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun playerCircleButtonChromeUiStateTracksProminentSelectedAndDisabledPresentation() {
+        val normal = buildPlayerCircleButtonChromeUiState(selected = false, prominent = false, enabled = true)
+        val selected = buildPlayerCircleButtonChromeUiState(selected = true, prominent = true, enabled = true)
+        val disabled = buildPlayerCircleButtonChromeUiState(selected = false, prominent = false, enabled = false)
+
+        assertEquals(44.dp, normal.size)
+        assertEquals(22.dp, normal.iconSize)
+        assertNull(normal.containerTone)
+        assertEquals(PlayerChromeBaseColor.Black, normal.containerBaseColor)
+        assertEquals(0.46f, normal.containerAlpha, 0.001f)
+        assertNull(normal.iconTone)
+        assertEquals(PlayerChromeBaseColor.White, normal.iconBaseColor)
+        assertEquals(0.9f, normal.iconAlpha, 0.001f)
+        assertEquals(62.dp, selected.size)
+        assertEquals(34.dp, selected.iconSize)
+        assertEquals(SourceLibraryTone.Primary, selected.containerTone)
+        assertEquals(1f, selected.containerAlpha, 0.001f)
+        assertEquals(1f, selected.iconAlpha, 0.001f)
+        assertNull(disabled.containerTone)
+        assertEquals(PlayerChromeBaseColor.White, disabled.containerBaseColor)
+        assertEquals(0.08f, disabled.containerAlpha, 0.001f)
+        assertEquals(PlayerChromeBaseColor.White, disabled.iconBaseColor)
+        assertEquals(0.3f, disabled.iconAlpha, 0.001f)
+    }
+
+    @Test
     fun portraitRecoveryActionsUiStateOnlyShowsForPlaybackIssues() {
         val hidden = buildPortraitRecoveryActionsUiState(
             hasPlaybackIssue = false,

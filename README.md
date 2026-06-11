@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.134
+
+English:
+
+- Player circular controls now use `PlayerCircleButtonChromeUiState` for normal, prominent, selected, and disabled sizing, container tone/base color, icon tone/base color, and alpha.
+- `PlayerCircleButton` now renders top-bar, center-play, seek, and fullscreen circular controls from model chrome instead of keeping button-size and state-color branches inside Compose.
+- Added unit coverage for normal, prominent selected, and disabled circular-control presentation.
+- App version labels, request user agents, and README notes are now updated to `0.5.134`.
+
 ### v0.5.133
 
 English:

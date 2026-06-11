@@ -274,3 +274,5 @@ This pass upgrades the player first-frame loading overlay. `PlayerStartupOverlay
 This pass upgrades BT playback preparation chrome. `TorrentPlaybackPreparationUiState` now owns content width, padding, spacing, progress tone, progress-track tone and alpha, title/description/line alpha, and error tone so edge-cache startup presentation follows the same model-driven player contract as ordinary-stream loading overlays and cache diagnostics.
 
 This pass upgrades player bottom text-action chrome. `PlayerTextActionChromeUiState` now owns quick-action pill height, radius, padding, spacing, icon size, container tone and alpha, content tone and alpha, value alpha, and disabled presentation so fullscreen recovery, route, episode, cache, and settings shortcuts share a tested model-driven control contract.
+
+This pass upgrades player circular-control chrome. `PlayerCircleButtonChromeUiState` now owns normal versus prominent button sizing, selected state, disabled state, container tone/base color and alpha, plus icon tone/base color and alpha so top-bar, center-play, seek, and fullscreen controls follow the same tested model-driven player-control contract.
