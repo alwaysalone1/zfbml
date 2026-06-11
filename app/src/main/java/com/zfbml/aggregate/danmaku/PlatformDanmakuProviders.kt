@@ -84,13 +84,17 @@ class DanmakuRegistry(
     providers: List<DanmakuProvider>,
     initialManualMappings: List<DanmakuManualMapping> = emptyList(),
     private val timelineCacheSize: Int = DEFAULT_TIMELINE_CACHE_SIZE,
+    private val matchCacheSize: Int = DEFAULT_MATCH_CACHE_SIZE,
 ) {
     private val byId = providers.associateBy { it.id }
     private val timelineCacheLock = Mutex()
+    private val matchCacheLock = Mutex()
     private val manualMappingLock = Mutex()
     private var manualMappings = initialManualMappings
     private val timelineCache = LinkedHashMap<DanmakuTimelineCacheKey, List<DanmakuItem>>(16, 0.75f, true)
+    private val matchCache = LinkedHashMap<DanmakuMatchCacheKey, List<DanmakuMatch>>(16, 0.75f, true)
     private val inFlightTimelineRequests = mutableMapOf<DanmakuTimelineCacheKey, Deferred<List<DanmakuItem>>>()
+    private val inFlightMatchRequests = mutableMapOf<DanmakuMatchCacheKey, Deferred<List<DanmakuMatch>>>()
     val profiles: List<DanmakuProfile> = providers.map { it.profile }
 
     fun provider(id: String): DanmakuProvider? = byId[id]
@@ -137,6 +141,18 @@ class DanmakuRegistry(
         } else {
             listOf(detail.title.trim()).filter { it.isNotBlank() }
         }
+        if (titles.isEmpty()) return@coroutineScope emptyList()
+        val cacheKey = DanmakuMatchCacheKey.from(detail, episode, includeAliases, titles)
+        cachedAutomaticMatches(cacheKey) {
+            queryAutomaticMatches(detail, episode, titles)
+        }
+    }
+
+    private suspend fun queryAutomaticMatches(
+        detail: MediaDetail,
+        episode: Episode,
+        titles: List<String>,
+    ): List<DanmakuMatch> = coroutineScope {
         titles.flatMap { title ->
             byId.values.map { provider ->
                 async {
@@ -147,6 +163,46 @@ class DanmakuRegistry(
             .flatten()
             .distinctBy { it.providerId to it.token }
             .sortedByDescending { it.score }
+    }
+
+    private suspend fun cachedAutomaticMatches(
+        key: DanmakuMatchCacheKey,
+        producer: suspend () -> List<DanmakuMatch>,
+    ): List<DanmakuMatch> = coroutineScope {
+        var createdRequest = false
+        val request = matchCacheLock.withLock {
+            matchCache[key]?.let { return@coroutineScope it }
+            inFlightMatchRequests[key] ?: async {
+                producer()
+            }.also { deferred ->
+                inFlightMatchRequests[key] = deferred
+                createdRequest = true
+            }
+        }
+
+        try {
+            val matches = request.await()
+            if (createdRequest) {
+                matchCacheLock.withLock {
+                    if (inFlightMatchRequests[key] === request) {
+                        inFlightMatchRequests.remove(key)
+                    }
+                    if (matches.isNotEmpty()) {
+                        cacheMatches(key, matches)
+                    }
+                }
+            }
+            matches
+        } catch (error: Throwable) {
+            if (createdRequest) {
+                matchCacheLock.withLock {
+                    if (inFlightMatchRequests[key] === request) {
+                        inFlightMatchRequests.remove(key)
+                    }
+                }
+            }
+            throw error
+        }
     }
 
     private suspend fun manualMatchesFor(detail: MediaDetail, episode: Episode): List<DanmakuMatch> {
@@ -237,8 +293,20 @@ class DanmakuRegistry(
         }
     }
 
+    private fun cacheMatches(key: DanmakuMatchCacheKey, matches: List<DanmakuMatch>) {
+        if (matchCacheSize <= 0) return
+        matchCache[key] = matches
+        while (matchCache.size > matchCacheSize) {
+            val iterator = matchCache.entries.iterator()
+            if (!iterator.hasNext()) break
+            iterator.next()
+            iterator.remove()
+        }
+    }
+
     private companion object {
         const val DEFAULT_TIMELINE_CACHE_SIZE = 48
+        const val DEFAULT_MATCH_CACHE_SIZE = 96
         const val MANUAL_MAPPING_SCORE = 100_000
     }
 }
@@ -461,6 +529,43 @@ private fun normalizedManualTitle(value: String): String {
     return value
         .lowercase()
         .replace(Regex("""[\s\p{P}\p{S}]"""), "")
+}
+
+private data class DanmakuMatchCacheKey(
+    val detailProviderId: String,
+    val detailUrl: String,
+    val episodeProviderId: String,
+    val episodeId: String,
+    val episodeTitle: String,
+    val episodeUrl: String,
+    val episodeIndex: Int?,
+    val subjectId: String?,
+    val episodeRemoteId: String?,
+    val includeAliases: Boolean,
+    val titles: List<String>,
+) {
+    companion object {
+        fun from(
+            detail: MediaDetail,
+            episode: Episode,
+            includeAliases: Boolean,
+            titles: List<String>,
+        ): DanmakuMatchCacheKey {
+            return DanmakuMatchCacheKey(
+                detailProviderId = detail.providerId,
+                detailUrl = detail.url,
+                episodeProviderId = episode.providerId,
+                episodeId = episode.id,
+                episodeTitle = episode.title,
+                episodeUrl = episode.url,
+                episodeIndex = episode.index,
+                subjectId = episode.raw["subjectId"],
+                episodeRemoteId = episode.raw["episodeId"],
+                includeAliases = includeAliases,
+                titles = titles,
+            )
+        }
+    }
 }
 
 private data class DanmakuTimelineCacheKey(

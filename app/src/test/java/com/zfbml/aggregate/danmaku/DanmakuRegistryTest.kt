@@ -49,8 +49,34 @@ class DanmakuRegistryTest {
         registry.fetchBestTimeline(detail(), episode("3"))
         registry.fetchBestTimeline(detail(), episode("3"))
 
-        assertEquals(2, provider.matchCount.get())
+        assertEquals(1, provider.matchCount.get())
         assertEquals(2, provider.fetchCount.get())
+    }
+
+    @Test
+    fun matchAllCachesAutomaticProviderMatches() = runTest {
+        val provider = CountingDanmakuProvider()
+        val registry = DanmakuRegistry(listOf(provider))
+
+        val first = registry.matchAll(detail(), episode("11"))
+        val second = registry.matchAll(detail(), episode("11"))
+
+        assertEquals(first, second)
+        assertEquals(1, provider.matchCount.get())
+        assertEquals(0, provider.fetchCount.get())
+    }
+
+    @Test
+    fun matchAllCoalescesConcurrentAutomaticProviderMatches() = runTest {
+        val provider = CountingDanmakuProvider(delayMs = 50)
+        val registry = DanmakuRegistry(listOf(provider))
+
+        val matches = List(5) {
+            async { registry.matchAll(detail(), episode("12")) }
+        }.awaitAll()
+
+        assertEquals(1, matches.distinct().size)
+        assertEquals(1, provider.matchCount.get())
     }
 
     @Test
@@ -99,6 +125,19 @@ class DanmakuRegistryTest {
         assertEquals(emptyList<DanmakuMatch>(), blankMatches)
         assertEquals(listOf("Manual Alias"), provider.matchedTitles.toList())
         assertEquals(1, provider.matchCount.get())
+    }
+
+    @Test
+    fun searchCandidatesCachesByManualQuery() = runTest {
+        val provider = CountingDanmakuProvider(id = "manual-search", tokenFromTitle = true)
+        val registry = DanmakuRegistry(listOf(provider))
+
+        registry.searchCandidates(detail(), episode("13"), "Alias A")
+        registry.searchCandidates(detail(), episode("13"), "Alias A")
+        registry.searchCandidates(detail(), episode("13"), "Alias B")
+
+        assertEquals(listOf("Alias A", "Alias B"), provider.matchedTitles.toList())
+        assertEquals(2, provider.matchCount.get())
     }
 
     @Test

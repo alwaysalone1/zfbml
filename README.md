@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.116
+
+English:
+
+- `DanmakuRegistry` now caches automatic danmaku candidate matches separately from timeline items, avoiding repeated platform search calls when the same episode or manual query is refreshed.
+- Concurrent automatic candidate requests now share the same in-flight provider search and cache non-empty match lists with an LRU cap.
+- Added unit coverage for automatic match caching, concurrent coalescing, manual-query cache isolation, and empty-timeline retry behavior.
+- App version labels, request user agents, and README notes are now updated to `0.5.116`.
+
 ### v0.5.115
 
 English:
