@@ -1585,7 +1585,7 @@ private fun CategoryFeedPage(
             }
         } else {
             items(listItems) { item ->
-                ScheduleAnimeRow(result = item, onClick = { onOpenDetail(item) })
+                CategoryBrowseItemRow(result = item, onClick = { onOpenDetail(item) })
             }
         }
     }
@@ -1886,6 +1886,45 @@ private fun InsightTile(state: CategoryBrowseMetricUiState) {
         Column(Modifier.fillMaxSize().padding(state.padding), verticalArrangement = Arrangement.SpaceBetween) {
             Text(state.value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = accent, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(state.label, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
+    }
+}
+
+@Composable
+private fun CategoryBrowseItemRow(result: SearchResult, onClick: () -> Unit) {
+    val state = remember(result) { buildCategoryBrowseItemUiState(result) }
+    val accent = sourceLibraryToneColor(state.tone)
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth().focusable(),
+        shape = RoundedCornerShape(state.cardCornerRadius),
+        colors = CardDefaults.cardColors(containerColor = AnimePanel),
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.22f)),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(state.rowPadding),
+            horizontalArrangement = Arrangement.spacedBy(state.rowSpacing),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            PosterArtwork(
+                posterUrl = state.result.posterUrl,
+                accent = accent.copy(alpha = 0.72f),
+                modifier = Modifier.size(width = state.posterWidth, height = state.posterHeight),
+                shape = RoundedCornerShape(state.posterCornerRadius),
+            )
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(state.contentSpacing)) {
+                Text(state.title, style = MaterialTheme.typography.titleMedium, color = Color.White, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(state.subtitle, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(state.chipSpacing)) {
+                    items(state.chips) { chip ->
+                        RouteStatusBadge(chip.label, sourceLibraryToneColor(chip.tone))
+                    }
+                }
+            }
+            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(state.contentSpacing)) {
+                Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = accent, modifier = Modifier.size(state.actionIconSize))
+                Text(state.actionLabel, style = MaterialTheme.typography.labelLarge, color = accent)
+            }
         }
     }
 }
@@ -2417,7 +2456,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.126")
+                setRequestProperty("User-Agent", "ZFBML/0.5.127")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2935,7 +2974,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.126",
+            version = "0.5.127",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,

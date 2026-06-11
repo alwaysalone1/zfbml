@@ -260,3 +260,5 @@ This pass upgrades Discover schedule presentation. `HomeScheduleDigestUiState`, 
 This pass upgrades Discover home content modules. `HomeSectionHeaderUiState`, `HomeContinueWatchingUiState`, and `HomePosterRailUiState` now own section actions, continue-watching progress, source fallback subtitles, poster-rail deduplication, fallback content, source tones, and poster/card dimensions so the home feed reads as one tested product surface rather than separate Compose-local rows.
 
 This pass upgrades category browse insight presentation. `CategoryBrowseUiState` now emits ordered metric tiles with semantic tones, sizing, padding, and spacing for coverage, rating, heat, and source summaries, so category channels behave like a tested browsing surface rather than four hand-built Compose cards.
+
+This pass upgrades category browse list rows. `CategoryBrowseItemUiState` now owns source-aware tone, rating and heat chips, provider fallback subtitles, action copy, poster dimensions, row spacing, and card chrome so category channels no longer reuse timetable rows for ordinary browsing results.

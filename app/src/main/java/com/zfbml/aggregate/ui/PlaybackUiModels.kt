@@ -413,6 +413,24 @@ internal data class CategoryBrowseMetricUiState(
     val padding: Dp,
 )
 
+internal data class CategoryBrowseItemUiState(
+    val result: SearchResult,
+    val title: String,
+    val subtitle: String,
+    val chips: List<SourceLibraryChipUiState>,
+    val actionLabel: String,
+    val tone: SourceLibraryTone,
+    val cardCornerRadius: Dp,
+    val rowPadding: Dp,
+    val rowSpacing: Dp,
+    val contentSpacing: Dp,
+    val chipSpacing: Dp,
+    val posterWidth: Dp,
+    val posterHeight: Dp,
+    val posterCornerRadius: Dp,
+    val actionIconSize: Dp,
+)
+
 internal const val HomeBrowseHomeTabId = "home"
 
 internal val HomeBrowseCategoryOrder = listOf(
@@ -3501,6 +3519,46 @@ internal fun buildCategoryBrowseUiState(
             ),
         ),
     )
+}
+
+internal fun buildCategoryBrowseItemUiState(result: SearchResult): CategoryBrowseItemUiState {
+    val kind = result.providerKindForSearch()
+    val chips = buildList {
+        result.raw["rating"]?.takeIf { it.isNotBlank() }?.let {
+            add(SourceLibraryChipUiState("\u8bc4\u5206 $it", SourceLibraryTone.Cache))
+        }
+        categoryBrowseHeatChip(result)?.let(::add)
+        add(SourceLibraryChipUiState(kind.providerLabel, kind.tone))
+    }.distinctBy { it.label }.take(3)
+    return CategoryBrowseItemUiState(
+        result = result,
+        title = result.title.ifBlank { "\u672a\u547d\u540d\u6761\u76ee" },
+        subtitle = result.subtitle?.takeIf { it.isNotBlank() } ?: kind.providerLabel,
+        chips = chips,
+        actionLabel = "\u8be6\u60c5",
+        tone = kind.tone,
+        cardCornerRadius = 8.dp,
+        rowPadding = 12.dp,
+        rowSpacing = 12.dp,
+        contentSpacing = 6.dp,
+        chipSpacing = 8.dp,
+        posterWidth = 88.dp,
+        posterHeight = 118.dp,
+        posterCornerRadius = 6.dp,
+        actionIconSize = 24.dp,
+    )
+}
+
+private fun categoryBrowseHeatChip(result: SearchResult): SourceLibraryChipUiState? {
+    return listOf(
+        "doing" to "\u5728\u770b",
+        "collect" to "\u6536\u85cf",
+        "wish" to "\u60f3\u770b",
+    ).firstNotNullOfOrNull { (key, label) ->
+        result.raw[key]
+            ?.takeIf { it.isNotBlank() }
+            ?.let { SourceLibraryChipUiState("$it $label", SourceLibraryTone.Primary) }
+    }
 }
 
 private fun SearchResult.homeStableMediaKey(): String {

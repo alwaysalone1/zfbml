@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.127
+
+English:
+
+- Category browse lists now render with `CategoryBrowseItemUiState` instead of reusing schedule rows.
+- Category rows now expose source-aware tone, rating/heat/provider chips, fallback subtitles, action copy, poster sizing, row spacing, and card chrome from the UI model.
+- Added unit coverage for category row metadata chips, source tones, fallback provider subtitles, heat labels, and layout dimensions.
+- App version labels, request user agents, and README notes are now updated to `0.5.127`.
+
 ### v0.5.126
 
 English:

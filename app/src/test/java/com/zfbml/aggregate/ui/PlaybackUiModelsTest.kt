@@ -2027,6 +2027,49 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun categoryBrowseItemUiStateBuildsMetadataChipsAndLayout() {
+        val result = SearchResult(
+            providerId = "bangumi-catalog",
+            title = "Alpha",
+            url = "bangumi://subject/1",
+            subtitle = "TV / 2024",
+            raw = mapOf("rating" to "8.8", "doing" to "1200"),
+        )
+
+        val state = buildCategoryBrowseItemUiState(result)
+
+        assertEquals(result, state.result)
+        assertEquals("Alpha", state.title)
+        assertEquals("TV / 2024", state.subtitle)
+        assertEquals(listOf("\u8bc4\u5206 8.8", "1200 \u5728\u770b", "Bangumi \u8d44\u6599\u5e93"), state.chips.map { it.label })
+        assertEquals(listOf(SourceLibraryTone.Cache, SourceLibraryTone.Primary, SourceLibraryTone.Online), state.chips.map { it.tone })
+        assertEquals(SourceLibraryTone.Online, state.tone)
+        assertEquals("\u8be6\u60c5", state.actionLabel)
+        assertEquals(88.dp, state.posterWidth)
+        assertEquals(118.dp, state.posterHeight)
+        assertEquals(12.dp, state.rowPadding)
+        assertEquals(8.dp, state.chipSpacing)
+    }
+
+    @Test
+    fun categoryBrowseItemUiStateFallsBackToProviderAndCollectHeat() {
+        val result = SearchResult(
+            providerId = "direct-url",
+            title = "",
+            url = "https://example.invalid/direct",
+            raw = mapOf("collect" to "3500"),
+        )
+
+        val state = buildCategoryBrowseItemUiState(result)
+
+        assertEquals("\u672a\u547d\u540d\u6761\u76ee", state.title)
+        assertEquals("\u5728\u7ebf\u94fe\u63a5", state.subtitle)
+        assertEquals(listOf("3500 \u6536\u85cf", "\u5728\u7ebf\u94fe\u63a5"), state.chips.map { it.label })
+        assertEquals(SourceLibraryTone.Primary, state.tone)
+        assertEquals(SourceLibraryTone.Primary, state.chips.last().tone)
+    }
+
+    @Test
     fun appNavigationUiStateSummarizesSelectedTabAndCapabilities() {
         val state = buildAppNavigationUiState(
             selectedTabId = "search",
