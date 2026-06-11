@@ -1971,6 +1971,24 @@ class PlaybackUiModelsTest {
         assertEquals("\u7cbe\u9009\u70ed\u64ad\u70ed\u95e8", state.listTitle)
         assertEquals("\u5168\u90e8 2", state.listAction)
         assertTrue(state.summary.contains("\u6700\u9ad8\u8bc4\u5206 8.8"))
+        assertEquals(9.dp, state.headerSpacing)
+        assertEquals(8.dp, state.metricSpacing)
+        assertEquals(
+            listOf("2", "8.8", "3500", "Bangumi"),
+            state.metrics.map { it.value },
+        )
+        assertEquals(
+            listOf(
+                SourceLibraryTone.Primary,
+                SourceLibraryTone.Cache,
+                SourceLibraryTone.Online,
+                SourceLibraryTone.Backup,
+            ),
+            state.metrics.map { it.tone },
+        )
+        assertEquals(128.dp, state.metrics.first().width)
+        assertEquals(82.dp, state.metrics.first().height)
+        assertEquals(10.dp, state.metrics.first().padding)
     }
 
     @Test
@@ -1998,9 +2016,11 @@ class PlaybackUiModelsTest {
         assertEquals("1", fallbackState.itemCountValue)
         assertEquals("\u515c\u5e95\u63a8\u8350", fallbackState.itemCountLabel)
         assertEquals("\u76f4\u94fe", fallbackState.sourceValue)
+        assertEquals(listOf("1", "--", "--", "\u76f4\u94fe"), fallbackState.metrics.map { it.value })
         assertTrue(fallbackState.summary.contains("\u515c\u5e95"))
         assertFalse(emptyState.hasItems)
         assertEquals("--", emptyState.itemCountValue)
+        assertEquals(listOf("--", "--", "--", "\u5f85\u540c\u6b65"), emptyState.metrics.map { it.value })
         assertTrue(emptyState.emptySubtitle.contains("\u641c\u7d22\u756a\u540d"))
         assertEquals("\u5267\u573a\u7248\u52a0\u8f7d\u5f02\u5e38", errorState.headline)
         assertTrue(errorState.summary.contains("HTTP 500"))

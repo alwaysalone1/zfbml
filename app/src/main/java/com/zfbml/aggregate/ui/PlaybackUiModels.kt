@@ -398,6 +398,19 @@ internal data class CategoryBrowseUiState(
     val emptyTitle: String,
     val emptySubtitle: String,
     val hasItems: Boolean,
+    val headerSpacing: Dp,
+    val metricSpacing: Dp,
+    val metrics: List<CategoryBrowseMetricUiState>,
+)
+
+internal data class CategoryBrowseMetricUiState(
+    val value: String,
+    val label: String,
+    val tone: SourceLibraryTone,
+    val width: Dp,
+    val height: Dp,
+    val cornerRadius: Dp,
+    val padding: Dp,
 )
 
 internal const val HomeBrowseHomeTabId = "home"
@@ -3408,6 +3421,11 @@ internal fun buildCategoryBrowseUiState(
     val itemCountLabel = if (fallbackVisible) "\u515c\u5e95\u63a8\u8350" else "\u5206\u7c7b\u6761\u76ee"
     val topRatingValue = topRating?.let { "%.1f".format(it) } ?: "--"
     val heatValue = highestHeat.takeIf { it > 0 }?.compactBrowseCount() ?: "--"
+    val sourceLabel = "\u6570\u636e\u6765\u6e90"
+    val metricTileWidth = 128.dp
+    val metricTileHeight = 82.dp
+    val metricTileCornerRadius = 8.dp
+    val metricTilePadding = 10.dp
     val headline = when {
         !error.isNullOrBlank() -> "${category.title}\u52a0\u8f7d\u5f02\u5e38"
         loading && items.isEmpty() -> "\u6b63\u5728\u540c\u6b65${category.title}"
@@ -3432,7 +3450,7 @@ internal fun buildCategoryBrowseUiState(
         heatValue = heatValue,
         heatLabel = "\u6700\u9ad8\u70ed\u5ea6",
         sourceValue = sourceValue,
-        sourceLabel = "\u6570\u636e\u6765\u6e90",
+        sourceLabel = sourceLabel,
         listTitle = if (category.id == "recommend") "\u7cbe\u9009\u63a8\u8350" else "\u7cbe\u9009\u70ed\u64ad${category.title}",
         listAction = if (items.isNotEmpty()) "\u5168\u90e8 ${items.size}" else "",
         emptyTitle = if (fallbackVisible) "\u5206\u7c7b\u6682\u65e0\u547d\u4e2d" else "\u6682\u65e0\u53ef\u5c55\u793a\u6761\u76ee",
@@ -3442,6 +3460,46 @@ internal fun buildCategoryBrowseUiState(
             "\u53ef\u4ee5\u5207\u5230\u5176\u4ed6\u5206\u7c7b\uff0c\u6216\u76f4\u63a5\u641c\u7d22\u756a\u540d\u3002"
         },
         hasItems = items.isNotEmpty(),
+        headerSpacing = 9.dp,
+        metricSpacing = 8.dp,
+        metrics = listOf(
+            CategoryBrowseMetricUiState(
+                value = itemCountValue,
+                label = itemCountLabel,
+                tone = SourceLibraryTone.Primary,
+                width = metricTileWidth,
+                height = metricTileHeight,
+                cornerRadius = metricTileCornerRadius,
+                padding = metricTilePadding,
+            ),
+            CategoryBrowseMetricUiState(
+                value = topRatingValue,
+                label = "\u6700\u9ad8\u8bc4\u5206",
+                tone = SourceLibraryTone.Cache,
+                width = metricTileWidth,
+                height = metricTileHeight,
+                cornerRadius = metricTileCornerRadius,
+                padding = metricTilePadding,
+            ),
+            CategoryBrowseMetricUiState(
+                value = heatValue,
+                label = "\u6700\u9ad8\u70ed\u5ea6",
+                tone = SourceLibraryTone.Online,
+                width = metricTileWidth,
+                height = metricTileHeight,
+                cornerRadius = metricTileCornerRadius,
+                padding = metricTilePadding,
+            ),
+            CategoryBrowseMetricUiState(
+                value = sourceValue,
+                label = sourceLabel,
+                tone = SourceLibraryTone.Backup,
+                width = metricTileWidth,
+                height = metricTileHeight,
+                cornerRadius = metricTileCornerRadius,
+                padding = metricTilePadding,
+            ),
+        ),
     )
 }
 

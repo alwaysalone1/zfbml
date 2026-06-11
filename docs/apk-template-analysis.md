@@ -258,3 +258,5 @@ This pass upgrades the Discover spotlight carousel. `HomeSpotlightCarouselUiStat
 This pass upgrades Discover schedule presentation. `HomeScheduleDigestUiState`, `HomeScheduleHeroUiState`, and `HomeScheduleAnimeRowUiState` now own timetable digest copy, loading/error tone, metric chips, hero metadata, weekday-chip chrome, anime-row metadata, and layout dimensions so the anime schedule behaves like a product browsing surface instead of Compose-local cards.
 
 This pass upgrades Discover home content modules. `HomeSectionHeaderUiState`, `HomeContinueWatchingUiState`, and `HomePosterRailUiState` now own section actions, continue-watching progress, source fallback subtitles, poster-rail deduplication, fallback content, source tones, and poster/card dimensions so the home feed reads as one tested product surface rather than separate Compose-local rows.
+
+This pass upgrades category browse insight presentation. `CategoryBrowseUiState` now emits ordered metric tiles with semantic tones, sizing, padding, and spacing for coverage, rating, heat, and source summaries, so category channels behave like a tested browsing surface rather than four hand-built Compose cards.

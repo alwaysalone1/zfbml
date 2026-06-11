@@ -1848,7 +1848,7 @@ private fun PosterRail(items: List<SearchResult>, onOpenDetail: (SearchResult) -
 
 @Composable
 private fun CategoryInsightStrip(state: CategoryBrowseUiState) {
-    Column(verticalArrangement = Arrangement.spacedBy(9.dp), modifier = Modifier.fillMaxWidth()) {
+    Column(verticalArrangement = Arrangement.spacedBy(state.headerSpacing), modifier = Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Text(
                 text = state.headline,
@@ -1866,34 +1866,26 @@ private fun CategoryInsightStrip(state: CategoryBrowseUiState) {
                 overflow = TextOverflow.Ellipsis,
             )
         }
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            item {
-                InsightTile(state.itemCountValue, state.itemCountLabel, AnimeAccentPink, Modifier.width(128.dp))
-            }
-            item {
-                InsightTile(state.topRatingValue, state.topRatingLabel, AnimeAccentGreen, Modifier.width(128.dp))
-            }
-            item {
-                InsightTile(state.heatValue, state.heatLabel, AnimeAccentCyan, Modifier.width(128.dp))
-            }
-            item {
-                InsightTile(state.sourceValue, state.sourceLabel, AnimeAccentAmber, Modifier.width(128.dp))
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(state.metricSpacing), modifier = Modifier.fillMaxWidth()) {
+            items(state.metrics) { metric ->
+                InsightTile(metric)
             }
         }
     }
 }
 
 @Composable
-private fun InsightTile(label: String, title: String, accent: Color, modifier: Modifier = Modifier) {
+private fun InsightTile(state: CategoryBrowseMetricUiState) {
+    val accent = sourceLibraryToneColor(state.tone)
     Card(
-        modifier = modifier.height(82.dp),
-        shape = RoundedCornerShape(8.dp),
+        modifier = Modifier.width(state.width).height(state.height),
+        shape = RoundedCornerShape(state.cornerRadius),
         colors = CardDefaults.cardColors(containerColor = AnimePanel),
         border = BorderStroke(1.dp, AnimeBorder),
     ) {
-        Column(Modifier.fillMaxSize().padding(10.dp), verticalArrangement = Arrangement.SpaceBetween) {
-            Text(label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = accent, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(title, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        Column(Modifier.fillMaxSize().padding(state.padding), verticalArrangement = Arrangement.SpaceBetween) {
+            Text(state.value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = accent, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(state.label, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
     }
 }
@@ -2425,7 +2417,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.125")
+                setRequestProperty("User-Agent", "ZFBML/0.5.126")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2943,7 +2935,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.125",
+            version = "0.5.126",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
