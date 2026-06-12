@@ -630,6 +630,8 @@ internal data class HomeScheduleAnimeRowUiState(
 internal data class CategoryBrowseUiState(
     val headline: String,
     val summary: String,
+    val statusLabel: String,
+    val statusTone: SourceLibraryTone,
     val itemCountValue: String,
     val itemCountLabel: String,
     val topRatingValue: String,
@@ -4435,9 +4437,26 @@ internal fun buildCategoryBrowseUiState(
         loading -> "Bangumi \u5206\u7c7b\u699c\u5355\u540c\u6b65\u4e2d\uff0c\u5b8c\u6210\u540e\u4f1a\u8865\u5168\u8bc4\u5206\u548c\u70ed\u5ea6\u6307\u6807\u3002"
         else -> "\u53ef\u5207\u6362\u5230\u5176\u4ed6\u5206\u7c7b\uff0c\u6216\u76f4\u63a5\u641c\u7d22\u756a\u540d\u8fdb\u5165\u8be6\u60c5\u3002"
     }
+    val statusLabel = when {
+        !error.isNullOrBlank() -> "\u5f02\u5e38"
+        loading && items.isNotEmpty() -> "\u66f4\u65b0\u4e2d"
+        loading -> "\u540c\u6b65\u4e2d"
+        items.isNotEmpty() -> "\u5df2\u7d22\u5f15"
+        fallbackVisible -> "\u63a8\u8350\u515c\u5e95"
+        else -> "\u5f85\u8865\u6e90"
+    }
+    val statusTone = when {
+        !error.isNullOrBlank() -> SourceLibraryTone.Web
+        loading -> SourceLibraryTone.Online
+        items.isNotEmpty() -> SourceLibraryTone.Cache
+        fallbackVisible -> SourceLibraryTone.Backup
+        else -> SourceLibraryTone.Muted
+    }
     return CategoryBrowseUiState(
         headline = headline,
         summary = summary,
+        statusLabel = statusLabel,
+        statusTone = statusTone,
         itemCountValue = itemCountValue,
         itemCountLabel = itemCountLabel,
         topRatingValue = topRatingValue,

@@ -1854,14 +1854,22 @@ private fun PosterRail(items: List<SearchResult>, onOpenDetail: (SearchResult) -
 private fun CategoryInsightStrip(state: CategoryBrowseUiState) {
     Column(verticalArrangement = Arrangement.spacedBy(state.headerSpacing), modifier = Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(
-                text = state.headline,
-                style = MaterialTheme.typography.titleMedium,
-                color = Color.White,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = state.headline,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                RouteStatusBadge(state.statusLabel, sourceLibraryToneColor(state.statusTone))
+            }
             Text(
                 text = state.summary,
                 style = MaterialTheme.typography.bodySmall,
@@ -2460,7 +2468,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.217")
+                setRequestProperty("User-Agent", "ZFBML/0.5.218")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2993,7 +3001,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.217",
+            version = "0.5.218",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,

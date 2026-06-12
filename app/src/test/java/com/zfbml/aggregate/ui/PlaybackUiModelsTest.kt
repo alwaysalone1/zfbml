@@ -2487,6 +2487,8 @@ class PlaybackUiModelsTest {
 
         assertTrue(state.hasItems)
         assertEquals("\u70ed\u95e8\u5df2\u7d22\u5f15 2 \u90e8", state.headline)
+        assertEquals("\u5df2\u7d22\u5f15", state.statusLabel)
+        assertEquals(SourceLibraryTone.Cache, state.statusTone)
         assertEquals("2", state.itemCountValue)
         assertEquals("\u5206\u7c7b\u6761\u76ee", state.itemCountLabel)
         assertEquals("8.8", state.topRatingValue)
@@ -2529,6 +2531,11 @@ class PlaybackUiModelsTest {
             category = category,
             items = emptyList(),
         )
+        val loadingState = buildCategoryBrowseUiState(
+            category = category,
+            items = emptyList(),
+            loading = true,
+        )
         val errorState = buildCategoryBrowseUiState(
             category = category,
             items = emptyList(),
@@ -2537,16 +2544,25 @@ class PlaybackUiModelsTest {
 
         assertFalse(fallbackState.hasItems)
         assertEquals("\u5267\u573a\u7248\u5c55\u793a\u515c\u5e95\u63a8\u8350", fallbackState.headline)
+        assertEquals("\u63a8\u8350\u515c\u5e95", fallbackState.statusLabel)
+        assertEquals(SourceLibraryTone.Backup, fallbackState.statusTone)
         assertEquals("1", fallbackState.itemCountValue)
         assertEquals("\u515c\u5e95\u63a8\u8350", fallbackState.itemCountLabel)
         assertEquals("\u76f4\u94fe", fallbackState.sourceValue)
         assertEquals(listOf("1", "--", "--", "\u76f4\u94fe"), fallbackState.metrics.map { it.value })
         assertTrue(fallbackState.summary.contains("\u515c\u5e95"))
         assertFalse(emptyState.hasItems)
+        assertEquals("\u5f85\u8865\u6e90", emptyState.statusLabel)
+        assertEquals(SourceLibraryTone.Muted, emptyState.statusTone)
         assertEquals("--", emptyState.itemCountValue)
         assertEquals(listOf("--", "--", "--", "\u5f85\u540c\u6b65"), emptyState.metrics.map { it.value })
         assertTrue(emptyState.emptySubtitle.contains("\u641c\u7d22\u756a\u540d"))
+        assertEquals("\u6b63\u5728\u540c\u6b65\u5267\u573a\u7248", loadingState.headline)
+        assertEquals("\u540c\u6b65\u4e2d", loadingState.statusLabel)
+        assertEquals(SourceLibraryTone.Online, loadingState.statusTone)
         assertEquals("\u5267\u573a\u7248\u52a0\u8f7d\u5f02\u5e38", errorState.headline)
+        assertEquals("\u5f02\u5e38", errorState.statusLabel)
+        assertEquals(SourceLibraryTone.Web, errorState.statusTone)
         assertTrue(errorState.summary.contains("HTTP 500"))
     }
 

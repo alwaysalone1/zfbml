@@ -442,3 +442,5 @@ This pass upgrades search landing suggestion provenance. `SearchSuggestionUiStat
 This pass upgrades cache library readiness presentation. `CacheLibraryUiState` now summarizes overall cache availability as Media3 offline, BT progressive playback, web-only blocking, or missing-source states and surfaces the primary cache action directly in the cache hero.
 
 This pass upgrades detail first-play decision visibility. `DetailFirstPlayUiState` now carries a tested status badge for ready, matching, empty, and failed route states, so the detail page exposes playback readiness before the user starts playback.
+
+This pass upgrades category browse readiness visibility. `CategoryBrowseUiState` now carries a tested status badge for indexed, syncing, fallback, empty, and failed channel states, so category pages explain browsing readiness before users open a detail page.

@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.218
+
+English:
+
+- Category browse insight headers now expose a visible status badge for indexed, syncing, fallback, empty, and failed channel states.
+- `CategoryBrowseUiState` now keeps category readiness labels and tones in the tested model contract alongside coverage, rating, heat, and source metrics.
+- Added model coverage for category browse status labels and tones across populated, loading, fallback, empty, and error states.
+- App version labels, request user agents, and README notes are now updated to `0.5.218`.
+
 ### v0.5.217
 
 English:
