@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.152
+
+English:
+
+- Portrait recovery actions now use `PlayerActionUiState` for button height, radius, container base color, container alpha, icon size, spacing, and content alpha.
+- `PortraitRecoveryActionButton` now renders from model chrome instead of keeping portrait recovery dimensions and opacity constants inside Compose.
+- Added unit coverage for portrait recovery action chrome.
+- App version labels, request user agents, and README notes are now updated to `0.5.152`.
+
 ### v0.5.151
 
 English:

@@ -1207,6 +1207,13 @@ internal data class PlayerActionUiState(
     val selected: Boolean,
     val enabled: Boolean,
     val tone: SourceLibraryTone,
+    val portraitRecoveryHeight: Dp = 38.dp,
+    val portraitRecoveryCornerRadius: Dp = 8.dp,
+    val portraitRecoveryContainerBaseColor: PlayerChromeBaseColor = PlayerChromeBaseColor.White,
+    val portraitRecoveryContainerAlpha: Float = 0.06f,
+    val portraitRecoveryIconSize: Dp = 17.dp,
+    val portraitRecoveryContentSpacing: Dp = 6.dp,
+    val portraitRecoveryContentAlpha: Float = 1f,
 )
 
 internal enum class PlayerActionKind {

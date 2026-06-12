@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.151")
+                setRequestProperty("User-Agent", "ZFBML/0.5.152")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2984,7 +2984,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.151",
+            version = "0.5.152",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -6382,14 +6382,27 @@ private fun PortraitRecoveryActionButton(
     modifier: Modifier = Modifier,
 ) {
     val accent = sourceLibraryToneColor(action.tone)
+    val containerColor = playerChromeBaseColor(action.portraitRecoveryContainerBaseColor)
+    val contentColor = accent.copy(alpha = action.portraitRecoveryContentAlpha)
     TextButton(
         onClick = onClick,
         enabled = action.enabled,
-        modifier = modifier.height(38.dp).background(Color.White.copy(alpha = 0.06f), RoundedCornerShape(8.dp)),
+        modifier = modifier
+            .height(action.portraitRecoveryHeight)
+            .background(
+                containerColor.copy(alpha = action.portraitRecoveryContainerAlpha),
+                RoundedCornerShape(action.portraitRecoveryCornerRadius),
+            ),
+        shape = RoundedCornerShape(action.portraitRecoveryCornerRadius),
     ) {
-        Icon(playerActionIcon(action.kind), contentDescription = null, tint = accent, modifier = Modifier.size(17.dp))
-        Spacer(Modifier.width(6.dp))
-        Text(action.title, color = accent)
+        Icon(
+            playerActionIcon(action.kind),
+            contentDescription = null,
+            tint = contentColor,
+            modifier = Modifier.size(action.portraitRecoveryIconSize),
+        )
+        Spacer(Modifier.width(action.portraitRecoveryContentSpacing))
+        Text(action.title, color = contentColor)
     }
 }
 
