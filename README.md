@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.168
+
+English:
+
+- Player route-source chips now use `PlayerRouteSourceChipUiState` for border tone, status-badge tone, and footer tone.
+- `PlayerRouteSourceChip` now renders source filter chip border/status/footer color from tested model tone fields instead of reading the route-source group directly in Compose.
+- Added unit coverage for route-source chip tone chrome.
+- App version labels, request user agents, and README notes are now updated to `0.5.168`.
+
 ### v0.5.167
 
 English:

@@ -342,3 +342,5 @@ This pass upgrades player route-option row chrome. `RouteCandidateUiState` now o
 This pass upgrades player route panel summary chrome. `RoutePanelUiState` and `RoutePanelMetricUiState` now own summary-card border width, title/summary alpha, selected-route summary base color, toggle content padding, notice alpha, metric container base color, and metric value alpha so fullscreen route diagnostics stay model-driven alongside route rows and source filters.
 
 This pass upgrades player route-source strip chrome. `PlayerRouteSourceStripUiState` now owns strip title and route-list title base colors plus route-list title alpha, while `PlayerRouteSourceChipUiState` owns chip container/title/detail base colors so fullscreen source filtering renders from the tested model contract instead of Compose-local white chrome constants.
+
+This pass upgrades player route-source chip tone chrome. `PlayerRouteSourceChipUiState` now owns border tone, status-badge tone, and footer tone so fullscreen source filtering keeps source-group semantics in the tested model while Compose only applies the selected tone and existing theme error color.

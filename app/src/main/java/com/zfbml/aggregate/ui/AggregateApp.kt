@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.167")
+                setRequestProperty("User-Agent", "ZFBML/0.5.168")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2984,7 +2984,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.167",
+            version = "0.5.168",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -8921,10 +8921,12 @@ private fun PlayerRouteSourceChip(
     onClick: () -> Unit,
 ) {
     val group = state.group
-    val accent = sourceLibraryToneColor(group.tone)
+    val borderColor = sourceLibraryToneColor(state.borderTone)
+    val statusColor = sourceLibraryToneColor(state.statusTone)
     val containerColor = playerChromeBaseColor(state.containerBaseColor)
     val titleColor = playerChromeBaseColor(state.titleBaseColor)
     val detailColor = playerChromeBaseColor(state.detailBaseColor)
+    val footerColor = if (state.footerError) MaterialTheme.colorScheme.error else sourceLibraryToneColor(state.footerTone)
     Card(
         onClick = onClick,
         modifier = Modifier.width(state.width).height(state.height),
@@ -8932,7 +8934,7 @@ private fun PlayerRouteSourceChip(
         colors = CardDefaults.cardColors(
             containerColor = containerColor.copy(alpha = state.containerAlpha),
         ),
-        border = BorderStroke(state.borderWidth, accent.copy(alpha = state.borderAlpha)),
+        border = BorderStroke(state.borderWidth, borderColor.copy(alpha = state.borderAlpha)),
     ) {
         Column(
             modifier = Modifier.fillMaxSize().padding(state.contentPadding),
@@ -8948,7 +8950,7 @@ private fun PlayerRouteSourceChip(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                RouteStatusBadge(group.statusLabel, accent)
+                RouteStatusBadge(group.statusLabel, statusColor)
             }
             if (state.detailVisible) {
                 Text(
@@ -8961,7 +8963,7 @@ private fun PlayerRouteSourceChip(
                 Text(
                     group.footerLabel,
                     style = MaterialTheme.typography.labelSmall,
-                    color = (if (state.footerError) MaterialTheme.colorScheme.error else accent).copy(alpha = state.footerAlpha),
+                    color = footerColor.copy(alpha = state.footerAlpha),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
