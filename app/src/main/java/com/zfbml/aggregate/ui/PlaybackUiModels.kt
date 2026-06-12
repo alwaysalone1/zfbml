@@ -2094,6 +2094,21 @@ internal data class RouteSourceGroupUiState(
     val hasRecommended: Boolean,
     val isAll: Boolean = false,
     val isFilterSelected: Boolean = false,
+    val filterWidth: Dp = 174.dp,
+    val filterHeight: Dp = 76.dp,
+    val filterCornerRadius: Dp = 8.dp,
+    val filterBorderWidth: Dp = 1.dp,
+    val filterHorizontalPadding: Dp = 10.dp,
+    val filterVerticalPadding: Dp = 8.dp,
+    val filterHeaderSpacing: Dp = 6.dp,
+    val filterFooterSpacing: Dp = 6.dp,
+    val selectedContainerAlpha: Float = 0.18f,
+    val recommendedContainerAlpha: Float = 0.12f,
+    val idleContainerAlpha: Float = 0.06f,
+    val selectedContentAlpha: Float = 1f,
+    val recommendedContentAlpha: Float = 0.94f,
+    val idleContentAlpha: Float = 0.78f,
+    val idleFooterAlpha: Float = 0.58f,
 ) {
     val sourceSummary: String
         get() = when {
@@ -2149,6 +2164,14 @@ internal data class DetailRouteSourceStatusPillUiState(
     val label: String,
     val value: String,
     val tone: SourceLibraryTone,
+    val height: Dp = 30.dp,
+    val cornerRadius: Dp = 8.dp,
+    val containerAlpha: Float = 0.13f,
+    val horizontalPadding: Dp = 9.dp,
+    val contentSpacing: Dp = 4.dp,
+    val labelAlpha: Float = 1f,
+    val valueBaseColor: PlayerChromeBaseColor = PlayerChromeBaseColor.White,
+    val valueAlpha: Float = 0.86f,
 )
 
 internal data class DetailRouteSourceAutoChoiceUiState(
@@ -2158,6 +2181,23 @@ internal data class DetailRouteSourceAutoChoiceUiState(
     val actionLabel: String,
     val tone: SourceLibraryTone,
     val badges: List<SourceLibraryChipUiState>,
+    val cardCornerRadius: Dp = 8.dp,
+    val borderWidth: Dp = 1.dp,
+    val selectedBorderAlpha: Float = 1f,
+    val idleBorderAlpha: Float = 0.42f,
+    val contentPadding: Dp = 12.dp,
+    val rowSpacing: Dp = 10.dp,
+    val iconBoxSize: Dp = 42.dp,
+    val iconBoxCornerRadius: Dp = 8.dp,
+    val iconBoxContainerAlpha: Float = 0.18f,
+    val iconSize: Dp = 22.dp,
+    val textColumnSpacing: Dp = 5.dp,
+    val titleRowSpacing: Dp = 7.dp,
+    val titleAlpha: Float = 1f,
+    val subtitleTone: SourceLibraryTone = SourceLibraryTone.Muted,
+    val subtitleAlpha: Float = 1f,
+    val badgeSpacing: Dp = 6.dp,
+    val actionLabelAlpha: Float = 1f,
 )
 
 internal data class DetailRouteSourceSelectorUiState(
@@ -2167,6 +2207,13 @@ internal data class DetailRouteSourceSelectorUiState(
     val current: DetailRouteSourceStatusPillUiState,
     val autoChoice: DetailRouteSourceAutoChoiceUiState,
     val groups: List<RouteSourceGroupUiState>,
+    val containerSpacing: Dp = 10.dp,
+    val headerSpacing: Dp = 8.dp,
+    val headerTextSpacing: Dp = 2.dp,
+    val titleAlpha: Float = 1f,
+    val subtitleTone: SourceLibraryTone = SourceLibraryTone.Muted,
+    val subtitleAlpha: Float = 1f,
+    val groupSpacing: Dp = 8.dp,
 )
 
 internal fun buildRouteUiState(

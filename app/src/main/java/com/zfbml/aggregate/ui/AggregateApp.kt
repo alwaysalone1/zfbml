@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.162")
+                setRequestProperty("User-Agent", "ZFBML/0.5.163")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2984,7 +2984,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.162",
+            version = "0.5.163",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -5060,13 +5060,13 @@ private fun RouteSourceSelector(
             recommendedSourceId = recommendedSourceId,
         )
     }
-    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(state.containerSpacing)) {
         RouteSourceSelectorHeader(state)
         RouteSourceAutoChoiceCard(
             state = state.autoChoice,
             onClick = { onSelected(null) },
         )
-        LazyRow(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        LazyRow(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(state.groupSpacing)) {
             items(state.groups) { group ->
                 RouteSourceFilterPill(
                     group = group,
@@ -5081,16 +5081,17 @@ private fun RouteSourceSelector(
 private fun RouteSourceSelectorHeader(
     state: DetailRouteSourceSelectorUiState,
 ) {
+    val subtitleColor = sourceLibraryToneColor(state.subtitleTone)
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(state.headerSpacing),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(state.headerTextSpacing)) {
             Text(
                 text = state.title,
                 style = MaterialTheme.typography.titleMedium,
-                color = Color.White,
+                color = Color.White.copy(alpha = state.titleAlpha),
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -5098,7 +5099,7 @@ private fun RouteSourceSelectorHeader(
             Text(
                 text = state.subtitle,
                 style = MaterialTheme.typography.bodySmall,
-                color = AnimeMuted,
+                color = subtitleColor.copy(alpha = state.subtitleAlpha),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -5117,33 +5118,42 @@ private fun RouteSourceAutoChoiceCard(
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth().focusable(),
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(state.cardCornerRadius),
         colors = CardDefaults.cardColors(containerColor = if (state.selected) AnimePanelSoft else AnimePanel),
-        border = BorderStroke(1.dp, accent.copy(alpha = if (state.selected) 1f else 0.42f)),
+        border = BorderStroke(state.borderWidth, accent.copy(alpha = if (state.selected) state.selectedBorderAlpha else state.idleBorderAlpha)),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.fillMaxWidth().padding(state.contentPadding),
+            horizontalArrangement = Arrangement.spacedBy(state.rowSpacing),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
-                modifier = Modifier.size(42.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.18f)),
+                modifier = Modifier
+                    .size(state.iconBoxSize)
+                    .clip(RoundedCornerShape(state.iconBoxCornerRadius))
+                    .background(accent.copy(alpha = state.iconBoxContainerAlpha)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = accent, modifier = Modifier.size(22.dp))
+                Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = accent, modifier = Modifier.size(state.iconSize))
             }
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(state.title, style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1)
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(state.textColumnSpacing)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(state.titleRowSpacing), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        state.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color.White.copy(alpha = state.titleAlpha),
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                    )
                 }
                 Text(
                     state.subtitle,
                     style = MaterialTheme.typography.bodySmall,
-                    color = AnimeMuted,
+                    color = sourceLibraryToneColor(state.subtitleTone).copy(alpha = state.subtitleAlpha),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(horizontalArrangement = Arrangement.spacedBy(state.badgeSpacing), verticalAlignment = Alignment.CenterVertically) {
                     state.badges.forEach { badge ->
                         RouteStatusBadge(badge.label, sourceLibraryToneColor(badge.tone))
                     }
@@ -5152,7 +5162,7 @@ private fun RouteSourceAutoChoiceCard(
             Text(
                 state.actionLabel,
                 style = MaterialTheme.typography.labelLarge,
-                color = accent,
+                color = accent.copy(alpha = state.actionLabelAlpha),
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
             )
@@ -5163,17 +5173,18 @@ private fun RouteSourceAutoChoiceCard(
 @Composable
 private fun RouteSourceStatusPill(state: DetailRouteSourceStatusPillUiState) {
     val color = sourceLibraryToneColor(state.tone)
+    val valueColor = playerChromeBaseColor(state.valueBaseColor)
     Row(
         modifier = Modifier
-            .height(30.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(color.copy(alpha = 0.13f))
-            .padding(horizontal = 9.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+            .height(state.height)
+            .clip(RoundedCornerShape(state.cornerRadius))
+            .background(color.copy(alpha = state.containerAlpha))
+            .padding(horizontal = state.horizontalPadding),
+        horizontalArrangement = Arrangement.spacedBy(state.contentSpacing),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(state.label, style = MaterialTheme.typography.labelSmall, color = color, maxLines = 1)
-        Text(state.value, style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.86f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(state.label, style = MaterialTheme.typography.labelSmall, color = color.copy(alpha = state.labelAlpha), maxLines = 1)
+        Text(state.value, style = MaterialTheme.typography.labelSmall, color = valueColor.copy(alpha = state.valueAlpha), maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -5185,24 +5196,24 @@ private fun RouteSourceFilterPill(
     val accent = sourceLibraryToneColor(group.tone)
     val emphasized = group.isFilterSelected || group.hasRecommended
     val contentColor = when {
-        group.isFilterSelected -> Color.White
-        group.hasRecommended -> Color.White.copy(alpha = 0.94f)
-        else -> Color.White.copy(alpha = 0.78f)
+        group.isFilterSelected -> Color.White.copy(alpha = group.selectedContentAlpha)
+        group.hasRecommended -> Color.White.copy(alpha = group.recommendedContentAlpha)
+        else -> Color.White.copy(alpha = group.idleContentAlpha)
     }
     TextButton(
         onClick = onClick,
-        modifier = Modifier.width(174.dp).height(76.dp).focusable(),
-        shape = RoundedCornerShape(8.dp),
+        modifier = Modifier.width(group.filterWidth).height(group.filterHeight).focusable(),
+        shape = RoundedCornerShape(group.filterCornerRadius),
         colors = ButtonDefaults.textButtonColors(
             containerColor = when {
-                group.isFilterSelected -> accent.copy(alpha = 0.18f)
-                group.hasRecommended -> AnimeAccentPink.copy(alpha = 0.12f)
-                else -> Color.White.copy(alpha = 0.06f)
+                group.isFilterSelected -> accent.copy(alpha = group.selectedContainerAlpha)
+                group.hasRecommended -> accent.copy(alpha = group.recommendedContainerAlpha)
+                else -> Color.White.copy(alpha = group.idleContainerAlpha)
             },
             contentColor = contentColor,
         ),
-        border = BorderStroke(1.dp, if (emphasized) accent else AnimeBorder),
-        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
+        border = BorderStroke(group.filterBorderWidth, if (emphasized) accent else AnimeBorder),
+        contentPadding = PaddingValues(horizontal = group.filterHorizontalPadding, vertical = group.filterVerticalPadding),
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -5210,7 +5221,7 @@ private fun RouteSourceFilterPill(
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                horizontalArrangement = Arrangement.spacedBy(group.filterHeaderSpacing),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
@@ -5237,11 +5248,11 @@ private fun RouteSourceFilterPill(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(horizontalArrangement = Arrangement.spacedBy(group.filterFooterSpacing), verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = group.footerLabel,
                     style = MaterialTheme.typography.labelSmall,
-                    color = if (emphasized) accent else Color.White.copy(alpha = 0.58f),
+                    color = if (emphasized) accent else Color.White.copy(alpha = group.idleFooterAlpha),
                     fontWeight = if (emphasized) FontWeight.Bold else FontWeight.Medium,
                     maxLines = 1,
                 )

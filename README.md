@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.163
+
+English:
+
+- Detail route source selectors now use `DetailRouteSourceSelectorUiState`, `DetailRouteSourceStatusPillUiState`, `DetailRouteSourceAutoChoiceUiState`, and `RouteSourceGroupUiState` for selector spacing, status-pill chrome, auto-choice card chrome, and source-filter sizing/padding/alpha.
+- Route source selector Compose now renders automatic best-route entry, recommended/current status pills, and manual source filters from tested model chrome instead of local constants.
+- Added unit coverage for detail route-source selector chrome.
+- App version labels, request user agents, and README notes are now updated to `0.5.163`.
+
 ### v0.5.162
 
 English:
