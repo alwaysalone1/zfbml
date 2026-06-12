@@ -1695,6 +1695,7 @@ internal data class PlayerPanelTabUiState(
     val selected: Boolean,
     val highlighted: Boolean,
     val actionEnabled: Boolean,
+    val tabFocusEnabled: Boolean,
     val prominent: Boolean,
     val usesVisualTone: Boolean,
     val visualTone: SourceLibraryTone,
@@ -5829,6 +5830,7 @@ internal fun buildPlayerPanelSheetUiState(
             selected = selected,
             highlighted = highlighted,
             actionEnabled = actionEnabled,
+            tabFocusEnabled = actionEnabled,
             prominent = selected,
             usesVisualTone = usesVisualTone,
             visualTone = when {

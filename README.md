@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.181
+
+English:
+
+- Player panel quick tabs now use `PlayerPanelTabUiState.tabFocusEnabled` for TV/keyboard focus eligibility.
+- Disabled Route/Episode tabs stay visible as context but are skipped by focus navigation unless they are the active tab.
+- Added unit coverage for selected, available, unavailable, and always-available panel tab focus states.
+- App version labels, request user agents, and README notes are now updated to `0.5.181`.
+
 ### v0.5.180
 
 English:

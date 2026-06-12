@@ -3794,6 +3794,7 @@ class PlaybackUiModelsTest {
         assertTrue(state.tabs.first { it.kind == PlayerPanelKind.Route }.enabled)
         val routeTab = state.tabs.first { it.kind == PlayerPanelKind.Route }
         assertTrue(routeTab.actionEnabled)
+        assertTrue(routeTab.tabFocusEnabled)
         assertTrue(routeTab.prominent)
         assertTrue(routeTab.usesVisualTone)
         assertEquals(SourceLibraryTone.Primary, routeTab.visualTone)
@@ -3813,6 +3814,7 @@ class PlaybackUiModelsTest {
         assertEquals(SourceLibraryTone.Primary, state.tabs.first { it.kind == PlayerPanelKind.Danmaku }.tone)
         val danmakuTab = state.tabs.first { it.kind == PlayerPanelKind.Danmaku }
         assertTrue(danmakuTab.actionEnabled)
+        assertTrue(danmakuTab.tabFocusEnabled)
         assertFalse(danmakuTab.prominent)
         assertTrue(danmakuTab.usesVisualTone)
         assertEquals(SourceLibraryTone.Online, danmakuTab.visualTone)
@@ -3856,6 +3858,7 @@ class PlaybackUiModelsTest {
         assertTrue(state.tabs.first { it.kind == PlayerPanelKind.More }.selected)
         val moreTab = state.tabs.first { it.kind == PlayerPanelKind.More }
         assertTrue(moreTab.actionEnabled)
+        assertTrue(moreTab.tabFocusEnabled)
         assertTrue(moreTab.prominent)
         assertTrue(moreTab.usesVisualTone)
         assertEquals(SourceLibraryTone.Primary, moreTab.visualTone)
@@ -3865,18 +3868,22 @@ class PlaybackUiModelsTest {
         assertEquals("自动", state.tabs.first { it.kind == PlayerPanelKind.Route }.value)
         val routeTab = state.tabs.first { it.kind == PlayerPanelKind.Route }
         assertFalse(routeTab.actionEnabled)
+        assertFalse(routeTab.tabFocusEnabled)
         assertFalse(routeTab.prominent)
         assertFalse(routeTab.usesVisualTone)
         assertEquals(0.035f, routeTab.containerAlpha)
         assertEquals(0.32f, routeTab.contentAlpha)
         assertEquals(0.48f, routeTab.valueAlpha)
-        assertFalse(state.tabs.first { it.kind == PlayerPanelKind.Episode }.enabled)
+        val episodeTab = state.tabs.first { it.kind == PlayerPanelKind.Episode }
+        assertFalse(episodeTab.enabled)
+        assertFalse(episodeTab.tabFocusEnabled)
         assertEquals("单集", state.tabs.first { it.kind == PlayerPanelKind.Episode }.value)
         assertFalse(state.tabs.first { it.kind == PlayerPanelKind.Danmaku }.highlighted)
         assertEquals("关", state.tabs.first { it.kind == PlayerPanelKind.Danmaku }.value)
         assertEquals(SourceLibraryTone.Muted, state.tabs.first { it.kind == PlayerPanelKind.Danmaku }.tone)
         val danmakuTab = state.tabs.first { it.kind == PlayerPanelKind.Danmaku }
         assertTrue(danmakuTab.actionEnabled)
+        assertTrue(danmakuTab.tabFocusEnabled)
         assertFalse(danmakuTab.usesVisualTone)
         assertEquals(0.72f, danmakuTab.contentAlpha)
         assertEquals(0.76f, danmakuTab.valueAlpha)
