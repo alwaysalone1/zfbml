@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.157")
+                setRequestProperty("User-Agent", "ZFBML/0.5.158")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2984,7 +2984,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.157",
+            version = "0.5.158",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -4372,11 +4372,7 @@ private fun DetailFirstPlayStrip(
         }
         LazyRow(horizontalArrangement = Arrangement.spacedBy(7.dp), modifier = Modifier.fillMaxWidth()) {
             items(state.chips) { chip ->
-                DetailDecisionChip(
-                    chip.label,
-                    chip.value,
-                    sourceLibraryToneColor(chip.tone),
-                )
+                DetailDecisionChip(chip)
             }
         }
     }
@@ -4426,30 +4422,41 @@ private fun DetailPlaybackReadinessStrip(state: DetailPlaybackReadinessUiState) 
         }
         LazyRow(horizontalArrangement = Arrangement.spacedBy(7.dp), modifier = Modifier.fillMaxWidth()) {
             items(state.chips) { chip ->
-                DetailDecisionChip(
-                    chip.label,
-                    chip.value,
-                    sourceLibraryToneColor(chip.tone),
-                )
+                DetailDecisionChip(chip)
             }
         }
     }
 }
 
 @Composable
-private fun DetailDecisionChip(label: String, value: String, color: Color) {
+private fun DetailDecisionChip(state: DetailFirstPlayChipUiState) {
+    val accent = sourceLibraryToneColor(state.tone)
+    val containerColor = playerChromeBaseColor(state.containerBaseColor)
+    val labelColor = sourceLibraryToneColor(state.labelTone)
     Row(
         modifier = Modifier
-            .height(28.dp)
-            .clip(RoundedCornerShape(999.dp))
-            .background(Color.White.copy(alpha = 0.07f))
-            .border(1.dp, color.copy(alpha = 0.22f), RoundedCornerShape(999.dp))
-            .padding(horizontal = 9.dp),
-        horizontalArrangement = Arrangement.spacedBy(5.dp),
+            .height(state.height)
+            .clip(RoundedCornerShape(state.cornerRadius))
+            .background(containerColor.copy(alpha = state.containerAlpha))
+            .border(state.borderWidth, accent.copy(alpha = state.borderAlpha), RoundedCornerShape(state.cornerRadius))
+            .padding(horizontal = state.horizontalPadding),
+        horizontalArrangement = Arrangement.spacedBy(state.contentSpacing),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, style = MaterialTheme.typography.labelSmall, color = AnimeMuted, maxLines = 1)
-        Text(value.ifBlank { "自动" }, style = MaterialTheme.typography.labelSmall, color = color, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(
+            state.label,
+            style = MaterialTheme.typography.labelSmall,
+            color = labelColor.copy(alpha = state.labelAlpha),
+            maxLines = 1,
+        )
+        Text(
+            state.value.ifBlank { state.fallbackValue },
+            style = MaterialTheme.typography.labelSmall,
+            color = accent.copy(alpha = state.valueAlpha),
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 

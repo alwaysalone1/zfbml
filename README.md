@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.158
+
+English:
+
+- Detail decision chips now use `DetailFirstPlayChipUiState` for height, radius, container and border chrome, spacing, text alpha, and fallback value copy.
+- `DetailDecisionChip` now renders playback-readiness and first-play chips from model chrome instead of keeping chip constants inside Compose.
+- Added unit coverage for detail decision-chip chrome.
+- App version labels, request user agents, and README notes are now updated to `0.5.158`.
+
 ### v0.5.157
 
 English:

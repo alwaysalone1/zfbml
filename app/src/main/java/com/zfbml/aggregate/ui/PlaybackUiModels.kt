@@ -124,6 +124,18 @@ internal data class DetailFirstPlayChipUiState(
     val label: String,
     val value: String,
     val tone: SourceLibraryTone,
+    val height: Dp = 28.dp,
+    val cornerRadius: Dp = 999.dp,
+    val containerBaseColor: PlayerChromeBaseColor = PlayerChromeBaseColor.White,
+    val containerAlpha: Float = 0.07f,
+    val borderWidth: Dp = 1.dp,
+    val borderAlpha: Float = 0.22f,
+    val horizontalPadding: Dp = 9.dp,
+    val contentSpacing: Dp = 5.dp,
+    val labelTone: SourceLibraryTone = SourceLibraryTone.Muted,
+    val labelAlpha: Float = 1f,
+    val valueAlpha: Float = 1f,
+    val fallbackValue: String = "\u81ea\u52a8",
 )
 
 internal data class DetailFirstPlayUiState(

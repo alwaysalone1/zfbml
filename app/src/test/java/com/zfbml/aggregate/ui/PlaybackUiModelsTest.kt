@@ -227,6 +227,19 @@ class PlaybackUiModelsTest {
             listOf("\u7ebf\u8def", "\u5728\u7ebf", "\u5907\u7528", "\u7f13\u5b58"),
             readiness.chips.map { it.label },
         )
+        val chip = readiness.chips.first()
+        assertEquals(28.dp, chip.height)
+        assertEquals(999.dp, chip.cornerRadius)
+        assertEquals(PlayerChromeBaseColor.White, chip.containerBaseColor)
+        assertEquals(0.07f, chip.containerAlpha, 0.001f)
+        assertEquals(1.dp, chip.borderWidth)
+        assertEquals(0.22f, chip.borderAlpha, 0.001f)
+        assertEquals(9.dp, chip.horizontalPadding)
+        assertEquals(5.dp, chip.contentSpacing)
+        assertEquals(SourceLibraryTone.Muted, chip.labelTone)
+        assertEquals(1f, chip.labelAlpha, 0.001f)
+        assertEquals(1f, chip.valueAlpha, 0.001f)
+        assertEquals("\u81ea\u52a8", chip.fallbackValue)
         assertTrue(readiness.chips.any { it.label == "\u7f13\u5b58" && it.value == "\u53ef\u79bb\u7ebf" && it.tone == SourceLibraryTone.Primary })
         assertTrue(readiness.summary.contains("Online"))
     }
