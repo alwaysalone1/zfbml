@@ -243,9 +243,16 @@ class MediaRouteResolver(
     private fun scoreEpisode(episode: Episode, request: MediaFetchRequest, hitScore: Int): Int {
         val title = episode.title
         val lower = title.lowercase()
+        val normalizedTitle = title.normalizeTitleForRouteScore()
         var score = hitScore / 2
         score += episodeScore(episode.index ?: TorrentTitleScorer.extractEpisode(title), request.episodeIndex)
-        if (request.subjectNames.any { lower.contains(it.lowercase()) }) score += 35
+        if (request.subjectNames.any { name ->
+                val normalizedName = name.normalizeTitleForRouteScore()
+                normalizedName.isNotBlank() && normalizedTitle.contains(normalizedName)
+            }
+        ) {
+            score += 35
+        }
         score += qualityScore(lower)
         return score
     }

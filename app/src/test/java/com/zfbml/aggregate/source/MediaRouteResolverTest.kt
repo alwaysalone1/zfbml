@@ -201,6 +201,30 @@ class MediaRouteResolverTest {
     }
 
     @Test
+    fun resolverScoresNormalizedEpisodeTitleMatches() = runTest {
+        val provider = NormalizedEpisodeTitleProvider()
+        val request = MediaFetchRequest.fromEpisode(
+            Episode(
+                providerId = "bangumi-catalog",
+                id = "catalog-2",
+                title = "Episode 2",
+                url = "bangumi://subject/2/episode/2",
+                index = 2,
+                raw = mapOf(
+                    "subjectNameCn" to "Test Anime",
+                    "subjectName" to "Test Anime",
+                ),
+            ),
+        )
+
+        val routes = MediaRouteResolver(listOf(provider), providerTimeoutMs = 1_000L).resolve(request)
+
+        assertTrue(routes.size >= 2)
+        assertEquals("normalized://result/matched", routes.first().stream.metadata["routeUrl"])
+        assertEquals("Test-Anime - 02", routes.first().episodeTitle)
+    }
+
+    @Test
     fun resolverRanksExactChineseTitleAboveContainingVariants() = runTest {
         val provider = FakeChineseTitleProvider()
         val request = MediaFetchRequest.fromEpisode(
@@ -505,6 +529,64 @@ class MediaRouteResolverTest {
                 ),
                 MediaStream(
                     id = "${episode.id}-hls",
+                    providerId = manifest.id,
+                    url = "${episode.url}.m3u8",
+                    protocol = StreamProtocol.HLS,
+                    quality = "1080p",
+                    sourceScore = 60,
+                ),
+            )
+        }
+    }
+
+    private class NormalizedEpisodeTitleProvider : SourceProvider {
+        override val manifest = SourceManifest(
+            id = "normalized-title",
+            name = "Normalized Title Source",
+            version = "1",
+            author = "test",
+            capabilities = setOf(SourceCapability.SEARCH, SourceCapability.DETAIL, SourceCapability.STREAM),
+        )
+
+        override suspend fun search(query: String): List<SearchResult> {
+            return listOf(
+                SearchResult(
+                    providerId = manifest.id,
+                    title = "$query candidate",
+                    url = "normalized://result/unmatched",
+                    raw = mapOf("mediaKind" to "online"),
+                ),
+                SearchResult(
+                    providerId = manifest.id,
+                    title = "$query candidate",
+                    url = "normalized://result/matched",
+                    raw = mapOf("mediaKind" to "online"),
+                ),
+            )
+        }
+
+        override suspend fun loadDetail(result: SearchResult): MediaDetail {
+            val matched = result.url.endsWith("/matched")
+            return MediaDetail(
+                providerId = manifest.id,
+                title = result.title,
+                url = result.url,
+                episodes = listOf(
+                    Episode(
+                        providerId = manifest.id,
+                        id = if (matched) "normalized-matched-2" else "normalized-unmatched-2",
+                        title = if (matched) "Test-Anime - 02" else "Other Anime - 02",
+                        url = "${result.url}/stream",
+                        index = 2,
+                    ),
+                ),
+            )
+        }
+
+        override suspend fun resolveStreams(episode: Episode): List<MediaStream> {
+            return listOf(
+                MediaStream(
+                    id = episode.id,
                     providerId = manifest.id,
                     url = "${episode.url}.m3u8",
                     protocol = StreamProtocol.HLS,

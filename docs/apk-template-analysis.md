@@ -428,3 +428,5 @@ This pass upgrades route-search alias fallback. `MediaFetchRequest` now keeps CJ
 This pass upgrades capped route-query selection. `MediaRouteResolver` now reserves one query slot for a non-CJK fallback alias when CJK catalog aliases overflow the search cap, preserving Chinese-name priority while avoiding silent loss of original-title sources.
 
 This pass upgrades capped automatic danmaku title selection. `DanmakuRegistry` now preserves one automatic-search slot for catalog-provided non-CJK aliases when CJK catalog names overflow the cap, while plain detail fallback titles cannot evict trusted CJK aliases.
+
+This pass upgrades route episode-title scoring. `MediaRouteResolver` now normalizes loaded episode titles before checking catalog-name containment, so punctuation variants like `Test-Anime` still reinforce the intended route during automatic playback selection.

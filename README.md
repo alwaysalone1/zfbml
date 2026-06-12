@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.211
+
+English:
+
+- Route episode scoring now normalizes episode titles before checking whether they contain the catalog anime name.
+- Sources that format episode titles as `Test-Anime`, `Test.Anime`, or similar punctuation variants can now rank above unrelated same-episode results.
+- Added resolver coverage proving normalized episode-title matches influence route ordering.
+- App version labels, request user agents, and README notes are now updated to `0.5.211`.
+
 ### v0.5.210
 
 English:
