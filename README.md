@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.222
+
+English:
+
+- Danmaku mapping rows now expose a visible status badge for loaded, manual calibration, matching, review-required, candidate, and uncalibrated states.
+- `PlayerDanmakuMappingUiState` now keeps mapping readiness labels and tones in the tested model contract alongside candidate rows and manual calibration actions.
+- Added model coverage for danmaku mapping status labels and tones across automatic, manual, loading, and low-confidence review states.
+- App version labels, request user agents, and README notes are now updated to `0.5.222`.
+
 ### v0.5.221
 
 English:

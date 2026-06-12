@@ -450,3 +450,5 @@ This pass upgrades home schedule digest readiness visibility. `HomeScheduleDiges
 This pass upgrades search result readiness visibility. `SearchResultsSectionUiState` now carries a tested status badge for idle, searching, matched, filtered-empty, no-hit, partial-failure, and failed states, so search results explain index health before users open a detail page.
 
 This pass upgrades brand splash readiness visibility. `BrandSplashUiState` now carries a tested startup readiness badge for full capability, playback-ready, search-ready, search-missing, and lightweight-start states, so the first screen summarizes app capability before the main shell appears.
+
+This pass upgrades danmaku mapping readiness visibility. `PlayerDanmakuMappingUiState` now carries a tested status badge for loaded, manual calibration, matching, review-required, candidate, and uncalibrated states, so the player makes automatic matching and manual correction state visible in the danmaku panel.

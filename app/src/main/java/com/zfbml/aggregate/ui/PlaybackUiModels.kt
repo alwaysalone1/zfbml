@@ -1543,6 +1543,8 @@ internal data class PlayerDanmakuOperationNoticeUiState(
 internal data class PlayerDanmakuMappingUiState(
     val title: String,
     val subtitle: String,
+    val statusLabel: String,
+    val statusTone: SourceLibraryTone,
     val actionLabel: String,
     val badges: List<SourceLibraryChipUiState>,
     val candidateList: PlayerDanmakuCandidateListUiState,
@@ -5761,6 +5763,14 @@ internal fun buildPlayerDanmakuMappingUiState(
         candidateCount > 0 -> SourceLibraryTone.Backup
         else -> SourceLibraryTone.Muted
     }
+    val statusLabel = when {
+        manual -> "人工校准"
+        matching -> "匹配中"
+        loadedCount > 0 -> "已加载"
+        requiresManualReview -> "需核对"
+        candidateCount > 0 -> "有候选"
+        else -> "待校准"
+    }
     val title = when {
         manual -> "弹幕映射已校准"
         matching -> "正在匹配弹幕"
@@ -5787,6 +5797,8 @@ internal fun buildPlayerDanmakuMappingUiState(
     return PlayerDanmakuMappingUiState(
         title = title,
         subtitle = subtitle,
+        statusLabel = statusLabel,
+        statusTone = tone,
         actionLabel = when {
             matching -> "匹配中"
             manual -> "重新校准"

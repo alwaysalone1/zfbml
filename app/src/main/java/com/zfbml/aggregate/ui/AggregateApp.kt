@@ -2480,7 +2480,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.221")
+                setRequestProperty("User-Agent", "ZFBML/0.5.222")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -3013,7 +3013,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.221",
+            version = "0.5.222",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -8781,7 +8781,7 @@ private fun PlayerDanmakuSettingsPanel(
             icon = Icons.Filled.Search,
             enabled = state.mapping.actionEnabled,
             trailing = state.mapping.actionLabel,
-            badges = state.mapping.badges,
+            badges = listOf(SourceLibraryChipUiState(state.mapping.statusLabel, state.mapping.statusTone)) + state.mapping.badges,
             actionEnabled = state.mapping.actionEnabled,
             iconAlpha = state.mapping.iconAlpha,
             titleAlpha = state.mapping.titleAlpha,
