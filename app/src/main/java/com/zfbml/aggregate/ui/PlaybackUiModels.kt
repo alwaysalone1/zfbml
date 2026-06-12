@@ -991,6 +991,9 @@ internal data class CacheCapabilityUiState(
 internal data class CacheLibraryUiState(
     val headline: String,
     val summary: String,
+    val readinessLabel: String,
+    val readinessTone: SourceLibraryTone,
+    val primaryActionLabel: String,
     val cacheableSourceCount: Int,
     val media3SourceCount: Int,
     val btSourceCount: Int,
@@ -4942,9 +4945,30 @@ internal fun buildCacheLibraryUiState(
         if (btSourceCount > 0) add(SourceLibraryChipUiState("${btSourceCount} BT", SourceLibraryTone.Backup))
         if (webBlockedSourceCount > 0) add(SourceLibraryChipUiState("${webBlockedSourceCount} 阻断", SourceLibraryTone.Web))
     }
+    val readinessTone = when {
+        media3SourceCount > 0 -> SourceLibraryTone.Cache
+        btSourceCount > 0 -> SourceLibraryTone.Backup
+        webBlockedSourceCount > 0 -> SourceLibraryTone.Web
+        else -> SourceLibraryTone.Muted
+    }
+    val readinessLabel = when {
+        media3SourceCount > 0 -> "\u53ef\u79bb\u7ebf\u7f13\u5b58"
+        btSourceCount > 0 -> "\u8fb9\u4e0b\u8fb9\u64ad"
+        webBlockedSourceCount > 0 -> "\u4ec5\u5728\u7ebf\u64ad\u653e"
+        else -> "\u5f85\u63a5\u5165\u7f13\u5b58\u6e90"
+    }
+    val primaryActionLabel = when {
+        media3SourceCount > 0 -> "\u7f13\u5b58\u53ef\u7528"
+        btSourceCount > 0 -> "\u67e5\u770b BT \u7f13\u5b58"
+        webBlockedSourceCount > 0 -> "\u5207\u6362\u53ef\u7f13\u5b58\u6e90"
+        else -> "\u7b49\u5f85\u6765\u6e90"
+    }
     return CacheLibraryUiState(
         headline = headline,
         summary = summary,
+        readinessLabel = readinessLabel,
+        readinessTone = readinessTone,
+        primaryActionLabel = primaryActionLabel,
         cacheableSourceCount = cacheableSourceCount,
         media3SourceCount = media3SourceCount,
         btSourceCount = btSourceCount,

@@ -2880,6 +2880,9 @@ class PlaybackUiModelsTest {
         assertEquals(1, state.btSourceCount)
         assertEquals(1, state.webBlockedSourceCount)
         assertTrue(state.advancedEngineAvailable)
+        assertEquals("\u53ef\u79bb\u7ebf\u7f13\u5b58", state.readinessLabel)
+        assertEquals(SourceLibraryTone.Cache, state.readinessTone)
+        assertEquals("\u7f13\u5b58\u53ef\u7528", state.primaryActionLabel)
         assertEquals("\u79bb\u7ebf\u7247\u5e93\u5df2\u63a5\u5165 2 \u4e2a\u7f13\u5b58\u6765\u6e90", state.headline)
         assertTrue(state.summary.contains("Media3"))
         assertTrue(state.summary.contains("BT"))
@@ -2903,8 +2906,36 @@ class PlaybackUiModelsTest {
     @Test
     fun cacheLibraryUiStateExplainsEmptyAndPendingAdvancedRuntime() {
         val state = buildCacheLibraryUiState(emptyList())
+        val btOnly = buildCacheLibraryUiState(
+            listOf(
+                manifest(
+                    id = "bt",
+                    name = "BT",
+                    capabilities = setOf(SourceCapability.SEARCH, SourceCapability.STREAM, SourceCapability.BITTORRENT),
+                ),
+            ),
+        )
+        val webOnly = buildCacheLibraryUiState(
+            listOf(
+                manifest(
+                    id = "web",
+                    name = "Web",
+                    capabilities = setOf(SourceCapability.SEARCH, SourceCapability.WEBVIEW_SNIFF),
+                    requiresWebView = true,
+                ),
+            ),
+        )
 
         assertEquals(0, state.cacheableSourceCount)
+        assertEquals("\u5f85\u63a5\u5165\u7f13\u5b58\u6e90", state.readinessLabel)
+        assertEquals(SourceLibraryTone.Muted, state.readinessTone)
+        assertEquals("\u7b49\u5f85\u6765\u6e90", state.primaryActionLabel)
+        assertEquals("\u8fb9\u4e0b\u8fb9\u64ad", btOnly.readinessLabel)
+        assertEquals(SourceLibraryTone.Backup, btOnly.readinessTone)
+        assertEquals("\u67e5\u770b BT \u7f13\u5b58", btOnly.primaryActionLabel)
+        assertEquals("\u4ec5\u5728\u7ebf\u64ad\u653e", webOnly.readinessLabel)
+        assertEquals(SourceLibraryTone.Web, webOnly.readinessTone)
+        assertEquals("\u5207\u6362\u53ef\u7f13\u5b58\u6e90", webOnly.primaryActionLabel)
         assertEquals("\u79bb\u7ebf\u7247\u5e93\u5f85\u63a5\u5165\u53ef\u7f13\u5b58\u6765\u6e90", state.headline)
         assertTrue(state.summary.contains("HLS"))
         assertEquals("0 \u53ef\u7f13\u5b58", state.chips.first().label)

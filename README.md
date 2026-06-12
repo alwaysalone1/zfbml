@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.216
+
+English:
+
+- Cache library now exposes an overall readiness badge for Media3 offline, BT progressive playback, web-only blocking, and missing-source states.
+- Cache hero cards now surface the primary cache action next to the capability summary so users can see the next step before opening detail panels.
+- Added model coverage for cache readiness labels, tones, and primary actions across Media3, BT, web-only, and empty source configurations.
+- App version labels, request user agents, and README notes are now updated to `0.5.216`.
+
 ### v0.5.215
 
 English:

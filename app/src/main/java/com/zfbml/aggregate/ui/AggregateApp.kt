@@ -2460,7 +2460,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.215")
+                setRequestProperty("User-Agent", "ZFBML/0.5.216")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2993,7 +2993,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.215",
+            version = "0.5.216",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -3055,8 +3055,20 @@ private fun CacheLibraryHero(
                 Icon(Icons.Filled.CloudDownload, contentDescription = null, tint = AnimeAccentGreen, modifier = Modifier.size(28.dp))
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                Text(state.headline, style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        state.headline,
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.titleLarge,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    RouteStatusBadge(state.readinessLabel, sourceLibraryToneColor(state.readinessTone))
+                }
                 Text(state.summary, style = MaterialTheme.typography.bodyMedium, color = AnimeMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(state.primaryActionLabel, style = MaterialTheme.typography.labelMedium, color = sourceLibraryToneColor(state.readinessTone), maxLines = 1)
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                     items(state.chips) { chip ->
                         RouteStatusBadge(chip.label, sourceLibraryToneColor(chip.tone))

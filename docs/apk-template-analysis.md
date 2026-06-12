@@ -438,3 +438,5 @@ This pass upgrades fallback episode extraction. `TorrentTitleScorer` now recogni
 This pass upgrades home schedule empty-state guidance. Empty airing days now show a rest marker in weekday chips and point the empty panel at the next available update batch, making the追番 calendar scan closer to large-client schedule pages without adding unrelated surface area.
 
 This pass upgrades search landing suggestion provenance. `SearchSuggestionUiState` now carries a visible badge for schedule-driven entries and fallback hot keywords, so the search page exposes where each quick-search term came from before the user commits to a query.
+
+This pass upgrades cache library readiness presentation. `CacheLibraryUiState` now summarizes overall cache availability as Media3 offline, BT progressive playback, web-only blocking, or missing-source states and surfaces the primary cache action directly in the cache hero.
