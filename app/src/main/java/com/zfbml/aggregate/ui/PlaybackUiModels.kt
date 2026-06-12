@@ -1379,6 +1379,7 @@ internal data class PlayerActionUiState(
     val value: String?,
     val selected: Boolean,
     val enabled: Boolean,
+    val actionFocusEnabled: Boolean = enabled,
     val tone: SourceLibraryTone,
     val portraitRecoveryHeight: Dp = 38.dp,
     val portraitRecoveryCornerRadius: Dp = 8.dp,

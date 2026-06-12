@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.181")
+                setRequestProperty("User-Agent", "ZFBML/0.5.182")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2992,7 +2992,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.181",
+            version = "0.5.182",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -7429,7 +7429,7 @@ private fun PlayerTinyToggle(
     TextButton(
         onClick = onClick,
         enabled = state.action.enabled,
-        modifier = modifier.height(state.height).focusable(),
+        modifier = modifier.height(state.height).focusable(enabled = state.action.actionFocusEnabled),
         shape = RoundedCornerShape(state.cornerRadius),
         colors = ButtonDefaults.textButtonColors(
             containerColor = containerColor.copy(alpha = state.containerAlpha),
@@ -7966,6 +7966,7 @@ private fun PlayerActionBar(
                     value = if (compactValues) null else action.state.value,
                     selected = action.state.selected,
                     enabled = action.state.enabled,
+                    focusEnabled = action.state.actionFocusEnabled,
                     onClick = action.onClick,
                     modifier = Modifier.weight(1f),
                 )
@@ -9652,6 +9653,7 @@ private fun PlayerTextAction(
     value: String? = null,
     selected: Boolean = false,
     enabled: Boolean = true,
+    focusEnabled: Boolean = enabled,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -9668,7 +9670,7 @@ private fun PlayerTextAction(
         enabled = enabled,
         modifier = modifier
             .height(chrome.height)
-            .focusable(),
+            .focusable(enabled = focusEnabled),
         shape = RoundedCornerShape(chrome.cornerRadius),
         colors = ButtonDefaults.textButtonColors(
             containerColor = containerBaseColor.copy(alpha = chrome.containerAlpha),

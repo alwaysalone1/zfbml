@@ -370,3 +370,5 @@ This pass upgrades player route-row focus behavior. `RouteCandidateUiState` now 
 This pass upgrades player episode-row focus behavior. `PlayerEpisodeOptionUiState` now owns row focus eligibility so the episode-switching panel can keep loading-disabled waiting episodes visible for context while skipping them in TV and keyboard navigation until they become selectable.
 
 This pass upgrades player panel-tab focus behavior. `PlayerPanelTabUiState` now owns tab focus eligibility so disabled Route/Episode tabs remain visible as playback context but are skipped by TV and keyboard navigation unless they are the active panel.
+
+This pass upgrades player bottom-action focus behavior. `PlayerActionUiState` now owns action focus eligibility so disabled bottom controls and compact recovery fallbacks remain visible with their disabled presentation but no longer enter the TV or keyboard focus sequence.
