@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.176")
+                setRequestProperty("User-Agent", "ZFBML/0.5.177")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2992,7 +2992,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.176",
+            version = "0.5.177",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -5293,7 +5293,12 @@ private fun RouteStatusBadge(label: String, color: Color) {
 }
 
 @Composable
-private fun RoutePlayActionLabel(label: String, tone: SourceLibraryTone) {
+private fun RoutePlayActionLabel(
+    label: String,
+    tone: SourceLibraryTone,
+    iconKind: RouteActionIconKind = RouteActionIconKind.Play,
+    iconContentDescription: String? = null,
+) {
     val color = sourceLibraryToneColor(tone)
     val chrome = remember { buildRoutePlayActionChromeUiState() }
     Row(
@@ -5306,8 +5311,8 @@ private fun RoutePlayActionLabel(label: String, tone: SourceLibraryTone) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
-            Icons.Filled.PlayArrow,
-            contentDescription = null,
+            playerRouteActionIcon(iconKind),
+            contentDescription = iconContentDescription,
             tint = color.copy(alpha = chrome.iconAlpha),
             modifier = Modifier.size(chrome.iconSize),
         )
@@ -5379,9 +5384,13 @@ private fun RouteCandidateRow(
     val sourceBoxColor = sourceLibraryToneColor(state.detailSourceBoxTone)
     Card(
         onClick = onClick,
-        modifier = modifier.fillMaxWidth().focusable(),
+        enabled = state.detailClickEnabled,
+        modifier = modifier.fillMaxWidth().focusable(enabled = state.detailClickEnabled),
         shape = RoundedCornerShape(state.detailCardCornerRadius),
-        colors = CardDefaults.cardColors(containerColor = containerColor),
+        colors = CardDefaults.cardColors(
+            containerColor = containerColor,
+            disabledContainerColor = containerColor,
+        ),
         border = BorderStroke(
             state.detailBorderWidth,
             if (state.recommended) {
@@ -5392,7 +5401,10 @@ private fun RouteCandidateRow(
         ),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(state.detailContentPadding),
+            modifier = Modifier
+                .fillMaxWidth()
+                .alpha(state.detailContentAlpha)
+                .padding(state.detailContentPadding),
             horizontalArrangement = Arrangement.spacedBy(state.detailRowSpacing),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -5460,7 +5472,12 @@ private fun RouteCandidateRow(
                         color = sizeColor.copy(alpha = state.detailSizeAlpha),
                     )
                 }
-                RoutePlayActionLabel(state.actionLabel, state.actionTone)
+                RoutePlayActionLabel(
+                    label = state.actionLabel,
+                    tone = state.actionTone,
+                    iconKind = state.actionIconKind,
+                    iconContentDescription = state.actionIconContentDescription,
+                )
             }
         }
     }

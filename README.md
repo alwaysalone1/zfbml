@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.177
+
+English:
+
+- Detail route candidate cards now use `RouteCandidateUiState` for click enablement and disabled content alpha.
+- Detail route play-action pills now render play, current, download, web fallback, and retry icons from the tested route action model.
+- Added unit coverage for detail route click/content presentation across recommended, web fallback, and failed routes.
+- App version labels, request user agents, and README notes are now updated to `0.5.177`.
+
 ### v0.5.176
 
 English:

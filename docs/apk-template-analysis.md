@@ -360,3 +360,5 @@ This pass upgrades detail route source identity chrome. `RouteCandidateUiState` 
 This pass upgrades detail route card shell chrome. `AnimeSurfaceBaseColor` and `RouteCandidateUiState` now own detail route-card container base color, border tone, and fallback border base color so recommended and idle route cards render their shell from the tested model contract instead of Compose-local panel and border branching.
 
 This pass upgrades detail route card inner accent chrome. `RouteCandidateUiState` now owns detail rail tone/alpha and source-box tone/alpha, with provider accent classification moved into tested model code so detail route cards no longer derive those visible accents inside Compose.
+
+This pass upgrades detail route-card interaction chrome. `RouteCandidateUiState` now owns detail card click enablement and disabled content alpha, and the detail play-action pill reuses the tested route action icon semantics so playable, current, BT, web fallback, and retry states present consistently across detail and fullscreen route surfaces.
