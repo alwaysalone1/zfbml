@@ -358,3 +358,5 @@ This pass upgrades route candidate protocol tone chrome. `RouteCandidateUiState`
 This pass upgrades detail route source identity chrome. `RouteCandidateUiState` now owns source-initial and source-name base colors so detail route cards render provider identity text from the tested model contract instead of Compose-local white constants.
 
 This pass upgrades detail route card shell chrome. `AnimeSurfaceBaseColor` and `RouteCandidateUiState` now own detail route-card container base color, border tone, and fallback border base color so recommended and idle route cards render their shell from the tested model contract instead of Compose-local panel and border branching.
+
+This pass upgrades detail route card inner accent chrome. `RouteCandidateUiState` now owns detail rail tone/alpha and source-box tone/alpha, with provider accent classification moved into tested model code so detail route cards no longer derive those visible accents inside Compose.

@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.176
+
+English:
+
+- Detail route candidate cards now use `RouteCandidateUiState` for accent rail tone/alpha and source-box tone/alpha.
+- `RouteCandidateRow` renders route-card rail and provider box color from tested model chrome instead of Compose-local accent/provider lookups.
+- Added unit coverage for detail route rail and source-box chrome.
+- App version labels, request user agents, and README notes are now updated to `0.5.176`.
+
 ### v0.5.175
 
 English:

@@ -2118,9 +2118,13 @@ internal data class RouteCandidateUiState(
     val detailIdleBorderAlpha: Float,
     val detailContentPadding: Dp,
     val detailRowSpacing: Dp,
+    val detailRailTone: SourceLibraryTone,
+    val detailRailAlpha: Float,
     val detailRailWidth: Dp,
     val detailRailHeight: Dp,
     val detailRailCornerRadius: Dp,
+    val detailSourceBoxTone: SourceLibraryTone,
+    val detailSourceBoxAlpha: Float,
     val detailSourceBoxSize: Dp,
     val detailSourceBoxCornerRadius: Dp,
     val detailSourceInitialBaseColor: PlayerChromeBaseColor,
@@ -3024,9 +3028,13 @@ internal fun buildRouteCandidateUiState(
         detailIdleBorderAlpha = 1f,
         detailContentPadding = 12.dp,
         detailRowSpacing = 10.dp,
+        detailRailTone = accentTone,
+        detailRailAlpha = 1f,
         detailRailWidth = 4.dp,
         detailRailHeight = 64.dp,
         detailRailCornerRadius = 8.dp,
+        detailSourceBoxTone = providerAccentToneForUi(route.sourceId),
+        detailSourceBoxAlpha = 1f,
         detailSourceBoxSize = 42.dp,
         detailSourceBoxCornerRadius = 8.dp,
         detailSourceInitialBaseColor = PlayerChromeBaseColor.White,
@@ -3075,6 +3083,16 @@ internal fun buildRouteCandidateUiState(
         actionIconKind = actionIconKind,
         actionIconContentDescription = actionIconContentDescription,
     )
+}
+
+internal fun providerAccentToneForUi(providerId: String): SourceLibraryTone {
+    return when (providerId.lowercase()) {
+        "bangumi-catalog", "direct" -> SourceLibraryTone.Online
+        "bt", "mikan", "dmhy" -> SourceLibraryTone.Primary
+        "acg-rip", "bangumi-moe", "demo" -> SourceLibraryTone.Backup
+        "nyaa" -> SourceLibraryTone.Web
+        else -> SourceLibraryTone.Web
+    }
 }
 
 internal fun buildRouteLoadingSteps(

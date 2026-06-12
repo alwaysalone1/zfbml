@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.175")
+                setRequestProperty("User-Agent", "ZFBML/0.5.176")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2992,7 +2992,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.175",
+            version = "0.5.176",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -5366,7 +5366,6 @@ private fun RouteCandidateRow(
     modifier: Modifier = Modifier,
 ) {
     val state = buildRouteCandidateUiState(route = route, recommended = recommended)
-    val accent = sourceLibraryToneColor(state.accentTone)
     val primaryColor = sourceLibraryToneColor(state.detailPrimaryTone)
     val titleColor = sourceLibraryToneColor(state.detailTitleTone)
     val protocolColor = sourceLibraryToneColor(state.detailProtocolTone)
@@ -5376,6 +5375,8 @@ private fun RouteCandidateRow(
     val containerColor = animeSurfaceBaseColor(state.detailCardContainerBaseColor)
     val borderColor = state.detailBorderTone?.let(::sourceLibraryToneColor)
         ?: animeSurfaceBaseColor(state.detailBorderBaseColor)
+    val railColor = sourceLibraryToneColor(state.detailRailTone)
+    val sourceBoxColor = sourceLibraryToneColor(state.detailSourceBoxTone)
     Card(
         onClick = onClick,
         modifier = modifier.fillMaxWidth().focusable(),
@@ -5400,12 +5401,12 @@ private fun RouteCandidateRow(
                     .width(state.detailRailWidth)
                     .height(state.detailRailHeight)
                     .clip(RoundedCornerShape(state.detailRailCornerRadius))
-                    .background(accent),
+                    .background(railColor.copy(alpha = state.detailRailAlpha)),
             )
             Box(
                 modifier = Modifier
                     .size(state.detailSourceBoxSize)
-                    .background(providerAccent(state.sourceId), RoundedCornerShape(state.detailSourceBoxCornerRadius)),
+                    .background(sourceBoxColor.copy(alpha = state.detailSourceBoxAlpha), RoundedCornerShape(state.detailSourceBoxCornerRadius)),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
