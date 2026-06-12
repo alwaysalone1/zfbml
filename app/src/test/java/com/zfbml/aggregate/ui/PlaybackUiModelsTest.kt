@@ -2069,6 +2069,16 @@ class PlaybackUiModelsTest {
             loading = true,
             searched = false,
         )
+        val idleState = buildSearchResultsSectionUiState(
+            indexState = buildSearchIndexUiState(
+                manifests = manifests,
+                report = null,
+                results = emptyList(),
+            ),
+            visibleResultCount = 0,
+            loading = false,
+            searched = false,
+        )
         val selectedIndex = buildSearchIndexUiState(
             manifests = manifests,
             report = report,
@@ -2090,8 +2100,16 @@ class PlaybackUiModelsTest {
 
         assertEquals("\u641c\u7d22\u7ed3\u679c", loadingState.headerTitle)
         assertEquals("\u6b63\u5728\u5e76\u884c\u641c\u7d22 2 \u4e2a\u6765\u6e90", loadingState.headerSubtitle)
+        assertEquals("\u641c\u7d22\u4e2d", loadingState.statusLabel)
+        assertEquals(SourceLibraryTone.Online, loadingState.statusTone)
+        assertEquals("\u5f85\u8f93\u5165", idleState.statusLabel)
+        assertEquals(SourceLibraryTone.Muted, idleState.statusTone)
         assertEquals("BT Source \u00b7 2 \u4e2a\u7ed3\u679c", selectedState.headerSubtitle)
+        assertEquals("\u6765\u6e90\u547d\u4e2d", selectedState.statusLabel)
+        assertEquals(SourceLibraryTone.Primary, selectedState.statusTone)
         assertEquals("\u5f53\u524d\u6765\u6e90\u6682\u65e0\u547d\u4e2d", selectedEmpty.emptyTitle)
+        assertEquals("\u7b5b\u9009\u4e3a\u7a7a", selectedEmpty.statusLabel)
+        assertEquals(SourceLibraryTone.Backup, selectedEmpty.statusTone)
         assertTrue(selectedEmpty.emptySubtitle.contains("\u5168\u90e8\u7d22\u5f15"))
     }
 
@@ -2119,6 +2137,8 @@ class PlaybackUiModelsTest {
         )
 
         assertEquals("\u6682\u65e0\u7ed3\u679c \u00b7 1 \u4e2a\u6e90\u5f02\u5e38", state.headerSubtitle)
+        assertEquals("\u5f02\u5e38", state.statusLabel)
+        assertEquals(SourceLibraryTone.Web, state.statusTone)
         assertEquals("\u6682\u672a\u547d\u4e2d\u53ef\u7528\u7ed3\u679c", state.emptyTitle)
         assertTrue(state.emptySubtitle.contains("\u5f02\u5e38\u6e90"))
     }

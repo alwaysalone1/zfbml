@@ -446,3 +446,5 @@ This pass upgrades detail first-play decision visibility. `DetailFirstPlayUiStat
 This pass upgrades category browse readiness visibility. `CategoryBrowseUiState` now carries a tested status badge for indexed, syncing, fallback, empty, and failed channel states, so category pages explain browsing readiness before users open a detail page.
 
 This pass upgrades home schedule digest readiness visibility. `HomeScheduleDigestUiState` now carries a tested status badge for today's updates, weekly indexed schedules, syncing, empty, and failed states, so the Discover calendar explains schedule freshness before users expand the weekly list.
+
+This pass upgrades search result readiness visibility. `SearchResultsSectionUiState` now carries a tested status badge for idle, searching, matched, filtered-empty, no-hit, partial-failure, and failed states, so search results explain index health before users open a detail page.

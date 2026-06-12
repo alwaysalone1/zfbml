@@ -529,6 +529,8 @@ internal data class SearchIdleHintUiState(
 internal data class SearchResultsSectionUiState(
     val headerTitle: String,
     val headerSubtitle: String,
+    val statusLabel: String,
+    val statusTone: SourceLibraryTone,
     val emptyTitle: String,
     val emptySubtitle: String,
 )
@@ -3882,6 +3884,26 @@ internal fun buildSearchResultsSectionUiState(
         failedCount > 0 -> "\u6682\u65e0\u7ed3\u679c \u00b7 $failedCount \u4e2a\u6e90\u5f02\u5e38"
         else -> "\u9009\u62e9\u756a\u5267\u8fdb\u5165\u8be6\u60c5"
     }
+    val statusLabel = when {
+        loading -> "\u641c\u7d22\u4e2d"
+        !searched -> "\u5f85\u8f93\u5165"
+        selectedFilter != null && visibleCount > 0 -> "\u6765\u6e90\u547d\u4e2d"
+        selectedFilter != null -> "\u7b5b\u9009\u4e3a\u7a7a"
+        totalCount > 0 && failedCount > 0 -> "\u90e8\u5206\u5f02\u5e38"
+        totalCount > 0 -> "\u5df2\u547d\u4e2d"
+        failedCount > 0 -> "\u5f02\u5e38"
+        else -> "\u65e0\u547d\u4e2d"
+    }
+    val statusTone = when {
+        loading -> SourceLibraryTone.Online
+        !searched -> SourceLibraryTone.Muted
+        selectedFilter != null && visibleCount > 0 -> SourceLibraryTone.Primary
+        selectedFilter != null -> SourceLibraryTone.Backup
+        totalCount > 0 && failedCount > 0 -> SourceLibraryTone.Backup
+        totalCount > 0 -> SourceLibraryTone.Cache
+        failedCount > 0 -> SourceLibraryTone.Web
+        else -> SourceLibraryTone.Muted
+    }
     val emptyTitle = when {
         !searched -> "\u7b49\u5f85\u641c\u7d22"
         selectedFilter != null && totalCount > 0 -> "\u5f53\u524d\u6765\u6e90\u6682\u65e0\u547d\u4e2d"
@@ -3897,6 +3919,8 @@ internal fun buildSearchResultsSectionUiState(
     return SearchResultsSectionUiState(
         headerTitle = "\u641c\u7d22\u7ed3\u679c",
         headerSubtitle = headerSubtitle,
+        statusLabel = statusLabel,
+        statusTone = statusTone,
         emptyTitle = emptyTitle,
         emptySubtitle = emptySubtitle,
     )
