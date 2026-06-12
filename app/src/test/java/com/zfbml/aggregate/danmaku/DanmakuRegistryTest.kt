@@ -170,6 +170,31 @@ class DanmakuRegistryTest {
     }
 
     @Test
+    fun matchAllAddsAutomaticBaseTitleVariantsForSeasonedTitles() = runTest {
+        val provider = CountingDanmakuProvider(tokenFromTitle = true)
+        val registry = DanmakuRegistry(listOf(provider))
+
+        val matches = registry.matchAll(
+            detail(title = "Fallback Title"),
+            episode(
+                id = "15",
+                raw = mapOf(
+                    "subjectId" to "subject-15",
+                    "episodeId" to "15",
+                    "subjectNameCn" to "\u6d4b\u8bd5\u756a\u5267 \u7b2c\u4e8c\u5b63",
+                ),
+            ),
+        )
+
+        assertEquals(
+            listOf("\u6d4b\u8bd5\u756a\u5267 \u7b2c\u4e8c\u5b63", "\u6d4b\u8bd5\u756a\u5267", "Fallback Title"),
+            matches.map { it.title },
+        )
+        assertEquals(matches.map { it.title }, provider.matchedTitles.toList())
+        assertEquals(3, provider.matchCount.get())
+    }
+
+    @Test
     fun candidateScoreRewardsExactTitleAndEpisodeSignals() {
         val exactLowerBase = danmakuCandidateMatchScore(
             baseScore = 82,

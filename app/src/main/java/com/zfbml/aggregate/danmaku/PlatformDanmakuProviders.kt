@@ -25,6 +25,13 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 
 private const val MAX_AUTOMATIC_TITLE_SEARCH_COUNT = 4
+private const val MAX_AUTOMATIC_TITLE_VARIANTS_PER_TITLE = 3
+private val DANMAKU_TITLE_BRACKET_SUFFIX_REGEX = Regex(
+    """(?i)\s*[\(（［\[][^\)）］\]]*(?:season|part|cour|tv|ova|oad|剧场版|总集篇|第\s*[零〇一二三四五六七八九十百两\d]+\s*[季期部话話クール])[^\)）］\]]*[\)）］\]]\s*$""",
+)
+private val DANMAKU_TITLE_TRAILING_SUFFIX_REGEX = Regex(
+    """(?i)(?:[\s:：\-—_]+)?(?:第\s*[零〇一二三四五六七八九十百两\d]+\s*(?:季|期|部|クール|cour|season)|\d+(?:st|nd|rd|th)?\s*season|season\s*\d+|s\d+|part\s*\d+|cour\s*\d+|tv版?|剧场版|总集篇|ova|oad)\s*$""",
+)
 
 abstract class WebDanmakuProvider(
     final override val id: String,
@@ -316,7 +323,7 @@ class DanmakuRegistry(
 }
 
 private fun danmakuAutomaticSearchTitles(detail: MediaDetail, episode: Episode): List<String> {
-    val candidates = buildList {
+    val baseCandidates = buildList {
         add(episode.raw["subjectNameCn"])
         add(episode.raw["subjectTitle"])
         episode.raw["subjectAliases"]
@@ -329,11 +336,37 @@ private fun danmakuAutomaticSearchTitles(detail: MediaDetail, episode: Episode):
         .map { it.trim() }
         .filter { it.length >= 2 }
         .distinctBy { it.normalizedDanmakuTitleKey() }
+    val titleVariants = baseCandidates
+        .flatMap { it.danmakuAutomaticTitleVariants().drop(1) }
+        .filter { it.length >= 2 }
+    val candidates = (baseCandidates + titleVariants)
+        .distinctBy { it.normalizedDanmakuTitleKey() }
     val cjkTitles = candidates.filter { it.containsDanmakuCjkText() }
     val nonCjkTitles = candidates.filterNot { candidate ->
         cjkTitles.any { it.normalizedDanmakuTitleKey() == candidate.normalizedDanmakuTitleKey() }
     }
     return (cjkTitles + nonCjkTitles).take(MAX_AUTOMATIC_TITLE_SEARCH_COUNT)
+}
+
+private fun String.danmakuAutomaticTitleVariants(): List<String> {
+    val clean = trim().replace(Regex("""\s+"""), " ")
+    if (clean.length < 2) return emptyList()
+    val variants = mutableListOf(clean)
+    var current = clean
+    while (variants.size < MAX_AUTOMATIC_TITLE_VARIANTS_PER_TITLE) {
+        val stripped = current
+            .replace(DANMAKU_TITLE_BRACKET_SUFFIX_REGEX, "")
+            .replace(DANMAKU_TITLE_TRAILING_SUFFIX_REGEX, "")
+            .trim()
+            .trimEnd(':', '：', '-', '—', '_', '·', '・')
+            .trim()
+        if (stripped.length < 2 || stripped.normalizedDanmakuTitleKey() == current.normalizedDanmakuTitleKey()) break
+        if (variants.none { it.normalizedDanmakuTitleKey() == stripped.normalizedDanmakuTitleKey() }) {
+            variants += stripped
+        }
+        current = stripped
+    }
+    return variants
 }
 
 private fun String.normalizedDanmakuTitleKey(): String {
