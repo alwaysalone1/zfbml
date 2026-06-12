@@ -305,13 +305,12 @@ class DanmakuRegistry(
     }
 
     private fun DanmakuMatch.isAutomaticTimelineEligible(): Boolean {
-        return source == DanmakuMatchSource.Manual || score >= AUTOMATIC_TIMELINE_MIN_SCORE
+        return source == DanmakuMatchSource.Manual || score >= DANMAKU_AUTOMATIC_TIMELINE_MIN_SCORE
     }
 
     private companion object {
         const val DEFAULT_TIMELINE_CACHE_SIZE = 48
         const val DEFAULT_MATCH_CACHE_SIZE = 96
-        const val AUTOMATIC_TIMELINE_MIN_SCORE = 60
         const val MANUAL_MAPPING_SCORE = 100_000
     }
 }

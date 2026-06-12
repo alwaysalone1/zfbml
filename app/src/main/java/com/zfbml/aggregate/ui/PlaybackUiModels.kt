@@ -2,6 +2,7 @@ package com.zfbml.aggregate.ui
 
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.zfbml.aggregate.danmaku.DANMAKU_AUTOMATIC_TIMELINE_MIN_SCORE
 import com.zfbml.aggregate.danmaku.DanmakuMatch
 import com.zfbml.aggregate.danmaku.DanmakuMatchSource
 import com.zfbml.aggregate.danmaku.DanmakuPlatform
@@ -1516,6 +1517,7 @@ internal data class PlayerDanmakuMappingUiState(
     val selected: Boolean,
     val highlighted: Boolean,
     val prominent: Boolean,
+    val requiresManualReview: Boolean,
     val actionEnabled: Boolean,
     val iconAlpha: Float,
     val titleAlpha: Float,
@@ -5489,6 +5491,11 @@ internal fun buildPlayerDanmakuMappingUiState(
     val best = candidates.maxByOrNull { it.score }
     val manual = best?.source == DanmakuMatchSource.Manual
     val loadedCount = timelineCount.coerceAtLeast(0)
+    val requiresManualReview = !matching &&
+        !manual &&
+        loadedCount == 0 &&
+        best != null &&
+        best.score < DANMAKU_AUTOMATIC_TIMELINE_MIN_SCORE
     val tone = when {
         manual -> SourceLibraryTone.Primary
         matching -> SourceLibraryTone.Online
@@ -5499,6 +5506,7 @@ internal fun buildPlayerDanmakuMappingUiState(
     val title = when {
         manual -> "弹幕映射已校准"
         matching -> "正在匹配弹幕"
+        requiresManualReview -> "弹幕候选需核对"
         candidateCount > 0 -> "弹幕自动匹配"
         else -> "弹幕源待校准"
     }
@@ -5508,12 +5516,14 @@ internal fun buildPlayerDanmakuMappingUiState(
         }.orEmpty()
         matching -> "按番名和当前集数搜索 Bilibili / 腾讯 / 爱奇艺 / 优酷"
         loadedCount > 0 -> "已加载 $loadedCount 条 · ${best?.providerId?.danmakuProviderLabel().orEmpty().ifBlank { "自动源" }}"
+        requiresManualReview -> "最高候选低于 ${DANMAKU_AUTOMATIC_TIMELINE_MIN_SCORE} 分自动加载阈值，可手动确认后加载到本集"
         candidateCount > 0 -> "找到 $candidateCount 个候选，可手动选择更准确的弹幕源"
         else -> "未命中自动候选，可手动搜索弹幕源并校准到本集"
     }
     val badges = buildList {
         add(SourceLibraryChipUiState(if (manual) "人工校准" else "自动匹配", tone))
         if (candidateCount > 0) add(SourceLibraryChipUiState("$candidateCount 候选", SourceLibraryTone.Online))
+        if (requiresManualReview) add(SourceLibraryChipUiState("需核对", SourceLibraryTone.Backup))
         if (loadedCount > 0) add(SourceLibraryChipUiState("$loadedCount 条", SourceLibraryTone.Cache))
     }
     return PlayerDanmakuMappingUiState(
@@ -5522,6 +5532,7 @@ internal fun buildPlayerDanmakuMappingUiState(
         actionLabel = when {
             matching -> "匹配中"
             manual -> "重新校准"
+            requiresManualReview -> "核对候选"
             candidateCount > 0 -> "手动校准"
             else -> "搜索弹幕"
         },
@@ -5531,8 +5542,9 @@ internal fun buildPlayerDanmakuMappingUiState(
         candidateSpacing = 8.dp,
         candidates = candidates.map(::buildPlayerDanmakuCandidateUiState),
         selected = manual,
-        highlighted = matching || manual || loadedCount > 0,
+        highlighted = matching || manual || loadedCount > 0 || requiresManualReview,
         prominent = manual,
+        requiresManualReview = requiresManualReview,
         actionEnabled = !matching,
         iconAlpha = if (matching || candidateCount > 0 || loadedCount > 0) 1f else 0.5f,
         titleAlpha = if (candidateCount > 0 || loadedCount > 0 || matching) 0.94f else 0.76f,
@@ -5540,7 +5552,7 @@ internal fun buildPlayerDanmakuMappingUiState(
         trailingTone = tone,
         rowState = buildPlayerSelectableRowUiState(
             enabled = true,
-            highlighted = matching || manual || loadedCount > 0,
+            highlighted = matching || manual || loadedCount > 0 || requiresManualReview,
             prominent = manual,
         ),
     )
@@ -5585,7 +5597,7 @@ private fun danmakuCandidateConfidenceLabel(match: DanmakuMatch): String {
     return when {
         match.source == DanmakuMatchSource.Manual -> "人工确认"
         match.score >= 85 -> "高可信"
-        match.score >= 60 -> "需核对"
+        match.score >= DANMAKU_AUTOMATIC_TIMELINE_MIN_SCORE -> "需核对"
         else -> "低可信"
     }
 }
@@ -5594,7 +5606,7 @@ private fun danmakuCandidateConfidenceTone(match: DanmakuMatch): SourceLibraryTo
     return when {
         match.source == DanmakuMatchSource.Manual -> SourceLibraryTone.Primary
         match.score >= 85 -> SourceLibraryTone.Cache
-        match.score >= 60 -> SourceLibraryTone.Backup
+        match.score >= DANMAKU_AUTOMATIC_TIMELINE_MIN_SCORE -> SourceLibraryTone.Backup
         else -> SourceLibraryTone.Muted
     }
 }

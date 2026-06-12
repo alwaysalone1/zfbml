@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.199
+
+English:
+
+- The danmaku automatic-load threshold is now shared through the danmaku model layer and reused by candidate UI state.
+- Low-confidence mapping rows now explicitly enter a manual-review state with threshold copy, a review action label, and a review badge.
+- Added unit coverage proving regular automatic matches stay loaded while low-confidence candidates request manual review.
+- App version labels, request user agents, and README notes are now updated to `0.5.199`.
+
 ### v0.5.198
 
 English:

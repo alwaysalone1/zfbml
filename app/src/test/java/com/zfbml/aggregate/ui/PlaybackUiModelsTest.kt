@@ -3405,10 +3405,20 @@ class PlaybackUiModelsTest {
             fontScale = 0.7f,
             matching = true,
         ).mapping
+        val review = buildPlayerDanmakuSettingsUiState(
+            enabled = true,
+            density = 0.6f,
+            alpha = 0.8f,
+            fontScale = 0.7f,
+            matches = listOf(danmakuMatch("danmaku-youku", score = 35)),
+            matching = false,
+            timelineCount = 0,
+        ).mapping
 
         assertEquals("弹幕自动匹配", automatic.title)
         assertEquals("手动校准", automatic.actionLabel)
         assertEquals(listOf("自动匹配", "2 候选", "345 条"), automatic.badges.map { it.label })
+        assertFalse(automatic.requiresManualReview)
         assertTrue(automatic.subtitle.contains("345"))
         assertEquals(SourceLibraryTone.Cache, automatic.trailingTone)
         assertTrue(automatic.highlighted)
@@ -3448,6 +3458,15 @@ class PlaybackUiModelsTest {
         assertFalse(loading.actionEnabled)
         assertEquals(SourceLibraryTone.Online, loading.trailingTone)
         assertTrue(loading.highlighted)
+
+        assertEquals("弹幕候选需核对", review.title)
+        assertEquals("核对候选", review.actionLabel)
+        assertEquals(listOf("自动匹配", "1 候选", "需核对"), review.badges.map { it.label })
+        assertTrue(review.requiresManualReview)
+        assertTrue(review.subtitle.contains("60"))
+        assertEquals(SourceLibraryTone.Backup, review.trailingTone)
+        assertTrue(review.highlighted)
+        assertFalse(review.prominent)
     }
 
     @Test

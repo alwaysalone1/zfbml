@@ -2,6 +2,8 @@ package com.zfbml.aggregate.danmaku
 
 import kotlinx.serialization.Serializable
 
+internal const val DANMAKU_AUTOMATIC_TIMELINE_MIN_SCORE = 60
+
 data class DanmakuItem(
     val timeMs: Long,
     val text: String,
