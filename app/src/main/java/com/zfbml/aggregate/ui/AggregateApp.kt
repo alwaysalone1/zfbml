@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.195")
+                setRequestProperty("User-Agent", "ZFBML/0.5.196")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2992,7 +2992,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.195",
+            version = "0.5.196",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -9879,18 +9879,24 @@ private fun VideoStartupOverlay(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(state.contentSpacing),
         ) {
-            CircularProgressIndicator(color = sourceLibraryToneColor(state.progressTone), modifier = Modifier.size(state.progressSize))
+            CircularProgressIndicator(
+                color = sourceLibraryToneColor(state.progressTone),
+                strokeWidth = state.progressStrokeWidth,
+                modifier = Modifier.size(state.progressSize),
+            )
             Text(
                 state.title,
                 style = MaterialTheme.typography.titleMedium,
                 color = Color.White.copy(alpha = state.titleAlpha),
                 fontWeight = FontWeight.Bold,
+                maxLines = state.titleMaxLines,
+                overflow = TextOverflow.Ellipsis,
             )
             Text(
                 state.metadataLine,
                 style = MaterialTheme.typography.bodySmall,
                 color = AnimeMuted.copy(alpha = state.metadataAlpha),
-                maxLines = 1,
+                maxLines = state.metadataMaxLines,
                 overflow = TextOverflow.Ellipsis,
             )
         }

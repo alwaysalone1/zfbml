@@ -398,3 +398,5 @@ This pass upgrades shared player circle-button focus behavior. `PlayerCircleButt
 This pass upgrades shared player selectable-row focus behavior. `PlayerSelectableRowUiState` now owns row focus eligibility so disabled danmaku, quality, speed, and mapping rows can remain visible for context while TV or keyboard navigation skips unavailable actions.
 
 This pass upgrades shared player text-action focus behavior. `PlayerTextActionChromeUiState` now owns final focus eligibility so bottom playback actions can preserve their enabled or selected chrome while the tested player action model decides whether TV and keyboard navigation should land on them.
+
+This pass upgrades player startup-overlay anti-obstruction chrome. `PlayerStartupOverlayUiState` now owns progress stroke width plus title and metadata line limits so buffering/loading overlays keep a compact, tested footprint instead of relying on Compose defaults while video content is initializing.

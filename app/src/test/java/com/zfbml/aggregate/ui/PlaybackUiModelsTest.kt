@@ -4786,8 +4786,11 @@ class PlaybackUiModelsTest {
         assertEquals(18.dp, loading.contentPadding)
         assertEquals(10.dp, loading.contentSpacing)
         assertEquals(30.dp, loading.progressSize)
+        assertEquals(3.dp, loading.progressStrokeWidth)
         assertEquals(1f, loading.titleAlpha, 0.001f)
+        assertEquals(1, loading.titleMaxLines)
         assertEquals(1f, loading.metadataAlpha, 0.001f)
+        assertEquals(1, loading.metadataMaxLines)
         assertEquals("Buffering / MP4", progressive.metadataLine)
     }
 

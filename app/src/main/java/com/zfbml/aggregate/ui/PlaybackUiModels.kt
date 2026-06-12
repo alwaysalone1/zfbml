@@ -1148,8 +1148,11 @@ internal data class PlayerStartupOverlayUiState(
     val contentPadding: Dp,
     val contentSpacing: Dp,
     val progressSize: Dp,
+    val progressStrokeWidth: Dp,
     val titleAlpha: Float,
+    val titleMaxLines: Int,
     val metadataAlpha: Float,
+    val metadataMaxLines: Int,
 )
 
 internal data class PlayerRouteStatusUiState(
@@ -6256,8 +6259,11 @@ internal fun buildPlayerStartupOverlayUiState(
         contentPadding = 18.dp,
         contentSpacing = 10.dp,
         progressSize = 30.dp,
+        progressStrokeWidth = 3.dp,
         titleAlpha = 1f,
+        titleMaxLines = 1,
         metadataAlpha = 1f,
+        metadataMaxLines = 1,
     )
 }
 

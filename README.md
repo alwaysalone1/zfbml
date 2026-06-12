@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.196
+
+English:
+
+- Player startup overlay now exposes progress stroke width and title/metadata line limits in `PlayerStartupOverlayUiState`.
+- Loading overlays keep the same compact visual footprint while making anti-obstruction text constraints testable.
+- Added unit coverage for startup overlay progress and text line constraints.
+- App version labels, request user agents, and README notes are now updated to `0.5.196`.
+
 ### v0.5.195
 
 English:
