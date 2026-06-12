@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.173
+
+English:
+
+- Route candidate models now own protocol text tone for both detail cards and fullscreen route rows.
+- `RouteCandidateRow` and `PlayerRouteOptionRow` render protocol labels from tested `RouteCandidateUiState` tone fields instead of deriving them from local accent colors.
+- Added unit coverage for route candidate protocol tone chrome.
+- App version labels, request user agents, and README notes are now updated to `0.5.173`.
+
 ### v0.5.172
 
 English:

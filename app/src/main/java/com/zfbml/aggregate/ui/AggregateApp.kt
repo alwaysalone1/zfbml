@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.172")
+                setRequestProperty("User-Agent", "ZFBML/0.5.173")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2984,7 +2984,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.172",
+            version = "0.5.173",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -5361,6 +5361,7 @@ private fun RouteCandidateRow(
     val accent = sourceLibraryToneColor(state.accentTone)
     val primaryColor = sourceLibraryToneColor(state.detailPrimaryTone)
     val titleColor = sourceLibraryToneColor(state.detailTitleTone)
+    val protocolColor = sourceLibraryToneColor(state.detailProtocolTone)
     val sizeColor = sourceLibraryToneColor(state.detailSizeTone)
     Card(
         onClick = onClick,
@@ -5436,7 +5437,7 @@ private fun RouteCandidateRow(
                 Text(
                     state.protocolLabel,
                     style = MaterialTheme.typography.labelLarge,
-                    color = accent.copy(alpha = state.detailProtocolAlpha),
+                    color = protocolColor.copy(alpha = state.detailProtocolAlpha),
                 )
                 state.sizeLabel?.let {
                     Text(
@@ -9020,6 +9021,7 @@ private fun PlayerRouteOptionRow(
     val secondaryTone = if (detailedMode) state.detailedSubtitleTone else state.compactSubtitleTone
     val secondaryAlpha = if (detailedMode) state.detailedSubtitleAlpha else state.compactSubtitleAlpha
     val detailLineColor = sourceLibraryToneColor(state.detailLineTone)
+    val protocolColor = sourceLibraryToneColor(state.protocolTone)
     val sizeColor = sourceLibraryToneColor(state.sizeTone)
     val rowContainerColor = playerChromeBaseColor(state.rowContainerBaseColor)
     val rowDisabledContainerColor = playerChromeBaseColor(state.rowDisabledContainerBaseColor)
@@ -9086,7 +9088,7 @@ private fun PlayerRouteOptionRow(
                     Text(
                         state.protocolLabel,
                         style = MaterialTheme.typography.labelMedium,
-                        color = accent.copy(alpha = state.protocolAlpha),
+                        color = protocolColor.copy(alpha = state.protocolAlpha),
                         maxLines = 1,
                     )
                     state.sizeLabel?.let {
