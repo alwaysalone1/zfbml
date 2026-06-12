@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.168")
+                setRequestProperty("User-Agent", "ZFBML/0.5.169")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2984,7 +2984,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.168",
+            version = "0.5.169",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -8813,7 +8813,7 @@ private fun PlayerRoutePanel(
     onRouteSelected: (RouteCandidate) -> Unit,
 ) {
     if (routes.isEmpty()) {
-        Text("暂时没有可用播放源", style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+        PlayerRoutePanelEmpty(state = buildPlayerRoutePanelEmptyUiState())
         return
     }
     val currentSourceId = remember(routes, selectedStreamId) {
@@ -8884,6 +8884,32 @@ private fun PlayerRoutePanel(
                 onClick = { onRouteSelected(route) },
             )
         }
+    }
+}
+
+@Composable
+private fun PlayerRoutePanelEmpty(
+    state: PlayerRoutePanelEmptyUiState,
+    modifier: Modifier = Modifier,
+) {
+    val titleColor = playerChromeBaseColor(state.titleBaseColor)
+    val summaryColor = sourceLibraryToneColor(state.summaryTone)
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(state.verticalSpacing)) {
+        Text(
+            state.title,
+            style = MaterialTheme.typography.titleSmall,
+            color = titleColor.copy(alpha = state.titleAlpha),
+            fontWeight = FontWeight.SemiBold,
+            maxLines = state.titleMaxLines,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            state.summary,
+            style = MaterialTheme.typography.bodyMedium,
+            color = summaryColor.copy(alpha = state.summaryAlpha),
+            maxLines = state.summaryMaxLines,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 

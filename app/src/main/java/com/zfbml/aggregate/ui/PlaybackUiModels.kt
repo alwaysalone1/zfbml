@@ -2006,6 +2006,18 @@ internal data class RoutePanelMetricUiState(
     val valueAlpha: Float,
 )
 
+internal data class PlayerRoutePanelEmptyUiState(
+    val title: String,
+    val summary: String,
+    val titleBaseColor: PlayerChromeBaseColor,
+    val titleAlpha: Float,
+    val summaryTone: SourceLibraryTone,
+    val summaryAlpha: Float,
+    val verticalSpacing: Dp,
+    val titleMaxLines: Int,
+    val summaryMaxLines: Int,
+)
+
 internal data class PlayerRouteSourceStripUiState(
     val visible: Boolean,
     val title: String,
@@ -7114,6 +7126,20 @@ internal fun buildRoutePanelUiState(
         noticeTone = SourceLibraryTone.Backup,
         noticeAlpha = 1f,
         noticeMaxLines = 2,
+    )
+}
+
+internal fun buildPlayerRoutePanelEmptyUiState(): PlayerRoutePanelEmptyUiState {
+    return PlayerRoutePanelEmptyUiState(
+        title = "\u6682\u65f6\u6ca1\u6709\u53ef\u7528\u64ad\u653e\u6e90",
+        summary = "\u53ef\u4ee5\u8fd4\u56de\u8be6\u60c5\u9875\u91cd\u65b0\u5339\u914d\uff0c\u6216\u5207\u6362\u96c6\u6570\u540e\u518d\u8bd5",
+        titleBaseColor = PlayerChromeBaseColor.White,
+        titleAlpha = 1f,
+        summaryTone = SourceLibraryTone.Muted,
+        summaryAlpha = 0.78f,
+        verticalSpacing = 4.dp,
+        titleMaxLines = 1,
+        summaryMaxLines = 2,
     )
 }
 

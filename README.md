@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.169
+
+English:
+
+- Player route panels now use `PlayerRoutePanelEmptyUiState` for empty-state title, summary, base color, tone, alpha, spacing, and max-line chrome.
+- The route panel empty state now gives an actionable recovery hint instead of a single Compose-local text constant.
+- Added unit coverage for player route-panel empty-state chrome.
+- App version labels, request user agents, and README notes are now updated to `0.5.169`.
+
 ### v0.5.168
 
 English:

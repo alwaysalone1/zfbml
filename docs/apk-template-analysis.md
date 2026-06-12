@@ -344,3 +344,5 @@ This pass upgrades player route panel summary chrome. `RoutePanelUiState` and `R
 This pass upgrades player route-source strip chrome. `PlayerRouteSourceStripUiState` now owns strip title and route-list title base colors plus route-list title alpha, while `PlayerRouteSourceChipUiState` owns chip container/title/detail base colors so fullscreen source filtering renders from the tested model contract instead of Compose-local white chrome constants.
 
 This pass upgrades player route-source chip tone chrome. `PlayerRouteSourceChipUiState` now owns border tone, status-badge tone, and footer tone so fullscreen source filtering keeps source-group semantics in the tested model while Compose only applies the selected tone and existing theme error color.
+
+This pass upgrades player route-panel empty-state chrome. `PlayerRoutePanelEmptyUiState` now owns empty copy, text base color, summary tone, alpha, spacing, and max-line limits so no-route playback panels provide actionable recovery guidance through the tested player model instead of a Compose-local fallback string.

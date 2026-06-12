@@ -946,6 +946,21 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun playerRoutePanelEmptyUiStateProvidesActionableCopyAndChrome() {
+        val state = buildPlayerRoutePanelEmptyUiState()
+
+        assertEquals("\u6682\u65f6\u6ca1\u6709\u53ef\u7528\u64ad\u653e\u6e90", state.title)
+        assertEquals("\u53ef\u4ee5\u8fd4\u56de\u8be6\u60c5\u9875\u91cd\u65b0\u5339\u914d\uff0c\u6216\u5207\u6362\u96c6\u6570\u540e\u518d\u8bd5", state.summary)
+        assertEquals(PlayerChromeBaseColor.White, state.titleBaseColor)
+        assertEquals(1f, state.titleAlpha, 0.001f)
+        assertEquals(SourceLibraryTone.Muted, state.summaryTone)
+        assertEquals(0.78f, state.summaryAlpha, 0.001f)
+        assertEquals(4.dp, state.verticalSpacing)
+        assertEquals(1, state.titleMaxLines)
+        assertEquals(2, state.summaryMaxLines)
+    }
+
+    @Test
     fun routePanelUiStateSummarizesRecommendationAndFailures() {
         val failed = route("failed", StreamProtocol.HLS, 900, quality = "1080p")
         val bt = route("bt", StreamProtocol.BITTORRENT, 800, quality = "1080p")
