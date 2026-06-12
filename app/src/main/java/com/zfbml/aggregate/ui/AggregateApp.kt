@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.150")
+                setRequestProperty("User-Agent", "ZFBML/0.5.151")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2984,7 +2984,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.150",
+            version = "0.5.151",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -6256,11 +6256,8 @@ private fun PortraitWatchInfoPanel(
                         ) {
                             panelState.actions.forEach { action ->
                                 PortraitPlaybackAction(
+                                    state = action,
                                     icon = playerPanelTabIcon(action.kind),
-                                    title = action.title,
-                                    subtitle = action.subtitle,
-                                    accent = sourceLibraryToneColor(action.tone),
-                                    enabled = action.enabled,
                                     onClick = { onShowPanel(action.kind.asPlayerPanel()) },
                                     modifier = Modifier.weight(1f),
                                 )
@@ -6398,43 +6395,42 @@ private fun PortraitRecoveryActionButton(
 
 @Composable
 private fun PortraitPlaybackAction(
+    state: PortraitWatchActionUiState,
     icon: ImageVector,
-    title: String,
-    subtitle: String,
-    accent: Color,
-    enabled: Boolean = true,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val accent = sourceLibraryToneColor(state.tone)
+    val titleColor = playerChromeBaseColor(state.titleBaseColor)
     TextButton(
         onClick = onClick,
-        enabled = enabled,
-        modifier = modifier.height(34.dp).focusable(),
-        shape = RoundedCornerShape(999.dp),
+        enabled = state.enabled,
+        modifier = modifier.height(state.height).focusable(),
+        shape = RoundedCornerShape(state.cornerRadius),
         colors = ButtonDefaults.textButtonColors(
-            containerColor = accent.copy(alpha = 0.12f),
-            contentColor = accent,
+            containerColor = accent.copy(alpha = state.containerAlpha),
+            contentColor = accent.copy(alpha = state.iconAlpha),
         ),
-        contentPadding = PaddingValues(horizontal = 11.dp, vertical = 0.dp),
+        contentPadding = PaddingValues(horizontal = state.horizontalPadding, vertical = state.verticalPadding),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            horizontalArrangement = Arrangement.spacedBy(state.contentSpacing),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp))
+            Icon(icon, contentDescription = null, modifier = Modifier.size(state.iconSize))
             Text(
-                text = title,
+                text = state.title,
                 style = MaterialTheme.typography.labelMedium,
-                color = Color.White,
+                color = titleColor.copy(alpha = state.titleAlpha),
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
             )
             Text(
-                text = subtitle,
+                text = state.subtitle,
                 modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.labelSmall,
-                color = accent,
+                color = accent.copy(alpha = state.subtitleAlpha),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )

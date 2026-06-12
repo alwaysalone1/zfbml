@@ -308,3 +308,5 @@ This pass upgrades detail route-prefetch chip chrome. `RoutePrefetchItemUiState`
 This pass upgrades detail route-metric chip chrome. `DetailRouteMetricUiState` now owns metric-chip height, radius, container base color, alpha, padding, spacing, label tone, label alpha, and value alpha so detail-page route diagnostics render from a tested model contract instead of Compose-local dimensions and opacity constants.
 
 This pass upgrades detail route-prefetch card shell chrome. `RoutePrefetchUiState` now owns the route-warming card radius, container base color, alpha, border width/alpha, content padding/spacing, header spacing, icon-box sizing/radius/alpha, title and summary tones, progress track, and item spacing so adjacent-episode prefetch feedback is model-driven as a complete detail-page module.
+
+This pass upgrades portrait playback action chrome. `PortraitWatchActionUiState` now owns action button height, radius, container alpha, padding, spacing, icon size/alpha, title base color, title alpha, and subtitle alpha so portrait detail-playback controls for episode and route entry points follow the same tested model contract as fullscreen player actions.

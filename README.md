@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.151
+
+English:
+
+- Portrait playback actions now use `PortraitWatchActionUiState` for button height, radius, container alpha, padding, spacing, icon size/alpha, title color, and text alpha values.
+- `PortraitPlaybackAction` now renders from model chrome instead of keeping portrait action dimensions and opacity constants inside Compose.
+- Added unit coverage for portrait playback action chrome.
+- App version labels, request user agents, and README notes are now updated to `0.5.151`.
+
 ### v0.5.150
 
 English:

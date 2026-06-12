@@ -1031,6 +1031,17 @@ internal data class PortraitWatchActionUiState(
     val subtitle: String,
     val enabled: Boolean,
     val tone: SourceLibraryTone,
+    val height: Dp = 34.dp,
+    val cornerRadius: Dp = 999.dp,
+    val containerAlpha: Float = 0.12f,
+    val horizontalPadding: Dp = 11.dp,
+    val verticalPadding: Dp = 0.dp,
+    val contentSpacing: Dp = 6.dp,
+    val iconSize: Dp = 16.dp,
+    val iconAlpha: Float = 1f,
+    val titleBaseColor: PlayerChromeBaseColor = PlayerChromeBaseColor.White,
+    val titleAlpha: Float = 1f,
+    val subtitleAlpha: Float = 1f,
 )
 
 internal data class PortraitEpisodeRailUiState(
