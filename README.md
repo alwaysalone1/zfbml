@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.201
+
+English:
+
+- Manual danmaku search input state is now modeled by `PlayerDanmakuSearchUiState`.
+- The danmaku panel now renders search label, placeholder, trimmed submitted query, disabled loading state, and search-button enablement from the tested model.
+- Added unit coverage for trimmed searches, blank queries, and matching-in-progress search disabling.
+- App version labels, request user agents, and README notes are now updated to `0.5.201`.
+
 ### v0.5.200
 
 English:

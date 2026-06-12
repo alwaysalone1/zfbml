@@ -1501,8 +1501,19 @@ internal data class PlayerDanmakuSettingsUiState(
     val alphaSlider: PlayerDanmakuSliderUiState,
     val fontScaleSlider: PlayerDanmakuSliderUiState,
     val mapping: PlayerDanmakuMappingUiState,
+    val search: PlayerDanmakuSearchUiState,
     val safetySummary: String,
     val tone: SourceLibraryTone,
+)
+
+internal data class PlayerDanmakuSearchUiState(
+    val query: String,
+    val submittedQuery: String,
+    val label: String,
+    val placeholder: String,
+    val enabled: Boolean,
+    val actionEnabled: Boolean,
+    val actionContentDescription: String,
 )
 
 internal data class PlayerDanmakuMappingUiState(
@@ -5386,6 +5397,7 @@ internal fun buildPlayerDanmakuSettingsUiState(
     matches: List<DanmakuMatch> = emptyList(),
     matching: Boolean = false,
     timelineCount: Int = 0,
+    searchQuery: String = "",
     safeArea: PlayerDanmakuSafeAreaUiState? = null,
 ): PlayerDanmakuSettingsUiState {
     val densityLabel = formatDanmakuDensityForUi(density)
@@ -5401,6 +5413,10 @@ internal fun buildPlayerDanmakuSettingsUiState(
         matches = matches,
         matching = matching,
         timelineCount = timelineCount,
+    )
+    val search = buildPlayerDanmakuSearchUiState(
+        query = searchQuery,
+        matching = matching,
     )
     return PlayerDanmakuSettingsUiState(
         toggleTitle = if (enabled) "弹幕已开启" else "弹幕已关闭",
@@ -5474,8 +5490,25 @@ internal fun buildPlayerDanmakuSettingsUiState(
             inactiveTrackAlpha = 0.22f,
         ),
         mapping = mapping,
+        search = search,
         safetySummary = safetySummary,
         tone = tone,
+    )
+}
+
+internal fun buildPlayerDanmakuSearchUiState(
+    query: String,
+    matching: Boolean,
+): PlayerDanmakuSearchUiState {
+    val submittedQuery = query.trim()
+    return PlayerDanmakuSearchUiState(
+        query = query,
+        submittedQuery = submittedQuery,
+        label = "弹幕番名",
+        placeholder = "中文名 / 原名 / 别名",
+        enabled = !matching,
+        actionEnabled = !matching && submittedQuery.isNotBlank(),
+        actionContentDescription = if (matching) "正在匹配弹幕候选" else "搜索弹幕候选",
     )
 }
 

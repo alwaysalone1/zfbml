@@ -3260,6 +3260,7 @@ class PlaybackUiModelsTest {
             density = 0.62f,
             alpha = 0.76f,
             fontScale = 0.72f,
+            searchQuery = "  海贼王  ",
             safeArea = safeArea,
         )
         val disabled = buildPlayerDanmakuSettingsUiState(
@@ -3345,6 +3346,13 @@ class PlaybackUiModelsTest {
         assertFalse(enabled.mapping.prominent)
         assertEquals(SourceLibraryTone.Muted, enabled.mapping.trailingTone)
         assertEquals(48.dp, enabled.mapping.rowState.minHeight)
+        assertEquals("  海贼王  ", enabled.search.query)
+        assertEquals("海贼王", enabled.search.submittedQuery)
+        assertEquals("弹幕番名", enabled.search.label)
+        assertEquals("中文名 / 原名 / 别名", enabled.search.placeholder)
+        assertTrue(enabled.search.enabled)
+        assertTrue(enabled.search.actionEnabled)
+        assertEquals("搜索弹幕候选", enabled.search.actionContentDescription)
         assertTrue(enabled.safetySummary.contains("避让"))
         assertTrue(enabled.safetySummary.contains("\u4e2d0"))
         assertEquals(SourceLibraryTone.Primary, enabled.tone)
@@ -3370,6 +3378,21 @@ class PlaybackUiModelsTest {
         assertEquals("108%", disabled.fontScaleSlider.valueText)
         assertEquals(1.08f, disabled.fontScaleSlider.value)
         assertEquals(SourceLibraryTone.Muted, disabled.tone)
+    }
+
+    @Test
+    fun playerDanmakuSearchUiStateTrimsAndDisablesBlankOrLoadingSearches() {
+        val blank = buildPlayerDanmakuSearchUiState(query = "   ", matching = false)
+        val loading = buildPlayerDanmakuSearchUiState(query = "Alias", matching = true)
+
+        assertEquals("", blank.submittedQuery)
+        assertTrue(blank.enabled)
+        assertFalse(blank.actionEnabled)
+        assertEquals("搜索弹幕候选", blank.actionContentDescription)
+        assertEquals("Alias", loading.submittedQuery)
+        assertFalse(loading.enabled)
+        assertFalse(loading.actionEnabled)
+        assertEquals("正在匹配弹幕候选", loading.actionContentDescription)
     }
 
     @Test

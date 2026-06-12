@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.200")
+                setRequestProperty("User-Agent", "ZFBML/0.5.201")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2992,7 +2992,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.200",
+            version = "0.5.201",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -8631,7 +8631,7 @@ private fun PlayerDanmakuSettingsPanel(
     onAlphaChange: (Float) -> Unit,
     onFontScaleChange: (Float) -> Unit,
 ) {
-    val state = remember(danmakuEnabled, density, alpha, fontScale, matches, matching, timelineCount, safeArea) {
+    val state = remember(danmakuEnabled, density, alpha, fontScale, matches, matching, timelineCount, searchQuery, safeArea) {
         buildPlayerDanmakuSettingsUiState(
             enabled = danmakuEnabled,
             density = density,
@@ -8640,6 +8640,7 @@ private fun PlayerDanmakuSettingsPanel(
             matches = matches,
             matching = matching,
             timelineCount = timelineCount,
+            searchQuery = searchQuery,
             safeArea = safeArea,
         )
     }
@@ -8673,22 +8674,22 @@ private fun PlayerDanmakuSettingsPanel(
             subtitleAlpha = state.mapping.subtitleAlpha,
             trailingTone = state.mapping.trailingTone,
             rowState = state.mapping.rowState,
-            onClick = { onSearchDanmaku(searchQuery) },
+            onClick = { onSearchDanmaku(state.search.submittedQuery) },
         )
         OutlinedTextField(
-            value = searchQuery,
+            value = state.search.query,
             onValueChange = onSearchQueryChange,
             modifier = Modifier.fillMaxWidth(),
-            enabled = !matching,
+            enabled = state.search.enabled,
             singleLine = true,
-            label = { Text("弹幕番名") },
-            placeholder = { Text("中文名 / 原名 / 别名") },
+            label = { Text(state.search.label) },
+            placeholder = { Text(state.search.placeholder) },
             trailingIcon = {
                 IconButton(
-                    enabled = !matching && searchQuery.isNotBlank(),
-                    onClick = { onSearchDanmaku(searchQuery) },
+                    enabled = state.search.actionEnabled,
+                    onClick = { onSearchDanmaku(state.search.submittedQuery) },
                 ) {
-                    Icon(Icons.Filled.Search, contentDescription = "搜索弹幕候选")
+                    Icon(Icons.Filled.Search, contentDescription = state.search.actionContentDescription)
                 }
             },
         )

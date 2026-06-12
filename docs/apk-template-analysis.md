@@ -408,3 +408,5 @@ This pass upgrades danmaku automatic-load trust boundaries. `DanmakuRegistry` no
 This pass upgrades danmaku low-confidence review guidance. The automatic-load score threshold is now shared from the danmaku model layer, and `PlayerDanmakuMappingUiState` marks low-confidence candidate sets as requiring manual review with threshold-aware copy, badges, and row highlighting.
 
 This pass upgrades danmaku candidate confirmation semantics. `PlayerDanmakuCandidateUiState` now marks low-confidence candidates as requiring manual review and changes their action copy to a confirmation flow, making it clearer that selecting them is an intentional calibration step rather than automatic matching.
+
+This pass upgrades manual danmaku search entry modeling. `PlayerDanmakuSearchUiState` now owns the editable query, trimmed submitted query, label, placeholder, loading-disabled state, and search action availability so the calibration panel no longer derives manual-search behavior directly in Compose.
