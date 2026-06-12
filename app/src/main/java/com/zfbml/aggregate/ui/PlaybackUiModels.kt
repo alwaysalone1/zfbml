@@ -1036,6 +1036,8 @@ internal data class PlayerOverlayState(
     val statusLabel: String,
     val notice: String?,
     val error: String?,
+    val noticeTone: SourceLibraryTone? = null,
+    val noticeMaxLines: Int? = null,
 )
 
 internal data class PlayerTopOverlayUiState(
@@ -1133,6 +1135,7 @@ internal data class PlayerNoticeUiState(
     val fullscreenTitleBaseColor: PlayerChromeBaseColor = PlayerChromeBaseColor.White,
     val fullscreenTitleAlpha: Float = 1f,
     val fullscreenMessageAlpha: Float = 1f,
+    val fullscreenMessageMaxLines: Int = 1,
     val fullscreenTitleWeight: Float = 0.9f,
     val fullscreenMessageWeight: Float = 1.4f,
 )
@@ -6380,7 +6383,7 @@ internal fun buildPlayerRouteStatusUiState(
         statusLabel = overlayState.statusLabel.ifBlank { "自动" },
         tone = when {
             error -> SourceLibraryTone.Web
-            hasNotice -> SourceLibraryTone.Backup
+            hasNotice -> overlayState.noticeTone ?: SourceLibraryTone.Backup
             else -> SourceLibraryTone.Online
         },
         error = error,
@@ -6413,8 +6416,10 @@ internal fun buildPlayerOverlayNoticeUiState(
     return PlayerNoticeUiState(
         title = overlayState.statusLabel.ifBlank { if (error) "播放异常" else "播放提示" },
         message = message,
-        tone = if (error) SourceLibraryTone.Web else SourceLibraryTone.Backup,
+        tone = if (error) SourceLibraryTone.Web else overlayState.noticeTone ?: SourceLibraryTone.Backup,
         error = error,
+        fullscreenHeight = if (!error && (overlayState.noticeMaxLines ?: 1) > 1) 44.dp else 34.dp,
+        fullscreenMessageMaxLines = if (error) 1 else overlayState.noticeMaxLines ?: 1,
     )
 }
 
@@ -6422,6 +6427,8 @@ internal fun buildPlayerFullscreenNoticeUiState(
     routeSummary: String,
     routeNotice: String?,
     errorMessage: String?,
+    routeNoticeTone: SourceLibraryTone? = null,
+    routeNoticeMaxLines: Int? = null,
 ): PlayerNoticeUiState? {
     val message = routeNotice?.takeIf { it.isNotBlank() }
         ?: errorMessage?.takeIf { it.isNotBlank() }
@@ -6430,8 +6437,10 @@ internal fun buildPlayerFullscreenNoticeUiState(
     return PlayerNoticeUiState(
         title = routeSummary.ifBlank { "自动线路" },
         message = message,
-        tone = if (error) SourceLibraryTone.Web else SourceLibraryTone.Backup,
+        tone = if (error) SourceLibraryTone.Web else routeNoticeTone ?: SourceLibraryTone.Backup,
         error = error,
+        fullscreenHeight = if (!error && (routeNoticeMaxLines ?: 1) > 1) 44.dp else 34.dp,
+        fullscreenMessageMaxLines = if (error) 1 else routeNoticeMaxLines ?: 1,
     )
 }
 
@@ -6647,6 +6656,8 @@ internal fun buildPortraitWatchInfoUiState(
     routeNotice: String?,
     errorMessage: String?,
     hasPlaybackIssue: Boolean,
+    routeNoticeTone: SourceLibraryTone? = null,
+    routeNoticeMaxLines: Int? = null,
 ): PortraitWatchInfoUiState {
     val currentRoute = routes.firstOrNull { it.stream.id == stream.id || it.stream.url == stream.url }
     val quality = stream.quality.orEmpty().ifBlank { "自动" }
@@ -6692,6 +6703,8 @@ internal fun buildPortraitWatchInfoUiState(
         routeSummary = "播放提示",
         routeNotice = routeNotice,
         errorMessage = errorMessage,
+        routeNoticeTone = routeNoticeTone,
+        routeNoticeMaxLines = routeNoticeMaxLines,
     ) ?: if (hasPlaybackIssue) {
         PlayerNoticeUiState(
             title = "播放提示",
@@ -7483,6 +7496,8 @@ internal fun buildPlayerOverlayState(
     playbackState: String,
     notice: String?,
     error: String?,
+    noticeTone: SourceLibraryTone? = null,
+    noticeMaxLines: Int? = null,
 ): PlayerOverlayState {
     val playbackStateLabel = playerPlaybackStateLabelForUi(playbackState)
     return PlayerOverlayState(
@@ -7495,6 +7510,8 @@ internal fun buildPlayerOverlayState(
         statusLabel = playerStatusLabelForUi(playbackStateLabel, notice, error),
         notice = notice,
         error = error,
+        noticeTone = noticeTone,
+        noticeMaxLines = noticeMaxLines,
     )
 }
 

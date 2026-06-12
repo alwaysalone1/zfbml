@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.203")
+                setRequestProperty("User-Agent", "ZFBML/0.5.204")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2992,7 +2992,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.203",
+            version = "0.5.204",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -5501,6 +5501,8 @@ private fun PlayerScreen(
     }
     val routeCoverageLabel = remember(routeOptions) { playerRouteCoverageLabel(routeOptions) }
     var routeNotice by remember(stream.id) { mutableStateOf<String?>(null) }
+    var routeNoticeTone by remember(stream.id) { mutableStateOf<SourceLibraryTone?>(null) }
+    var routeNoticeMaxLines by remember(stream.id) { mutableStateOf<Int?>(null) }
     var danmakuItems by remember { mutableStateOf<List<DanmakuItem>>(emptyList()) }
     var danmakuMatches by remember { mutableStateOf<List<DanmakuMatch>>(emptyList()) }
     var danmakuMatching by remember { mutableStateOf(false) }
@@ -5537,6 +5539,30 @@ private fun PlayerScreen(
     fun revealControls() {
         controlsVisible = true
         controlsRevealSerial += 1
+    }
+
+    fun showRouteNotice(
+        message: String,
+        tone: SourceLibraryTone? = null,
+        maxLines: Int? = null,
+    ) {
+        routeNotice = message
+        routeNoticeTone = tone
+        routeNoticeMaxLines = maxLines
+    }
+
+    fun showDanmakuOperationNotice(notice: PlayerDanmakuOperationNoticeUiState) {
+        showRouteNotice(
+            message = notice.message,
+            tone = notice.tone,
+            maxLines = notice.maxLines,
+        )
+    }
+
+    fun clearRouteNotice() {
+        routeNotice = null
+        routeNoticeTone = null
+        routeNoticeMaxLines = null
     }
 
     fun toggleControls() {
@@ -5687,10 +5713,10 @@ private fun PlayerScreen(
         failedStreamIds = failedIds
         val nextRoute = nextPlayableRoute(playerRoutes, currentStream.id, failedIds)
         if (nextRoute != null) {
-            routeNotice = "播放源失败，已自动切到 ${nextRoute.primaryRouteLabel()}"
+            showRouteNotice("播放源失败，已自动切到 ${nextRoute.primaryRouteLabel()}")
             currentStream = nextRoute.stream
         } else {
-            routeNotice = "当前播放源失败：$errorMessage"
+            showRouteNotice("当前播放源失败：$errorMessage")
         }
     }
     LaunchedEffect(state.hasRenderedFirstFrame, state.isPlaying, currentStream.id, routeNotice) {
@@ -5698,7 +5724,7 @@ private fun PlayerScreen(
         if (state.hasRenderedFirstFrame || state.isPlaying) {
             delay(1_800)
             if (routeNotice == notice && (state.hasRenderedFirstFrame || state.isPlaying)) {
-                routeNotice = null
+                clearRouteNotice()
             }
         }
     }
@@ -5726,22 +5752,22 @@ private fun PlayerScreen(
     fun enqueueCurrentStreamForOffline() {
         revealControls()
         if (!cacheActionState.enabled) {
-            routeNotice = cacheActionState.reason
+            showRouteNotice(cacheActionState.reason)
             return
         }
         graph.media3DownloadCoordinator.enqueue(currentStream, "${detail.title} ${currentEpisode.title}")
-        routeNotice = "\u5df2\u52a0\u5165\u79bb\u7ebf\u7f13\u5b58 \u00b7 ${cacheActionState.reason}"
+        showRouteNotice("\u5df2\u52a0\u5165\u79bb\u7ebf\u7f13\u5b58 \u00b7 ${cacheActionState.reason}")
     }
 
     fun refreshDanmakuMapping(query: String = danmakuSearchQuery) {
         revealControls()
         val cleanQuery = query.trim()
         if (cleanQuery.isBlank()) {
-            routeNotice = buildPlayerDanmakuBlankSearchNoticeUiState().message
+            showDanmakuOperationNotice(buildPlayerDanmakuBlankSearchNoticeUiState())
             return
         }
         danmakuSearchQuery = cleanQuery
-        routeNotice = buildPlayerDanmakuSearchLoadingNoticeUiState(cleanQuery).message
+        showDanmakuOperationNotice(buildPlayerDanmakuSearchLoadingNoticeUiState(cleanQuery))
         scope.launch {
             danmakuMatching = true
             try {
@@ -5753,11 +5779,13 @@ private fun PlayerScreen(
                 danmakuItems = runCatching {
                     graph.danmakuRegistry.fetchBestTimeline(detail, currentEpisode)
                 }.getOrDefault(emptyList())
-                routeNotice = buildPlayerDanmakuSearchResultNoticeUiState(
-                    query = cleanQuery,
-                    candidateCount = matches.size,
-                    timelineCount = danmakuItems.size,
-                ).message
+                showDanmakuOperationNotice(
+                    buildPlayerDanmakuSearchResultNoticeUiState(
+                        query = cleanQuery,
+                        candidateCount = matches.size,
+                        timelineCount = danmakuItems.size,
+                    ),
+                )
             } finally {
                 danmakuMatching = false
             }
@@ -5766,7 +5794,7 @@ private fun PlayerScreen(
 
     fun calibrateDanmakuMapping(match: DanmakuMatch) {
         revealControls()
-        routeNotice = buildPlayerDanmakuCalibrationLoadingNoticeUiState().message
+        showDanmakuOperationNotice(buildPlayerDanmakuCalibrationLoadingNoticeUiState())
         scope.launch {
             danmakuMatching = true
             try {
@@ -5783,9 +5811,11 @@ private fun PlayerScreen(
                 val matches = graph.danmakuRegistry.matchAll(detail, currentEpisode)
                 danmakuMatches = matches
                 danmakuItems = graph.danmakuRegistry.fetchBestTimeline(detail, currentEpisode)
-                routeNotice = buildPlayerDanmakuCalibrationResultNoticeUiState(
-                    timelineCount = danmakuItems.size,
-                ).message
+                showDanmakuOperationNotice(
+                    buildPlayerDanmakuCalibrationResultNoticeUiState(
+                        timelineCount = danmakuItems.size,
+                    ),
+                )
             } finally {
                 danmakuMatching = false
             }
@@ -5796,7 +5826,7 @@ private fun PlayerScreen(
         revealControls()
         activePanel = null
         failedStreamIds = emptySet()
-        routeNotice = null
+        clearRouteNotice()
         currentStream = route.stream
     }
 
@@ -5804,7 +5834,7 @@ private fun PlayerScreen(
         revealControls()
         activePanel = null
         failedStreamIds = failedStreamIds - currentStream.id
-        routeNotice = "正在重试当前播放源..."
+        showRouteNotice("正在重试当前播放源...")
         if (currentStream.protocol == StreamProtocol.BITTORRENT) {
             scope.launch {
                 graph.torrentEngine.prepare(currentStream)
@@ -5822,10 +5852,10 @@ private fun PlayerScreen(
         failedStreamIds = failedIds
         val route = nextPlayableRoute(playerRoutes, currentStream.id, failedIds)
         if (route != null) {
-            routeNotice = "已切换到 ${route.primaryRouteLabel()}"
+            showRouteNotice("已切换到 ${route.primaryRouteLabel()}")
             currentStream = route.stream
         } else {
-            routeNotice = "没有更多可用播放源，可重试当前源或手动换源"
+            showRouteNotice("没有更多可用播放源，可重试当前源或手动换源")
         }
     }
 
@@ -5852,16 +5882,16 @@ private fun PlayerScreen(
                     .ifBlank { preferredRoute.protocol.displayName() }
                 val keptSource = preferredRoute.sourceId == previousSourceId ||
                     preferredRoute.stream.providerId == previousProviderId
-                routeNotice = if (keptSource) {
-                    "已切到 $episodeLabel · 沿用 $routeLabel"
+                if (keptSource) {
+                    showRouteNotice("已切到 $episodeLabel · 沿用 $routeLabel")
                 } else {
-                    "已切到 $episodeLabel · 原播放源不可用，改用 $routeLabel"
+                    showRouteNotice("已切到 $episodeLabel · 原播放源不可用，改用 $routeLabel")
                 }
                 activePanel = null
                 revealControls()
                 currentStream = preferredRoute.stream
             } else {
-                routeNotice = "${target.title} 暂时没有可用播放源"
+                showRouteNotice("${target.title} 暂时没有可用播放源")
             }
         }
 
@@ -5871,14 +5901,14 @@ private fun PlayerScreen(
             return
         }
 
-        routeNotice = "正在加载 ${target.title} 的播放源..."
+        showRouteNotice("正在加载 ${target.title} 的播放源...")
         episodeLoadingId = target.id
         scope.launch {
             val result = runCatching { graph.sourceRegistry.resolveRouteCandidates(target) }
             result
                 .onSuccess { candidates -> applyEpisodeRoutes(candidates) }
                 .onFailure { failure ->
-                    routeNotice = "选集加载失败：${failure.message ?: failure::class.simpleName.orEmpty().ifBlank { "未知错误" }}"
+                    showRouteNotice("选集加载失败：${failure.message ?: failure::class.simpleName.orEmpty().ifBlank { "未知错误" }}")
                 }
             episodeLoadingId = null
         }
@@ -5892,6 +5922,8 @@ private fun PlayerScreen(
         playbackState = state.playbackStateLabel,
         notice = routeNotice,
         error = effectiveErrorMessage,
+        noticeTone = routeNoticeTone,
+        noticeMaxLines = routeNoticeMaxLines,
     )
     val nextEpisode = remember(detail.episodes, currentEpisode.id) {
         nextEpisodeForPlayer(detail.episodes, currentEpisode)
@@ -6064,6 +6096,8 @@ private fun PlayerScreen(
                     routeOptions = routeOptions,
                     routeCoverageLabel = routeCoverageLabel,
                     routeNotice = routeNotice,
+                    routeNoticeTone = routeNoticeTone,
+                    routeNoticeMaxLines = routeNoticeMaxLines,
                     errorMessage = effectiveErrorMessage,
                     danmakuEnabled = danmakuEnabled,
                     density = density,
@@ -6187,6 +6221,8 @@ private fun PlayerScreen(
                     routes = routeOptions,
                     playbackState = state.playbackStateLabel,
                     routeNotice = routeNotice,
+                    routeNoticeTone = routeNoticeTone,
+                    routeNoticeMaxLines = routeNoticeMaxLines,
                     errorMessage = effectiveErrorMessage,
                     episodeLoadingId = episodeLoadingId,
                     hasPlaybackIssue = hasPlaybackIssue,
@@ -6284,6 +6320,8 @@ private fun PortraitWatchInfoPanel(
     routes: List<RouteCandidate>,
     playbackState: String,
     routeNotice: String?,
+    routeNoticeTone: SourceLibraryTone?,
+    routeNoticeMaxLines: Int?,
     errorMessage: String?,
     episodeLoadingId: String?,
     hasPlaybackIssue: Boolean,
@@ -6294,7 +6332,18 @@ private fun PortraitWatchInfoPanel(
     onEpisodeSelected: (Episode) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val panelState = remember(detail, episode, stream, routes, playbackState, routeNotice, errorMessage, hasPlaybackIssue) {
+    val panelState = remember(
+        detail,
+        episode,
+        stream,
+        routes,
+        playbackState,
+        routeNotice,
+        routeNoticeTone,
+        routeNoticeMaxLines,
+        errorMessage,
+        hasPlaybackIssue,
+    ) {
         buildPortraitWatchInfoUiState(
             detail = detail,
             episode = episode,
@@ -6304,6 +6353,8 @@ private fun PortraitWatchInfoPanel(
             routeNotice = routeNotice,
             errorMessage = errorMessage,
             hasPlaybackIssue = hasPlaybackIssue,
+            routeNoticeTone = routeNoticeTone,
+            routeNoticeMaxLines = routeNoticeMaxLines,
         )
     }
     val episodeRailState = remember(detail, episode.id, episodeLoadingId) {
@@ -6423,7 +6474,7 @@ private fun PortraitWatchInfoPanel(
                             text = diagnostic.message,
                             style = MaterialTheme.typography.bodySmall,
                             color = playerNoticeColor(diagnostic),
-                            maxLines = 2,
+                            maxLines = diagnostic.fullscreenMessageMaxLines,
                             overflow = TextOverflow.Ellipsis,
                         )
                     }
@@ -7016,6 +7067,8 @@ private fun PlayerBottomControls(
     routeOptions: List<RouteCandidate>,
     routeCoverageLabel: String,
     routeNotice: String?,
+    routeNoticeTone: SourceLibraryTone?,
+    routeNoticeMaxLines: Int?,
     errorMessage: String?,
     danmakuEnabled: Boolean,
     density: Float,
@@ -7141,6 +7194,8 @@ private fun PlayerBottomControls(
                 routeSummary = routeSummary,
                 routeNotice = routeNotice,
                 errorMessage = errorMessage,
+                routeNoticeTone = routeNoticeTone,
+                routeNoticeMaxLines = routeNoticeMaxLines,
             )
             if (noticeState != null) {
                 PlayerFullscreenNoticeStrip(
@@ -7236,7 +7291,7 @@ private fun PlayerFullscreenNoticeStrip(
             text = state.message,
             style = MaterialTheme.typography.labelSmall,
             color = accent.copy(alpha = state.fullscreenMessageAlpha),
-            maxLines = 1,
+            maxLines = state.fullscreenMessageMaxLines,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(state.fullscreenMessageWeight),
         )

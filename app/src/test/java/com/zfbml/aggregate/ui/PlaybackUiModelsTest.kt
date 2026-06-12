@@ -4600,6 +4600,18 @@ class PlaybackUiModelsTest {
             errorMessage = null,
             hasPlaybackIssue = false,
         )
+        val noticeState = buildPortraitWatchInfoUiState(
+            detail = detail,
+            episode = episodes[1],
+            stream = routes[0].stream,
+            routes = routes,
+            playbackState = "READY",
+            routeNotice = "已按「海贼王」找到 2 个弹幕候选，可选择校准",
+            errorMessage = null,
+            hasPlaybackIssue = false,
+            routeNoticeTone = SourceLibraryTone.Online,
+            routeNoticeMaxLines = 2,
+        )
 
         assertEquals("番剧标题", state.title)
         assertEquals("第 2 集", state.currentEpisodeLabel)
@@ -4626,6 +4638,10 @@ class PlaybackUiModelsTest {
         assertEquals(1f, episodeAction.subtitleAlpha, 0.001f)
         assertEquals("2源", state.actions.first { it.kind == PlayerPanelKind.Route }.subtitle)
         assertNull(state.diagnostic)
+        val diagnostic = checkNotNull(noticeState.diagnostic)
+        assertEquals(SourceLibraryTone.Online, diagnostic.tone)
+        assertEquals(2, diagnostic.fullscreenMessageMaxLines)
+        assertEquals(44.dp, diagnostic.fullscreenHeight)
     }
 
     @Test
@@ -4707,12 +4723,27 @@ class PlaybackUiModelsTest {
             error = "播放失败",
         )
         val noticeOverlay = errorOverlay.copy(notice = "已切换到 1080p", error = null, statusLabel = "切源中")
+        val danmakuOverlay = errorOverlay.copy(
+            notice = "已按「海贼王」找到 2 个弹幕候选，可选择校准",
+            error = null,
+            statusLabel = "弹幕候选",
+            noticeTone = SourceLibraryTone.Online,
+            noticeMaxLines = 2,
+        )
         val errorState = checkNotNull(buildPlayerOverlayNoticeUiState(errorOverlay))
         val noticeState = checkNotNull(buildPlayerOverlayNoticeUiState(noticeOverlay))
+        val danmakuState = checkNotNull(buildPlayerOverlayNoticeUiState(danmakuOverlay))
         val fullscreenNotice = checkNotNull(buildPlayerFullscreenNoticeUiState(
             routeSummary = "Animeko · HLS",
             routeNotice = "已切换到备用源",
             errorMessage = "上一条线路失败",
+        ))
+        val fullscreenDanmakuNotice = checkNotNull(buildPlayerFullscreenNoticeUiState(
+            routeSummary = "Animeko · HLS",
+            routeNotice = "已按「海贼王」找到 2 个弹幕候选，可选择校准",
+            errorMessage = null,
+            routeNoticeTone = SourceLibraryTone.Online,
+            routeNoticeMaxLines = 2,
         ))
         val fullscreenError = checkNotNull(buildPlayerFullscreenNoticeUiState(
             routeSummary = "",
@@ -4726,6 +4757,11 @@ class PlaybackUiModelsTest {
         assertEquals("已切换到 1080p", noticeState.message)
         assertFalse(noticeState.error)
         assertEquals(SourceLibraryTone.Backup, noticeState.tone)
+        assertEquals("已按「海贼王」找到 2 个弹幕候选，可选择校准", danmakuState.message)
+        assertFalse(danmakuState.error)
+        assertEquals(SourceLibraryTone.Online, danmakuState.tone)
+        assertEquals(44.dp, danmakuState.fullscreenHeight)
+        assertEquals(2, danmakuState.fullscreenMessageMaxLines)
         assertEquals(132.dp, noticeState.compactMaxWidth)
         assertEquals(30.dp, noticeState.compactHeight)
         assertEquals(999.dp, noticeState.compactCornerRadius)
@@ -4752,8 +4788,12 @@ class PlaybackUiModelsTest {
         assertEquals(PlayerChromeBaseColor.White, fullscreenNotice.fullscreenTitleBaseColor)
         assertEquals(1f, fullscreenNotice.fullscreenTitleAlpha, 0.001f)
         assertEquals(1f, fullscreenNotice.fullscreenMessageAlpha, 0.001f)
+        assertEquals(1, fullscreenNotice.fullscreenMessageMaxLines)
         assertEquals(0.9f, fullscreenNotice.fullscreenTitleWeight, 0.001f)
         assertEquals(1.4f, fullscreenNotice.fullscreenMessageWeight, 0.001f)
+        assertEquals(SourceLibraryTone.Online, fullscreenDanmakuNotice.tone)
+        assertEquals(44.dp, fullscreenDanmakuNotice.fullscreenHeight)
+        assertEquals(2, fullscreenDanmakuNotice.fullscreenMessageMaxLines)
         assertEquals("自动线路", fullscreenError.title)
         assertEquals("播放失败", fullscreenError.message)
         assertTrue(fullscreenError.error)
@@ -4786,6 +4826,7 @@ class PlaybackUiModelsTest {
                 statusLabel = "切源中",
                 notice = "已切换",
                 error = null,
+                noticeTone = SourceLibraryTone.Cache,
             ),
         )
         val error = buildPlayerRouteStatusUiState(
@@ -4822,7 +4863,7 @@ class PlaybackUiModelsTest {
         assertEquals(PlayerChromeBaseColor.White, normal.routeTextBaseColor)
         assertEquals(1f, normal.routeTextAlpha, 0.001f)
         assertEquals("自动线路", notice.routeLabel)
-        assertEquals(SourceLibraryTone.Backup, notice.tone)
+        assertEquals(SourceLibraryTone.Cache, notice.tone)
         assertFalse(notice.error)
         assertEquals(SourceLibraryTone.Web, error.tone)
         assertTrue(error.error)

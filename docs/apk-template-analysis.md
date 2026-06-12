@@ -414,3 +414,5 @@ This pass upgrades manual danmaku search entry modeling. `PlayerDanmakuSearchUiS
 This pass upgrades danmaku candidate-list presentation. `PlayerDanmakuCandidateListUiState` now owns candidate-list visibility, title chrome, loading empty guidance, spacing, and rendered candidate rows so the calibration panel can show search progress and candidate choices from a tested model contract.
 
 This pass upgrades danmaku operation notices. `PlayerDanmakuOperationNoticeUiState` now owns search and calibration feedback messages, tones, error flags, and line limits so blank searches, loading, results, and saved manual mappings share a tested notice contract instead of ad hoc player strings.
+
+This pass upgrades danmaku notice rendering. Modeled danmaku operation tones and line limits now flow through the player overlay, route-status chip, fullscreen notice strip, and portrait playback diagnostics, while generic route notices clear stale overrides through a shared notice helper.

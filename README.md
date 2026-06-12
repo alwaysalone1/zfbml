@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.204
+
+English:
+
+- Danmaku operation notice tones and line limits now flow into the player overlay notice pipeline.
+- Route notices are now set through a helper that clears stale tone overrides, while danmaku search and calibration notices keep their tested semantic tone.
+- Compact top notices, route status chips, fullscreen notice strips, and portrait playback diagnostics now honor modeled danmaku notice presentation.
+- App version labels, request user agents, and README notes are now updated to `0.5.204`.
+
 ### v0.5.203
 
 English:
