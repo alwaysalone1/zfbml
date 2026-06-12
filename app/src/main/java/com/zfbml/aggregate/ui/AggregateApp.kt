@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.173")
+                setRequestProperty("User-Agent", "ZFBML/0.5.174")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2984,7 +2984,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.173",
+            version = "0.5.174",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -5363,6 +5363,8 @@ private fun RouteCandidateRow(
     val titleColor = sourceLibraryToneColor(state.detailTitleTone)
     val protocolColor = sourceLibraryToneColor(state.detailProtocolTone)
     val sizeColor = sourceLibraryToneColor(state.detailSizeTone)
+    val sourceInitialColor = playerChromeBaseColor(state.detailSourceInitialBaseColor)
+    val sourceNameColor = playerChromeBaseColor(state.detailSourceNameBaseColor)
     Card(
         onClick = onClick,
         modifier = modifier.fillMaxWidth().focusable(),
@@ -5398,7 +5400,7 @@ private fun RouteCandidateRow(
                 Text(
                     state.sourceInitial,
                     style = MaterialTheme.typography.titleMedium,
-                    color = Color.White.copy(alpha = state.detailSourceInitialAlpha),
+                    color = sourceInitialColor.copy(alpha = state.detailSourceInitialAlpha),
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                 )
@@ -5409,7 +5411,7 @@ private fun RouteCandidateRow(
                         state.sourceName,
                         modifier = Modifier.weight(1f),
                         style = MaterialTheme.typography.titleMedium,
-                        color = Color.White.copy(alpha = state.detailSourceNameAlpha),
+                        color = sourceNameColor.copy(alpha = state.detailSourceNameAlpha),
                         fontWeight = FontWeight.SemiBold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,

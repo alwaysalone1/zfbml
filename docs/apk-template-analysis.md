@@ -354,3 +354,5 @@ This pass upgrades player route action icon semantics. `RouteCandidateUiState` n
 This pass upgrades player route action accessibility. `RouteCandidateUiState` now owns action icon content descriptions for play, current, download, web-fallback, and retry states so fullscreen route switching exposes the same tested action semantics to accessibility services.
 
 This pass upgrades route candidate protocol tone chrome. `RouteCandidateUiState` now owns player-row and detail-card protocol tones so route protocol labels share the same tested color contract across detail playback selection and fullscreen route switching instead of deriving protocol color inside Compose.
+
+This pass upgrades detail route source identity chrome. `RouteCandidateUiState` now owns source-initial and source-name base colors so detail route cards render provider identity text from the tested model contract instead of Compose-local white constants.
