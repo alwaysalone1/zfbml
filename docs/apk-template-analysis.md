@@ -382,3 +382,5 @@ This pass upgrades portrait playback-action focus behavior. `PortraitWatchAction
 This pass upgrades portrait episode-rail focus behavior. `PortraitEpisodeRailItemUiState` now owns focus eligibility so the portrait episode strip can keep loading and waiting episodes visible while TV or keyboard navigation only lands on selectable rail cards.
 
 This pass upgrades portrait episode more-entry focus behavior. `PortraitEpisodeMoreActionUiState` now owns focus eligibility so the all-episodes shortcut stays part of the tested portrait playback navigation contract instead of relying on Compose-local focus defaults.
+
+This pass upgrades danmaku toggle focus behavior. Compact and fullscreen danmaku toggle models now own focus eligibility separately from the current danmaku-enabled state, so off-state toggles remain reachable by TV or keyboard navigation while Compose only renders the tested contract.

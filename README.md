@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.188
+
+English:
+
+- Compact and fullscreen danmaku toggles now use model-owned `toggleFocusEnabled` for TV/keyboard focus eligibility.
+- Danmaku-off states remain focusable so remote and keyboard users can turn danmaku back on without opening extra panels.
+- Added unit coverage for enabled and disabled danmaku toggle focus states.
+- App version labels, request user agents, and README notes are now updated to `0.5.188`.
+
 ### v0.5.187
 
 English:
