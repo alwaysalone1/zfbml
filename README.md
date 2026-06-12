@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.165
+
+English:
+
+- Player route option rows now use `RouteCandidateUiState` for border width, rail alpha, row title alpha, compact/detailed subtitle alpha, detail-line tone/alpha, protocol alpha, size tone/alpha, and action-label icon/text alpha.
+- `PlayerRouteOptionRow` and `PlayerRouteActionLabel` now render player-side route rows from tested route candidate chrome instead of local text and action constants.
+- Added unit coverage for player route-option row chrome.
+- App version labels, request user agents, and README notes are now updated to `0.5.165`.
+
 ### v0.5.164
 
 English:

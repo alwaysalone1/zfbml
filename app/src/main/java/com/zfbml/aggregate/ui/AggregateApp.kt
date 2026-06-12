@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.164")
+                setRequestProperty("User-Agent", "ZFBML/0.5.165")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2984,7 +2984,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.164",
+            version = "0.5.165",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -8985,6 +8985,9 @@ private fun PlayerRouteOptionRow(
     val primaryTitle = if (detailedMode) state.detailedTitle else state.compactTitle
     val secondaryTitle = if (detailedMode) state.detailedSubtitle else state.compactSubtitle
     val secondaryTone = if (detailedMode) state.detailedSubtitleTone else state.compactSubtitleTone
+    val secondaryAlpha = if (detailedMode) state.detailedSubtitleAlpha else state.compactSubtitleAlpha
+    val detailLineColor = sourceLibraryToneColor(state.detailLineTone)
+    val sizeColor = sourceLibraryToneColor(state.sizeTone)
     val borderColor = state.borderTone?.let(::sourceLibraryToneColor) ?: Color.White
     Card(
         onClick = onClick,
@@ -8995,7 +8998,7 @@ private fun PlayerRouteOptionRow(
             containerColor = Color.White.copy(alpha = state.containerAlpha),
             disabledContainerColor = Color.White.copy(alpha = state.disabledContainerAlpha),
         ),
-        border = BorderStroke(1.dp, borderColor.copy(alpha = state.borderAlpha)),
+        border = BorderStroke(state.rowBorderWidth, borderColor.copy(alpha = state.borderAlpha)),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(state.rowPadding),
@@ -9007,7 +9010,7 @@ private fun PlayerRouteOptionRow(
                     .width(state.railWidth)
                     .height(if (detailedMode) state.detailedRailHeight else state.compactRailHeight)
                     .clip(RoundedCornerShape(state.rowCornerRadius))
-                    .background(accent),
+                    .background(accent.copy(alpha = state.rowRailAlpha)),
             )
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(state.textColumnSpacing)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(state.titleBadgeSpacing), verticalAlignment = Alignment.CenterVertically) {
@@ -9015,7 +9018,7 @@ private fun PlayerRouteOptionRow(
                         primaryTitle,
                         modifier = Modifier.weight(1f),
                         style = MaterialTheme.typography.titleSmall,
-                        color = Color.White,
+                        color = Color.White.copy(alpha = state.rowTitleAlpha),
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -9027,7 +9030,7 @@ private fun PlayerRouteOptionRow(
                 Text(
                     secondaryTitle,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = sourceLibraryToneColor(secondaryTone),
+                    color = sourceLibraryToneColor(secondaryTone).copy(alpha = secondaryAlpha),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -9035,7 +9038,7 @@ private fun PlayerRouteOptionRow(
                     Text(
                         state.detailLine,
                         style = MaterialTheme.typography.bodySmall,
-                        color = AnimeMuted,
+                        color = detailLineColor.copy(alpha = state.detailLineAlpha),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -9043,8 +9046,20 @@ private fun PlayerRouteOptionRow(
             }
             Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(state.trailingSpacing)) {
                 if (detailedMode) {
-                    Text(state.protocolLabel, style = MaterialTheme.typography.labelMedium, color = accent, maxLines = 1)
-                    state.sizeLabel?.let { Text(it, style = MaterialTheme.typography.labelSmall, color = AnimeMuted, maxLines = 1) }
+                    Text(
+                        state.protocolLabel,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = accent.copy(alpha = state.protocolAlpha),
+                        maxLines = 1,
+                    )
+                    state.sizeLabel?.let {
+                        Text(
+                            it,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = sizeColor.copy(alpha = state.sizeAlpha),
+                            maxLines = 1,
+                        )
+                    }
                 }
                 PlayerRouteActionLabel(state = state, color = actionColor)
             }
@@ -9066,8 +9081,18 @@ private fun PlayerRouteActionLabel(
         horizontalArrangement = Arrangement.spacedBy(state.actionLabelSpacing),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = color, modifier = Modifier.size(state.actionLabelIconSize))
-        Text(state.actionLabel, style = MaterialTheme.typography.labelSmall, color = color, maxLines = 1)
+        Icon(
+            Icons.Filled.PlayArrow,
+            contentDescription = null,
+            tint = color.copy(alpha = state.actionLabelIconAlpha),
+            modifier = Modifier.size(state.actionLabelIconSize),
+        )
+        Text(
+            state.actionLabel,
+            style = MaterialTheme.typography.labelSmall,
+            color = color.copy(alpha = state.actionLabelTextAlpha),
+            maxLines = 1,
+        )
     }
 }
 

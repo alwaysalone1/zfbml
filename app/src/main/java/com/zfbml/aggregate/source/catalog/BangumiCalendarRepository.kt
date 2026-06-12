@@ -42,7 +42,7 @@ class BangumiCalendarRepository(
         }
 
         private const val CALENDAR_URL = "https://api.bgm.tv/calendar"
-        private const val USER_AGENT = "ZFBML/0.5.164 (https://github.com/alwaysalone1/zfbml)"
+        private const val USER_AGENT = "ZFBML/0.5.165 (https://github.com/alwaysalone1/zfbml)"
         private val json = Json {
             ignoreUnknownKeys = true
             coerceInputValues = true
