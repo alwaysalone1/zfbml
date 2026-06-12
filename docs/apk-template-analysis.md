@@ -422,3 +422,5 @@ This pass upgrades automatic danmaku title expansion. `DanmakuRegistry` now appe
 This pass upgrades automatic danmaku title ordering. Base-title variants are now emitted directly after their source title before the automatic search cap is applied, so a primary seasonal title's normalized base name cannot be pushed out by long Bangumi alias lists.
 
 This pass upgrades catalog alias normalization for route indexing and danmaku lookup. Mixed Bangumi alias text is now split across newline, pipe, semicolon, spaced slash, and comma-style delimiters before both playback route search and automatic danmaku candidate search, matching the large-client pattern of normalizing catalog identity before fanout queries.
+
+This pass upgrades route-search alias fallback. `MediaFetchRequest` now keeps CJK catalog names first but retains non-CJK original names and foreign aliases as lower-priority route queries, so sources that index only the original title can still be discovered without weakening Chinese-title priority.

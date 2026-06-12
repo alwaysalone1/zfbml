@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.208
+
+English:
+
+- Route indexing now keeps non-CJK original names and foreign aliases as fallback searches after CJK catalog names.
+- This preserves Chinese-title priority while recovering routes from sources that only index the original or English title.
+- Added resolver coverage proving fallback aliases are sent through the real route-search pipeline.
+- App version labels, request user agents, and README notes are now updated to `0.5.208`.
+
 ### v0.5.207
 
 English:

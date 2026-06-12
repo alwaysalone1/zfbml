@@ -34,7 +34,8 @@ data class MediaFetchRequest(
                 .filter { it.length >= 2 }
                 .distinctBy { it.normalizedAliasKey() }
             val cjkAliases = distinctAliases.filter { it.containsCjkCharacter() }
-            val aliases = cjkAliases.ifEmpty { distinctAliases }
+            val nonCjkAliases = distinctAliases.filterNot { it.containsCjkCharacter() }
+            val aliases = (cjkAliases + nonCjkAliases).ifEmpty { distinctAliases }
 
             return MediaFetchRequest(
                 subjectId = episode.raw["subjectId"],

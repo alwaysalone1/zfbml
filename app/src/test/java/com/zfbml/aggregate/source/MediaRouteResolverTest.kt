@@ -86,9 +86,41 @@ class MediaRouteResolverTest {
         val request = MediaFetchRequest.fromEpisode(episode)
 
         assertEquals(
-            listOf("大闹天宫", "大闹天宫 1961"),
+            listOf(
+                "大闹天宫",
+                "大闹天宫 1961",
+                "Uproar in Heaven",
+                "Sun Ukun: Uproar in Heaven",
+            ),
             request.subjectNames,
         )
+    }
+
+    @Test
+    fun resolverKeepsNonCjkAliasesAsFallbackQueries() = runTest {
+        val provider = EnglishOnlyRouteProvider()
+        val request = MediaFetchRequest.fromEpisode(
+            Episode(
+                providerId = "bangumi-catalog",
+                id = "catalog-2",
+                title = "Episode 2",
+                url = "bangumi://subject/2/episode/2",
+                index = 2,
+                raw = mapOf(
+                    "subjectId" to "2",
+                    "subjectNameCn" to "\u6d4b\u8bd5\u756a\u5267",
+                    "subjectAliases" to "\u6d4b\u8bd5\u756a\u5267 \u522b\u540d|English Anime",
+                    "subjectName" to "Original Anime",
+                ),
+            ),
+        )
+
+        val routes = MediaRouteResolver(listOf(provider), providerTimeoutMs = 1_000L).resolve(request)
+
+        assertTrue(provider.queries.contains("English Anime"))
+        assertTrue(routes.isNotEmpty())
+        assertEquals("English Only Source", routes.first().sourceName)
+        assertEquals("English Anime - 02", routes.first().title)
     }
 
     @Test
@@ -282,6 +314,61 @@ class MediaRouteResolverTest {
         assertTrue(provider.loadedSourceIds.contains("source-a"))
         assertTrue(provider.loadedSourceIds.contains("source-b"))
         assertTrue(routes.map { it.sourceId }.contains("source-b"))
+    }
+
+    private class EnglishOnlyRouteProvider : SourceProvider {
+        val queries = ConcurrentLinkedQueue<String>()
+
+        override val manifest = SourceManifest(
+            id = "english-only",
+            name = "English Only Source",
+            version = "1",
+            author = "test",
+            capabilities = setOf(SourceCapability.SEARCH, SourceCapability.DETAIL, SourceCapability.STREAM),
+        )
+
+        override suspend fun search(query: String): List<SearchResult> {
+            queries += query
+            if (query != "English Anime") return emptyList()
+            return listOf(
+                SearchResult(
+                    providerId = manifest.id,
+                    title = "English Anime - 02",
+                    url = "english://result/2",
+                    raw = mapOf("mediaKind" to "online"),
+                ),
+            )
+        }
+
+        override suspend fun loadDetail(result: SearchResult): MediaDetail {
+            return MediaDetail(
+                providerId = manifest.id,
+                title = result.title,
+                url = result.url,
+                episodes = listOf(
+                    Episode(
+                        providerId = manifest.id,
+                        id = "english-ep-2",
+                        title = result.title,
+                        url = "${result.url}/stream",
+                        index = 2,
+                    ),
+                ),
+            )
+        }
+
+        override suspend fun resolveStreams(episode: Episode): List<MediaStream> {
+            return listOf(
+                MediaStream(
+                    id = episode.id,
+                    providerId = manifest.id,
+                    url = "${episode.url}.m3u8",
+                    protocol = StreamProtocol.HLS,
+                    quality = "1080p",
+                    sourceScore = 70,
+                ),
+            )
+        }
     }
 
     private class FakeRouteProvider : SourceProvider {
