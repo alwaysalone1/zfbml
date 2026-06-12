@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.153")
+                setRequestProperty("User-Agent", "ZFBML/0.5.154")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2984,7 +2984,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.153",
+            version = "0.5.154",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -4461,52 +4461,56 @@ private fun DetailRouteStatusCard(
     modifier: Modifier = Modifier,
 ) {
     val accent = if (state.error) MaterialTheme.colorScheme.error else sourceLibraryToneColor(state.tone)
+    val contentSpacing = if (state.compact) state.compactContentSpacing else state.expandedContentSpacing
+    val iconBoxSize = if (state.compact) state.iconBoxCompactSize else state.iconBoxExpandedSize
+    val progressIconSize = if (state.compact) state.progressIconCompactSize else state.progressIconExpandedSize
+    val readyIconSize = if (state.compact) state.readyIconCompactSize else state.readyIconExpandedSize
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(state.cardCornerRadius),
         color = AnimePanel,
-        border = BorderStroke(1.dp, AnimeBorder),
+        border = BorderStroke(state.cardBorderWidth, AnimeBorder),
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(if (state.compact) 8.dp else 14.dp),
+            modifier = Modifier.fillMaxWidth().padding(state.contentPadding),
+            verticalArrangement = Arrangement.spacedBy(contentSpacing),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(state.headerSpacing),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Box(
                     modifier = Modifier
-                        .size(if (state.compact) 38.dp else 44.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(accent.copy(alpha = 0.18f)),
+                        .size(iconBoxSize)
+                        .clip(RoundedCornerShape(state.iconBoxCornerRadius))
+                        .background(accent.copy(alpha = state.iconBoxContainerAlpha)),
                     contentAlignment = Alignment.Center,
                 ) {
                     if (state.showProgress) {
-                        CircularProgressIndicator(color = accent, modifier = Modifier.size(if (state.compact) 18.dp else 22.dp))
+                        CircularProgressIndicator(color = accent, modifier = Modifier.size(progressIconSize))
                     } else {
                         Icon(
                             imageVector = if (state.useReadyIcon) Icons.Filled.Check else Icons.Filled.PlayArrow,
                             contentDescription = null,
                             tint = accent,
-                            modifier = Modifier.size(if (state.compact) 21.dp else 24.dp),
+                            modifier = Modifier.size(readyIconSize),
                         )
                     }
                 }
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(state.titleColumnSpacing)) {
                     Text(state.title, style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold)
                     Text(state.subtitle, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
-                TextButton(onClick = onToggleExpanded, modifier = Modifier.height(38.dp).focusable()) {
+                TextButton(onClick = onToggleExpanded, modifier = Modifier.height(state.actionButtonHeight).focusable()) {
                     Text(state.actionLabel, color = AnimeAccentCyan, style = MaterialTheme.typography.labelLarge)
                 }
             }
             if (state.showProgress) {
                 LinearProgressIndicator(
-                    modifier = Modifier.fillMaxWidth().height(3.dp).clip(RoundedCornerShape(8.dp)),
+                    modifier = Modifier.fillMaxWidth().height(state.progressHeight).clip(RoundedCornerShape(state.progressCornerRadius)),
                     color = accent,
-                    trackColor = Color.White.copy(alpha = 0.08f),
+                    trackColor = Color.White.copy(alpha = state.progressTrackAlpha),
                 )
             }
             if (state.showRecommendation) {
@@ -4521,7 +4525,7 @@ private fun DetailRouteStatusCard(
                 RouteLoadingStepRow(steps = state.loadingSteps, accent = accent)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(state.diagnosticsSpacing),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     state.metrics.forEach { metric ->

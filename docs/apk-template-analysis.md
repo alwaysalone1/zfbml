@@ -314,3 +314,5 @@ This pass upgrades portrait playback action chrome. `PortraitWatchActionUiState`
 This pass upgrades portrait recovery action chrome. `PlayerActionUiState` now owns portrait recovery button height, radius, container base color, alpha, icon size, spacing, and content alpha so retry and next-route controls in portrait playback errors follow the same tested model contract as fullscreen and compact recovery actions.
 
 This pass upgrades player route-source chip chrome. `PlayerRouteSourceChipUiState` now owns chip radius, border width, header spacing, title alpha, footer alpha, and the existing size/padding/container/detail controls so fullscreen route-source filtering keeps a tested model contract instead of relying on Compose-local chip constants.
+
+This pass upgrades detail route-status card chrome. `DetailRouteStatusUiState` now owns card radius, border width, padding, compact/expanded spacing, header spacing, icon-box sizing, progress sizing, action height, and diagnostics spacing so route matching on the detail playback page follows the same tested model contract as player route-source controls.

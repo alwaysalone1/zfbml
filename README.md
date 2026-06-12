@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.154
+
+English:
+
+- Detail route status cards now use `DetailRouteStatusUiState` for card radius, border width, padding, compact/expanded spacing, icon-box sizing, progress sizing, action height, and diagnostics spacing.
+- `DetailRouteStatusCard` now renders its route-matching shell from model chrome instead of keeping playback-detail route constants inside Compose.
+- Added unit coverage for detail route-status card chrome.
+- App version labels, request user agents, and README notes are now updated to `0.5.154`.
+
 ### v0.5.153
 
 English:
