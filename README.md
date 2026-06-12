@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.219
+
+English:
+
+- Home schedule digest cards now expose a visible status badge for today's updates, weekly indexed schedules, syncing, empty, and failed states.
+- `HomeScheduleDigestUiState` now keeps schedule readiness labels and tones in the tested model contract alongside progress and count chips.
+- Added model coverage for schedule digest status labels and tones across ready, syncing, empty, and failed states.
+- App version labels, request user agents, and README notes are now updated to `0.5.219`.
+
 ### v0.5.218
 
 English:

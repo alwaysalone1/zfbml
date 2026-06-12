@@ -584,6 +584,8 @@ internal data class HomeScheduleUiState(
 internal data class HomeScheduleDigestUiState(
     val title: String,
     val subtitle: String,
+    val statusLabel: String,
+    val statusTone: SourceLibraryTone,
     val showProgress: Boolean,
     val tone: SourceLibraryTone,
     val chips: List<SourceLibraryChipUiState>,
@@ -4094,9 +4096,19 @@ internal fun buildHomeScheduleDigestUiState(
         state.weekCount > 0 -> SourceLibraryTone.Online
         else -> SourceLibraryTone.Muted
     }
+    val statusLabel = when {
+        cleanError != null -> "\u5f02\u5e38"
+        loading && state.weekCount > 0 -> "\u66f4\u65b0\u4e2d"
+        loading -> "\u540c\u6b65\u4e2d"
+        state.todayCount > 0 -> "\u4eca\u65e5\u66f4\u65b0"
+        state.weekCount > 0 -> "\u672c\u5468\u5df2\u7d22\u5f15"
+        else -> "\u5f85\u540c\u6b65"
+    }
     return HomeScheduleDigestUiState(
         title = cleanError?.let { "\u65f6\u95f4\u8868\u540c\u6b65\u5f02\u5e38" } ?: state.headline,
         subtitle = cleanError ?: state.summary,
+        statusLabel = statusLabel,
+        statusTone = tone,
         showProgress = loading,
         tone = tone,
         chips = listOf(

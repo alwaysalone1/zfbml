@@ -444,3 +444,5 @@ This pass upgrades cache library readiness presentation. `CacheLibraryUiState` n
 This pass upgrades detail first-play decision visibility. `DetailFirstPlayUiState` now carries a tested status badge for ready, matching, empty, and failed route states, so the detail page exposes playback readiness before the user starts playback.
 
 This pass upgrades category browse readiness visibility. `CategoryBrowseUiState` now carries a tested status badge for indexed, syncing, fallback, empty, and failed channel states, so category pages explain browsing readiness before users open a detail page.
+
+This pass upgrades home schedule digest readiness visibility. `HomeScheduleDigestUiState` now carries a tested status badge for today's updates, weekly indexed schedules, syncing, empty, and failed states, so the Discover calendar explains schedule freshness before users expand the weekly list.
