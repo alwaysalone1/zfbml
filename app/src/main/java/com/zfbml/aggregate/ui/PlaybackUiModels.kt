@@ -843,6 +843,8 @@ internal data class BrandSplashUiState(
     val brand: String,
     val tagline: String,
     val progressLabel: String,
+    val statusLabel: String,
+    val statusTone: SourceLibraryTone,
     val startupDurationMillis: Int,
     val logoSize: Dp,
     val orbitSize: Dp,
@@ -4835,11 +4837,26 @@ internal fun buildBrandSplashUiState(
     } else {
         BrandSplashStatusPillUiState("弹幕同步", SourceLibraryTone.Backup, 0.28f)
     }
+    val statusLabel = when {
+        safeSearchableCount > 0 && safeDanmakuCount > 0 && safeCacheableCount > 0 -> "全能力就绪"
+        safeSearchableCount > 0 && safeDanmakuCount > 0 -> "播放就绪"
+        safeSearchableCount > 0 -> "搜索就绪"
+        safeSourceCount > 0 -> "待补搜索"
+        else -> "轻量启动"
+    }
+    val statusTone = when {
+        safeSearchableCount > 0 && safeDanmakuCount > 0 && safeCacheableCount > 0 -> SourceLibraryTone.Cache
+        safeSearchableCount > 0 -> SourceLibraryTone.Online
+        safeSourceCount > 0 -> SourceLibraryTone.Backup
+        else -> SourceLibraryTone.Muted
+    }
     return BrandSplashUiState(
         headline = "追番不迷路",
         brand = "ZFBML",
         tagline = tagline,
         progressLabel = progressLabel,
+        statusLabel = statusLabel,
+        statusTone = statusTone,
         startupDurationMillis = 1_100,
         logoSize = 112.dp,
         orbitSize = 190.dp,

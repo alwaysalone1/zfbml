@@ -2808,6 +2808,8 @@ class PlaybackUiModelsTest {
         assertEquals("ZFBML", state.brand)
         assertEquals("5 个搜索源 · 弹幕自动匹配", state.tagline)
         assertEquals("缓存与片单已就绪", state.progressLabel)
+        assertEquals("全能力就绪", state.statusLabel)
+        assertEquals(SourceLibraryTone.Cache, state.statusTone)
         assertEquals(1_100, state.startupDurationMillis)
         assertEquals(112.dp, state.logoSize)
         assertEquals(190.dp, state.orbitSize)
@@ -2833,6 +2835,8 @@ class PlaybackUiModelsTest {
 
         assertEquals("今晚继续追", state.tagline)
         assertEquals("片单已就绪", state.progressLabel)
+        assertEquals("轻量启动", state.statusLabel)
+        assertEquals(SourceLibraryTone.Muted, state.statusTone)
         assertEquals("源站待接入", state.statusPills[1].label)
         assertEquals(SourceLibraryTone.Muted, state.statusPills[1].tone)
         assertEquals("弹幕同步", state.statusPills[2].label)

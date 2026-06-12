@@ -448,3 +448,5 @@ This pass upgrades category browse readiness visibility. `CategoryBrowseUiState`
 This pass upgrades home schedule digest readiness visibility. `HomeScheduleDigestUiState` now carries a tested status badge for today's updates, weekly indexed schedules, syncing, empty, and failed states, so the Discover calendar explains schedule freshness before users expand the weekly list.
 
 This pass upgrades search result readiness visibility. `SearchResultsSectionUiState` now carries a tested status badge for idle, searching, matched, filtered-empty, no-hit, partial-failure, and failed states, so search results explain index health before users open a detail page.
+
+This pass upgrades brand splash readiness visibility. `BrandSplashUiState` now carries a tested startup readiness badge for full capability, playback-ready, search-ready, search-missing, and lightweight-start states, so the first screen summarizes app capability before the main shell appears.

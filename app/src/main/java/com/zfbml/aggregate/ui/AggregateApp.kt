@@ -311,12 +311,16 @@ private fun BrandSplashScreen(state: BrandSplashUiState) {
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
                 )
-                Text(
-                    text = state.brand,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = AnimeAccentCyan,
-                    fontWeight = FontWeight.Bold,
-                )
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = state.brand,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = AnimeAccentCyan,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                    )
+                    RouteStatusBadge(state.statusLabel, sourceLibraryToneColor(state.statusTone))
+                }
                 Text(
                     text = state.tagline,
                     style = MaterialTheme.typography.bodyMedium,
@@ -2476,7 +2480,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.220")
+                setRequestProperty("User-Agent", "ZFBML/0.5.221")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -3009,7 +3013,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.220",
+            version = "0.5.221",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,

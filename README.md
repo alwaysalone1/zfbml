@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.221
+
+English:
+
+- Brand splash now exposes a visible startup readiness badge next to the `ZFBML` mark, covering full capability, playback-ready, search-ready, search-missing, and lightweight-start states.
+- `BrandSplashUiState` now keeps startup readiness labels and tones in the tested model contract alongside the splash headline, progress copy, status pills, poster ribbon, danmaku streaks, and signal rails.
+- Added model coverage for full-capability and empty-source splash readiness states.
+- App version labels, request user agents, and README notes are now updated to `0.5.221`.
+
 ### v0.5.220
 
 English:
