@@ -3429,6 +3429,7 @@ class PlaybackUiModelsTest {
         assertEquals("Episode 1 · 高可信 · 评分 90", automatic.candidates.first().subtitle)
         assertEquals("高可信", automatic.candidates.first().confidenceLabel)
         assertEquals(SourceLibraryTone.Cache, automatic.candidates.first().confidenceTone)
+        assertFalse(automatic.candidates.first().requiresManualReview)
         assertEquals("设为本集", automatic.candidates.first().actionLabel)
         assertEquals(listOf("候选", "B站", "高可信"), automatic.candidates.first().badges.map { it.label })
         assertEquals("需核对", automatic.candidates[1].confidenceLabel)
@@ -3447,6 +3448,7 @@ class PlaybackUiModelsTest {
         assertEquals("已校准", manual.candidates.first().actionLabel)
         assertEquals("人工确认", manual.candidates.first().confidenceLabel)
         assertEquals(SourceLibraryTone.Primary, manual.candidates.first().confidenceTone)
+        assertFalse(manual.candidates.first().requiresManualReview)
         assertEquals(listOf("人工", "B站", "人工确认"), manual.candidates.first().badges.map { it.label })
         assertTrue(manual.candidates.first().selected)
         assertFalse(manual.candidates.first().enabled)
@@ -3475,6 +3477,9 @@ class PlaybackUiModelsTest {
 
         assertEquals("低可信", state.confidenceLabel)
         assertEquals(SourceLibraryTone.Muted, state.confidenceTone)
+        assertTrue(state.requiresManualReview)
+        assertEquals("确认本集", state.actionLabel)
+        assertEquals(SourceLibraryTone.Backup, state.trailingTone)
         assertTrue(state.subtitle.contains("低可信"))
         assertEquals(listOf("候选", "优酷", "低可信"), state.badges.map { it.label })
     }

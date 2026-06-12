@@ -1532,6 +1532,7 @@ internal data class PlayerDanmakuCandidateUiState(
     val subtitle: String,
     val confidenceLabel: String,
     val confidenceTone: SourceLibraryTone,
+    val requiresManualReview: Boolean,
     val actionLabel: String,
     val badges: List<SourceLibraryChipUiState>,
     val selected: Boolean,
@@ -5564,6 +5565,8 @@ internal fun buildPlayerDanmakuCandidateUiState(match: DanmakuMatch): PlayerDanm
     val episodeLabel = match.episodeTitle.orEmpty().ifBlank { match.title }
     val confidenceLabel = danmakuCandidateConfidenceLabel(match)
     val confidenceTone = danmakuCandidateConfidenceTone(match)
+    val requiresManualReview = match.source != DanmakuMatchSource.Manual &&
+        match.score < DANMAKU_AUTOMATIC_TIMELINE_MIN_SCORE
     return PlayerDanmakuCandidateUiState(
         match = match,
         title = match.providerId.danmakuProviderLabel(),
@@ -5572,7 +5575,12 @@ internal fun buildPlayerDanmakuCandidateUiState(match: DanmakuMatch): PlayerDanm
             .joinToString(" · "),
         confidenceLabel = confidenceLabel,
         confidenceTone = confidenceTone,
-        actionLabel = if (manual) "已校准" else "设为本集",
+        requiresManualReview = requiresManualReview,
+        actionLabel = when {
+            manual -> "已校准"
+            requiresManualReview -> "确认本集"
+            else -> "设为本集"
+        },
         badges = buildList {
             add(SourceLibraryChipUiState(if (manual) "人工" else "候选", tone))
             add(SourceLibraryChipUiState(match.platform.uiDanmakuPlatformLabel(), SourceLibraryTone.Web))
@@ -5584,7 +5592,11 @@ internal fun buildPlayerDanmakuCandidateUiState(match: DanmakuMatch): PlayerDanm
         iconAlpha = if (manual) 1f else 0.82f,
         titleAlpha = 0.94f,
         subtitleAlpha = if (manual) 0.88f else 0.72f,
-        trailingTone = tone,
+        trailingTone = when {
+            manual -> SourceLibraryTone.Primary
+            requiresManualReview -> SourceLibraryTone.Backup
+            else -> tone
+        },
         rowState = buildPlayerSelectableRowUiState(
             enabled = true,
             highlighted = manual,

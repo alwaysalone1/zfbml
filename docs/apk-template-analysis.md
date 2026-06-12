@@ -406,3 +406,5 @@ This pass upgrades danmaku candidate confidence presentation. `PlayerDanmakuCand
 This pass upgrades danmaku automatic-load trust boundaries. `DanmakuRegistry` now skips low-confidence automatic candidates when fetching the best timeline, while still returning those candidates through matching so the user can manually review and calibrate the correct source for the current episode.
 
 This pass upgrades danmaku low-confidence review guidance. The automatic-load score threshold is now shared from the danmaku model layer, and `PlayerDanmakuMappingUiState` marks low-confidence candidate sets as requiring manual review with threshold-aware copy, badges, and row highlighting.
+
+This pass upgrades danmaku candidate confirmation semantics. `PlayerDanmakuCandidateUiState` now marks low-confidence candidates as requiring manual review and changes their action copy to a confirmation flow, making it clearer that selecting them is an intentional calibration step rather than automatic matching.
