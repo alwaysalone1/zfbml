@@ -3701,6 +3701,7 @@ class PlaybackUiModelsTest {
         assertEquals("弹幕开", danmaku.label)
         assertTrue(danmaku.selected)
         assertTrue(danmaku.enabled)
+        assertTrue(danmaku.focusEnabled)
         assertEquals(SourceLibraryTone.Primary, danmaku.tone)
         assertEquals(48.dp, danmaku.width)
         assertEquals(48.dp, danmaku.height)
@@ -3717,20 +3718,25 @@ class PlaybackUiModelsTest {
         assertEquals(0.32f, danmaku.disabledContentAlpha)
         assertEquals("选集", rich.actions.first { it.kind == PlayerMoreActionKind.Episode }.label)
         assertTrue(rich.actions.first { it.kind == PlayerMoreActionKind.Episode }.enabled)
+        assertTrue(rich.actions.first { it.kind == PlayerMoreActionKind.Episode }.focusEnabled)
         assertTrue(rich.actions.first { it.kind == PlayerMoreActionKind.Route }.enabled)
+        assertTrue(rich.actions.first { it.kind == PlayerMoreActionKind.Route }.focusEnabled)
         assertEquals("更多", rich.actions.last().label)
 
         val disabledDanmaku = limited.actions.first { it.kind == PlayerMoreActionKind.Danmaku }
         assertEquals("弹幕关", disabledDanmaku.label)
         assertFalse(disabledDanmaku.selected)
         assertTrue(disabledDanmaku.enabled)
+        assertTrue(disabledDanmaku.focusEnabled)
         assertEquals(SourceLibraryTone.Muted, disabledDanmaku.tone)
         assertNull(disabledDanmaku.containerTone)
         assertEquals(0f, disabledDanmaku.containerAlpha)
         assertNull(disabledDanmaku.contentTone)
         assertEquals(0.82f, disabledDanmaku.contentAlpha)
         assertFalse(limited.actions.first { it.kind == PlayerMoreActionKind.Episode }.enabled)
+        assertFalse(limited.actions.first { it.kind == PlayerMoreActionKind.Episode }.focusEnabled)
         assertFalse(limited.actions.first { it.kind == PlayerMoreActionKind.Route }.enabled)
+        assertFalse(limited.actions.first { it.kind == PlayerMoreActionKind.Route }.focusEnabled)
     }
 
     @Test

@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.183
+
+English:
+
+- Fullscreen side-dock actions now use `PlayerFullscreenDockActionUiState.focusEnabled` for TV/keyboard focus eligibility.
+- Disabled Episode/Route dock shortcuts stay visible as context but are skipped by focus navigation.
+- Added unit coverage for enabled, selected, and disabled fullscreen dock focus states.
+- App version labels, request user agents, and README notes are now updated to `0.5.183`.
+
 ### v0.5.182
 
 English:

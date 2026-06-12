@@ -372,3 +372,5 @@ This pass upgrades player episode-row focus behavior. `PlayerEpisodeOptionUiStat
 This pass upgrades player panel-tab focus behavior. `PlayerPanelTabUiState` now owns tab focus eligibility so disabled Route/Episode tabs remain visible as playback context but are skipped by TV and keyboard navigation unless they are the active panel.
 
 This pass upgrades player bottom-action focus behavior. `PlayerActionUiState` now owns action focus eligibility so disabled bottom controls and compact recovery fallbacks remain visible with their disabled presentation but no longer enter the TV or keyboard focus sequence.
+
+This pass upgrades fullscreen side-dock focus behavior. `PlayerFullscreenDockActionUiState` now owns focus eligibility so disabled Episode and Route shortcuts stay visible for playback context while TV and keyboard navigation skip them.
