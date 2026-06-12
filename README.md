@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.214
+
+English:
+
+- Home schedule empty-day states now explain the next available update batch instead of showing only generic fallback copy.
+- Empty schedule day chips now display a rest marker, matching large-app calendar scan patterns better than a raw zero count.
+- Added model coverage for empty-day schedule guidance while preserving today and week summary behavior.
+- App version labels, request user agents, and README notes are now updated to `0.5.214`.
+
 ### v0.5.213
 
 English:

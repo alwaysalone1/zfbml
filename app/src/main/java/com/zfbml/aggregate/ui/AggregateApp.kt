@@ -2339,6 +2339,7 @@ private fun fallbackScheduleDayChips(
             count = 0,
             selected = day.weekdayId == selectedDayId,
             today = day.weekdayId == currentDayId,
+            countLabel = "\u4f11",
             tone = when {
                 day.weekdayId == selectedDayId -> SourceLibraryTone.Online
                 day.weekdayId == currentDayId -> SourceLibraryTone.Primary
@@ -2459,7 +2460,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.213")
+                setRequestProperty("User-Agent", "ZFBML/0.5.214")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2992,7 +2993,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.213",
+            version = "0.5.214",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,

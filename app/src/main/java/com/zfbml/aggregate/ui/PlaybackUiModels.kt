@@ -4011,6 +4011,7 @@ internal fun buildHomeScheduleUiState(
             count = day.items.size,
             selected = day.weekdayId == selectedDay?.weekdayId,
             today = day.weekdayId == currentDayId,
+            countLabel = if (day.items.isNotEmpty()) day.items.size.toString() else "\u4f11",
             tone = when {
                 day.weekdayId == selectedDay?.weekdayId -> SourceLibraryTone.Online
                 day.weekdayId == currentDayId -> SourceLibraryTone.Primary
@@ -4036,6 +4037,16 @@ internal fun buildHomeScheduleUiState(
         selectedItems.isNotEmpty() -> "\u672c\u5468\u5df2\u7d22\u5f15 $weekCount \u90e8\u653e\u9001\uff0c\u4e0b\u4e00\u6279\u66f4\u65b0\uff1a$nextUpdateLabel\u3002"
         else -> "\u672c\u5468\u5df2\u7d22\u5f15 $weekCount \u90e8\u653e\u9001\uff0c\u53ef\u5207\u6362\u5230\u5176\u4ed6\u65e5\u671f\u7ee7\u7eed\u770b\u3002"
     }
+    val emptyTitle = when {
+        weekCount == 0 -> "\u65b0\u756a\u65f6\u95f4\u8868\u5f85\u540c\u6b65"
+        selectedDay != null -> "$selectedDayName\u6682\u65e0\u653e\u9001"
+        else -> "\u6682\u65e0\u5f53\u65e5\u653e\u9001\u6570\u636e"
+    }
+    val emptySubtitle = when {
+        weekCount == 0 -> "\u540c\u6b65 Bangumi \u6bcf\u65e5\u653e\u9001\u540e\uff0c\u8fd9\u91cc\u4f1a\u663e\u793a\u4eca\u65e5\u3001\u672c\u5468\u548c\u4e0b\u4e00\u6279\u66f4\u65b0\u3002"
+        nextUpdateDay != null -> "\u4e0b\u6b21\u66f4\u65b0\uff1a$nextUpdateLabel\uff1b\u53ef\u5207\u6362\u5230\u6709\u66f4\u65b0\u7684\u65e5\u671f\uff0c\u6216\u76f4\u63a5\u641c\u7d22\u756a\u540d\u3002"
+        else -> "\u53ef\u4ee5\u5207\u6362\u5176\u4ed6\u65e5\u671f\uff0c\u6216\u76f4\u63a5\u641c\u7d22\u756a\u540d\u3002"
+    }
     return HomeScheduleUiState(
         selectedDay = selectedDay,
         selectedItems = selectedItems,
@@ -4044,8 +4055,8 @@ internal fun buildHomeScheduleUiState(
         summary = summary,
         selectedDayTitle = selectedDayName,
         selectedDayAction = selectedDayAction,
-        emptyTitle = "\u6682\u65e0\u5f53\u65e5\u653e\u9001\u6570\u636e",
-        emptySubtitle = "\u53ef\u4ee5\u5207\u6362\u5176\u4ed6\u65e5\u671f\uff0c\u6216\u76f4\u63a5\u641c\u7d22\u756a\u540d\u3002",
+        emptyTitle = emptyTitle,
+        emptySubtitle = emptySubtitle,
         todayCount = todayCount,
         weekCount = weekCount,
         nextUpdateLabel = nextUpdateLabel,

@@ -434,3 +434,5 @@ This pass upgrades route episode-title scoring. `MediaRouteResolver` now normali
 This pass upgrades online route hit validation. Online search results now proceed to detail loading before episode compatibility is finalized, preventing season-like numbers in the search-result title from dropping a valid episode list before it can be inspected.
 
 This pass upgrades fallback episode extraction. `TorrentTitleScorer` now recognizes SxxEyy, Season/Episode, and Chinese season-plus-episode labels before generic episode patterns, reducing route misses for torrent/RSS and fallback sources that use large-client style season naming.
+
+This pass upgrades home schedule empty-state guidance. Empty airing days now show a rest marker in weekday chips and point the empty panel at the next available update batch, making the追番 calendar scan closer to large-client schedule pages without adding unrelated surface area.

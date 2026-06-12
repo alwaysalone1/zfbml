@@ -2130,6 +2130,7 @@ class PlaybackUiModelsTest {
         assertTrue(state.dayChips.first { it.weekdayId == 1 }.today)
         assertTrue(state.dayChips.first { it.weekdayId == 2 }.selected)
         assertEquals("\u4e8c", state.dayChips.first { it.weekdayId == 2 }.label)
+        assertEquals("\u4f11", state.dayChips.first { it.weekdayId == 3 }.countLabel)
     }
 
     @Test
@@ -2142,6 +2143,14 @@ class PlaybackUiModelsTest {
             selectedDayId = 99,
             currentDayId = 4,
         )
+        val selectedEmpty = buildHomeScheduleUiState(
+            schedule = listOf(
+                scheduleDay(1, "\u661f\u671f\u4e00", emptyList()),
+                scheduleDay(3, "\u661f\u671f\u4e09", listOf(searchResult("bangumi-catalog", "Next"))),
+            ),
+            selectedDayId = 1,
+            currentDayId = 1,
+        )
         val empty = buildHomeScheduleUiState(
             schedule = emptyList(),
             selectedDayId = 1,
@@ -2151,6 +2160,9 @@ class PlaybackUiModelsTest {
         assertEquals(4, currentDayFallback.selectedDay?.weekdayId)
         assertEquals(1, currentDayFallback.todayCount)
         assertEquals("\u4eca\u65e5\u66f4\u65b0 1 \u90e8", currentDayFallback.headline)
+        assertEquals("\u661f\u671f\u4e00\u6682\u65e0\u653e\u9001", selectedEmpty.emptyTitle)
+        assertEquals("\u4e09 1 \u90e8", selectedEmpty.nextUpdateLabel)
+        assertTrue(selectedEmpty.emptySubtitle.contains("\u4e0b\u6b21\u66f4\u65b0\uff1a\u4e09 1 \u90e8"))
         assertEquals(0, empty.todayCount)
         assertEquals(0, empty.weekCount)
         assertEquals("\u5f85\u540c\u6b65", empty.nextUpdateLabel)
