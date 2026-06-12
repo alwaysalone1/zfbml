@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.174")
+                setRequestProperty("User-Agent", "ZFBML/0.5.175")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2941,6 +2941,14 @@ private fun playerChromeBaseColor(color: PlayerChromeBaseColor): Color {
     }
 }
 
+private fun animeSurfaceBaseColor(color: AnimeSurfaceBaseColor): Color {
+    return when (color) {
+        AnimeSurfaceBaseColor.Panel -> AnimePanel
+        AnimeSurfaceBaseColor.PanelSoft -> AnimePanelSoft
+        AnimeSurfaceBaseColor.Border -> AnimeBorder
+    }
+}
+
 @Composable
 private fun playerNoticeColor(state: PlayerNoticeUiState): Color {
     return if (state.error) MaterialTheme.colorScheme.error else sourceLibraryToneColor(state.tone)
@@ -2984,7 +2992,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.174",
+            version = "0.5.175",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -5365,17 +5373,20 @@ private fun RouteCandidateRow(
     val sizeColor = sourceLibraryToneColor(state.detailSizeTone)
     val sourceInitialColor = playerChromeBaseColor(state.detailSourceInitialBaseColor)
     val sourceNameColor = playerChromeBaseColor(state.detailSourceNameBaseColor)
+    val containerColor = animeSurfaceBaseColor(state.detailCardContainerBaseColor)
+    val borderColor = state.detailBorderTone?.let(::sourceLibraryToneColor)
+        ?: animeSurfaceBaseColor(state.detailBorderBaseColor)
     Card(
         onClick = onClick,
         modifier = modifier.fillMaxWidth().focusable(),
         shape = RoundedCornerShape(state.detailCardCornerRadius),
-        colors = CardDefaults.cardColors(containerColor = if (state.recommended) AnimePanelSoft else AnimePanel),
+        colors = CardDefaults.cardColors(containerColor = containerColor),
         border = BorderStroke(
             state.detailBorderWidth,
             if (state.recommended) {
-                accent.copy(alpha = state.detailRecommendedBorderAlpha)
+                borderColor.copy(alpha = state.detailRecommendedBorderAlpha)
             } else {
-                AnimeBorder.copy(alpha = state.detailIdleBorderAlpha)
+                borderColor.copy(alpha = state.detailIdleBorderAlpha)
             },
         ),
     ) {

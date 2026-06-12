@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.175
+
+English:
+
+- Detail route candidate cards now use `RouteCandidateUiState` for card container base color, border tone, and fallback border base color.
+- `RouteCandidateRow` renders route-card shell color from tested model chrome instead of local `AnimePanel`/`AnimePanelSoft`/`AnimeBorder` branching.
+- Added unit coverage for detail route card shell chrome.
+- App version labels, request user agents, and README notes are now updated to `0.5.175`.
+
 ### v0.5.174
 
 English:

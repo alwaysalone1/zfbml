@@ -1348,6 +1348,12 @@ internal enum class PlayerChromeBaseColor {
     White,
 }
 
+internal enum class AnimeSurfaceBaseColor {
+    Panel,
+    PanelSoft,
+    Border,
+}
+
 internal enum class RouteActionIconKind {
     Play,
     Current,
@@ -2103,6 +2109,9 @@ internal data class RouteCandidateUiState(
     val protocolAlpha: Float,
     val sizeTone: SourceLibraryTone,
     val sizeAlpha: Float,
+    val detailCardContainerBaseColor: AnimeSurfaceBaseColor,
+    val detailBorderTone: SourceLibraryTone?,
+    val detailBorderBaseColor: AnimeSurfaceBaseColor,
     val detailCardCornerRadius: Dp,
     val detailBorderWidth: Dp,
     val detailRecommendedBorderAlpha: Float,
@@ -3006,6 +3015,9 @@ internal fun buildRouteCandidateUiState(
         protocolAlpha = 1f,
         sizeTone = SourceLibraryTone.Muted,
         sizeAlpha = 1f,
+        detailCardContainerBaseColor = if (recommended) AnimeSurfaceBaseColor.PanelSoft else AnimeSurfaceBaseColor.Panel,
+        detailBorderTone = if (recommended) accentTone else null,
+        detailBorderBaseColor = AnimeSurfaceBaseColor.Border,
         detailCardCornerRadius = 8.dp,
         detailBorderWidth = 1.dp,
         detailRecommendedBorderAlpha = 1f,

@@ -356,3 +356,5 @@ This pass upgrades player route action accessibility. `RouteCandidateUiState` no
 This pass upgrades route candidate protocol tone chrome. `RouteCandidateUiState` now owns player-row and detail-card protocol tones so route protocol labels share the same tested color contract across detail playback selection and fullscreen route switching instead of deriving protocol color inside Compose.
 
 This pass upgrades detail route source identity chrome. `RouteCandidateUiState` now owns source-initial and source-name base colors so detail route cards render provider identity text from the tested model contract instead of Compose-local white constants.
+
+This pass upgrades detail route card shell chrome. `AnimeSurfaceBaseColor` and `RouteCandidateUiState` now own detail route-card container base color, border tone, and fallback border base color so recommended and idle route cards render their shell from the tested model contract instead of Compose-local panel and border branching.
