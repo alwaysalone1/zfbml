@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.169")
+                setRequestProperty("User-Agent", "ZFBML/0.5.170")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2984,7 +2984,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.169",
+            version = "0.5.170",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -9021,15 +9021,19 @@ private fun PlayerRouteOptionRow(
     val secondaryAlpha = if (detailedMode) state.detailedSubtitleAlpha else state.compactSubtitleAlpha
     val detailLineColor = sourceLibraryToneColor(state.detailLineTone)
     val sizeColor = sourceLibraryToneColor(state.sizeTone)
-    val borderColor = state.borderTone?.let(::sourceLibraryToneColor) ?: Color.White
+    val rowContainerColor = playerChromeBaseColor(state.rowContainerBaseColor)
+    val rowDisabledContainerColor = playerChromeBaseColor(state.rowDisabledContainerBaseColor)
+    val rowBorderBaseColor = playerChromeBaseColor(state.rowBorderBaseColor)
+    val rowTitleColor = playerChromeBaseColor(state.rowTitleBaseColor)
+    val borderColor = state.borderTone?.let(::sourceLibraryToneColor) ?: rowBorderBaseColor
     Card(
         onClick = onClick,
         enabled = state.enabled,
         modifier = Modifier.fillMaxWidth().focusable(),
         shape = RoundedCornerShape(state.rowCornerRadius),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = state.containerAlpha),
-            disabledContainerColor = Color.White.copy(alpha = state.disabledContainerAlpha),
+            containerColor = rowContainerColor.copy(alpha = state.containerAlpha),
+            disabledContainerColor = rowDisabledContainerColor.copy(alpha = state.disabledContainerAlpha),
         ),
         border = BorderStroke(state.rowBorderWidth, borderColor.copy(alpha = state.borderAlpha)),
     ) {
@@ -9051,7 +9055,7 @@ private fun PlayerRouteOptionRow(
                         primaryTitle,
                         modifier = Modifier.weight(1f),
                         style = MaterialTheme.typography.titleSmall,
-                        color = Color.White.copy(alpha = state.rowTitleAlpha),
+                        color = rowTitleColor.copy(alpha = state.rowTitleAlpha),
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,

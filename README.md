@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.170
+
+English:
+
+- Player route option rows now use `RouteCandidateUiState` for row container base color, disabled container base color, fallback border base color, and row title base color.
+- `PlayerRouteOptionRow` now renders route-row base chrome from tested model fields instead of local white constants.
+- Added unit coverage for route option-row base color chrome.
+- App version labels, request user agents, and README notes are now updated to `0.5.170`.
+
 ### v0.5.169
 
 English:
