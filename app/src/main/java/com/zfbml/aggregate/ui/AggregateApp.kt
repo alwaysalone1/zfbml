@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.158")
+                setRequestProperty("User-Agent", "ZFBML/0.5.159")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2984,7 +2984,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.158",
+            version = "0.5.159",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -4315,46 +4315,50 @@ private fun DetailFirstPlayStrip(
     state: DetailFirstPlayUiState,
 ) {
     val accent = sourceLibraryToneColor(state.tone)
+    val containerColor = playerChromeBaseColor(state.containerBaseColor)
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color.Black.copy(alpha = 0.32f))
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(9.dp),
+            .clip(RoundedCornerShape(state.cardCornerRadius))
+            .background(containerColor.copy(alpha = state.containerAlpha))
+            .padding(horizontal = state.horizontalPadding, vertical = state.verticalPadding),
+        verticalArrangement = Arrangement.spacedBy(state.contentSpacing),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(state.headerSpacing),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
-                modifier = Modifier.size(34.dp).clip(RoundedCornerShape(8.dp)).background(accent.copy(alpha = 0.18f)),
+                modifier = Modifier
+                    .size(state.iconBoxSize)
+                    .clip(RoundedCornerShape(state.iconBoxCornerRadius))
+                    .background(accent.copy(alpha = state.iconBoxContainerAlpha)),
                 contentAlignment = Alignment.Center,
             ) {
                 if (state.showProgress) {
-                    CircularProgressIndicator(color = accent, modifier = Modifier.size(18.dp))
+                    CircularProgressIndicator(color = accent, modifier = Modifier.size(state.progressIconSize))
                 } else {
                     Icon(
                         imageVector = if (state.useReadyIcon) Icons.Filled.Check else Icons.Filled.VideoLibrary,
                         contentDescription = null,
                         tint = accent,
-                        modifier = Modifier.size(18.dp),
+                        modifier = Modifier.size(state.statusIconSize),
                     )
                 }
             }
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(state.textColumnSpacing)) {
                 Text(
                     state.title,
                     style = MaterialTheme.typography.labelMedium,
-                    color = accent,
+                    color = accent.copy(alpha = state.titleAlpha),
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                 )
                 Text(
                     state.decision,
                     style = MaterialTheme.typography.bodySmall,
-                    color = Color.White.copy(alpha = 0.78f),
+                    color = Color.White.copy(alpha = state.decisionAlpha),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -4362,15 +4366,15 @@ private fun DetailFirstPlayStrip(
             Text(
                 state.actionLabel,
                 style = MaterialTheme.typography.labelSmall,
-                color = accent,
+                color = accent.copy(alpha = state.actionLabelAlpha),
                 maxLines = 1,
                 modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(accent.copy(alpha = 0.12f))
-                    .padding(horizontal = 8.dp, vertical = 5.dp),
+                    .clip(RoundedCornerShape(state.actionCornerRadius))
+                    .background(accent.copy(alpha = state.actionContainerAlpha))
+                    .padding(horizontal = state.actionHorizontalPadding, vertical = state.actionVerticalPadding),
             )
         }
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(7.dp), modifier = Modifier.fillMaxWidth()) {
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(state.chipSpacing), modifier = Modifier.fillMaxWidth()) {
             items(state.chips) { chip ->
                 DetailDecisionChip(chip)
             }
