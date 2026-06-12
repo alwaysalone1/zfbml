@@ -42,7 +42,7 @@ class MediaRouteResolver(
             .awaitAll()
             .flatten()
             .distinctBy { "${it.result.providerId}|${it.result.url}" }
-            .filter { hit -> isEpisodeCompatible(hit.result.title, request.episodeIndex) }
+            .filter { hit -> isSearchHitEpisodeCompatible(hit, request.episodeIndex) }
             .sortedByDescending { it.score }
             .take(MAX_SEARCH_HITS)
 
@@ -259,6 +259,11 @@ class MediaRouteResolver(
 
     private fun isEpisodeCompatible(title: String, expected: Int?): Boolean {
         return isEpisodeCompatible(TorrentTitleScorer.extractEpisode(title), expected)
+    }
+
+    private fun isSearchHitEpisodeCompatible(hit: SearchHit, expected: Int?): Boolean {
+        if (hit.result.raw["mediaKind"] == "online") return true
+        return isEpisodeCompatible(hit.result.title, expected)
     }
 
     private fun isEpisodeCompatible(candidate: Int?, expected: Int?): Boolean {

@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.212
+
+English:
+
+- Online route search hits are now allowed to load detail pages before episode compatibility is decided.
+- This avoids dropping valid series results whose search title contains season-like numbers such as `- 2` while the real episode list contains the requested episode.
+- Added resolver coverage proving online detail loading recovers the requested episode after an episode-like search title.
+- App version labels, request user agents, and README notes are now updated to `0.5.212`.
+
 ### v0.5.211
 
 English:

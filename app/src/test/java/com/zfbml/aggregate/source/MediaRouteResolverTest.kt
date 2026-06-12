@@ -225,6 +225,30 @@ class MediaRouteResolverTest {
     }
 
     @Test
+    fun resolverLoadsOnlineDetailsBeforeRejectingEpisodeLikeResultTitles() = runTest {
+        val provider = OnlineSeasonNumberProvider()
+        val request = MediaFetchRequest.fromEpisode(
+            Episode(
+                providerId = "bangumi-catalog",
+                id = "catalog-5",
+                title = "Episode 5",
+                url = "bangumi://subject/5/episode/5",
+                index = 5,
+                raw = mapOf(
+                    "subjectNameCn" to "Test Anime",
+                    "subjectName" to "Test Anime",
+                ),
+            ),
+        )
+
+        val routes = MediaRouteResolver(listOf(provider), providerTimeoutMs = 1_000L).resolve(request)
+
+        assertEquals(1, provider.detailCount.get())
+        assertTrue(routes.isNotEmpty())
+        assertEquals("Season 2 Episode 5", routes.first().episodeTitle)
+    }
+
+    @Test
     fun resolverRanksExactChineseTitleAboveContainingVariants() = runTest {
         val provider = FakeChineseTitleProvider()
         val request = MediaFetchRequest.fromEpisode(
@@ -592,6 +616,60 @@ class MediaRouteResolverTest {
                     protocol = StreamProtocol.HLS,
                     quality = "1080p",
                     sourceScore = 60,
+                ),
+            )
+        }
+    }
+
+    private class OnlineSeasonNumberProvider : SourceProvider {
+        val detailCount = AtomicInteger(0)
+
+        override val manifest = SourceManifest(
+            id = "online-season-number",
+            name = "Online Season Number",
+            version = "1",
+            author = "test",
+            capabilities = setOf(SourceCapability.SEARCH, SourceCapability.DETAIL, SourceCapability.STREAM),
+        )
+
+        override suspend fun search(query: String): List<SearchResult> {
+            return listOf(
+                SearchResult(
+                    providerId = manifest.id,
+                    title = "$query - 2",
+                    url = "season-number://result/season-2",
+                    raw = mapOf("mediaKind" to "online"),
+                ),
+            )
+        }
+
+        override suspend fun loadDetail(result: SearchResult): MediaDetail {
+            detailCount.incrementAndGet()
+            return MediaDetail(
+                providerId = manifest.id,
+                title = result.title,
+                url = result.url,
+                episodes = listOf(
+                    Episode(
+                        providerId = manifest.id,
+                        id = "season-number-ep-5",
+                        title = "Season 2 Episode 5",
+                        url = "${result.url}/episode/5",
+                        index = 5,
+                    ),
+                ),
+            )
+        }
+
+        override suspend fun resolveStreams(episode: Episode): List<MediaStream> {
+            return listOf(
+                MediaStream(
+                    id = episode.id,
+                    providerId = manifest.id,
+                    url = "${episode.url}.m3u8",
+                    protocol = StreamProtocol.HLS,
+                    quality = "1080p",
+                    sourceScore = 70,
                 ),
             )
         }
