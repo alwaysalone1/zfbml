@@ -193,9 +193,29 @@ internal data class DetailEpisodeSummaryUiState(
     val routeActionLabel: String,
     val tone: SourceLibraryTone,
     val chips: List<SearchResultChipUiState>,
+    val cardCornerRadius: Dp = 8.dp,
+    val contentSpacing: Dp = 8.dp,
+    val headerSpacing: Dp = 10.dp,
+    val textColumnSpacing: Dp = 3.dp,
+    val titleRowSpacing: Dp = 8.dp,
+    val headlineAlpha: Float = 1f,
+    val summaryTone: SourceLibraryTone = SourceLibraryTone.Muted,
+    val summaryAlpha: Float = 1f,
+    val actionCornerRadius: Dp = 8.dp,
+    val actionContainerAlpha: Float = 0.10f,
+    val actionHorizontalPadding: Dp = 10.dp,
+    val actionVerticalPadding: Dp = 7.dp,
+    val actionLabelAlpha: Float = 1f,
+    val chipSpacing: Dp = 8.dp,
+)
+
+internal data class DetailEpisodeSelectorUiState(
+    val items: List<DetailEpisodeOptionUiState>,
+    val itemSpacing: Dp = 10.dp,
 )
 
 internal data class DetailEpisodeOptionUiState(
+    val episode: Episode,
     val episodeId: String,
     val indexLabel: String,
     val title: String,
@@ -203,6 +223,17 @@ internal data class DetailEpisodeOptionUiState(
     val actionLabel: String,
     val selected: Boolean,
     val tone: SourceLibraryTone,
+    val cardWidth: Dp = 136.dp,
+    val cardHeight: Dp = 84.dp,
+    val cardCornerRadius: Dp = 8.dp,
+    val borderWidth: Dp = 1.dp,
+    val contentPadding: Dp = 10.dp,
+    val contentSpacing: Dp = 5.dp,
+    val headerSpacing: Dp = 6.dp,
+    val indexAlpha: Float = 1f,
+    val actionAlpha: Float = 1f,
+    val titleAlpha: Float = 1f,
+    val subtitleAlpha: Float = 1f,
 )
 
 internal data class DetailRouteResolutionUiState(
@@ -2612,6 +2643,7 @@ internal fun buildDetailEpisodeOptionUiState(
         ?: episode.index?.takeIf { it > 0 }?.let { "\u7b2c $it \u96c6" }
         ?: "\u7279\u522b\u7bc7"
     return DetailEpisodeOptionUiState(
+        episode = episode,
         episodeId = episode.id,
         indexLabel = indexLabel,
         title = title,
@@ -2623,6 +2655,20 @@ internal fun buildDetailEpisodeOptionUiState(
         actionLabel = if (selected) "\u5df2\u9009" else "\u627e\u7ebf\u8def",
         selected = selected,
         tone = if (selected) SourceLibraryTone.Online else SourceLibraryTone.Muted,
+    )
+}
+
+internal fun buildDetailEpisodeSelectorUiState(
+    episodes: List<Episode>,
+    selectedEpisodeId: String?,
+): DetailEpisodeSelectorUiState {
+    return DetailEpisodeSelectorUiState(
+        items = episodes.map { episode ->
+            buildDetailEpisodeOptionUiState(
+                episode = episode,
+                selected = episode.id == selectedEpisodeId,
+            )
+        },
     )
 }
 

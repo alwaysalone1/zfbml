@@ -617,6 +617,20 @@ class PlaybackUiModelsTest {
         assertEquals("已匹配", summary.routeStatusLabel)
         assertEquals("可播放", summary.routeActionLabel)
         assertEquals(SourceLibraryTone.Cache, summary.tone)
+        assertEquals(8.dp, summary.cardCornerRadius)
+        assertEquals(8.dp, summary.contentSpacing)
+        assertEquals(10.dp, summary.headerSpacing)
+        assertEquals(3.dp, summary.textColumnSpacing)
+        assertEquals(8.dp, summary.titleRowSpacing)
+        assertEquals(1f, summary.headlineAlpha, 0.001f)
+        assertEquals(SourceLibraryTone.Muted, summary.summaryTone)
+        assertEquals(1f, summary.summaryAlpha, 0.001f)
+        assertEquals(8.dp, summary.actionCornerRadius)
+        assertEquals(0.10f, summary.actionContainerAlpha, 0.001f)
+        assertEquals(10.dp, summary.actionHorizontalPadding)
+        assertEquals(7.dp, summary.actionVerticalPadding)
+        assertEquals(1f, summary.actionLabelAlpha, 0.001f)
+        assertEquals(8.dp, summary.chipSpacing)
         assertTrue(summary.summary.contains("Provider"))
         assertTrue(summary.chips.any { it.label == "预取命中" })
     }
@@ -660,20 +674,38 @@ class PlaybackUiModelsTest {
 
     @Test
     fun detailEpisodeOptionUiStateLabelsSelectedAndPendingEpisodes() {
-        val selected = buildDetailEpisodeOptionUiState(episode(index = 3), selected = true)
-        val pending = buildDetailEpisodeOptionUiState(episode(index = 4), selected = false)
+        val selected = buildDetailEpisodeOptionUiState(episode(id = "ep-3", index = 3), selected = true)
+        val pending = buildDetailEpisodeOptionUiState(episode(id = "ep-4", index = 4), selected = false)
+        val selector = buildDetailEpisodeSelectorUiState(
+            episodes = listOf(selected.episode, pending.episode),
+            selectedEpisodeId = selected.episodeId,
+        )
 
         assertEquals("03", selected.indexLabel)
+        assertEquals(selected.episode.id, selected.episodeId)
         assertEquals("\u5df2\u9009", selected.actionLabel)
         assertTrue(selected.subtitle.contains("\u5df2\u5339\u914d\u7ebf\u8def"))
         assertTrue(selected.selected)
         assertEquals(SourceLibraryTone.Online, selected.tone)
+        assertEquals(136.dp, selected.cardWidth)
+        assertEquals(84.dp, selected.cardHeight)
+        assertEquals(8.dp, selected.cardCornerRadius)
+        assertEquals(1.dp, selected.borderWidth)
+        assertEquals(10.dp, selected.contentPadding)
+        assertEquals(5.dp, selected.contentSpacing)
+        assertEquals(6.dp, selected.headerSpacing)
+        assertEquals(1f, selected.indexAlpha, 0.001f)
+        assertEquals(1f, selected.actionAlpha, 0.001f)
+        assertEquals(1f, selected.titleAlpha, 0.001f)
+        assertEquals(1f, selected.subtitleAlpha, 0.001f)
 
         assertEquals("04", pending.indexLabel)
         assertEquals("\u627e\u7ebf\u8def", pending.actionLabel)
         assertTrue(pending.subtitle.contains("\u5728\u7ebf\u64ad\u653e"))
         assertFalse(pending.selected)
         assertEquals(SourceLibraryTone.Muted, pending.tone)
+        assertEquals(10.dp, selector.itemSpacing)
+        assertEquals(listOf(true, false), selector.items.map { it.selected })
     }
 
     @Test

@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.160")
+                setRequestProperty("User-Agent", "ZFBML/0.5.161")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2984,7 +2984,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.160",
+            version = "0.5.161",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -4865,29 +4865,35 @@ private fun DetailEpisodeSectionHeader(
     modifier: Modifier = Modifier,
 ) {
     val accent = sourceLibraryToneColor(state.tone)
+    val summaryColor = sourceLibraryToneColor(state.summaryTone)
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(state.cardCornerRadius),
         color = Color.Transparent,
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(state.contentSpacing),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(state.headerSpacing),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text(state.headline, style = MaterialTheme.typography.titleLarge, color = Color.White, fontWeight = FontWeight.Bold)
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(state.textColumnSpacing)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(state.titleRowSpacing), verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            state.headline,
+                            style = MaterialTheme.typography.titleLarge,
+                            color = Color.White.copy(alpha = state.headlineAlpha),
+                            fontWeight = FontWeight.Bold,
+                        )
                         RouteStatusBadge(state.routeStatusLabel, accent)
                     }
                     Text(
                         state.summary,
                         style = MaterialTheme.typography.bodySmall,
-                        color = AnimeMuted,
+                        color = summaryColor.copy(alpha = state.summaryAlpha),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -4895,15 +4901,15 @@ private fun DetailEpisodeSectionHeader(
                 Text(
                     state.routeActionLabel,
                     style = MaterialTheme.typography.labelLarge,
-                    color = accent,
+                    color = accent.copy(alpha = state.actionLabelAlpha),
                     maxLines = 1,
                     modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(accent.copy(alpha = 0.1f))
-                        .padding(horizontal = 10.dp, vertical = 7.dp),
+                        .clip(RoundedCornerShape(state.actionCornerRadius))
+                        .background(accent.copy(alpha = state.actionContainerAlpha))
+                        .padding(horizontal = state.actionHorizontalPadding, vertical = state.actionVerticalPadding),
                 )
             }
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(state.chipSpacing), modifier = Modifier.fillMaxWidth()) {
                 items(state.chips) { chip ->
                     RouteStatusBadge(chip.label, sourceLibraryToneColor(chip.tone))
                 }
@@ -4919,34 +4925,35 @@ private fun EpisodeSelectorRow(
     onEpisodeSelected: (Episode) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    LazyRow(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        items(episodes) { episode ->
-            val selected = episode.id == selectedEpisodeId
-            val state = buildDetailEpisodeOptionUiState(episode, selected)
+    val selectorState = remember(episodes, selectedEpisodeId) {
+        buildDetailEpisodeSelectorUiState(episodes, selectedEpisodeId)
+    }
+    LazyRow(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(selectorState.itemSpacing)) {
+        items(selectorState.items, key = { it.episodeId }) { state ->
             val accent = sourceLibraryToneColor(state.tone)
             Card(
-                onClick = { onEpisodeSelected(episode) },
-                modifier = Modifier.width(136.dp).height(84.dp).focusable(),
-                shape = RoundedCornerShape(8.dp),
+                onClick = { onEpisodeSelected(state.episode) },
+                modifier = Modifier.width(state.cardWidth).height(state.cardHeight).focusable(),
+                shape = RoundedCornerShape(state.cardCornerRadius),
                 colors = CardDefaults.cardColors(containerColor = if (state.selected) AnimePanelSoft else AnimePanel),
-                border = BorderStroke(1.dp, if (state.selected) accent else AnimeBorder),
+                border = BorderStroke(state.borderWidth, if (state.selected) accent else AnimeBorder),
             ) {
                 Column(
-                    Modifier.fillMaxSize().padding(10.dp),
-                    verticalArrangement = Arrangement.spacedBy(5.dp),
+                    Modifier.fillMaxSize().padding(state.contentPadding),
+                    verticalArrangement = Arrangement.spacedBy(state.contentSpacing),
                 ) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(state.headerSpacing), verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             text = state.indexLabel,
                             style = MaterialTheme.typography.titleMedium,
-                            color = if (state.selected) accent else Color.White,
+                            color = (if (state.selected) accent else Color.White).copy(alpha = state.indexAlpha),
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
                         )
                         Text(
                             text = state.actionLabel,
                             style = MaterialTheme.typography.labelSmall,
-                            color = accent,
+                            color = accent.copy(alpha = state.actionAlpha),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -4954,14 +4961,14 @@ private fun EpisodeSelectorRow(
                     Text(
                         text = state.title,
                         style = MaterialTheme.typography.bodySmall,
-                        color = if (state.selected) Color.White else AnimeMuted,
+                        color = (if (state.selected) Color.White else AnimeMuted).copy(alpha = state.titleAlpha),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
                     Text(
                         text = state.subtitle,
                         style = MaterialTheme.typography.labelSmall,
-                        color = AnimeMuted,
+                        color = AnimeMuted.copy(alpha = state.subtitleAlpha),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
