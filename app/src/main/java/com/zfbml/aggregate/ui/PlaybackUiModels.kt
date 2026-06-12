@@ -1962,6 +1962,7 @@ internal data class RoutePanelUiState(
     val compactMetrics: List<RoutePanelMetricUiState>,
     val detailedMetrics: List<RoutePanelMetricUiState>,
     val containerAlpha: Float,
+    val borderWidth: Dp,
     val borderAlpha: Float,
     val cornerRadius: Dp,
     val contentPadding: Dp,
@@ -1970,7 +1971,10 @@ internal data class RoutePanelUiState(
     val iconTone: SourceLibraryTone,
     val iconSize: Dp,
     val textSpacing: Dp,
+    val titleAlpha: Float,
     val summaryTone: SourceLibraryTone,
+    val summaryAlpha: Float,
+    val selectedRouteSummaryBaseColor: PlayerChromeBaseColor,
     val selectedRouteSummaryAlpha: Float,
     val expandToggleLabel: String,
     val collapseToggleLabel: String,
@@ -1981,8 +1985,10 @@ internal data class RoutePanelUiState(
     val toggleActiveContainerAlpha: Float,
     val toggleInactiveContainerAlpha: Float,
     val toggleInactiveContentAlpha: Float,
+    val toggleContentPadding: Dp,
     val metricSpacing: Dp,
     val noticeTone: SourceLibraryTone,
+    val noticeAlpha: Float,
     val noticeMaxLines: Int,
 )
 
@@ -1992,10 +1998,12 @@ internal data class RoutePanelMetricUiState(
     val tone: SourceLibraryTone,
     val height: Dp,
     val cornerRadius: Dp,
+    val containerBaseColor: PlayerChromeBaseColor,
     val containerAlpha: Float,
     val horizontalPadding: Dp,
     val spacing: Dp,
     val labelAlpha: Float,
+    val valueAlpha: Float,
 )
 
 internal data class PlayerRouteSourceStripUiState(
@@ -7019,10 +7027,12 @@ internal fun buildRoutePanelUiState(
             tone = tone,
             height = 30.dp,
             cornerRadius = 8.dp,
+            containerBaseColor = PlayerChromeBaseColor.Black,
             containerAlpha = 0.28f,
             horizontalPadding = 9.dp,
             spacing = 4.dp,
             labelAlpha = 0.7f,
+            valueAlpha = 1f,
         )
     }
     val compactMetrics = if (failedCount > 0) {
@@ -7058,6 +7068,7 @@ internal fun buildRoutePanelUiState(
         compactMetrics = compactMetrics,
         detailedMetrics = detailedMetrics,
         containerAlpha = 0.06f,
+        borderWidth = 1.dp,
         borderAlpha = 0.08f,
         cornerRadius = 8.dp,
         contentPadding = 12.dp,
@@ -7066,7 +7077,10 @@ internal fun buildRoutePanelUiState(
         iconTone = SourceLibraryTone.Online,
         iconSize = 20.dp,
         textSpacing = 2.dp,
+        titleAlpha = 1f,
         summaryTone = SourceLibraryTone.Muted,
+        summaryAlpha = 1f,
+        selectedRouteSummaryBaseColor = PlayerChromeBaseColor.White,
         selectedRouteSummaryAlpha = 0.62f,
         expandToggleLabel = "详细",
         collapseToggleLabel = "简单",
@@ -7077,8 +7091,10 @@ internal fun buildRoutePanelUiState(
         toggleActiveContainerAlpha = 0.16f,
         toggleInactiveContainerAlpha = 0.08f,
         toggleInactiveContentAlpha = 0.74f,
+        toggleContentPadding = 0.dp,
         metricSpacing = 8.dp,
         noticeTone = SourceLibraryTone.Backup,
+        noticeAlpha = 1f,
         noticeMaxLines = 2,
     )
 }

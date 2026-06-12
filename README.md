@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.166
+
+English:
+
+- Player route summary cards now use `RoutePanelUiState` for border width, title alpha, summary alpha, selected-route summary base color, toggle padding, notice alpha, and metric container/value chrome.
+- `RoutePanelSummaryCard` and route panel metric chips now render from tested model chrome instead of keeping summary-card constants inside Compose.
+- Added unit coverage for player route panel summary chrome.
+- App version labels, request user agents, and README notes are now updated to `0.5.166`.
+
 ### v0.5.165
 
 English:

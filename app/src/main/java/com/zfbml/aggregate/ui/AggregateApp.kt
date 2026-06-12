@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.165")
+                setRequestProperty("User-Agent", "ZFBML/0.5.166")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2984,7 +2984,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.165",
+            version = "0.5.166",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -9104,11 +9104,12 @@ private fun RoutePanelSummaryCard(
     onToggleDetailed: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val selectedRouteSummaryColor = playerChromeBaseColor(state.selectedRouteSummaryBaseColor)
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(state.cornerRadius),
         color = Color.White.copy(alpha = state.containerAlpha),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = state.borderAlpha)),
+        border = BorderStroke(state.borderWidth, Color.White.copy(alpha = state.borderAlpha)),
     ) {
         Column(
             modifier = Modifier.fillMaxWidth().padding(state.contentPadding),
@@ -9129,13 +9130,13 @@ private fun RoutePanelSummaryCard(
                     Text(
                         if (detailedMode) state.detailedTitle else state.compactTitle,
                         style = MaterialTheme.typography.titleSmall,
-                        color = Color.White,
+                        color = Color.White.copy(alpha = state.titleAlpha),
                         fontWeight = FontWeight.Bold,
                     )
                     Text(
                         if (detailedMode) state.detailedSummary else state.compactSummary,
                         style = MaterialTheme.typography.bodySmall,
-                        color = sourceLibraryToneColor(state.summaryTone),
+                        color = sourceLibraryToneColor(state.summaryTone).copy(alpha = state.summaryAlpha),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -9143,7 +9144,7 @@ private fun RoutePanelSummaryCard(
                         Text(
                             summary,
                             style = MaterialTheme.typography.labelSmall,
-                            color = Color.White.copy(alpha = state.selectedRouteSummaryAlpha),
+                            color = selectedRouteSummaryColor.copy(alpha = state.selectedRouteSummaryAlpha),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -9165,7 +9166,7 @@ private fun RoutePanelSummaryCard(
                             Color.White.copy(alpha = state.toggleInactiveContentAlpha)
                         },
                     ),
-                    contentPadding = PaddingValues(0.dp),
+                    contentPadding = PaddingValues(state.toggleContentPadding),
                 ) {
                     Text(
                         if (detailedMode) state.collapseToggleLabel else state.expandToggleLabel,
@@ -9187,7 +9188,7 @@ private fun RoutePanelSummaryCard(
                 Text(
                     it,
                     style = MaterialTheme.typography.bodySmall,
-                    color = sourceLibraryToneColor(state.noticeTone),
+                    color = sourceLibraryToneColor(state.noticeTone).copy(alpha = state.noticeAlpha),
                     maxLines = state.noticeMaxLines,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -9201,11 +9202,12 @@ private fun RoutePanelMetricChip(
     metric: RoutePanelMetricUiState,
 ) {
     val color = sourceLibraryToneColor(metric.tone)
+    val containerColor = playerChromeBaseColor(metric.containerBaseColor)
     Row(
         modifier = Modifier
             .height(metric.height)
             .clip(RoundedCornerShape(metric.cornerRadius))
-            .background(Color.Black.copy(alpha = metric.containerAlpha))
+            .background(containerColor.copy(alpha = metric.containerAlpha))
             .padding(horizontal = metric.horizontalPadding),
         horizontalArrangement = Arrangement.spacedBy(metric.spacing),
         verticalAlignment = Alignment.CenterVertically,
@@ -9219,7 +9221,7 @@ private fun RoutePanelMetricChip(
         Text(
             metric.value,
             style = MaterialTheme.typography.labelMedium,
-            color = color,
+            color = color.copy(alpha = metric.valueAlpha),
             fontWeight = FontWeight.Bold,
             maxLines = 1,
         )
