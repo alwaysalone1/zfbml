@@ -376,3 +376,5 @@ This pass upgrades player bottom-action focus behavior. `PlayerActionUiState` no
 This pass upgrades fullscreen side-dock focus behavior. `PlayerFullscreenDockActionUiState` now owns focus eligibility so disabled Episode and Route shortcuts stay visible for playback context while TV and keyboard navigation skip them.
 
 This pass upgrades compact fullscreen-entry focus behavior. `PlayerCompactFullscreenActionUiState` now owns focus eligibility so the compact fullscreen button keeps its enabled/disabled presentation and TV or keyboard focus state under the same tested model contract.
+
+This pass upgrades portrait playback-action focus behavior. `PortraitWatchActionUiState` now owns focus eligibility so portrait Episode and Route shortcuts keep their enabled/disabled presentation and TV or keyboard focus state under the same tested playback model contract.

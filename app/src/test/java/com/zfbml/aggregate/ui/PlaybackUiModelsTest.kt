@@ -4465,6 +4465,7 @@ class PlaybackUiModelsTest {
         val episodeAction = state.actions.first { it.kind == PlayerPanelKind.Episode }
         assertEquals("2/3", episodeAction.subtitle)
         assertTrue(episodeAction.enabled)
+        assertTrue(episodeAction.focusEnabled)
         assertEquals(SourceLibraryTone.Primary, episodeAction.tone)
         assertEquals(34.dp, episodeAction.height)
         assertEquals(999.dp, episodeAction.cornerRadius)
@@ -4479,6 +4480,27 @@ class PlaybackUiModelsTest {
         assertEquals(1f, episodeAction.subtitleAlpha, 0.001f)
         assertEquals("2源", state.actions.first { it.kind == PlayerPanelKind.Route }.subtitle)
         assertNull(state.diagnostic)
+    }
+
+    @Test
+    fun portraitWatchActionUiStateDefaultsFocusToEnabledState() {
+        val enabled = PortraitWatchActionUiState(
+            kind = PlayerPanelKind.Episode,
+            title = "Episode",
+            subtitle = "1/12",
+            enabled = true,
+            tone = SourceLibraryTone.Primary,
+        )
+        val disabled = PortraitWatchActionUiState(
+            kind = PlayerPanelKind.Route,
+            title = "Route",
+            subtitle = "1 source",
+            enabled = false,
+            tone = SourceLibraryTone.Online,
+        )
+
+        assertTrue(enabled.focusEnabled)
+        assertFalse(disabled.focusEnabled)
     }
 
     @Test

@@ -1189,6 +1189,7 @@ internal data class PortraitWatchActionUiState(
     val title: String,
     val subtitle: String,
     val enabled: Boolean,
+    val focusEnabled: Boolean = enabled,
     val tone: SourceLibraryTone,
     val height: Dp = 34.dp,
     val cornerRadius: Dp = 999.dp,

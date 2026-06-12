@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.184")
+                setRequestProperty("User-Agent", "ZFBML/0.5.185")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2992,7 +2992,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.184",
+            version = "0.5.185",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -6569,7 +6569,7 @@ private fun PortraitPlaybackAction(
     TextButton(
         onClick = onClick,
         enabled = state.enabled,
-        modifier = modifier.height(state.height).focusable(),
+        modifier = modifier.height(state.height).focusable(enabled = state.focusEnabled),
         shape = RoundedCornerShape(state.cornerRadius),
         colors = ButtonDefaults.textButtonColors(
             containerColor = accent.copy(alpha = state.containerAlpha),

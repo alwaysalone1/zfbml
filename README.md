@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.185
+
+English:
+
+- Portrait playback actions now use `PortraitWatchActionUiState.focusEnabled` for TV/keyboard focus eligibility.
+- Episode and Route shortcuts in the portrait watch info panel keep focus behavior under the tested playback model contract.
+- Added unit coverage for enabled and disabled portrait playback-action focus defaults.
+- App version labels, request user agents, and README notes are now updated to `0.5.185`.
+
 ### v0.5.184
 
 English:
