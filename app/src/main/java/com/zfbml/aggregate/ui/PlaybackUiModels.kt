@@ -1376,6 +1376,7 @@ internal data class PlayerCircleButtonChromeUiState(
     val iconTone: SourceLibraryTone?,
     val iconBaseColor: PlayerChromeBaseColor,
     val iconAlpha: Float,
+    val focusEnabled: Boolean,
 )
 
 internal data class PlayerActionUiState(
@@ -6419,6 +6420,7 @@ internal fun buildPlayerCircleButtonChromeUiState(
             selected -> 1f
             else -> 0.9f
         },
+        focusEnabled = enabled,
     )
 }
 

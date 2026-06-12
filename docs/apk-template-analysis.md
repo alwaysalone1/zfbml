@@ -392,3 +392,5 @@ This pass upgrades fullscreen shortcut focus behavior. `PlayerFullscreenSeekButt
 This pass upgrades route-panel toggle focus behavior. `RoutePanelUiState` now owns detail-toggle focus eligibility so the compact/detailed route summary switch remains a tested TV and keyboard navigation target instead of inheriting Compose defaults.
 
 This pass upgrades player top route-status focus behavior. `PlayerRouteStatusUiState` now owns focus eligibility so the route-status chip that opens the playback route panel remains part of the tested TV and keyboard navigation contract instead of relying on Compose defaults.
+
+This pass upgrades shared player circle-button focus behavior. `PlayerCircleButtonChromeUiState` now owns focus eligibility so disabled circular playback controls keep their muted chrome but are skipped by TV and keyboard navigation.

@@ -4241,16 +4241,19 @@ class PlaybackUiModelsTest {
         assertNull(normal.iconTone)
         assertEquals(PlayerChromeBaseColor.White, normal.iconBaseColor)
         assertEquals(0.9f, normal.iconAlpha, 0.001f)
+        assertTrue(normal.focusEnabled)
         assertEquals(62.dp, selected.size)
         assertEquals(34.dp, selected.iconSize)
         assertEquals(SourceLibraryTone.Primary, selected.containerTone)
         assertEquals(1f, selected.containerAlpha, 0.001f)
         assertEquals(1f, selected.iconAlpha, 0.001f)
+        assertTrue(selected.focusEnabled)
         assertNull(disabled.containerTone)
         assertEquals(PlayerChromeBaseColor.White, disabled.containerBaseColor)
         assertEquals(0.08f, disabled.containerAlpha, 0.001f)
         assertEquals(PlayerChromeBaseColor.White, disabled.iconBaseColor)
         assertEquals(0.3f, disabled.iconAlpha, 0.001f)
+        assertFalse(disabled.focusEnabled)
     }
 
     @Test

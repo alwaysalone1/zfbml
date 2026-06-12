@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.193
+
+English:
+
+- Shared player circle buttons now use `PlayerCircleButtonChromeUiState.focusEnabled` for TV/keyboard focus eligibility.
+- Disabled circular controls keep their disabled chrome but are skipped by focus navigation.
+- Added unit coverage for normal, selected, and disabled circle-button focus states.
+- App version labels, request user agents, and README notes are now updated to `0.5.193`.
+
 ### v0.5.192
 
 English:
