@@ -1825,6 +1825,7 @@ internal data class PlayerFullscreenSeekButtonUiState(
     val width: Dp,
     val height: Dp,
     val iconSize: Dp,
+    val focusEnabled: Boolean,
     val iconBaseColor: PlayerChromeBaseColor,
     val iconAlpha: Float,
 )
@@ -1836,6 +1837,7 @@ internal data class PlayerFullscreenLockButtonUiState(
     val height: Dp,
     val cornerRadius: Dp,
     val iconSize: Dp,
+    val focusEnabled: Boolean,
     val containerTone: SourceLibraryTone?,
     val containerBaseColor: PlayerChromeBaseColor,
     val containerAlpha: Float,
@@ -7035,6 +7037,7 @@ internal fun buildPlayerFullscreenSeekClusterUiState(
             width = 42.dp,
             height = 36.dp,
             iconSize = 18.dp,
+            focusEnabled = true,
             iconBaseColor = PlayerChromeBaseColor.White,
             iconAlpha = 0.84f,
         )
@@ -7076,6 +7079,7 @@ internal fun buildPlayerFullscreenLockButtonUiState(
         height = 44.dp,
         cornerRadius = 999.dp,
         iconSize = 21.dp,
+        focusEnabled = true,
         containerTone = if (locked) SourceLibraryTone.Primary else null,
         containerBaseColor = if (locked) PlayerChromeBaseColor.White else PlayerChromeBaseColor.Black,
         containerAlpha = if (locked) 0.24f else 0.42f,

@@ -386,3 +386,5 @@ This pass upgrades portrait episode more-entry focus behavior. `PortraitEpisodeM
 This pass upgrades danmaku toggle focus behavior. Compact and fullscreen danmaku toggle models now own focus eligibility separately from the current danmaku-enabled state, so off-state toggles remain reachable by TV or keyboard navigation while Compose only renders the tested contract.
 
 This pass upgrades fullscreen seek-slider focus behavior. `PlayerSeekBarUiState` now owns slider focus eligibility so seekable streams stay keyboard and TV navigable while unknown-duration playback shows a loading track without adding a dead progress target to the focus chain.
+
+This pass upgrades fullscreen shortcut focus behavior. `PlayerFullscreenSeekButtonUiState` and `PlayerFullscreenLockButtonUiState` now own focus eligibility so replay, forward, lock, and unlock buttons keep their remote/keyboard navigation contract in the tested player model instead of relying on Compose defaults.

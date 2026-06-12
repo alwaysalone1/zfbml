@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.190
+
+English:
+
+- Fullscreen seek shortcut and lock buttons now use model-owned `focusEnabled` for TV/keyboard focus eligibility.
+- Replay/forward shortcuts and lock/unlock controls keep their always-reachable focus contract under tested playback models.
+- Added unit coverage for fullscreen shortcut and lock-button focus states.
+- App version labels, request user agents, and README notes are now updated to `0.5.190`.
+
 ### v0.5.189
 
 English:

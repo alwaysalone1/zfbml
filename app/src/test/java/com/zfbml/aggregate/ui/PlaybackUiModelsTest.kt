@@ -5079,12 +5079,14 @@ class PlaybackUiModelsTest {
         assertEquals(42.dp, backward.width)
         assertEquals(36.dp, backward.height)
         assertEquals(18.dp, backward.iconSize)
+        assertTrue(backward.focusEnabled)
         assertEquals(PlayerChromeBaseColor.White, backward.iconBaseColor)
         assertEquals(0.84f, backward.iconAlpha, 0.001f)
 
         val forward = state.buttons.last()
         assertEquals("快进 10 秒", forward.contentDescription)
         assertEquals(10_000L, forward.deltaMs)
+        assertTrue(forward.focusEnabled)
     }
 
     @Test
@@ -5098,6 +5100,7 @@ class PlaybackUiModelsTest {
         assertEquals(44.dp, unlocked.height)
         assertEquals(999.dp, unlocked.cornerRadius)
         assertEquals(21.dp, unlocked.iconSize)
+        assertTrue(unlocked.focusEnabled)
         assertNull(unlocked.containerTone)
         assertEquals(PlayerChromeBaseColor.Black, unlocked.containerBaseColor)
         assertEquals(0.42f, unlocked.containerAlpha, 0.001f)
@@ -5107,6 +5110,7 @@ class PlaybackUiModelsTest {
 
         assertTrue(locked.locked)
         assertEquals("解锁控制", locked.contentDescription)
+        assertTrue(locked.focusEnabled)
         assertEquals(SourceLibraryTone.Primary, locked.containerTone)
         assertEquals(PlayerChromeBaseColor.White, locked.containerBaseColor)
         assertEquals(0.24f, locked.containerAlpha, 0.001f)
