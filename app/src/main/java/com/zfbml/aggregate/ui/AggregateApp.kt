@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.186")
+                setRequestProperty("User-Agent", "ZFBML/0.5.187")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2992,7 +2992,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.186",
+            version = "0.5.187",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -6606,7 +6606,7 @@ private fun PortraitPlaybackAction(
 private fun PortraitEpisodeMoreCard(state: PortraitEpisodeMoreActionUiState, onClick: () -> Unit) {
     Card(
         onClick = onClick,
-        modifier = Modifier.width(72.dp).height(48.dp).focusable(),
+        modifier = Modifier.width(72.dp).height(48.dp).focusable(enabled = state.focusEnabled),
         shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(containerColor = AnimePanelSoft),
         border = BorderStroke(1.dp, AnimeAccentCyan.copy(alpha = 0.42f)),

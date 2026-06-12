@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.187
+
+English:
+
+- Portrait episode more-entry cards now use `PortraitEpisodeMoreActionUiState.focusEnabled` for TV/keyboard focus eligibility.
+- The all-episodes shortcut keeps its always-reachable focus contract in the tested portrait episode-rail model.
+- Added unit coverage for the portrait all-episodes entry focus state.
+- App version labels, request user agents, and README notes are now updated to `0.5.187`.
+
 ### v0.5.186
 
 English:

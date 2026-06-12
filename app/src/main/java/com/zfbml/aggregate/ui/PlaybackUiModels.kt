@@ -1227,6 +1227,7 @@ internal data class PortraitEpisodeMoreActionUiState(
     val title: String,
     val subtitle: String,
     val count: Int,
+    val focusEnabled: Boolean = true,
 )
 
 internal data class PortraitRecoveryActionsUiState(

@@ -380,3 +380,5 @@ This pass upgrades compact fullscreen-entry focus behavior. `PlayerCompactFullsc
 This pass upgrades portrait playback-action focus behavior. `PortraitWatchActionUiState` now owns focus eligibility so portrait Episode and Route shortcuts keep their enabled/disabled presentation and TV or keyboard focus state under the same tested playback model contract.
 
 This pass upgrades portrait episode-rail focus behavior. `PortraitEpisodeRailItemUiState` now owns focus eligibility so the portrait episode strip can keep loading and waiting episodes visible while TV or keyboard navigation only lands on selectable rail cards.
+
+This pass upgrades portrait episode more-entry focus behavior. `PortraitEpisodeMoreActionUiState` now owns focus eligibility so the all-episodes shortcut stays part of the tested portrait playback navigation contract instead of relying on Compose-local focus defaults.

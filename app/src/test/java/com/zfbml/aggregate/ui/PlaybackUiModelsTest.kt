@@ -3120,6 +3120,7 @@ class PlaybackUiModelsTest {
         assertEquals(SourceLibraryTone.Backup, state.items.first { it.episode.id == "ep-11" }.tone)
         assertFalse(state.items.first { it.episode.id == "ep-6" }.enabled)
         assertFalse(state.items.first { it.episode.id == "ep-6" }.focusEnabled)
+        assertTrue(checkNotNull(state.moreAction).focusEnabled)
         assertEquals("全部", checkNotNull(state.moreAction).title)
         assertEquals("24集", checkNotNull(state.moreAction).subtitle)
     }
