@@ -326,3 +326,5 @@ This pass upgrades detail route-recommendation band chrome. `DetailRouteRecommen
 This pass upgrades detail decision-chip chrome. `DetailFirstPlayChipUiState` now owns chip height, radius, container base color/alpha, border width/alpha, padding, spacing, label/value alpha, and fallback value copy so first-play and playback-readiness decision chips share a tested model contract instead of Compose-local constants.
 
 This pass upgrades detail first-play strip chrome. `DetailFirstPlayUiState` now owns strip radius, container base color/alpha, padding, spacing, icon-box chrome, title/decision alpha, action-chip chrome, and chip spacing so the detail playback first-play guidance shell is model-driven alongside its decision chips.
+
+This pass upgrades detail playback-readiness strip chrome. `DetailPlaybackReadinessUiState` now owns strip radius, container base color/alpha, border width/alpha, padding, spacing, status-dot sizing, headline/summary alpha, summary tone, and chip spacing so playback readiness presentation follows the same tested model contract as first-play guidance and decision chips.

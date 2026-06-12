@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.160
+
+English:
+
+- Detail playback readiness strips now use `DetailPlaybackReadinessUiState` for shell radius, container color/alpha, border, padding, spacing, status-dot sizing, text alpha, summary tone, and chip spacing.
+- `DetailPlaybackReadinessStrip` now renders the playback readiness shell from model chrome instead of keeping strip constants inside Compose.
+- Added unit coverage for detail playback-readiness strip chrome.
+- App version labels, request user agents, and README notes are now updated to `0.5.160`.
+
 ### v0.5.159
 
 English:

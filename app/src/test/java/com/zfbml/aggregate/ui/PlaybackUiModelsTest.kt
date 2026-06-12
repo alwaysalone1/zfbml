@@ -223,6 +223,21 @@ class PlaybackUiModelsTest {
         assertEquals("\u53ef\u79bb\u7ebf", readiness.cacheLabel)
         assertEquals(SourceLibraryTone.Cache, readiness.tone)
         assertEquals(SourceLibraryTone.Primary, readiness.cacheTone)
+        assertEquals(8.dp, readiness.cardCornerRadius)
+        assertEquals(PlayerChromeBaseColor.Black, readiness.containerBaseColor)
+        assertEquals(0.24f, readiness.containerAlpha, 0.001f)
+        assertEquals(1.dp, readiness.borderWidth)
+        assertEquals(0.20f, readiness.borderAlpha, 0.001f)
+        assertEquals(12.dp, readiness.horizontalPadding)
+        assertEquals(10.dp, readiness.verticalPadding)
+        assertEquals(8.dp, readiness.contentSpacing)
+        assertEquals(10.dp, readiness.headerSpacing)
+        assertEquals(8.dp, readiness.statusDotSize)
+        assertEquals(2.dp, readiness.textColumnSpacing)
+        assertEquals(1f, readiness.headlineAlpha, 0.001f)
+        assertEquals(SourceLibraryTone.Muted, readiness.summaryTone)
+        assertEquals(1f, readiness.summaryAlpha, 0.001f)
+        assertEquals(7.dp, readiness.chipSpacing)
         assertEquals(
             listOf("\u7ebf\u8def", "\u5728\u7ebf", "\u5907\u7528", "\u7f13\u5b58"),
             readiness.chips.map { it.label },

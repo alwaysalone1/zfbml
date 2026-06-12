@@ -84,6 +84,21 @@ internal data class DetailPlaybackReadinessUiState(
     val tone: SourceLibraryTone,
     val cacheTone: SourceLibraryTone,
     val chips: List<DetailFirstPlayChipUiState>,
+    val cardCornerRadius: Dp = 8.dp,
+    val containerBaseColor: PlayerChromeBaseColor = PlayerChromeBaseColor.Black,
+    val containerAlpha: Float = 0.24f,
+    val borderWidth: Dp = 1.dp,
+    val borderAlpha: Float = 0.20f,
+    val horizontalPadding: Dp = 12.dp,
+    val verticalPadding: Dp = 10.dp,
+    val contentSpacing: Dp = 8.dp,
+    val headerSpacing: Dp = 10.dp,
+    val statusDotSize: Dp = 8.dp,
+    val textColumnSpacing: Dp = 2.dp,
+    val headlineAlpha: Float = 1f,
+    val summaryTone: SourceLibraryTone = SourceLibraryTone.Muted,
+    val summaryAlpha: Float = 1f,
+    val chipSpacing: Dp = 7.dp,
 )
 
 internal data class DetailHeroActionUiState(

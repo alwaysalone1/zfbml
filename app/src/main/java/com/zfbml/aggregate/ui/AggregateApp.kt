@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.159")
+                setRequestProperty("User-Agent", "ZFBML/0.5.160")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2984,7 +2984,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.159",
+            version = "0.5.160",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -4385,31 +4385,33 @@ private fun DetailFirstPlayStrip(
 @Composable
 private fun DetailPlaybackReadinessStrip(state: DetailPlaybackReadinessUiState) {
     val accent = sourceLibraryToneColor(state.tone)
+    val containerColor = playerChromeBaseColor(state.containerBaseColor)
+    val summaryColor = sourceLibraryToneColor(state.summaryTone)
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color.Black.copy(alpha = 0.24f))
-            .border(1.dp, accent.copy(alpha = 0.20f), RoundedCornerShape(8.dp))
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+            .clip(RoundedCornerShape(state.cardCornerRadius))
+            .background(containerColor.copy(alpha = state.containerAlpha))
+            .border(state.borderWidth, accent.copy(alpha = state.borderAlpha), RoundedCornerShape(state.cardCornerRadius))
+            .padding(horizontal = state.horizontalPadding, vertical = state.verticalPadding),
+        verticalArrangement = Arrangement.spacedBy(state.contentSpacing),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(state.headerSpacing),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
                 modifier = Modifier
-                    .size(8.dp)
+                    .size(state.statusDotSize)
                     .clip(CircleShape)
                     .background(accent),
             )
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(state.textColumnSpacing)) {
                 Text(
                     text = state.headline,
                     style = MaterialTheme.typography.labelLarge,
-                    color = Color.White,
+                    color = Color.White.copy(alpha = state.headlineAlpha),
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -4417,14 +4419,14 @@ private fun DetailPlaybackReadinessStrip(state: DetailPlaybackReadinessUiState) 
                 Text(
                     text = state.summary,
                     style = MaterialTheme.typography.labelSmall,
-                    color = AnimeMuted,
+                    color = summaryColor.copy(alpha = state.summaryAlpha),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
             RouteStatusBadge(state.primaryActionLabel, accent)
         }
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(7.dp), modifier = Modifier.fillMaxWidth()) {
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(state.chipSpacing), modifier = Modifier.fillMaxWidth()) {
             items(state.chips) { chip ->
                 DetailDecisionChip(chip)
             }
