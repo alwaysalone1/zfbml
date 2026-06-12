@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.180
+
+English:
+
+- Player episode option rows now use `PlayerEpisodeOptionUiState.rowFocusEnabled` for TV/keyboard focus eligibility.
+- Loading-panel waiting episodes remain visible but are skipped by the episode-switching focus sequence until they become selectable.
+- Added unit coverage for current, selectable, loading, and waiting episode focus states.
+- App version labels, request user agents, and README notes are now updated to `0.5.180`.
+
 ### v0.5.179
 
 English:

@@ -366,3 +366,5 @@ This pass upgrades detail route-card interaction chrome. `RouteCandidateUiState`
 This pass upgrades detail route action-pill chrome. `RouteCandidateUiState` now owns the detail action pill height, radius, padding, spacing, icon size, icon alpha, text alpha, and container alpha so detail route cards no longer fetch action-pill presentation from Compose while preserving the shared tested pill contract.
 
 This pass upgrades player route-row focus behavior. `RouteCandidateUiState` now owns row focus eligibility so TV and keyboard navigation can skip web-only fallback rows that are shown for diagnostics but cannot be played directly, while retryable failures and playable routes remain focusable.
+
+This pass upgrades player episode-row focus behavior. `PlayerEpisodeOptionUiState` now owns row focus eligibility so the episode-switching panel can keep loading-disabled waiting episodes visible for context while skipping them in TV and keyboard navigation until they become selectable.
