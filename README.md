@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.198
+
+English:
+
+- Automatic danmaku timeline loading now skips low-confidence candidates below the trusted threshold.
+- Low-confidence matches still appear in candidate lists so users can manually search, review, and calibrate the correct source.
+- Added registry coverage proving low-confidence automatic matches are not fetched while remaining visible through `matchAll`.
+- App version labels, request user agents, and README notes are now updated to `0.5.198`.
+
 ### v0.5.197
 
 English:

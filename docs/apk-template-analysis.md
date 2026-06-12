@@ -402,3 +402,5 @@ This pass upgrades shared player text-action focus behavior. `PlayerTextActionCh
 This pass upgrades player startup-overlay anti-obstruction chrome. `PlayerStartupOverlayUiState` now owns progress stroke width plus title and metadata line limits so buffering/loading overlays keep a compact, tested footprint instead of relying on Compose defaults while video content is initializing.
 
 This pass upgrades danmaku candidate confidence presentation. `PlayerDanmakuCandidateUiState` now owns confidence labels and tones so automatic matches, low-confidence hits, and manually confirmed mappings are clearly differentiated before the user calibrates a source to the current episode.
+
+This pass upgrades danmaku automatic-load trust boundaries. `DanmakuRegistry` now skips low-confidence automatic candidates when fetching the best timeline, while still returning those candidates through matching so the user can manually review and calibrate the correct source for the current episode.

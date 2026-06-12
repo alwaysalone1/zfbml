@@ -260,6 +260,26 @@ class DanmakuRegistryTest {
     }
 
     @Test
+    fun fetchBestTimelineSkipsLowConfidenceAutomaticMatches() = runTest {
+        val lowConfidence = CountingDanmakuProvider(
+            id = "low-confidence",
+            score = 35,
+        )
+        val registry = DanmakuRegistry(listOf(lowConfidence))
+        val detail = detail()
+        val episode = episode("14")
+
+        val timeline = registry.fetchBestTimeline(detail, episode)
+        val matches = registry.matchAll(detail, episode)
+
+        assertEquals(emptyList<DanmakuItem>(), timeline)
+        assertEquals(listOf("low-confidence"), matches.map { it.providerId })
+        assertEquals(listOf(35), matches.map { it.score })
+        assertEquals(1, lowConfidence.matchCount.get())
+        assertEquals(0, lowConfidence.fetchCount.get())
+    }
+
+    @Test
     fun manualMappingFetchesCalibratedTimelineBeforeAutomaticMatching() = runTest {
         val manual = CountingDanmakuProvider(id = "manual", score = 1)
         val automatic = CountingDanmakuProvider(id = "automatic", score = 200)
