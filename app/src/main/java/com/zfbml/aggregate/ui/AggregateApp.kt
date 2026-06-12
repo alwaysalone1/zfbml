@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.161")
+                setRequestProperty("User-Agent", "ZFBML/0.5.162")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2984,7 +2984,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.161",
+            version = "0.5.162",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -4984,38 +4984,59 @@ private fun DetailRouteResolutionPanel(
     modifier: Modifier = Modifier,
 ) {
     val accent = sourceLibraryToneColor(state.tone)
+    val subtitleColor = sourceLibraryToneColor(state.subtitleTone)
+    val detailColor = sourceLibraryToneColor(state.detailTone)
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(state.cardCornerRadius),
         colors = CardDefaults.cardColors(containerColor = AnimePanel),
-        border = BorderStroke(1.dp, accent.copy(alpha = 0.62f)),
+        border = BorderStroke(state.borderWidth, accent.copy(alpha = state.borderAlpha)),
     ) {
         Column(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.fillMaxWidth().padding(state.contentPadding),
+            verticalArrangement = Arrangement.spacedBy(state.contentSpacing),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(state.headerSpacing),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 if (state.showProgress) {
-                    CircularProgressIndicator(color = accent, modifier = Modifier.size(28.dp))
+                    CircularProgressIndicator(color = accent, modifier = Modifier.size(state.progressSize))
                 } else {
                     Box(
-                        modifier = Modifier.size(32.dp).background(accent.copy(alpha = 0.14f), RoundedCornerShape(8.dp)),
+                        modifier = Modifier
+                            .size(state.iconBoxSize)
+                            .background(
+                                accent.copy(alpha = state.iconBoxContainerAlpha),
+                                RoundedCornerShape(state.iconBoxCornerRadius),
+                            ),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Icon(Icons.Filled.Search, contentDescription = null, tint = accent, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Filled.Search, contentDescription = null, tint = accent, modifier = Modifier.size(state.statusIconSize))
                     }
                 }
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    Text(state.title, style = MaterialTheme.typography.titleMedium, color = Color.White)
-                    Text(state.subtitle, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(state.textColumnSpacing)) {
+                    Text(
+                        state.title,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color.White.copy(alpha = state.titleAlpha),
+                    )
+                    Text(
+                        state.subtitle,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = subtitleColor.copy(alpha = state.subtitleAlpha),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 }
             }
-            Text(state.detail, style = MaterialTheme.typography.bodySmall, color = AnimeMuted)
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+            Text(
+                state.detail,
+                style = MaterialTheme.typography.bodySmall,
+                color = detailColor.copy(alpha = state.detailAlpha),
+            )
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(state.chipSpacing)) {
                 items(state.chips) { chip ->
                     RouteStatusBadge(chip.label, sourceLibraryToneColor(chip.tone))
                 }

@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.162
+
+English:
+
+- Detail route resolution panels now use `DetailRouteResolutionUiState` for card radius, border, padding, header spacing, progress/icon chrome, text alpha/tone, and chip spacing.
+- `DetailRouteResolutionPanel` now renders route-matching diagnostics from model chrome instead of keeping panel constants inside Compose.
+- Added unit coverage for detail route-resolution panel chrome.
+- App version labels, request user agents, and README notes are now updated to `0.5.162`.
+
 ### v0.5.161
 
 English:
