@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.209
+
+English:
+
+- Route search now reserves one capped query slot for a non-CJK fallback alias when CJK catalog aliases overflow the search limit.
+- Chinese catalog names still keep priority, while original or English titles can still recover sources that only index foreign names.
+- Added resolver coverage proving the fallback slot is searched when long CJK alias lists would otherwise fill the cap.
+- App version labels, request user agents, and README notes are now updated to `0.5.209`.
+
 ### v0.5.208
 
 English:

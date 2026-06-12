@@ -12,6 +12,14 @@ internal fun splitMediaAliasText(value: String?): List<String> {
         .filter { it.length >= 2 }
 }
 
+internal fun String.containsMediaCjkText(): Boolean {
+    return any { char ->
+        char in '\u4e00'..'\u9fff' ||
+            char in '\u3040'..'\u30ff' ||
+            char in '\u3400'..'\u4dbf'
+    }
+}
+
 data class MediaFetchRequest(
     val subjectId: String?,
     val subjectNames: List<String>,
@@ -33,8 +41,8 @@ data class MediaFetchRequest(
                 .map { it.trim() }
                 .filter { it.length >= 2 }
                 .distinctBy { it.normalizedAliasKey() }
-            val cjkAliases = distinctAliases.filter { it.containsCjkCharacter() }
-            val nonCjkAliases = distinctAliases.filterNot { it.containsCjkCharacter() }
+            val cjkAliases = distinctAliases.filter { it.containsMediaCjkText() }
+            val nonCjkAliases = distinctAliases.filterNot { it.containsMediaCjkText() }
             val aliases = (cjkAliases + nonCjkAliases).ifEmpty { distinctAliases }
 
             return MediaFetchRequest(
@@ -51,14 +59,6 @@ data class MediaFetchRequest(
         private fun String.normalizedAliasKey(): String {
             return lowercase()
                 .replace(Regex("""[\[\]【】()（）:：!！?？.,，。~～_\-\s]+"""), "")
-        }
-
-        private fun String.containsCjkCharacter(): Boolean {
-            return any { char ->
-                char in '\u4e00'..'\u9fff' ||
-                    char in '\u3040'..'\u30ff' ||
-                    char in '\u3400'..'\u4dbf'
-            }
         }
     }
 }

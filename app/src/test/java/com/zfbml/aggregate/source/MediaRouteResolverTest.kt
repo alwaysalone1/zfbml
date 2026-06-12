@@ -124,6 +124,34 @@ class MediaRouteResolverTest {
     }
 
     @Test
+    fun resolverReservesSearchSlotForNonCjkFallbackWhenCjkAliasesOverflow() = runTest {
+        val provider = EnglishOnlyRouteProvider(matchQuery = "English Overflow")
+        val request = MediaFetchRequest.fromEpisode(
+            Episode(
+                providerId = "bangumi-catalog",
+                id = "catalog-18",
+                title = "Episode 2",
+                url = "bangumi://subject/18/episode/2",
+                index = 2,
+                raw = mapOf(
+                    "subjectId" to "18",
+                    "subjectNameCn" to "\u6d4b\u8bd5\u756a\u5267",
+                    "subjectTitle" to "\u6d4b\u8bd5\u756a\u5267 \u7b2c\u4e8c\u5b63",
+                    "subjectAliases" to "\u6d4b\u8bd5\u756a\u5267 \u522b\u540d\u4e00|\u6d4b\u8bd5\u756a\u5267 \u522b\u540d\u4e8c|\u6d4b\u8bd5\u756a\u5267 \u522b\u540d\u4e09|English Overflow",
+                    "subjectName" to "Original Overflow",
+                ),
+            ),
+        )
+
+        val routes = MediaRouteResolver(listOf(provider), providerTimeoutMs = 1_000L).resolve(request)
+
+        assertEquals(4, provider.queries.size)
+        assertTrue(provider.queries.contains("English Overflow"))
+        assertTrue(routes.isNotEmpty())
+        assertEquals("English Overflow - 02", routes.first().title)
+    }
+
+    @Test
     fun resolverPromotesEpisodeMatchedRoute() = runTest {
         val provider = FakeRouteProvider()
         val request = MediaFetchRequest.fromEpisode(
@@ -316,7 +344,9 @@ class MediaRouteResolverTest {
         assertTrue(routes.map { it.sourceId }.contains("source-b"))
     }
 
-    private class EnglishOnlyRouteProvider : SourceProvider {
+    private class EnglishOnlyRouteProvider(
+        private val matchQuery: String = "English Anime",
+    ) : SourceProvider {
         val queries = ConcurrentLinkedQueue<String>()
 
         override val manifest = SourceManifest(
@@ -329,11 +359,11 @@ class MediaRouteResolverTest {
 
         override suspend fun search(query: String): List<SearchResult> {
             queries += query
-            if (query != "English Anime") return emptyList()
+            if (query != matchQuery) return emptyList()
             return listOf(
                 SearchResult(
                     providerId = manifest.id,
-                    title = "English Anime - 02",
+                    title = "$matchQuery - 02",
                     url = "english://result/2",
                     raw = mapOf("mediaKind" to "online"),
                 ),

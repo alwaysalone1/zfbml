@@ -11,7 +11,7 @@ class MediaRouteResolver(
     private val providerTimeoutMs: Long = 8_000L,
 ) {
     suspend fun resolve(request: MediaFetchRequest): List<RouteCandidate> = coroutineScope {
-        val aliases = request.subjectNames.take(MAX_ALIAS_SEARCH_COUNT)
+        val aliases = routeSearchAliases(request.subjectNames)
         if (aliases.isEmpty()) return@coroutineScope emptyList()
 
         val hits = providers
@@ -72,6 +72,17 @@ class MediaRouteResolver(
             .distinctBy { "${it.sourceId}|${it.stream.url}" }
             .sortedWith(routeComparator())
             .take(MAX_ROUTES)
+    }
+
+    private fun routeSearchAliases(subjectNames: List<String>): List<String> {
+        if (subjectNames.size <= MAX_ALIAS_SEARCH_COUNT) return subjectNames
+        val cjkAliases = subjectNames.filter { it.containsMediaCjkText() }
+        val nonCjkAliases = subjectNames.filterNot { it.containsMediaCjkText() }
+        if (cjkAliases.isEmpty() || nonCjkAliases.isEmpty()) {
+            return subjectNames.take(MAX_ALIAS_SEARCH_COUNT)
+        }
+        return (cjkAliases.take(MAX_ALIAS_SEARCH_COUNT - 1) + nonCjkAliases.first())
+            .take(MAX_ALIAS_SEARCH_COUNT)
     }
 
     private suspend fun resolveHits(
