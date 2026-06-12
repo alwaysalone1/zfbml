@@ -34,6 +34,40 @@ class MediaRouteResolverTest {
     }
 
     @Test
+    fun requestSplitsMixedCatalogAliasDelimiters() {
+        val episode = Episode(
+            providerId = "bangumi-catalog",
+            id = "ep-3",
+            title = "Episode 3",
+            url = "bangumi://subject/1/episode/3",
+            index = 3,
+            raw = mapOf(
+                "subjectId" to "1",
+                "subjectNameCn" to "Test CN",
+                "subjectName" to "Test JP",
+                "subjectAliases" to "Alias One\nAlias Two;Alias Three / Alias Four, Alias Five|Alias Six",
+                "episodeId" to "30",
+            ),
+        )
+
+        val request = MediaFetchRequest.fromEpisode(episode)
+
+        assertEquals(
+            listOf(
+                "Test CN",
+                "Alias One",
+                "Alias Two",
+                "Alias Three",
+                "Alias Four",
+                "Alias Five",
+                "Alias Six",
+                "Test JP",
+            ),
+            request.subjectNames,
+        )
+    }
+
+    @Test
     fun requestKeepsChineseAliasesAheadOfForeignOriginalName() {
         val episode = Episode(
             providerId = "bangumi-catalog",

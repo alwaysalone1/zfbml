@@ -1,5 +1,17 @@
 package com.zfbml.aggregate.source
 
+private val mediaAliasStrongDelimiterRegex = Regex("""[\r\n|;\uFF1B\u3001\uFF0C]+""")
+private val mediaAliasSoftDelimiterRegex = Regex("""(?:\s+/\s+|\s*,\s+)""")
+
+internal fun splitMediaAliasText(value: String?): List<String> {
+    if (value.isNullOrBlank()) return emptyList()
+    return value
+        .split(mediaAliasStrongDelimiterRegex)
+        .flatMap { segment -> segment.split(mediaAliasSoftDelimiterRegex) }
+        .map { it.trim() }
+        .filter { it.length >= 2 }
+}
+
 data class MediaFetchRequest(
     val subjectId: String?,
     val subjectNames: List<String>,
@@ -14,9 +26,7 @@ data class MediaFetchRequest(
             val distinctAliases = buildList {
                 add(episode.raw["subjectNameCn"])
                 add(episode.raw["subjectTitle"])
-                episode.raw["subjectAliases"]
-                    ?.split("|")
-                    ?.forEach { add(it) }
+                addAll(splitMediaAliasText(episode.raw["subjectAliases"]))
                 add(episode.raw["subjectName"])
             }
                 .filterNotNull()

@@ -221,6 +221,33 @@ class DanmakuRegistryTest {
     }
 
     @Test
+    fun matchAllSplitsMixedSubjectAliasDelimiters() = runTest {
+        val provider = CountingDanmakuProvider(tokenFromTitle = true)
+        val registry = DanmakuRegistry(listOf(provider))
+
+        val matches = registry.matchAll(
+            detail(title = "Fallback Title"),
+            episode(
+                id = "17",
+                raw = mapOf(
+                    "subjectId" to "subject-17",
+                    "episodeId" to "17",
+                    "subjectNameCn" to "Primary Title",
+                    "subjectAliases" to "Alias One\nAlias Two;Alias Three / Alias Four, Alias Five|Alias Six",
+                    "subjectName" to "Original Title",
+                ),
+            ),
+        )
+
+        assertEquals(
+            listOf("Primary Title", "Alias One", "Alias Two", "Alias Three"),
+            matches.map { it.title },
+        )
+        assertEquals(matches.map { it.title }, provider.matchedTitles.toList())
+        assertEquals(4, provider.matchCount.get())
+    }
+
+    @Test
     fun candidateScoreRewardsExactTitleAndEpisodeSignals() {
         val exactLowerBase = danmakuCandidateMatchScore(
             baseScore = 82,

@@ -420,3 +420,5 @@ This pass upgrades danmaku notice rendering. Modeled danmaku operation tones and
 This pass upgrades automatic danmaku title expansion. `DanmakuRegistry` now appends bounded base-title variants for seasonal, part, TV, OVA, and bracketed suffixes during automatic matching, improving provider lookup when catalog titles include edition labels while preserving exact user-entered manual searches.
 
 This pass upgrades automatic danmaku title ordering. Base-title variants are now emitted directly after their source title before the automatic search cap is applied, so a primary seasonal title's normalized base name cannot be pushed out by long Bangumi alias lists.
+
+This pass upgrades catalog alias normalization for route indexing and danmaku lookup. Mixed Bangumi alias text is now split across newline, pipe, semicolon, spaced slash, and comma-style delimiters before both playback route search and automatic danmaku candidate search, matching the large-client pattern of normalizing catalog identity before fanout queries.

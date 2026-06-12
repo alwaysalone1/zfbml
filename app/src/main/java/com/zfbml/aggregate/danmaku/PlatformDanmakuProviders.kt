@@ -2,6 +2,7 @@ package com.zfbml.aggregate.danmaku
 
 import com.zfbml.aggregate.source.Episode
 import com.zfbml.aggregate.source.MediaDetail
+import com.zfbml.aggregate.source.splitMediaAliasText
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import kotlinx.coroutines.Deferred
@@ -326,9 +327,7 @@ private fun danmakuAutomaticSearchTitles(detail: MediaDetail, episode: Episode):
     val baseCandidates = buildList {
         add(episode.raw["subjectNameCn"])
         add(episode.raw["subjectTitle"])
-        episode.raw["subjectAliases"]
-            ?.split("|")
-            ?.forEach { add(it) }
+        addAll(splitMediaAliasText(episode.raw["subjectAliases"]))
         add(episode.raw["subjectName"])
         add(detail.title)
     }

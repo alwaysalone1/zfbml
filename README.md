@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.207
+
+English:
+
+- Bangumi alias text is now split across mixed delimiters before route search and automatic danmaku lookup.
+- Route indexing and danmaku matching now share the same alias parsing path, avoiding long combined alias queries from newline, pipe, semicolon, slash, or comma separated catalog data.
+- Added unit coverage for mixed-alias route requests and automatic danmaku candidate search order.
+- App version labels, request user agents, and README notes are now updated to `0.5.207`.
+
 ### v0.5.206
 
 English:
