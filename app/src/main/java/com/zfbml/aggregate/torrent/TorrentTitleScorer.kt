@@ -41,14 +41,69 @@ object TorrentTitleScorer {
 
     fun extractEpisode(title: String): Int? {
         val patterns = listOf(
+            Regex("""(?i)\bS\d{1,2}\s*E\s*(\d{1,3})\b"""),
+            Regex("""(?i)\bSeason\s*\d{1,2}\s*(?:Episode|Ep\.?)\s*(\d{1,3})\b"""),
+            Regex("""第\s*[零〇一二三四五六七八九十百两\d]{1,8}\s*[季部期]\s*第?\s*([零〇一二三四五六七八九十百两\d]{1,8})\s*[话話集]"""),
             Regex("""\[(\d{1,3})]"""),
-            Regex("""\b[Ee][Pp]?\.?\s*(\d{1,3})\b"""),
+            Regex("""(?i)\b(?:Episode|Ep\.?|E)\s*(\d{1,3})\b"""),
             Regex("""[-#]\s*(\d{1,3})\b"""),
-            Regex("\u7b2c\\s*(\\d{1,3})\\s*[\u8bdd\u8a71\u96c6]"),
-            Regex("""第\s*(\d{1,3})\s*[话話集]"""),
+            Regex("""第\s*([零〇一二三四五六七八九十百两\d]{1,8})\s*[话話集]"""),
         )
         return patterns.firstNotNullOfOrNull { regex ->
-            regex.find(title)?.groupValues?.getOrNull(1)?.toIntOrNull()
+            regex.find(title)?.groupValues?.getOrNull(1)?.let(::parseEpisodeToken)
+        }
+    }
+
+    private fun parseEpisodeToken(value: String): Int? {
+        val clean = value.trim().trimStart('0')
+        if (clean.isBlank()) return 0
+        clean.toIntOrNull()?.let { return it }
+        return parseChineseNumber(clean)
+    }
+
+    private fun parseChineseNumber(value: String): Int? {
+        if (value.none { it == '十' || it == '百' }) {
+            val digits = value.map { chineseDigitValue(it) ?: return null }
+            return digits.joinToString("").toIntOrNull()
+        }
+        var total = 0
+        var current = 0
+        var hasValue = false
+        value.forEach { char ->
+            when (char) {
+                '百' -> {
+                    total += (current.takeIf { it > 0 } ?: 1) * 100
+                    current = 0
+                    hasValue = true
+                }
+                '十' -> {
+                    total += (current.takeIf { it > 0 } ?: 1) * 10
+                    current = 0
+                    hasValue = true
+                }
+                else -> {
+                    val digit = chineseDigitValue(char) ?: return null
+                    current = current * 10 + digit
+                    hasValue = true
+                }
+            }
+        }
+        return if (hasValue) total + current else null
+    }
+
+    private fun chineseDigitValue(char: Char): Int? {
+        return when (char) {
+            '零', '〇' -> 0
+            '一' -> 1
+            '二', '两' -> 2
+            '三' -> 3
+            '四' -> 4
+            '五' -> 5
+            '六' -> 6
+            '七' -> 7
+            '八' -> 8
+            '九' -> 9
+            else -> null
         }
     }
 

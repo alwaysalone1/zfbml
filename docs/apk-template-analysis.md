@@ -432,3 +432,5 @@ This pass upgrades capped automatic danmaku title selection. `DanmakuRegistry` n
 This pass upgrades route episode-title scoring. `MediaRouteResolver` now normalizes loaded episode titles before checking catalog-name containment, so punctuation variants like `Test-Anime` still reinforce the intended route during automatic playback selection.
 
 This pass upgrades online route hit validation. Online search results now proceed to detail loading before episode compatibility is finalized, preventing season-like numbers in the search-result title from dropping a valid episode list before it can be inspected.
+
+This pass upgrades fallback episode extraction. `TorrentTitleScorer` now recognizes SxxEyy, Season/Episode, and Chinese season-plus-episode labels before generic episode patterns, reducing route misses for torrent/RSS and fallback sources that use large-client style season naming.

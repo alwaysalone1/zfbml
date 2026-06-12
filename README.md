@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.213
+
+English:
+
+- Torrent and fallback route episode parsing now recognizes SxxEyy, Season/Episode, and season-plus-episode Chinese title formats.
+- Chinese-number episode labels such as 第十二话 are now parsed by the shared torrent title scorer.
+- Added scorer coverage for season-aware episode extraction while preserving existing quality detection.
+- App version labels, request user agents, and README notes are now updated to `0.5.213`.
+
 ### v0.5.212
 
 English:

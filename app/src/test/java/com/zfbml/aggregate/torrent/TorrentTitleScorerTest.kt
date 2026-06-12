@@ -12,6 +12,10 @@ class TorrentTitleScorerTest {
         assertEquals(3, TorrentTitleScorer.extractEpisode(title))
         assertEquals("1080p", TorrentTitleScorer.extractQuality(title))
         assertEquals(5, TorrentTitleScorer.extractEpisode("[Group] Demo Anime \u7b2c 5 \u8bdd [1080p]"))
+        assertEquals(5, TorrentTitleScorer.extractEpisode("[Group] Demo Anime S02E05 1080p"))
+        assertEquals(5, TorrentTitleScorer.extractEpisode("Demo Anime Season 2 Episode 5 1080p"))
+        assertEquals(5, TorrentTitleScorer.extractEpisode("Demo Anime \u7b2c2\u5b63\u7b2c5\u96c6 1080p"))
+        assertEquals(12, TorrentTitleScorer.extractEpisode("Demo Anime \u7b2c\u5341\u4e8c\u8bdd 1080p"))
     }
 
     @Test
