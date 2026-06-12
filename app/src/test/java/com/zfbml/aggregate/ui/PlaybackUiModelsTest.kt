@@ -1129,6 +1129,7 @@ class PlaybackUiModelsTest {
         assertEquals("可离线", state.cacheLabel)
         assertEquals(SourceLibraryTone.Primary, state.accentTone)
         assertEquals(SourceLibraryTone.Cache, state.statusTone)
+        assertEquals(RouteActionIconKind.Play, state.actionIconKind)
     }
 
     @Test
@@ -1150,6 +1151,7 @@ class PlaybackUiModelsTest {
         assertEquals(SourceLibraryTone.Online, state.accentTone)
         assertEquals(SourceLibraryTone.Online, state.actionTone)
         assertEquals(SourceLibraryTone.Online, state.borderTone)
+        assertEquals(RouteActionIconKind.Current, state.actionIconKind)
     }
 
     @Test
@@ -1166,6 +1168,7 @@ class PlaybackUiModelsTest {
         assertEquals("边下边播", bt.cacheLabel)
         assertTrue(bt.playable)
         assertEquals(SourceLibraryTone.Backup, bt.accentTone)
+        assertEquals(RouteActionIconKind.Download, bt.actionIconKind)
         assertEquals("仅网页", web.statusLabel)
         assertEquals("网页兜底", web.actionLabel)
         assertEquals("嗅探", web.cacheLabel)
@@ -1176,6 +1179,7 @@ class PlaybackUiModelsTest {
         assertEquals(0.08f, web.borderAlpha)
         assertNull(web.borderTone)
         assertEquals(SourceLibraryTone.Muted, web.accentTone)
+        assertEquals(RouteActionIconKind.Web, web.actionIconKind)
         assertEquals("播放失败", failed.statusLabel)
         assertEquals("重试", failed.actionLabel)
         assertEquals(listOf("播放失败"), failed.badges.map { it.label })
@@ -1189,6 +1193,7 @@ class PlaybackUiModelsTest {
         assertEquals(0.85f, failed.borderAlpha)
         assertEquals(SourceLibraryTone.Web, failed.borderTone)
         assertEquals(SourceLibraryTone.Web, failed.accentTone)
+        assertEquals(RouteActionIconKind.Retry, failed.actionIconKind)
     }
 
     @Test

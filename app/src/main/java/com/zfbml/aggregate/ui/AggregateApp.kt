@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.170")
+                setRequestProperty("User-Agent", "ZFBML/0.5.171")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2984,7 +2984,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.170",
+            version = "0.5.171",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -9119,7 +9119,7 @@ private fun PlayerRouteActionLabel(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
-            Icons.Filled.PlayArrow,
+            playerRouteActionIcon(state.actionIconKind),
             contentDescription = null,
             tint = color.copy(alpha = state.actionLabelIconAlpha),
             modifier = Modifier.size(state.actionLabelIconSize),
@@ -9130,6 +9130,16 @@ private fun PlayerRouteActionLabel(
             color = color.copy(alpha = state.actionLabelTextAlpha),
             maxLines = 1,
         )
+    }
+}
+
+private fun playerRouteActionIcon(kind: RouteActionIconKind): ImageVector {
+    return when (kind) {
+        RouteActionIconKind.Play -> Icons.Filled.PlayArrow
+        RouteActionIconKind.Current -> Icons.Filled.Check
+        RouteActionIconKind.Download -> Icons.Filled.CloudDownload
+        RouteActionIconKind.Web -> Icons.Filled.VideoLibrary
+        RouteActionIconKind.Retry -> Icons.Filled.Refresh
     }
 }
 

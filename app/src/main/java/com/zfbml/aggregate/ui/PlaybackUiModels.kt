@@ -1348,6 +1348,14 @@ internal enum class PlayerChromeBaseColor {
     White,
 }
 
+internal enum class RouteActionIconKind {
+    Play,
+    Current,
+    Download,
+    Web,
+    Retry,
+}
+
 internal data class PlayerCircleButtonChromeUiState(
     val size: Dp,
     val iconSize: Dp,
@@ -2145,6 +2153,7 @@ internal data class RouteCandidateUiState(
     val accentTone: SourceLibraryTone,
     val statusTone: SourceLibraryTone,
     val actionTone: SourceLibraryTone,
+    val actionIconKind: RouteActionIconKind,
 )
 
 internal const val RouteAllSourcesId = "__all_sources__"
@@ -2925,6 +2934,13 @@ internal fun buildRouteCandidateUiState(
         route.protocol == StreamProtocol.WEBVIEW_ONLY -> SourceLibraryTone.Muted
         else -> SourceLibraryTone.Online
     }
+    val actionIconKind = when {
+        failed -> RouteActionIconKind.Retry
+        selected -> RouteActionIconKind.Current
+        route.protocol == StreamProtocol.BITTORRENT -> RouteActionIconKind.Download
+        route.protocol == StreamProtocol.WEBVIEW_ONLY -> RouteActionIconKind.Web
+        else -> RouteActionIconKind.Play
+    }
     val badges = buildList {
         if (recommended) add(SourceLibraryChipUiState("\u63a8\u8350", SourceLibraryTone.Primary))
         add(SourceLibraryChipUiState(statusLabel, statusTone))
@@ -3027,6 +3043,7 @@ internal fun buildRouteCandidateUiState(
         accentTone = accentTone,
         statusTone = statusTone,
         actionTone = actionTone,
+        actionIconKind = actionIconKind,
     )
 }
 

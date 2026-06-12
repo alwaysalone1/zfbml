@@ -348,3 +348,5 @@ This pass upgrades player route-source chip tone chrome. `PlayerRouteSourceChipU
 This pass upgrades player route-panel empty-state chrome. `PlayerRoutePanelEmptyUiState` now owns empty copy, text base color, summary tone, alpha, spacing, and max-line limits so no-route playback panels provide actionable recovery guidance through the tested player model instead of a Compose-local fallback string.
 
 This pass upgrades player route option-row base chrome. `RouteCandidateUiState` now owns row container base color, disabled container base color, fallback border base color, and row title base color so fullscreen route switching rows keep their shell color contract in the tested model instead of Compose-local white constants.
+
+This pass upgrades player route action icon semantics. `RouteCandidateUiState` now owns a `RouteActionIconKind` for play, current, download, web-fallback, and retry states so fullscreen route switching presents state-specific action icons instead of a one-size play arrow.

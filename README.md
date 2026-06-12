@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.171
+
+English:
+
+- Player route action labels now use `RouteActionIconKind` so play, current, download, web fallback, and retry states can render distinct semantic icons.
+- `PlayerRouteActionLabel` maps the tested route action icon kind to Compose icons instead of always showing a play arrow.
+- Added unit coverage for route action icon semantics.
+- App version labels, request user agents, and README notes are now updated to `0.5.171`.
+
 ### v0.5.170
 
 English:
