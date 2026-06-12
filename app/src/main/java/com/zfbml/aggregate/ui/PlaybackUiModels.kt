@@ -1516,6 +1516,13 @@ internal data class PlayerDanmakuSearchUiState(
     val actionContentDescription: String,
 )
 
+internal data class PlayerDanmakuOperationNoticeUiState(
+    val message: String,
+    val tone: SourceLibraryTone,
+    val error: Boolean,
+    val maxLines: Int,
+)
+
 internal data class PlayerDanmakuMappingUiState(
     val title: String,
     val subtitle: String,
@@ -5520,6 +5527,85 @@ internal fun buildPlayerDanmakuSearchUiState(
         actionEnabled = !matching && submittedQuery.isNotBlank(),
         actionContentDescription = if (matching) "正在匹配弹幕候选" else "搜索弹幕候选",
     )
+}
+
+internal fun buildPlayerDanmakuBlankSearchNoticeUiState(): PlayerDanmakuOperationNoticeUiState {
+    return PlayerDanmakuOperationNoticeUiState(
+        message = "请输入番名后再搜索弹幕候选",
+        tone = SourceLibraryTone.Backup,
+        error = false,
+        maxLines = 2,
+    )
+}
+
+internal fun buildPlayerDanmakuSearchLoadingNoticeUiState(query: String): PlayerDanmakuOperationNoticeUiState {
+    val cleanQuery = query.trim()
+    return PlayerDanmakuOperationNoticeUiState(
+        message = "正在按「$cleanQuery」搜索弹幕候选...",
+        tone = SourceLibraryTone.Online,
+        error = false,
+        maxLines = 1,
+    )
+}
+
+internal fun buildPlayerDanmakuSearchResultNoticeUiState(
+    query: String,
+    candidateCount: Int,
+    timelineCount: Int,
+): PlayerDanmakuOperationNoticeUiState {
+    val cleanQuery = query.trim()
+    val safeCandidateCount = candidateCount.coerceAtLeast(0)
+    val safeTimelineCount = timelineCount.coerceAtLeast(0)
+    return when {
+        safeTimelineCount > 0 -> PlayerDanmakuOperationNoticeUiState(
+            message = "已加载 $safeTimelineCount 条弹幕 · 「$cleanQuery」$safeCandidateCount 个候选",
+            tone = SourceLibraryTone.Cache,
+            error = false,
+            maxLines = 1,
+        )
+        safeCandidateCount > 0 -> PlayerDanmakuOperationNoticeUiState(
+            message = "已按「$cleanQuery」找到 $safeCandidateCount 个弹幕候选，可选择校准",
+            tone = SourceLibraryTone.Online,
+            error = false,
+            maxLines = 2,
+        )
+        else -> PlayerDanmakuOperationNoticeUiState(
+            message = "「$cleanQuery」暂未找到弹幕候选，可尝试中文名、原名或别名",
+            tone = SourceLibraryTone.Backup,
+            error = false,
+            maxLines = 2,
+        )
+    }
+}
+
+internal fun buildPlayerDanmakuCalibrationLoadingNoticeUiState(): PlayerDanmakuOperationNoticeUiState {
+    return PlayerDanmakuOperationNoticeUiState(
+        message = "正在校准当前集弹幕映射...",
+        tone = SourceLibraryTone.Online,
+        error = false,
+        maxLines = 1,
+    )
+}
+
+internal fun buildPlayerDanmakuCalibrationResultNoticeUiState(
+    timelineCount: Int,
+): PlayerDanmakuOperationNoticeUiState {
+    val safeTimelineCount = timelineCount.coerceAtLeast(0)
+    return if (safeTimelineCount > 0) {
+        PlayerDanmakuOperationNoticeUiState(
+            message = "已校准弹幕映射 · 加载 $safeTimelineCount 条",
+            tone = SourceLibraryTone.Primary,
+            error = false,
+            maxLines = 1,
+        )
+    } else {
+        PlayerDanmakuOperationNoticeUiState(
+            message = "已保存校准映射，但该候选暂未返回弹幕",
+            tone = SourceLibraryTone.Backup,
+            error = false,
+            maxLines = 2,
+        )
+    }
 }
 
 internal fun buildPlayerDanmakuMappingUiState(

@@ -412,3 +412,5 @@ This pass upgrades danmaku candidate confirmation semantics. `PlayerDanmakuCandi
 This pass upgrades manual danmaku search entry modeling. `PlayerDanmakuSearchUiState` now owns the editable query, trimmed submitted query, label, placeholder, loading-disabled state, and search action availability so the calibration panel no longer derives manual-search behavior directly in Compose.
 
 This pass upgrades danmaku candidate-list presentation. `PlayerDanmakuCandidateListUiState` now owns candidate-list visibility, title chrome, loading empty guidance, spacing, and rendered candidate rows so the calibration panel can show search progress and candidate choices from a tested model contract.
+
+This pass upgrades danmaku operation notices. `PlayerDanmakuOperationNoticeUiState` now owns search and calibration feedback messages, tones, error flags, and line limits so blank searches, loading, results, and saved manual mappings share a tested notice contract instead of ad hoc player strings.

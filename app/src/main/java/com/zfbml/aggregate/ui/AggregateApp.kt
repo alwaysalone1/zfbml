@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.202")
+                setRequestProperty("User-Agent", "ZFBML/0.5.203")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2992,7 +2992,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.202",
+            version = "0.5.203",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -5737,11 +5737,11 @@ private fun PlayerScreen(
         revealControls()
         val cleanQuery = query.trim()
         if (cleanQuery.isBlank()) {
-            routeNotice = "请输入番名后再搜索弹幕候选"
+            routeNotice = buildPlayerDanmakuBlankSearchNoticeUiState().message
             return
         }
         danmakuSearchQuery = cleanQuery
-        routeNotice = "正在按「$cleanQuery」搜索弹幕候选..."
+        routeNotice = buildPlayerDanmakuSearchLoadingNoticeUiState(cleanQuery).message
         scope.launch {
             danmakuMatching = true
             try {
@@ -5753,11 +5753,11 @@ private fun PlayerScreen(
                 danmakuItems = runCatching {
                     graph.danmakuRegistry.fetchBestTimeline(detail, currentEpisode)
                 }.getOrDefault(emptyList())
-                routeNotice = when {
-                    danmakuItems.isNotEmpty() -> "已加载 ${danmakuItems.size} 条弹幕 · 「$cleanQuery」${matches.size} 个候选"
-                    matches.isNotEmpty() -> "已按「$cleanQuery」找到 ${matches.size} 个弹幕候选，可选择校准"
-                    else -> "「$cleanQuery」暂未找到弹幕候选，可尝试中文名、原名或别名"
-                }
+                routeNotice = buildPlayerDanmakuSearchResultNoticeUiState(
+                    query = cleanQuery,
+                    candidateCount = matches.size,
+                    timelineCount = danmakuItems.size,
+                ).message
             } finally {
                 danmakuMatching = false
             }
@@ -5766,7 +5766,7 @@ private fun PlayerScreen(
 
     fun calibrateDanmakuMapping(match: DanmakuMatch) {
         revealControls()
-        routeNotice = "正在校准当前集弹幕映射..."
+        routeNotice = buildPlayerDanmakuCalibrationLoadingNoticeUiState().message
         scope.launch {
             danmakuMatching = true
             try {
@@ -5783,11 +5783,9 @@ private fun PlayerScreen(
                 val matches = graph.danmakuRegistry.matchAll(detail, currentEpisode)
                 danmakuMatches = matches
                 danmakuItems = graph.danmakuRegistry.fetchBestTimeline(detail, currentEpisode)
-                routeNotice = if (danmakuItems.isNotEmpty()) {
-                    "已校准弹幕映射 · 加载 ${danmakuItems.size} 条"
-                } else {
-                    "已保存校准映射，但该候选暂未返回弹幕"
-                }
+                routeNotice = buildPlayerDanmakuCalibrationResultNoticeUiState(
+                    timelineCount = danmakuItems.size,
+                ).message
             } finally {
                 danmakuMatching = false
             }

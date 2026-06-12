@@ -3399,6 +3399,54 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun playerDanmakuOperationNoticeUiStateDescribesSearchAndCalibrationResults() {
+        val blank = buildPlayerDanmakuBlankSearchNoticeUiState()
+        val loading = buildPlayerDanmakuSearchLoadingNoticeUiState("  海贼王  ")
+        val loaded = buildPlayerDanmakuSearchResultNoticeUiState(
+            query = "海贼王",
+            candidateCount = 3,
+            timelineCount = 246,
+        )
+        val candidates = buildPlayerDanmakuSearchResultNoticeUiState(
+            query = "海贼王",
+            candidateCount = 2,
+            timelineCount = 0,
+        )
+        val empty = buildPlayerDanmakuSearchResultNoticeUiState(
+            query = "未知番名",
+            candidateCount = 0,
+            timelineCount = 0,
+        )
+        val calibrating = buildPlayerDanmakuCalibrationLoadingNoticeUiState()
+        val calibrated = buildPlayerDanmakuCalibrationResultNoticeUiState(timelineCount = 128)
+        val savedEmpty = buildPlayerDanmakuCalibrationResultNoticeUiState(timelineCount = 0)
+
+        assertEquals("请输入番名后再搜索弹幕候选", blank.message)
+        assertEquals(SourceLibraryTone.Backup, blank.tone)
+        assertFalse(blank.error)
+        assertEquals(2, blank.maxLines)
+        assertEquals("正在按「海贼王」搜索弹幕候选...", loading.message)
+        assertEquals(SourceLibraryTone.Online, loading.tone)
+        assertEquals(1, loading.maxLines)
+        assertEquals("已加载 246 条弹幕 · 「海贼王」3 个候选", loaded.message)
+        assertEquals(SourceLibraryTone.Cache, loaded.tone)
+        assertEquals(1, loaded.maxLines)
+        assertEquals("已按「海贼王」找到 2 个弹幕候选，可选择校准", candidates.message)
+        assertEquals(SourceLibraryTone.Online, candidates.tone)
+        assertEquals(2, candidates.maxLines)
+        assertEquals("「未知番名」暂未找到弹幕候选，可尝试中文名、原名或别名", empty.message)
+        assertEquals(SourceLibraryTone.Backup, empty.tone)
+        assertEquals("正在校准当前集弹幕映射...", calibrating.message)
+        assertEquals(SourceLibraryTone.Online, calibrating.tone)
+        assertEquals("已校准弹幕映射 · 加载 128 条", calibrated.message)
+        assertEquals(SourceLibraryTone.Primary, calibrated.tone)
+        assertEquals(1, calibrated.maxLines)
+        assertEquals("已保存校准映射，但该候选暂未返回弹幕", savedEmpty.message)
+        assertEquals(SourceLibraryTone.Backup, savedEmpty.tone)
+        assertEquals(2, savedEmpty.maxLines)
+    }
+
+    @Test
     fun playerDanmakuMappingUiStateSummarizesAutomaticAndManualMatches() {
         val automatic = buildPlayerDanmakuSettingsUiState(
             enabled = true,
