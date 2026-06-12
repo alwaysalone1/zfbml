@@ -336,10 +336,9 @@ private fun danmakuAutomaticSearchTitles(detail: MediaDetail, episode: Episode):
         .map { it.trim() }
         .filter { it.length >= 2 }
         .distinctBy { it.normalizedDanmakuTitleKey() }
-    val titleVariants = baseCandidates
-        .flatMap { it.danmakuAutomaticTitleVariants().drop(1) }
+    val candidates = baseCandidates
+        .flatMap { it.danmakuAutomaticTitleVariants() }
         .filter { it.length >= 2 }
-    val candidates = (baseCandidates + titleVariants)
         .distinctBy { it.normalizedDanmakuTitleKey() }
     val cjkTitles = candidates.filter { it.containsDanmakuCjkText() }
     val nonCjkTitles = candidates.filterNot { candidate ->

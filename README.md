@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.206
+
+English:
+
+- Automatic danmaku title variants now stay adjacent to their source title before the global search cap is applied.
+- Primary base-title variants are no longer pushed out by long Bangumi alias lists, improving automatic lookup for season-labeled titles.
+- Added registry coverage for alias-overflow ordering while preserving exact manual search behavior.
+- App version labels, request user agents, and README notes are now updated to `0.5.206`.
+
 ### v0.5.205
 
 English:

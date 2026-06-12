@@ -195,6 +195,32 @@ class DanmakuRegistryTest {
     }
 
     @Test
+    fun matchAllKeepsPrimaryBaseTitleVariantBeforeAliasOverflow() = runTest {
+        val provider = CountingDanmakuProvider(tokenFromTitle = true)
+        val registry = DanmakuRegistry(listOf(provider))
+
+        val matches = registry.matchAll(
+            detail(title = "Fallback Title"),
+            episode(
+                id = "16",
+                raw = mapOf(
+                    "subjectId" to "subject-16",
+                    "episodeId" to "16",
+                    "subjectNameCn" to "\u6d4b\u8bd5\u756a\u5267 \u7b2c\u4e8c\u5b63",
+                    "subjectAliases" to "\u522b\u540d\u4e00|\u522b\u540d\u4e8c|\u522b\u540d\u4e09|\u522b\u540d\u56db",
+                ),
+            ),
+        )
+
+        assertEquals(
+            listOf("\u6d4b\u8bd5\u756a\u5267 \u7b2c\u4e8c\u5b63", "\u6d4b\u8bd5\u756a\u5267", "\u522b\u540d\u4e00", "\u522b\u540d\u4e8c"),
+            matches.map { it.title },
+        )
+        assertEquals(matches.map { it.title }, provider.matchedTitles.toList())
+        assertEquals(4, provider.matchCount.get())
+    }
+
+    @Test
     fun candidateScoreRewardsExactTitleAndEpisodeSignals() {
         val exactLowerBase = danmakuCandidateMatchScore(
             baseScore = 82,

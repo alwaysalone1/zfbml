@@ -418,3 +418,5 @@ This pass upgrades danmaku operation notices. `PlayerDanmakuOperationNoticeUiSta
 This pass upgrades danmaku notice rendering. Modeled danmaku operation tones and line limits now flow through the player overlay, route-status chip, fullscreen notice strip, and portrait playback diagnostics, while generic route notices clear stale overrides through a shared notice helper.
 
 This pass upgrades automatic danmaku title expansion. `DanmakuRegistry` now appends bounded base-title variants for seasonal, part, TV, OVA, and bracketed suffixes during automatic matching, improving provider lookup when catalog titles include edition labels while preserving exact user-entered manual searches.
+
+This pass upgrades automatic danmaku title ordering. Base-title variants are now emitted directly after their source title before the automatic search cap is applied, so a primary seasonal title's normalized base name cannot be pushed out by long Bangumi alias lists.
