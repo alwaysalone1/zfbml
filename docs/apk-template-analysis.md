@@ -384,3 +384,5 @@ This pass upgrades portrait episode-rail focus behavior. `PortraitEpisodeRailIte
 This pass upgrades portrait episode more-entry focus behavior. `PortraitEpisodeMoreActionUiState` now owns focus eligibility so the all-episodes shortcut stays part of the tested portrait playback navigation contract instead of relying on Compose-local focus defaults.
 
 This pass upgrades danmaku toggle focus behavior. Compact and fullscreen danmaku toggle models now own focus eligibility separately from the current danmaku-enabled state, so off-state toggles remain reachable by TV or keyboard navigation while Compose only renders the tested contract.
+
+This pass upgrades fullscreen seek-slider focus behavior. `PlayerSeekBarUiState` now owns slider focus eligibility so seekable streams stay keyboard and TV navigable while unknown-duration playback shows a loading track without adding a dead progress target to the focus chain.

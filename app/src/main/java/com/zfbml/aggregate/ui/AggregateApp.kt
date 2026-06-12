@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.188")
+                setRequestProperty("User-Agent", "ZFBML/0.5.189")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2992,7 +2992,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.188",
+            version = "0.5.189",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -7122,7 +7122,7 @@ private fun PlayerBottomControls(
                             activeTrackColor = sourceLibraryToneColor(seekBarState.sliderActiveTrackTone),
                             inactiveTrackColor = sliderInactiveTrackColor.copy(alpha = seekBarState.sliderInactiveTrackAlpha),
                         ),
-                        modifier = Modifier.weight(1f).height(seekBarState.sliderHeight).focusable(),
+                        modifier = Modifier.weight(1f).height(seekBarState.sliderHeight).focusable(enabled = seekBarState.sliderFocusEnabled),
                     )
                 } else {
                     LinearProgressIndicator(
