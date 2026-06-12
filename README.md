@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.186
+
+English:
+
+- Portrait episode rail cards now use `PortraitEpisodeRailItemUiState.focusEnabled` for TV/keyboard focus eligibility.
+- Loading-only episode switches remain reachable while other temporarily disabled episodes are skipped by focus navigation.
+- Added unit coverage for enabled loading rail items and disabled waiting rail items.
+- App version labels, request user agents, and README notes are now updated to `0.5.186`.
+
 ### v0.5.185
 
 English:

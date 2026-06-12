@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.185")
+                setRequestProperty("User-Agent", "ZFBML/0.5.186")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2992,7 +2992,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.185",
+            version = "0.5.186",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -6467,7 +6467,7 @@ private fun PortraitWatchInfoPanel(
                         Card(
                             onClick = { onEpisodeSelected(railItem.episode) },
                             enabled = railItem.enabled,
-                            modifier = Modifier.width(82.dp).height(48.dp).focusable(),
+                            modifier = Modifier.width(82.dp).height(48.dp).focusable(enabled = railItem.focusEnabled),
                             shape = RoundedCornerShape(8.dp),
                             colors = CardDefaults.cardColors(containerColor = if (railItem.selected) AnimePanelSoft else AnimePanel),
                             border = BorderStroke(

@@ -3116,8 +3116,10 @@ class PlaybackUiModelsTest {
         assertEquals(SourceLibraryTone.Online, state.items.first { it.episode.id == "ep-10" }.tone)
         assertEquals("加载中", state.items.first { it.episode.id == "ep-11" }.title)
         assertTrue(state.items.first { it.episode.id == "ep-11" }.loading)
+        assertTrue(state.items.first { it.episode.id == "ep-11" }.focusEnabled)
         assertEquals(SourceLibraryTone.Backup, state.items.first { it.episode.id == "ep-11" }.tone)
         assertFalse(state.items.first { it.episode.id == "ep-6" }.enabled)
+        assertFalse(state.items.first { it.episode.id == "ep-6" }.focusEnabled)
         assertEquals("全部", checkNotNull(state.moreAction).title)
         assertEquals("24集", checkNotNull(state.moreAction).subtitle)
     }

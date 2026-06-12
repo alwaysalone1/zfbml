@@ -1219,6 +1219,7 @@ internal data class PortraitEpisodeRailItemUiState(
     val selected: Boolean,
     val loading: Boolean,
     val enabled: Boolean,
+    val focusEnabled: Boolean = enabled,
     val tone: SourceLibraryTone,
 )
 

@@ -378,3 +378,5 @@ This pass upgrades fullscreen side-dock focus behavior. `PlayerFullscreenDockAct
 This pass upgrades compact fullscreen-entry focus behavior. `PlayerCompactFullscreenActionUiState` now owns focus eligibility so the compact fullscreen button keeps its enabled/disabled presentation and TV or keyboard focus state under the same tested model contract.
 
 This pass upgrades portrait playback-action focus behavior. `PortraitWatchActionUiState` now owns focus eligibility so portrait Episode and Route shortcuts keep their enabled/disabled presentation and TV or keyboard focus state under the same tested playback model contract.
+
+This pass upgrades portrait episode-rail focus behavior. `PortraitEpisodeRailItemUiState` now owns focus eligibility so the portrait episode strip can keep loading and waiting episodes visible while TV or keyboard navigation only lands on selectable rail cards.
