@@ -426,3 +426,5 @@ This pass upgrades catalog alias normalization for route indexing and danmaku lo
 This pass upgrades route-search alias fallback. `MediaFetchRequest` now keeps CJK catalog names first but retains non-CJK original names and foreign aliases as lower-priority route queries, so sources that index only the original title can still be discovered without weakening Chinese-title priority.
 
 This pass upgrades capped route-query selection. `MediaRouteResolver` now reserves one query slot for a non-CJK fallback alias when CJK catalog aliases overflow the search cap, preserving Chinese-name priority while avoiding silent loss of original-title sources.
+
+This pass upgrades capped automatic danmaku title selection. `DanmakuRegistry` now preserves one automatic-search slot for catalog-provided non-CJK aliases when CJK catalog names overflow the cap, while plain detail fallback titles cannot evict trusted CJK aliases.

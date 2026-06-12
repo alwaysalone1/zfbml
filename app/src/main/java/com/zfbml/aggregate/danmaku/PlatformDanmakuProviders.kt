@@ -2,6 +2,7 @@ package com.zfbml.aggregate.danmaku
 
 import com.zfbml.aggregate.source.Episode
 import com.zfbml.aggregate.source.MediaDetail
+import com.zfbml.aggregate.source.containsMediaCjkText
 import com.zfbml.aggregate.source.splitMediaAliasText
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -325,25 +326,69 @@ class DanmakuRegistry(
 
 private fun danmakuAutomaticSearchTitles(detail: MediaDetail, episode: Episode): List<String> {
     val baseCandidates = buildList {
-        add(episode.raw["subjectNameCn"])
-        add(episode.raw["subjectTitle"])
-        addAll(splitMediaAliasText(episode.raw["subjectAliases"]))
-        add(episode.raw["subjectName"])
-        add(detail.title)
+        danmakuAutomaticTitleCandidate(episode.raw["subjectNameCn"], canReserveFallback = true)?.let(::add)
+        danmakuAutomaticTitleCandidate(episode.raw["subjectTitle"], canReserveFallback = true)?.let(::add)
+        splitMediaAliasText(episode.raw["subjectAliases"])
+            .forEach { title ->
+                danmakuAutomaticTitleCandidate(title, canReserveFallback = true)?.let(::add)
+            }
+        danmakuAutomaticTitleCandidate(episode.raw["subjectName"], canReserveFallback = true)?.let(::add)
+        danmakuAutomaticTitleCandidate(detail.title, canReserveFallback = false)?.let(::add)
     }
-        .filterNotNull()
-        .map { it.trim() }
-        .filter { it.length >= 2 }
-        .distinctBy { it.normalizedDanmakuTitleKey() }
+        .mergeDanmakuAutomaticTitleCandidates()
     val candidates = baseCandidates
-        .flatMap { it.danmakuAutomaticTitleVariants() }
-        .filter { it.length >= 2 }
-        .distinctBy { it.normalizedDanmakuTitleKey() }
-    val cjkTitles = candidates.filter { it.containsDanmakuCjkText() }
-    val nonCjkTitles = candidates.filterNot { candidate ->
-        cjkTitles.any { it.normalizedDanmakuTitleKey() == candidate.normalizedDanmakuTitleKey() }
+        .flatMap { candidate ->
+            candidate.title.danmakuAutomaticTitleVariants()
+                .map { candidate.copy(title = it) }
+        }
+        .filter { it.title.length >= 2 }
+        .mergeDanmakuAutomaticTitleCandidates()
+    return cappedDanmakuAutomaticSearchTitles(candidates).map { it.title }
+}
+
+private fun cappedDanmakuAutomaticSearchTitles(
+    candidates: List<DanmakuAutomaticTitleCandidate>,
+): List<DanmakuAutomaticTitleCandidate> {
+    if (candidates.size <= MAX_AUTOMATIC_TITLE_SEARCH_COUNT) return candidates
+    val cjkTitles = candidates.filter { it.title.containsMediaCjkText() }
+    val nonCjkTitles = candidates.filterNot { it.title.containsMediaCjkText() }
+    val reservableNonCjkTitles = nonCjkTitles.filter { it.canReserveFallback }
+    if (cjkTitles.isEmpty() || reservableNonCjkTitles.isEmpty()) {
+        return candidates.take(MAX_AUTOMATIC_TITLE_SEARCH_COUNT)
     }
-    return (cjkTitles + nonCjkTitles).take(MAX_AUTOMATIC_TITLE_SEARCH_COUNT)
+    if (cjkTitles.size < MAX_AUTOMATIC_TITLE_SEARCH_COUNT) {
+        return (cjkTitles + nonCjkTitles).take(MAX_AUTOMATIC_TITLE_SEARCH_COUNT)
+    }
+    return (cjkTitles.take(MAX_AUTOMATIC_TITLE_SEARCH_COUNT - 1) + reservableNonCjkTitles.first())
+        .take(MAX_AUTOMATIC_TITLE_SEARCH_COUNT)
+}
+
+private fun List<DanmakuAutomaticTitleCandidate>.mergeDanmakuAutomaticTitleCandidates(): List<DanmakuAutomaticTitleCandidate> {
+    val merged = LinkedHashMap<String, DanmakuAutomaticTitleCandidate>()
+    forEach { candidate ->
+        val key = candidate.title.normalizedDanmakuTitleKey()
+        val existing = merged[key]
+        merged[key] = if (existing == null) {
+            candidate
+        } else {
+            existing.copy(canReserveFallback = existing.canReserveFallback || candidate.canReserveFallback)
+        }
+    }
+    return merged.values.toList()
+}
+
+private data class DanmakuAutomaticTitleCandidate(
+    val title: String,
+    val canReserveFallback: Boolean,
+)
+
+private fun danmakuAutomaticTitleCandidate(
+    title: String?,
+    canReserveFallback: Boolean,
+): DanmakuAutomaticTitleCandidate? {
+    val cleanTitle = title?.trim().orEmpty()
+    if (cleanTitle.length < 2) return null
+    return DanmakuAutomaticTitleCandidate(cleanTitle, canReserveFallback)
 }
 
 private fun String.danmakuAutomaticTitleVariants(): List<String> {
@@ -371,14 +416,6 @@ private fun String.normalizedDanmakuTitleKey(): String {
     return lowercase().filter { char ->
         char.isLetterOrDigit() ||
             char in '\u4e00'..'\u9fff' ||
-            char in '\u3040'..'\u30ff' ||
-            char in '\u3400'..'\u4dbf'
-    }
-}
-
-private fun String.containsDanmakuCjkText(): Boolean {
-    return any { char ->
-        char in '\u4e00'..'\u9fff' ||
             char in '\u3040'..'\u30ff' ||
             char in '\u3400'..'\u4dbf'
     }

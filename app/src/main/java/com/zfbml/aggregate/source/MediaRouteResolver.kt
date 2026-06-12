@@ -81,6 +81,9 @@ class MediaRouteResolver(
         if (cjkAliases.isEmpty() || nonCjkAliases.isEmpty()) {
             return subjectNames.take(MAX_ALIAS_SEARCH_COUNT)
         }
+        if (cjkAliases.size < MAX_ALIAS_SEARCH_COUNT) {
+            return (cjkAliases + nonCjkAliases).take(MAX_ALIAS_SEARCH_COUNT)
+        }
         return (cjkAliases.take(MAX_ALIAS_SEARCH_COUNT - 1) + nonCjkAliases.first())
             .take(MAX_ALIAS_SEARCH_COUNT)
     }
