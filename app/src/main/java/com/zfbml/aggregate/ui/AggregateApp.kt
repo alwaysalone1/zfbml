@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.163")
+                setRequestProperty("User-Agent", "ZFBML/0.5.164")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2984,7 +2984,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.163",
+            version = "0.5.164",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -5359,34 +5359,56 @@ private fun RouteCandidateRow(
 ) {
     val state = buildRouteCandidateUiState(route = route, recommended = recommended)
     val accent = sourceLibraryToneColor(state.accentTone)
+    val primaryColor = sourceLibraryToneColor(state.detailPrimaryTone)
+    val titleColor = sourceLibraryToneColor(state.detailTitleTone)
+    val sizeColor = sourceLibraryToneColor(state.detailSizeTone)
     Card(
         onClick = onClick,
         modifier = modifier.fillMaxWidth().focusable(),
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(state.detailCardCornerRadius),
         colors = CardDefaults.cardColors(containerColor = if (state.recommended) AnimePanelSoft else AnimePanel),
-        border = BorderStroke(1.dp, if (state.recommended) AnimeAccentPink else AnimeBorder),
+        border = BorderStroke(
+            state.detailBorderWidth,
+            if (state.recommended) {
+                accent.copy(alpha = state.detailRecommendedBorderAlpha)
+            } else {
+                AnimeBorder.copy(alpha = state.detailIdleBorderAlpha)
+            },
+        ),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.fillMaxWidth().padding(state.detailContentPadding),
+            horizontalArrangement = Arrangement.spacedBy(state.detailRowSpacing),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
-                modifier = Modifier.width(4.dp).height(64.dp).clip(RoundedCornerShape(8.dp)).background(accent),
+                modifier = Modifier
+                    .width(state.detailRailWidth)
+                    .height(state.detailRailHeight)
+                    .clip(RoundedCornerShape(state.detailRailCornerRadius))
+                    .background(accent),
             )
             Box(
-                modifier = Modifier.size(42.dp).background(providerAccent(state.sourceId), RoundedCornerShape(8.dp)),
+                modifier = Modifier
+                    .size(state.detailSourceBoxSize)
+                    .background(providerAccent(state.sourceId), RoundedCornerShape(state.detailSourceBoxCornerRadius)),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(state.sourceInitial, style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1)
+                Text(
+                    state.sourceInitial,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.White.copy(alpha = state.detailSourceInitialAlpha),
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                )
             }
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(state.detailTextColumnSpacing)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(state.detailTitleRowSpacing), verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         state.sourceName,
                         modifier = Modifier.weight(1f),
                         style = MaterialTheme.typography.titleMedium,
-                        color = Color.White,
+                        color = Color.White.copy(alpha = state.detailSourceNameAlpha),
                         fontWeight = FontWeight.SemiBold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -5398,15 +5420,31 @@ private fun RouteCandidateRow(
                 Text(
                     state.primaryLabel,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = AnimeAccentCyan,
+                    color = primaryColor.copy(alpha = state.detailPrimaryAlpha),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                Text(state.title, style = MaterialTheme.typography.bodySmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(
+                    state.title,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = titleColor.copy(alpha = state.detailTitleAlpha),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
-            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(state.protocolLabel, style = MaterialTheme.typography.labelLarge, color = accent)
-                state.sizeLabel?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = AnimeMuted) }
+            Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(state.detailTrailingSpacing)) {
+                Text(
+                    state.protocolLabel,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = accent.copy(alpha = state.detailProtocolAlpha),
+                )
+                state.sizeLabel?.let {
+                    Text(
+                        it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = sizeColor.copy(alpha = state.detailSizeAlpha),
+                    )
+                }
                 RoutePlayActionLabel(state.actionLabel, state.actionTone)
             }
         }

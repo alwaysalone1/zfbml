@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.164
+
+English:
+
+- Detail route candidate cards now use `RouteCandidateUiState` for card radius, border, content padding, rail sizing, source-box sizing, text spacing, text tone/alpha, trailing spacing, protocol alpha, and size tone/alpha.
+- `RouteCandidateRow` now renders detail-page route lines from tested route candidate chrome instead of keeping separate Compose constants beside the player route row contract.
+- Added unit coverage for detail route-candidate card chrome.
+- App version labels, request user agents, and README notes are now updated to `0.5.164`.
+
 ### v0.5.163
 
 English:
