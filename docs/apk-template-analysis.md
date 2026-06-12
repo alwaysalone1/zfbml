@@ -320,3 +320,5 @@ This pass upgrades detail route-status card chrome. `DetailRouteStatusUiState` n
 This pass upgrades detail route-focus chip chrome. `DetailRouteFocusChipUiState` now owns minimum height, radius, container alpha, padding, spacing, label alpha, and value alpha so detail playback route diagnostics use the same tested model-driven presentation as the route-status card and fullscreen route-source filters.
 
 This pass upgrades route-loading diagnostic step chrome. `RouteLoadingStepUiState` now owns step accent tone, min height, radius, active/inactive container alpha, padding, spacing, inactive label tone, and text alpha values so detail-page route matching progress is rendered from a tested model contract instead of Compose-local step constants.
+
+This pass upgrades detail route-recommendation band chrome. `DetailRouteRecommendationUiState` now owns band min height, radius, container alpha, padding, spacing, indicator sizing, text alpha values, and action-button chrome so the detail playback recommended-route decision block follows the same tested model contract as the surrounding route diagnostics.

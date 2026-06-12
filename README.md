@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.157
+
+English:
+
+- Detail route recommendation bands now use `DetailRouteRecommendationUiState` for min height, radius, container alpha, padding, indicator sizing, text spacing/alpha, and action-button chrome.
+- `RouteRecommendationBand` now renders from model chrome instead of keeping recommendation band dimensions, opacity, and button color constants inside Compose.
+- Added unit coverage for detail route-recommendation band chrome.
+- App version labels, request user agents, and README notes are now updated to `0.5.157`.
+
 ### v0.5.156
 
 English:

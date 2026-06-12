@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.156")
+                setRequestProperty("User-Agent", "ZFBML/0.5.157")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2984,7 +2984,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.156",
+            version = "0.5.157",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -4659,35 +4659,44 @@ private fun RouteRecommendationBand(
     accent: Color,
     onPlayBest: () -> Unit,
 ) {
+    val actionContainerColor = sourceLibraryToneColor(state.actionContainerTone)
+    val actionContentColor = playerChromeBaseColor(state.actionContentBaseColor)
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 72.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(accent.copy(alpha = 0.12f))
-            .padding(12.dp),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+            .heightIn(min = state.minHeight)
+            .clip(RoundedCornerShape(state.cornerRadius))
+            .background(accent.copy(alpha = state.containerAlpha))
+            .padding(state.contentPadding),
+        horizontalArrangement = Arrangement.spacedBy(state.contentSpacing),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
-            modifier = Modifier.width(4.dp).height(48.dp).clip(RoundedCornerShape(8.dp)).background(accent),
+            modifier = Modifier
+                .width(state.indicatorWidth)
+                .height(state.indicatorHeight)
+                .clip(RoundedCornerShape(state.indicatorCornerRadius))
+                .background(accent),
         )
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(state.label, style = MaterialTheme.typography.labelMedium, color = accent, maxLines = 1)
-            Text(state.title, style = MaterialTheme.typography.titleMedium, color = Color.White, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(state.reason, style = MaterialTheme.typography.labelSmall, color = accent, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(state.detail, style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.72f), maxLines = 2, overflow = TextOverflow.Ellipsis)
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(state.textColumnSpacing)) {
+            Text(state.label, style = MaterialTheme.typography.labelMedium, color = accent.copy(alpha = state.labelAlpha), maxLines = 1)
+            Text(state.title, style = MaterialTheme.typography.titleMedium, color = Color.White.copy(alpha = state.titleAlpha), fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(state.reason, style = MaterialTheme.typography.labelSmall, color = accent.copy(alpha = state.reasonAlpha), maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(state.detail, style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = state.detailAlpha), maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
         if (state.canPlay) {
             Button(
                 onClick = onPlayBest,
-                shape = RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = AnimeAccentPink, contentColor = Color.White),
-                modifier = Modifier.height(40.dp).focusable(),
-                contentPadding = PaddingValues(horizontal = 12.dp),
+                shape = RoundedCornerShape(state.actionCornerRadius),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = actionContainerColor.copy(alpha = state.actionContainerAlpha),
+                    contentColor = actionContentColor.copy(alpha = state.actionContentAlpha),
+                ),
+                modifier = Modifier.height(state.actionButtonHeight).focusable(),
+                contentPadding = PaddingValues(horizontal = state.actionHorizontalPadding),
             ) {
-                Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(4.dp))
+                Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(state.actionIconSize))
+                Spacer(Modifier.width(state.actionContentSpacing))
                 Text(state.actionLabel, maxLines = 1)
             }
         }
