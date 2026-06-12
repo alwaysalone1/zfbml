@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.191
+
+English:
+
+- Route-panel detail toggles now use `RoutePanelUiState.toggleFocusEnabled` for TV/keyboard focus eligibility.
+- The compact/detailed route summary switch keeps its always-reachable navigation contract in the tested route-panel model.
+- Added unit coverage for route-panel toggle focus state.
+- App version labels, request user agents, and README notes are now updated to `0.5.191`.
+
 ### v0.5.190
 
 English:

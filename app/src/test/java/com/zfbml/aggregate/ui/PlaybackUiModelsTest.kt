@@ -1009,6 +1009,7 @@ class PlaybackUiModelsTest {
         assertEquals("简单", state.collapseToggleLabel)
         assertEquals(58.dp, state.toggleWidth)
         assertEquals(32.dp, state.toggleHeight)
+        assertTrue(state.toggleFocusEnabled)
         assertEquals(8.dp, state.toggleCornerRadius)
         assertEquals(SourceLibraryTone.Online, state.toggleTone)
         assertEquals(0.16f, state.toggleActiveContainerAlpha)

@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.190")
+                setRequestProperty("User-Agent", "ZFBML/0.5.191")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2992,7 +2992,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.190",
+            version = "0.5.191",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -9222,7 +9222,7 @@ private fun RoutePanelSummaryCard(
                 }
                 TextButton(
                     onClick = onToggleDetailed,
-                    modifier = Modifier.width(state.toggleWidth).height(state.toggleHeight).focusable(),
+                    modifier = Modifier.width(state.toggleWidth).height(state.toggleHeight).focusable(enabled = state.toggleFocusEnabled),
                     shape = RoundedCornerShape(state.toggleCornerRadius),
                     colors = ButtonDefaults.textButtonColors(
                         containerColor = if (detailedMode) {
