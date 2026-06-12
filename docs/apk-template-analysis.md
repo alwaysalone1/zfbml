@@ -364,3 +364,5 @@ This pass upgrades detail route card inner accent chrome. `RouteCandidateUiState
 This pass upgrades detail route-card interaction chrome. `RouteCandidateUiState` now owns detail card click enablement and disabled content alpha, and the detail play-action pill reuses the tested route action icon semantics so playable, current, BT, web fallback, and retry states present consistently across detail and fullscreen route surfaces.
 
 This pass upgrades detail route action-pill chrome. `RouteCandidateUiState` now owns the detail action pill height, radius, padding, spacing, icon size, icon alpha, text alpha, and container alpha so detail route cards no longer fetch action-pill presentation from Compose while preserving the shared tested pill contract.
+
+This pass upgrades player route-row focus behavior. `RouteCandidateUiState` now owns row focus eligibility so TV and keyboard navigation can skip web-only fallback rows that are shown for diagnostics but cannot be played directly, while retryable failures and playable routes remain focusable.

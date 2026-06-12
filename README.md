@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.179
+
+English:
+
+- Player route option rows now use `RouteCandidateUiState.rowFocusEnabled` for TV/keyboard focus eligibility.
+- Web fallback rows remain visible for diagnostics but no longer receive player-route focus when they cannot be played directly.
+- Added unit coverage for playable, current, web fallback, and failed route focus states.
+- App version labels, request user agents, and README notes are now updated to `0.5.179`.
+
 ### v0.5.178
 
 English:
