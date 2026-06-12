@@ -2480,7 +2480,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.223")
+                setRequestProperty("User-Agent", "ZFBML/0.5.224")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -3013,7 +3013,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.223",
+            version = "0.5.224",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -8707,13 +8707,23 @@ private fun PlayerMoreActionTile(action: PlayerMoreAction, modifier: Modifier = 
                 )
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(
-                    text = state.title,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = Color.White.copy(alpha = state.titleAlpha),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = state.title,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = Color.White.copy(alpha = state.titleAlpha),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
+                    )
+                    state.statusLabel?.takeIf { it.isNotBlank() }?.let { label ->
+                        RouteStatusBadge(label, sourceLibraryToneColor(state.statusTone))
+                    }
+                }
                 Text(
                     text = state.subtitle,
                     style = MaterialTheme.typography.labelSmall,

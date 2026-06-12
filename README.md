@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.224
+
+English:
+
+- Player cache actions now expose a visible cache-readiness badge for Media3 offline, BT progressive playback, WebView sniffing blockers, DRM blockers, and unsupported routes.
+- `PlayerCacheActionUiState` now keeps cache status labels and tones in the tested model contract used by player actions and cache guidance.
+- Added model coverage for cache action labels and tones across cacheable, BT, WebView, DRM, and unsupported route states.
+- App version labels, request user agents, and README notes are now updated to `0.5.224`.
+
 ### v0.5.223
 
 English:

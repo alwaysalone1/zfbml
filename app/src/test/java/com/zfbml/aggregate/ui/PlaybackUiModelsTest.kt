@@ -3846,6 +3846,8 @@ class PlaybackUiModelsTest {
                 value = "可离线",
                 reason = "Media3 离线缓存队列",
                 actionLabel = "缓存本集",
+                statusLabel = "\u53ef\u79bb\u7ebf",
+                statusTone = SourceLibraryTone.Cache,
             ),
         )
 
@@ -3869,7 +3871,9 @@ class PlaybackUiModelsTest {
         assertTrue(state.actions.first { it.kind == PlayerMoreActionKind.Danmaku }.selected)
         assertEquals("已开启", state.actions.first { it.kind == PlayerMoreActionKind.Danmaku }.subtitle)
         assertEquals("缓存本集", state.actions.first { it.kind == PlayerMoreActionKind.Cache }.subtitle)
-        assertEquals(SourceLibraryTone.Primary, state.actions.first { it.kind == PlayerMoreActionKind.Cache }.tone)
+        assertEquals(SourceLibraryTone.Cache, state.actions.first { it.kind == PlayerMoreActionKind.Cache }.tone)
+        assertEquals("\u53ef\u79bb\u7ebf", state.actions.first { it.kind == PlayerMoreActionKind.Cache }.statusLabel)
+        assertEquals(SourceLibraryTone.Cache, state.actions.first { it.kind == PlayerMoreActionKind.Cache }.statusTone)
         val danmaku = state.actions.first { it.kind == PlayerMoreActionKind.Danmaku }
         assertTrue(danmaku.highlighted)
         assertTrue(danmaku.prominent)
@@ -3906,6 +3910,8 @@ class PlaybackUiModelsTest {
                 value = "嗅探",
                 reason = "网页嗅探源需现场播放，暂不支持离线",
                 actionLabel = "不可缓存",
+                statusLabel = "\u7f51\u9875\u55c5\u63a2",
+                statusTone = SourceLibraryTone.Web,
             ),
         )
 
@@ -3919,7 +3925,9 @@ class PlaybackUiModelsTest {
         assertEquals("已关闭", state.actions.first { it.kind == PlayerMoreActionKind.Danmaku }.subtitle)
         assertFalse(state.actions.first { it.kind == PlayerMoreActionKind.Cache }.enabled)
         assertEquals("网页嗅探源需现场播放，暂不支持离线", state.actions.first { it.kind == PlayerMoreActionKind.Cache }.subtitle)
-        assertEquals(SourceLibraryTone.Muted, state.actions.first { it.kind == PlayerMoreActionKind.Cache }.tone)
+        assertEquals(SourceLibraryTone.Web, state.actions.first { it.kind == PlayerMoreActionKind.Cache }.tone)
+        assertEquals("\u7f51\u9875\u55c5\u63a2", state.actions.first { it.kind == PlayerMoreActionKind.Cache }.statusLabel)
+        assertEquals(SourceLibraryTone.Web, state.actions.first { it.kind == PlayerMoreActionKind.Cache }.statusTone)
         val disabledRoute = state.actions.first { it.kind == PlayerMoreActionKind.Route }
         assertFalse(disabledRoute.highlighted)
         assertFalse(disabledRoute.prominent)
@@ -4393,6 +4401,8 @@ class PlaybackUiModelsTest {
                 value = "可离线",
                 reason = "Media3 离线缓存队列",
                 actionLabel = "缓存本集",
+                statusLabel = "\u53ef\u79bb\u7ebf",
+                statusTone = SourceLibraryTone.Cache,
             ),
             hasPlaybackIssue = false,
             canSelectNextRoute = true,
@@ -4419,6 +4429,7 @@ class PlaybackUiModelsTest {
         assertEquals("12集", state.actions.first { it.kind == PlayerActionKind.Episode }.value)
         assertEquals("第6集", state.actions.first { it.kind == PlayerActionKind.NextEpisode }.value)
         assertTrue(state.actions.first { it.kind == PlayerActionKind.NextEpisode }.actionFocusEnabled)
+        assertEquals("\u53ef\u79bb\u7ebf", state.actions.first { it.kind == PlayerActionKind.Cache }.value)
         assertEquals(SourceLibraryTone.Cache, state.actions.first { it.kind == PlayerActionKind.Cache }.tone)
     }
 
@@ -4438,6 +4449,8 @@ class PlaybackUiModelsTest {
                 value = "嗅探",
                 reason = "网页嗅探源需现场播放，暂不支持离线",
                 actionLabel = "不可缓存",
+                statusLabel = "\u7f51\u9875\u55c5\u63a2",
+                statusTone = SourceLibraryTone.Web,
             ),
             hasPlaybackIssue = true,
             canSelectNextRoute = false,
@@ -4459,6 +4472,8 @@ class PlaybackUiModelsTest {
         assertEquals("单集", state.actions.first { it.kind == PlayerActionKind.Episode }.value)
         assertFalse(state.actions.first { it.kind == PlayerActionKind.Cache }.enabled)
         assertFalse(state.actions.first { it.kind == PlayerActionKind.Cache }.actionFocusEnabled)
+        assertEquals("\u7f51\u9875\u55c5\u63a2", state.actions.first { it.kind == PlayerActionKind.Cache }.value)
+        assertEquals(SourceLibraryTone.Web, state.actions.first { it.kind == PlayerActionKind.Cache }.tone)
         assertTrue(state.actions.first { it.kind == PlayerActionKind.More }.selected)
     }
 
@@ -5048,14 +5063,24 @@ class PlaybackUiModelsTest {
         assertTrue(hls.enabled)
         assertEquals("\u53ef\u79bb\u7ebf", hls.value)
         assertEquals("\u7f13\u5b58\u672c\u96c6", hls.actionLabel)
+        assertEquals("\u53ef\u79bb\u7ebf", hls.statusLabel)
+        assertEquals(SourceLibraryTone.Cache, hls.statusTone)
         assertFalse(webView.enabled)
         assertTrue(webView.reason.contains("\u7f51\u9875\u55c5\u63a2"))
+        assertEquals("\u7f51\u9875\u55c5\u63a2", webView.statusLabel)
+        assertEquals(SourceLibraryTone.Web, webView.statusTone)
         assertFalse(drm.enabled)
         assertEquals("DRM", drm.value)
+        assertEquals("DRM \u963b\u65ad", drm.statusLabel)
+        assertEquals(SourceLibraryTone.Web, drm.statusTone)
         assertFalse(bt.enabled)
         assertEquals("\u8fb9\u4e0b\u8fb9\u64ad", bt.value)
+        assertEquals("\u8fb9\u4e0b\u8fb9\u64ad", bt.statusLabel)
+        assertEquals(SourceLibraryTone.Backup, bt.statusTone)
         assertFalse(rtsp.enabled)
         assertEquals("RTSP", rtsp.value)
+        assertEquals("\u6682\u4e0d\u652f\u6301", rtsp.statusLabel)
+        assertEquals(SourceLibraryTone.Muted, rtsp.statusTone)
     }
 
     @Test

@@ -454,3 +454,5 @@ This pass upgrades brand splash readiness visibility. `BrandSplashUiState` now c
 This pass upgrades danmaku mapping readiness visibility. `PlayerDanmakuMappingUiState` now carries a tested status badge for loaded, manual calibration, matching, review-required, candidate, and uncalibrated states, so the player makes automatic matching and manual correction state visible in the danmaku panel.
 
 This pass upgrades danmaku anti-obstruction readiness visibility. `PlayerDanmakuSafeAreaUiState` now carries a tested avoidance badge for light, control, panel, center-protection, and lock-screen states, so the danmaku settings panel explains how rendering avoids controls and overlays.
+
+This pass upgrades player cache action readiness visibility. `PlayerCacheActionUiState` now carries a tested cache status badge for Media3 offline, BT progressive playback, WebView sniffing blockers, DRM blockers, and unsupported route states, so player cache actions explain availability before users enter a download path.
