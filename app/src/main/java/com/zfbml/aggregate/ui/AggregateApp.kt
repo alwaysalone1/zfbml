@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.166")
+                setRequestProperty("User-Agent", "ZFBML/0.5.167")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2984,7 +2984,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.166",
+            version = "0.5.167",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -8861,10 +8861,11 @@ private fun PlayerRoutePanel(
             }
         }
         item {
+            val routeListTitleColor = playerChromeBaseColor(sourceStripState.routeListTitleBaseColor)
             Text(
                 sourceStripState.routeListTitle,
                 style = MaterialTheme.typography.labelMedium,
-                color = Color.White.copy(alpha = sourceStripState.titleAlpha),
+                color = routeListTitleColor.copy(alpha = sourceStripState.routeListTitleAlpha),
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -8892,11 +8893,12 @@ private fun PlayerRouteSourceStrip(
     onSourceSelected: (String?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val titleColor = playerChromeBaseColor(state.titleBaseColor)
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(state.containerSpacing)) {
         Text(
             state.title,
             style = MaterialTheme.typography.labelMedium,
-            color = Color.White.copy(alpha = state.titleAlpha),
+            color = titleColor.copy(alpha = state.titleAlpha),
             fontWeight = FontWeight.SemiBold,
             maxLines = 1,
         )
@@ -8920,12 +8922,15 @@ private fun PlayerRouteSourceChip(
 ) {
     val group = state.group
     val accent = sourceLibraryToneColor(group.tone)
+    val containerColor = playerChromeBaseColor(state.containerBaseColor)
+    val titleColor = playerChromeBaseColor(state.titleBaseColor)
+    val detailColor = playerChromeBaseColor(state.detailBaseColor)
     Card(
         onClick = onClick,
         modifier = Modifier.width(state.width).height(state.height),
         shape = RoundedCornerShape(state.cornerRadius),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = state.containerAlpha),
+            containerColor = containerColor.copy(alpha = state.containerAlpha),
         ),
         border = BorderStroke(state.borderWidth, accent.copy(alpha = state.borderAlpha)),
     ) {
@@ -8938,7 +8943,7 @@ private fun PlayerRouteSourceChip(
                     group.name,
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.labelLarge,
-                    color = Color.White.copy(alpha = state.titleAlpha),
+                    color = titleColor.copy(alpha = state.titleAlpha),
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -8949,7 +8954,7 @@ private fun PlayerRouteSourceChip(
                 Text(
                     group.detailSummary,
                     style = MaterialTheme.typography.labelSmall,
-                    color = Color.White.copy(alpha = state.detailAlpha),
+                    color = detailColor.copy(alpha = state.detailAlpha),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )

@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.167
+
+English:
+
+- Player route-source strips now use `PlayerRouteSourceStripUiState` for title base color, route-list title base color, and route-list title alpha.
+- Player route-source chips now use `PlayerRouteSourceChipUiState` for container, title, and detail base colors instead of keeping those chrome constants in Compose.
+- Added unit coverage for player route-source strip and chip chrome.
+- App version labels, request user agents, and README notes are now updated to `0.5.167`.
+
 ### v0.5.166
 
 English:
