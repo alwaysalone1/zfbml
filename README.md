@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.202
+
+English:
+
+- Danmaku candidate list presentation is now modeled by `PlayerDanmakuCandidateListUiState`.
+- The danmaku calibration panel renders candidate title, loading empty state, spacing, and candidate rows from the tested list model.
+- Added unit coverage for hidden idle lists, visible candidate lists, and matching-in-progress empty guidance.
+- App version labels, request user agents, and README notes are now updated to `0.5.202`.
+
 ### v0.5.201
 
 English:

@@ -1521,10 +1521,7 @@ internal data class PlayerDanmakuMappingUiState(
     val subtitle: String,
     val actionLabel: String,
     val badges: List<SourceLibraryChipUiState>,
-    val candidateListTitle: String,
-    val candidateListTitleAlpha: Float,
-    val candidateSpacing: Dp,
-    val candidates: List<PlayerDanmakuCandidateUiState>,
+    val candidateList: PlayerDanmakuCandidateListUiState,
     val selected: Boolean,
     val highlighted: Boolean,
     val prominent: Boolean,
@@ -1535,6 +1532,19 @@ internal data class PlayerDanmakuMappingUiState(
     val subtitleAlpha: Float,
     val trailingTone: SourceLibraryTone,
     val rowState: PlayerSelectableRowUiState,
+)
+
+internal data class PlayerDanmakuCandidateListUiState(
+    val title: String,
+    val titleAlpha: Float,
+    val visible: Boolean,
+    val spacing: Dp,
+    val emptyText: String,
+    val emptyVisible: Boolean,
+    val emptyTone: SourceLibraryTone,
+    val emptyAlpha: Float,
+    val emptyTextMaxLines: Int,
+    val candidates: List<PlayerDanmakuCandidateUiState>,
 )
 
 internal data class PlayerDanmakuCandidateUiState(
@@ -5530,6 +5540,10 @@ internal fun buildPlayerDanmakuMappingUiState(
         loadedCount == 0 &&
         best != null &&
         best.score < DANMAKU_AUTOMATIC_TIMELINE_MIN_SCORE
+    val candidateList = buildPlayerDanmakuCandidateListUiState(
+        candidates = candidates,
+        matching = matching,
+    )
     val tone = when {
         manual -> SourceLibraryTone.Primary
         matching -> SourceLibraryTone.Online
@@ -5571,10 +5585,7 @@ internal fun buildPlayerDanmakuMappingUiState(
             else -> "搜索弹幕"
         },
         badges = badges,
-        candidateListTitle = if (candidateCount > 0) "弹幕候选" else "",
-        candidateListTitleAlpha = 0.72f,
-        candidateSpacing = 8.dp,
-        candidates = candidates.map(::buildPlayerDanmakuCandidateUiState),
+        candidateList = candidateList,
         selected = manual,
         highlighted = matching || manual || loadedCount > 0 || requiresManualReview,
         prominent = manual,
@@ -5589,6 +5600,26 @@ internal fun buildPlayerDanmakuMappingUiState(
             highlighted = matching || manual || loadedCount > 0 || requiresManualReview,
             prominent = manual,
         ),
+    )
+}
+
+internal fun buildPlayerDanmakuCandidateListUiState(
+    candidates: List<DanmakuMatch>,
+    matching: Boolean,
+): PlayerDanmakuCandidateListUiState {
+    val candidateStates = candidates.map(::buildPlayerDanmakuCandidateUiState)
+    val emptyVisible = matching && candidateStates.isEmpty()
+    return PlayerDanmakuCandidateListUiState(
+        title = "弹幕候选",
+        titleAlpha = 0.72f,
+        visible = candidateStates.isNotEmpty() || emptyVisible,
+        spacing = 8.dp,
+        emptyText = if (emptyVisible) "正在搜索可校准的弹幕候选" else "",
+        emptyVisible = emptyVisible,
+        emptyTone = SourceLibraryTone.Online,
+        emptyAlpha = 0.68f,
+        emptyTextMaxLines = 2,
+        candidates = candidateStates,
     )
 }
 

@@ -410,3 +410,5 @@ This pass upgrades danmaku low-confidence review guidance. The automatic-load sc
 This pass upgrades danmaku candidate confirmation semantics. `PlayerDanmakuCandidateUiState` now marks low-confidence candidates as requiring manual review and changes their action copy to a confirmation flow, making it clearer that selecting them is an intentional calibration step rather than automatic matching.
 
 This pass upgrades manual danmaku search entry modeling. `PlayerDanmakuSearchUiState` now owns the editable query, trimmed submitted query, label, placeholder, loading-disabled state, and search action availability so the calibration panel no longer derives manual-search behavior directly in Compose.
+
+This pass upgrades danmaku candidate-list presentation. `PlayerDanmakuCandidateListUiState` now owns candidate-list visibility, title chrome, loading empty guidance, spacing, and rendered candidate rows so the calibration panel can show search progress and candidate choices from a tested model contract.

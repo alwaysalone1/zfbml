@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.201")
+                setRequestProperty("User-Agent", "ZFBML/0.5.202")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2992,7 +2992,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.201",
+            version = "0.5.202",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -8693,16 +8693,25 @@ private fun PlayerDanmakuSettingsPanel(
                 }
             },
         )
-        if (state.mapping.candidates.isNotEmpty()) {
+        if (state.mapping.candidateList.visible) {
             Text(
-                state.mapping.candidateListTitle,
+                state.mapping.candidateList.title,
                 style = MaterialTheme.typography.labelMedium,
-                color = Color.White.copy(alpha = state.mapping.candidateListTitleAlpha),
+                color = Color.White.copy(alpha = state.mapping.candidateList.titleAlpha),
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
             )
-            Column(verticalArrangement = Arrangement.spacedBy(state.mapping.candidateSpacing)) {
-                state.mapping.candidates.forEach { candidate ->
+            if (state.mapping.candidateList.emptyVisible) {
+                Text(
+                    state.mapping.candidateList.emptyText,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = sourceLibraryToneColor(state.mapping.candidateList.emptyTone)
+                        .copy(alpha = state.mapping.candidateList.emptyAlpha),
+                    maxLines = state.mapping.candidateList.emptyTextMaxLines,
+                )
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(state.mapping.candidateList.spacing)) {
+                state.mapping.candidateList.candidates.forEach { candidate ->
                     PlayerSelectableRow(
                         title = candidate.title,
                         subtitle = candidate.subtitle,
