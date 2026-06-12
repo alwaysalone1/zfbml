@@ -394,3 +394,5 @@ This pass upgrades route-panel toggle focus behavior. `RoutePanelUiState` now ow
 This pass upgrades player top route-status focus behavior. `PlayerRouteStatusUiState` now owns focus eligibility so the route-status chip that opens the playback route panel remains part of the tested TV and keyboard navigation contract instead of relying on Compose defaults.
 
 This pass upgrades shared player circle-button focus behavior. `PlayerCircleButtonChromeUiState` now owns focus eligibility so disabled circular playback controls keep their muted chrome but are skipped by TV and keyboard navigation.
+
+This pass upgrades shared player selectable-row focus behavior. `PlayerSelectableRowUiState` now owns row focus eligibility so disabled danmaku, quality, speed, and mapping rows can remain visible for context while TV or keyboard navigation skips unavailable actions.

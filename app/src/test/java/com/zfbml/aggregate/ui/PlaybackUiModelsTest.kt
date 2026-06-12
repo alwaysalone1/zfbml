@@ -3446,16 +3446,23 @@ class PlaybackUiModelsTest {
 
     @Test
     fun playerSelectableRowUiStateSuppressesAccentWhenDisabled() {
+        val enabled = buildPlayerSelectableRowUiState(
+            enabled = true,
+            highlighted = false,
+            prominent = false,
+        )
         val state = buildPlayerSelectableRowUiState(
             enabled = false,
             highlighted = true,
             prominent = true,
         )
 
+        assertTrue(enabled.rowFocusEnabled)
         assertNull(state.containerTone)
         assertEquals(0.06f, state.containerAlpha)
         assertNull(state.borderTone)
         assertEquals(0.08f, state.borderAlpha)
+        assertFalse(state.rowFocusEnabled)
         assertNull(state.iconTone)
         assertEquals(48.dp, state.minHeight)
         assertEquals(8.dp, state.cornerRadius)

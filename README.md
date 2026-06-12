@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.194
+
+English:
+
+- Player selectable rows now use `PlayerSelectableRowUiState.rowFocusEnabled` for TV/keyboard focus eligibility.
+- Disabled danmaku, quality, speed, and mapping rows keep their explanatory chrome while being skipped by focus navigation.
+- Added unit coverage for enabled and disabled selectable-row focus states.
+- App version labels, request user agents, and README notes are now updated to `0.5.194`.
+
 ### v0.5.193
 
 English:
