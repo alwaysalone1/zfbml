@@ -318,3 +318,5 @@ This pass upgrades player route-source chip chrome. `PlayerRouteSourceChipUiStat
 This pass upgrades detail route-status card chrome. `DetailRouteStatusUiState` now owns card radius, border width, padding, compact/expanded spacing, header spacing, icon-box sizing, progress sizing, action height, and diagnostics spacing so route matching on the detail playback page follows the same tested model contract as player route-source controls.
 
 This pass upgrades detail route-focus chip chrome. `DetailRouteFocusChipUiState` now owns minimum height, radius, container alpha, padding, spacing, label alpha, and value alpha so detail playback route diagnostics use the same tested model-driven presentation as the route-status card and fullscreen route-source filters.
+
+This pass upgrades route-loading diagnostic step chrome. `RouteLoadingStepUiState` now owns step accent tone, min height, radius, active/inactive container alpha, padding, spacing, inactive label tone, and text alpha values so detail-page route matching progress is rendered from a tested model contract instead of Compose-local step constants.

@@ -87,6 +87,21 @@ class PlaybackUiModelsTest {
         assertEquals(3, loading.loadingSteps.size)
         assertTrue(loading.loadingSteps.all { it.active })
         assertEquals(loading.selectedEpisodeTitle, loading.loadingSteps.first().value)
+        val firstStep = loading.loadingSteps.first()
+        assertEquals(null, firstStep.accentTone)
+        assertEquals(58.dp, firstStep.minHeight)
+        assertEquals(8.dp, firstStep.cornerRadius)
+        assertEquals(0.13f, firstStep.activeContainerAlpha, 0.001f)
+        assertEquals(PlayerChromeBaseColor.White, firstStep.inactiveContainerBaseColor)
+        assertEquals(0.05f, firstStep.inactiveContainerAlpha, 0.001f)
+        assertEquals(10.dp, firstStep.horizontalPadding)
+        assertEquals(8.dp, firstStep.verticalPadding)
+        assertEquals(4.dp, firstStep.contentSpacing)
+        assertEquals(SourceLibraryTone.Muted, firstStep.inactiveLabelTone)
+        assertEquals(1f, firstStep.labelAlpha, 0.001f)
+        assertEquals(1f, firstStep.valueAlpha, 0.001f)
+        assertEquals(SourceLibraryTone.Online, loading.loadingSteps[1].accentTone)
+        assertEquals(SourceLibraryTone.Backup, loading.loadingSteps[2].accentTone)
     }
 
     @Test

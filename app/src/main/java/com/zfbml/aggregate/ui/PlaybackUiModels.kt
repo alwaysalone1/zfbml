@@ -56,6 +56,18 @@ internal data class RouteLoadingStepUiState(
     val title: String,
     val value: String,
     val active: Boolean,
+    val accentTone: SourceLibraryTone? = null,
+    val minHeight: Dp = 58.dp,
+    val cornerRadius: Dp = 8.dp,
+    val activeContainerAlpha: Float = 0.13f,
+    val inactiveContainerBaseColor: PlayerChromeBaseColor = PlayerChromeBaseColor.White,
+    val inactiveContainerAlpha: Float = 0.05f,
+    val horizontalPadding: Dp = 10.dp,
+    val verticalPadding: Dp = 8.dp,
+    val contentSpacing: Dp = 4.dp,
+    val inactiveLabelTone: SourceLibraryTone = SourceLibraryTone.Muted,
+    val labelAlpha: Float = 1f,
+    val valueAlpha: Float = 1f,
 )
 
 internal data class DetailPlaybackReadinessUiState(
@@ -2755,6 +2767,7 @@ internal fun buildRouteLoadingSteps(
                 else -> "待匹配"
             },
             active = matching || onlineCount > 0,
+            accentTone = SourceLibraryTone.Online,
         ),
         RouteLoadingStepUiState(
             title = "备用源",
@@ -2765,6 +2778,7 @@ internal fun buildRouteLoadingSteps(
                 else -> "兜底"
             },
             active = matching || btCount > 0 || status == RouteLoadStatus.Failed,
+            accentTone = SourceLibraryTone.Backup,
         ),
     )
 }

@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.156
+
+English:
+
+- Route loading diagnostic steps now use `RouteLoadingStepUiState` for accent tone, min height, radius, active/inactive container alpha, padding, spacing, inactive label tone, and text alpha values.
+- `RouteDiagnosticStep` now renders from model chrome instead of keeping route-loading step constants and color lists inside Compose.
+- Added unit coverage for route-loading diagnostic step chrome.
+- App version labels, request user agents, and README notes are now updated to `0.5.156`.
+
 ### v0.5.155
 
 English:

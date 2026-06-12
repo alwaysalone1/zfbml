@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.155")
+                setRequestProperty("User-Agent", "ZFBML/0.5.156")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2984,7 +2984,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.155",
+            version = "0.5.156",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -4747,18 +4747,15 @@ private fun RouteLoadingStepRow(
     steps: List<RouteLoadingStepUiState>,
     accent: Color,
 ) {
-    val colors = listOf(accent, AnimeAccentCyan, AnimeAccentAmber)
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        steps.take(3).forEachIndexed { index, step ->
+        steps.take(3).forEach { step ->
             RouteDiagnosticStep(
-                title = step.title,
-                value = step.value,
-                active = step.active,
-                accent = colors.getOrElse(index) { accent },
+                state = step,
+                parentAccent = accent,
                 modifier = Modifier.weight(1f),
             )
         }
@@ -4767,22 +4764,42 @@ private fun RouteLoadingStepRow(
 
 @Composable
 private fun RouteDiagnosticStep(
-    title: String,
-    value: String,
-    active: Boolean,
-    accent: Color,
+    state: RouteLoadingStepUiState,
+    parentAccent: Color,
     modifier: Modifier = Modifier,
 ) {
+    val accent = state.accentTone?.let(::sourceLibraryToneColor) ?: parentAccent
+    val inactiveContainerColor = playerChromeBaseColor(state.inactiveContainerBaseColor)
+    val labelColor = if (state.active) accent else sourceLibraryToneColor(state.inactiveLabelTone)
     Column(
         modifier = modifier
-            .heightIn(min = 58.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(if (active) accent.copy(alpha = 0.13f) else Color.White.copy(alpha = 0.05f))
-            .padding(horizontal = 10.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+            .heightIn(min = state.minHeight)
+            .clip(RoundedCornerShape(state.cornerRadius))
+            .background(
+                if (state.active) {
+                    accent.copy(alpha = state.activeContainerAlpha)
+                } else {
+                    inactiveContainerColor.copy(alpha = state.inactiveContainerAlpha)
+                },
+            )
+            .padding(horizontal = state.horizontalPadding, vertical = state.verticalPadding),
+        verticalArrangement = Arrangement.spacedBy(state.contentSpacing),
     ) {
-        Text(title, style = MaterialTheme.typography.labelSmall, color = if (active) accent else AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Text(value, style = MaterialTheme.typography.bodySmall, color = Color.White, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(
+            state.title,
+            style = MaterialTheme.typography.labelSmall,
+            color = labelColor.copy(alpha = state.labelAlpha),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            state.value,
+            style = MaterialTheme.typography.bodySmall,
+            color = Color.White.copy(alpha = state.valueAlpha),
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
