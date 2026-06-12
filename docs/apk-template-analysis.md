@@ -400,3 +400,5 @@ This pass upgrades shared player selectable-row focus behavior. `PlayerSelectabl
 This pass upgrades shared player text-action focus behavior. `PlayerTextActionChromeUiState` now owns final focus eligibility so bottom playback actions can preserve their enabled or selected chrome while the tested player action model decides whether TV and keyboard navigation should land on them.
 
 This pass upgrades player startup-overlay anti-obstruction chrome. `PlayerStartupOverlayUiState` now owns progress stroke width plus title and metadata line limits so buffering/loading overlays keep a compact, tested footprint instead of relying on Compose defaults while video content is initializing.
+
+This pass upgrades danmaku candidate confidence presentation. `PlayerDanmakuCandidateUiState` now owns confidence labels and tones so automatic matches, low-confidence hits, and manually confirmed mappings are clearly differentiated before the user calibrates a source to the current episode.

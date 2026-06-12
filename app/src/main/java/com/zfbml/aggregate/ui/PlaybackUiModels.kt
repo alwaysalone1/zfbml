@@ -1528,6 +1528,8 @@ internal data class PlayerDanmakuCandidateUiState(
     val match: DanmakuMatch,
     val title: String,
     val subtitle: String,
+    val confidenceLabel: String,
+    val confidenceTone: SourceLibraryTone,
     val actionLabel: String,
     val badges: List<SourceLibraryChipUiState>,
     val selected: Boolean,
@@ -5548,16 +5550,21 @@ internal fun buildPlayerDanmakuCandidateUiState(match: DanmakuMatch): PlayerDanm
     val manual = match.source == DanmakuMatchSource.Manual
     val tone = if (manual) SourceLibraryTone.Primary else SourceLibraryTone.Online
     val episodeLabel = match.episodeTitle.orEmpty().ifBlank { match.title }
+    val confidenceLabel = danmakuCandidateConfidenceLabel(match)
+    val confidenceTone = danmakuCandidateConfidenceTone(match)
     return PlayerDanmakuCandidateUiState(
         match = match,
         title = match.providerId.danmakuProviderLabel(),
-        subtitle = listOf(episodeLabel, "评分 ${match.score}")
+        subtitle = listOf(episodeLabel, confidenceLabel, "评分 ${match.score}")
             .filter { it.isNotBlank() }
             .joinToString(" · "),
+        confidenceLabel = confidenceLabel,
+        confidenceTone = confidenceTone,
         actionLabel = if (manual) "已校准" else "设为本集",
         badges = buildList {
             add(SourceLibraryChipUiState(if (manual) "人工" else "候选", tone))
             add(SourceLibraryChipUiState(match.platform.uiDanmakuPlatformLabel(), SourceLibraryTone.Web))
+            add(SourceLibraryChipUiState(confidenceLabel, confidenceTone))
         },
         selected = manual,
         enabled = !manual,
@@ -5572,6 +5579,24 @@ internal fun buildPlayerDanmakuCandidateUiState(match: DanmakuMatch): PlayerDanm
             prominent = manual,
         ),
     )
+}
+
+private fun danmakuCandidateConfidenceLabel(match: DanmakuMatch): String {
+    return when {
+        match.source == DanmakuMatchSource.Manual -> "人工确认"
+        match.score >= 85 -> "高可信"
+        match.score >= 60 -> "需核对"
+        else -> "低可信"
+    }
+}
+
+private fun danmakuCandidateConfidenceTone(match: DanmakuMatch): SourceLibraryTone {
+    return when {
+        match.source == DanmakuMatchSource.Manual -> SourceLibraryTone.Primary
+        match.score >= 85 -> SourceLibraryTone.Cache
+        match.score >= 60 -> SourceLibraryTone.Backup
+        else -> SourceLibraryTone.Muted
+    }
 }
 
 private fun String.danmakuProviderLabel(): String {

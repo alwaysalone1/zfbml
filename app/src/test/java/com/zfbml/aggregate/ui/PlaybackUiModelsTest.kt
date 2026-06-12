@@ -3416,9 +3416,13 @@ class PlaybackUiModelsTest {
         assertEquals("弹幕候选", automatic.candidateListTitle)
         assertEquals(8.dp, automatic.candidateSpacing)
         assertEquals(listOf("Bilibili", "腾讯视频"), automatic.candidates.map { it.title })
-        assertEquals("Episode 1 · 评分 90", automatic.candidates.first().subtitle)
+        assertEquals("Episode 1 · 高可信 · 评分 90", automatic.candidates.first().subtitle)
+        assertEquals("高可信", automatic.candidates.first().confidenceLabel)
+        assertEquals(SourceLibraryTone.Cache, automatic.candidates.first().confidenceTone)
         assertEquals("设为本集", automatic.candidates.first().actionLabel)
-        assertEquals(listOf("候选", "B站"), automatic.candidates.first().badges.map { it.label })
+        assertEquals(listOf("候选", "B站", "高可信"), automatic.candidates.first().badges.map { it.label })
+        assertEquals("需核对", automatic.candidates[1].confidenceLabel)
+        assertEquals(SourceLibraryTone.Backup, automatic.candidates[1].confidenceTone)
         assertFalse(automatic.candidates.first().selected)
         assertTrue(automatic.candidates.first().enabled)
         assertTrue(automatic.candidates.first().actionEnabled)
@@ -3431,7 +3435,9 @@ class PlaybackUiModelsTest {
         assertEquals(SourceLibraryTone.Primary, manual.trailingTone)
         assertEquals(SourceLibraryTone.Primary, manual.rowState.containerTone)
         assertEquals("已校准", manual.candidates.first().actionLabel)
-        assertEquals(listOf("人工", "B站"), manual.candidates.first().badges.map { it.label })
+        assertEquals("人工确认", manual.candidates.first().confidenceLabel)
+        assertEquals(SourceLibraryTone.Primary, manual.candidates.first().confidenceTone)
+        assertEquals(listOf("人工", "B站", "人工确认"), manual.candidates.first().badges.map { it.label })
         assertTrue(manual.candidates.first().selected)
         assertFalse(manual.candidates.first().enabled)
         assertFalse(manual.candidates.first().actionEnabled)
@@ -3442,6 +3448,16 @@ class PlaybackUiModelsTest {
         assertFalse(loading.actionEnabled)
         assertEquals(SourceLibraryTone.Online, loading.trailingTone)
         assertTrue(loading.highlighted)
+    }
+
+    @Test
+    fun playerDanmakuCandidateUiStateLabelsLowConfidenceMatches() {
+        val state = buildPlayerDanmakuCandidateUiState(danmakuMatch("danmaku-youku", score = 35))
+
+        assertEquals("低可信", state.confidenceLabel)
+        assertEquals(SourceLibraryTone.Muted, state.confidenceTone)
+        assertTrue(state.subtitle.contains("低可信"))
+        assertEquals(listOf("候选", "优酷", "低可信"), state.badges.map { it.label })
     }
 
     @Test

@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.197
+
+English:
+
+- Danmaku candidate rows now expose match confidence labels and tones in `PlayerDanmakuCandidateUiState`.
+- Candidate subtitles and badges distinguish manual confirmation, high-confidence automatic matches, review-needed matches, and low-confidence matches.
+- Added unit coverage for high, review-needed, manual, and low-confidence danmaku candidates.
+- App version labels, request user agents, and README notes are now updated to `0.5.197`.
+
 ### v0.5.196
 
 English:
