@@ -362,3 +362,5 @@ This pass upgrades detail route card shell chrome. `AnimeSurfaceBaseColor` and `
 This pass upgrades detail route card inner accent chrome. `RouteCandidateUiState` now owns detail rail tone/alpha and source-box tone/alpha, with provider accent classification moved into tested model code so detail route cards no longer derive those visible accents inside Compose.
 
 This pass upgrades detail route-card interaction chrome. `RouteCandidateUiState` now owns detail card click enablement and disabled content alpha, and the detail play-action pill reuses the tested route action icon semantics so playable, current, BT, web fallback, and retry states present consistently across detail and fullscreen route surfaces.
+
+This pass upgrades detail route action-pill chrome. `RouteCandidateUiState` now owns the detail action pill height, radius, padding, spacing, icon size, icon alpha, text alpha, and container alpha so detail route cards no longer fetch action-pill presentation from Compose while preserving the shared tested pill contract.

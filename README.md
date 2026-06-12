@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.178
+
+English:
+
+- Detail route play-action pills now take height, radius, padding, spacing, icon sizing, and alpha values from `RouteCandidateUiState`.
+- `RouteCandidateRow` renders its action pill from the route candidate model instead of calling Compose-local action chrome.
+- Added unit coverage for detail route action-pill chrome in the route candidate model.
+- App version labels, request user agents, and README notes are now updated to `0.5.178`.
+
 ### v0.5.177
 
 English:

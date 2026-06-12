@@ -2144,6 +2144,14 @@ internal data class RouteCandidateUiState(
     val detailProtocolAlpha: Float,
     val detailSizeTone: SourceLibraryTone,
     val detailSizeAlpha: Float,
+    val detailActionLabelHeight: Dp,
+    val detailActionLabelCornerRadius: Dp,
+    val detailActionLabelHorizontalPadding: Dp,
+    val detailActionLabelSpacing: Dp,
+    val detailActionLabelIconSize: Dp,
+    val detailActionLabelIconAlpha: Float,
+    val detailActionLabelTextAlpha: Float,
+    val detailActionLabelContainerAlpha: Float,
     val rowPadding: Dp,
     val rowSpacing: Dp,
     val rowCornerRadius: Dp,
@@ -2983,6 +2991,7 @@ internal fun buildRouteCandidateUiState(
     val enabled = playable || failed
     val prominent = selected || recommended
     val highlighted = selected || recommended || failed
+    val detailActionChrome = buildRoutePlayActionChromeUiState()
     return RouteCandidateUiState(
         streamId = route.stream.id,
         sourceId = route.sourceId,
@@ -3056,6 +3065,14 @@ internal fun buildRouteCandidateUiState(
         detailProtocolAlpha = 1f,
         detailSizeTone = SourceLibraryTone.Muted,
         detailSizeAlpha = 1f,
+        detailActionLabelHeight = detailActionChrome.height,
+        detailActionLabelCornerRadius = detailActionChrome.cornerRadius,
+        detailActionLabelHorizontalPadding = detailActionChrome.horizontalPadding,
+        detailActionLabelSpacing = detailActionChrome.contentSpacing,
+        detailActionLabelIconSize = detailActionChrome.iconSize,
+        detailActionLabelIconAlpha = detailActionChrome.iconAlpha,
+        detailActionLabelTextAlpha = detailActionChrome.textAlpha,
+        detailActionLabelContainerAlpha = detailActionChrome.containerAlpha,
         rowPadding = 10.dp,
         rowSpacing = 10.dp,
         rowCornerRadius = 8.dp,

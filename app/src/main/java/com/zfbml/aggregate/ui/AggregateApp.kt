@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.177")
+                setRequestProperty("User-Agent", "ZFBML/0.5.178")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2992,7 +2992,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.177",
+            version = "0.5.178",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -5293,33 +5293,27 @@ private fun RouteStatusBadge(label: String, color: Color) {
 }
 
 @Composable
-private fun RoutePlayActionLabel(
-    label: String,
-    tone: SourceLibraryTone,
-    iconKind: RouteActionIconKind = RouteActionIconKind.Play,
-    iconContentDescription: String? = null,
-) {
-    val color = sourceLibraryToneColor(tone)
-    val chrome = remember { buildRoutePlayActionChromeUiState() }
+private fun RoutePlayActionLabel(state: RouteCandidateUiState) {
+    val color = sourceLibraryToneColor(state.actionTone)
     Row(
         modifier = Modifier
-            .height(chrome.height)
-            .clip(RoundedCornerShape(chrome.cornerRadius))
-            .background(color.copy(alpha = chrome.containerAlpha))
-            .padding(horizontal = chrome.horizontalPadding),
-        horizontalArrangement = Arrangement.spacedBy(chrome.contentSpacing),
+            .height(state.detailActionLabelHeight)
+            .clip(RoundedCornerShape(state.detailActionLabelCornerRadius))
+            .background(color.copy(alpha = state.detailActionLabelContainerAlpha))
+            .padding(horizontal = state.detailActionLabelHorizontalPadding),
+        horizontalArrangement = Arrangement.spacedBy(state.detailActionLabelSpacing),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
-            playerRouteActionIcon(iconKind),
-            contentDescription = iconContentDescription,
-            tint = color.copy(alpha = chrome.iconAlpha),
-            modifier = Modifier.size(chrome.iconSize),
+            playerRouteActionIcon(state.actionIconKind),
+            contentDescription = state.actionIconContentDescription,
+            tint = color.copy(alpha = state.detailActionLabelIconAlpha),
+            modifier = Modifier.size(state.detailActionLabelIconSize),
         )
         Text(
-            label,
+            state.actionLabel,
             style = MaterialTheme.typography.labelSmall,
-            color = color.copy(alpha = chrome.textAlpha),
+            color = color.copy(alpha = state.detailActionLabelTextAlpha),
             maxLines = 1,
         )
     }
@@ -5472,12 +5466,7 @@ private fun RouteCandidateRow(
                         color = sizeColor.copy(alpha = state.detailSizeAlpha),
                     )
                 }
-                RoutePlayActionLabel(
-                    label = state.actionLabel,
-                    tone = state.actionTone,
-                    iconKind = state.actionIconKind,
-                    iconContentDescription = state.actionIconContentDescription,
-                )
+                RoutePlayActionLabel(state)
             }
         }
     }
