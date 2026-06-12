@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.172
+
+English:
+
+- Player route action icons now use `RouteCandidateUiState.actionIconContentDescription` for accessible descriptions.
+- `PlayerRouteActionLabel` no longer leaves the semantic action icon with a null content description.
+- Added unit coverage for play/current/download/web-fallback/retry action icon descriptions.
+- App version labels, request user agents, and README notes are now updated to `0.5.172`.
+
 ### v0.5.171
 
 English:

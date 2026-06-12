@@ -2154,6 +2154,7 @@ internal data class RouteCandidateUiState(
     val statusTone: SourceLibraryTone,
     val actionTone: SourceLibraryTone,
     val actionIconKind: RouteActionIconKind,
+    val actionIconContentDescription: String,
 )
 
 internal const val RouteAllSourcesId = "__all_sources__"
@@ -2941,6 +2942,14 @@ internal fun buildRouteCandidateUiState(
         route.protocol == StreamProtocol.WEBVIEW_ONLY -> RouteActionIconKind.Web
         else -> RouteActionIconKind.Play
     }
+    val actionIconContentDescription = when {
+        failed -> "\u91cd\u8bd5\u64ad\u653e\u6e90"
+        selected -> "\u5f53\u524d\u64ad\u653e\u6e90"
+        route.protocol == StreamProtocol.BITTORRENT -> "\u8fb9\u4e0b\u8fb9\u64ad"
+        route.protocol == StreamProtocol.WEBVIEW_ONLY -> "\u7f51\u9875\u515c\u5e95"
+        recommended -> "\u64ad\u653e\u63a8\u8350\u6e90"
+        else -> "\u64ad\u653e\u6e90"
+    }
     val badges = buildList {
         if (recommended) add(SourceLibraryChipUiState("\u63a8\u8350", SourceLibraryTone.Primary))
         add(SourceLibraryChipUiState(statusLabel, statusTone))
@@ -3044,6 +3053,7 @@ internal fun buildRouteCandidateUiState(
         statusTone = statusTone,
         actionTone = actionTone,
         actionIconKind = actionIconKind,
+        actionIconContentDescription = actionIconContentDescription,
     )
 }
 
