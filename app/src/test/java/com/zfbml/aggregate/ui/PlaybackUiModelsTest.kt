@@ -4666,6 +4666,7 @@ class PlaybackUiModelsTest {
         assertEquals(142.dp, normal.minWidth)
         assertEquals(210.dp, normal.maxWidth)
         assertEquals(36.dp, normal.height)
+        assertTrue(normal.focusEnabled)
         assertEquals(999.dp, normal.cornerRadius)
         assertEquals(PlayerChromeBaseColor.Black, normal.containerBaseColor)
         assertEquals(0.34f, normal.containerAlpha, 0.001f)

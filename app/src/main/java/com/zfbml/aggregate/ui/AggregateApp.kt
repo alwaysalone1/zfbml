@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.191")
+                setRequestProperty("User-Agent", "ZFBML/0.5.192")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2992,7 +2992,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.191",
+            version = "0.5.192",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -6859,7 +6859,7 @@ private fun PlayerTopRouteStatus(
     val containerColor = playerChromeBaseColor(state.containerBaseColor)
     val routeTextColor = playerChromeBaseColor(state.routeTextBaseColor)
     Surface(
-        modifier = modifier.height(state.height).clickable(onClick = onClick).focusable(),
+        modifier = modifier.height(state.height).clickable(onClick = onClick).focusable(enabled = state.focusEnabled),
         shape = RoundedCornerShape(state.cornerRadius),
         color = containerColor.copy(alpha = state.containerAlpha),
         border = BorderStroke(state.borderWidth, accent.copy(alpha = state.borderAlpha)),

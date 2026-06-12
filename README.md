@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.192
+
+English:
+
+- Player top route-status chips now use `PlayerRouteStatusUiState.focusEnabled` for TV/keyboard focus eligibility.
+- The route-status entry keeps its open-route-panel navigation contract in the tested playback model.
+- Added unit coverage for top route-status focus state.
+- App version labels, request user agents, and README notes are now updated to `0.5.192`.
+
 ### v0.5.191
 
 English:
