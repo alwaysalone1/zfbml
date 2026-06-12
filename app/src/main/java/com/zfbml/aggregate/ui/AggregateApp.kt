@@ -2480,7 +2480,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.222")
+                setRequestProperty("User-Agent", "ZFBML/0.5.223")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -3013,7 +3013,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.222",
+            version = "0.5.223",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -8857,13 +8857,17 @@ private fun PlayerDanmakuSettingsPanel(
             state = state.fontScaleSlider,
             onValueChange = onFontScaleChange,
         )
-        Text(
-            state.safetySummary,
-            style = MaterialTheme.typography.labelSmall,
-            color = sourceLibraryToneColor(state.tone),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            RouteStatusBadge(state.safetyLabel, sourceLibraryToneColor(state.safetyTone))
+            Text(
+                state.safetySummary,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.labelSmall,
+                color = sourceLibraryToneColor(state.tone),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
 }
 

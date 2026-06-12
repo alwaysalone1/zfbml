@@ -1520,6 +1520,8 @@ internal data class PlayerDanmakuSettingsUiState(
     val mapping: PlayerDanmakuMappingUiState,
     val search: PlayerDanmakuSearchUiState,
     val safetySummary: String,
+    val safetyLabel: String,
+    val safetyTone: SourceLibraryTone,
     val tone: SourceLibraryTone,
 )
 
@@ -1820,6 +1822,8 @@ internal data class PlayerDanmakuSafeAreaUiState(
     val startInsetDp: Int,
     val endInsetDp: Int,
     val centerExcludedHeightDp: Int,
+    val statusLabel: String,
+    val statusTone: SourceLibraryTone,
 )
 
 internal data class PlayerCacheActionUiState(
@@ -5549,6 +5553,8 @@ internal fun buildPlayerDanmakuSettingsUiState(
     val safetySummary = safeArea?.let { area ->
         "避让 顶${area.topInsetDp} / 底${area.bottomInsetDp} / 侧${area.startInsetDp + area.endInsetDp} / 中${area.centerExcludedHeightDp}"
     } ?: "自动避让播放器控制区"
+    val safetyLabel = safeArea?.statusLabel ?: "自动避让"
+    val safetyTone = safeArea?.statusTone ?: SourceLibraryTone.Muted
     val tone = if (enabled) SourceLibraryTone.Primary else SourceLibraryTone.Muted
     val toggleHighlighted = enabled
     val toggleProminent = enabled
@@ -5635,6 +5641,8 @@ internal fun buildPlayerDanmakuSettingsUiState(
         mapping = mapping,
         search = search,
         safetySummary = safetySummary,
+        safetyLabel = safetyLabel,
+        safetyTone = safetyTone,
         tone = tone,
     )
 }
@@ -7261,12 +7269,28 @@ internal fun buildPlayerDanmakuSafeAreaUiState(
         seekFeedbackVisible -> 72
         else -> 0
     }
+    val statusLabel = when {
+        centerExcludedHeight > 0 -> "中心保护"
+        panelOpen -> "面板避让"
+        visibleControls || noticeVisible -> "控制避让"
+        controlsLocked -> "锁屏避让"
+        else -> "轻避让"
+    }
+    val statusTone = when {
+        centerExcludedHeight > 0 -> SourceLibraryTone.Backup
+        panelOpen -> SourceLibraryTone.Online
+        visibleControls || noticeVisible -> SourceLibraryTone.Primary
+        controlsLocked -> SourceLibraryTone.Cache
+        else -> SourceLibraryTone.Muted
+    }
     return PlayerDanmakuSafeAreaUiState(
         topInsetDp = topInset,
         bottomInsetDp = bottomInset,
         startInsetDp = startInset,
         endInsetDp = endInset,
         centerExcludedHeightDp = centerExcludedHeight,
+        statusLabel = statusLabel,
+        statusTone = statusTone,
     )
 }
 

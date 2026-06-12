@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.223
+
+English:
+
+- Danmaku safe-area handling now exposes a visible avoidance badge for light, control, panel, center-protection, and lock-screen avoidance states.
+- `PlayerDanmakuSafeAreaUiState` and `PlayerDanmakuSettingsUiState` now keep avoidance labels and tones in the tested model contract alongside the concrete top, bottom, side, and center exclusion values used by rendering.
+- Added model coverage for danmaku safe-area labels and tones across hidden controls, visible controls, open panels, center overlays, and settings-panel summaries.
+- App version labels, request user agents, and README notes are now updated to `0.5.223`.
+
 ### v0.5.222
 
 English:
