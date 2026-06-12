@@ -436,3 +436,5 @@ This pass upgrades online route hit validation. Online search results now procee
 This pass upgrades fallback episode extraction. `TorrentTitleScorer` now recognizes SxxEyy, Season/Episode, and Chinese season-plus-episode labels before generic episode patterns, reducing route misses for torrent/RSS and fallback sources that use large-client style season naming.
 
 This pass upgrades home schedule empty-state guidance. Empty airing days now show a rest marker in weekday chips and point the empty panel at the next available update batch, making the追番 calendar scan closer to large-client schedule pages without adding unrelated surface area.
+
+This pass upgrades search landing suggestion provenance. `SearchSuggestionUiState` now carries a visible badge for schedule-driven entries and fallback hot keywords, so the search page exposes where each quick-search term came from before the user commits to a query.

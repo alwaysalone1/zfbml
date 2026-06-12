@@ -2460,7 +2460,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.214")
+                setRequestProperty("User-Agent", "ZFBML/0.5.215")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2993,7 +2993,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.214",
+            version = "0.5.215",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -3279,7 +3279,7 @@ private fun SearchSuggestionStrip(
                 val accent = sourceLibraryToneColor(suggestion.tone)
                 TextButton(
                     onClick = { onSelected(suggestion.keyword) },
-                    modifier = Modifier.height(56.dp).widthIn(min = 132.dp, max = 210.dp).focusable(),
+                    modifier = Modifier.height(62.dp).widthIn(min = 168.dp, max = 246.dp).focusable(),
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.textButtonColors(
                         containerColor = Color.White.copy(alpha = 0.08f),
@@ -3292,10 +3292,11 @@ private fun SearchSuggestionStrip(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(Icons.Filled.Search, contentDescription = null, tint = accent, modifier = Modifier.size(15.dp))
-                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Column(Modifier.widthIn(max = 132.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             Text(suggestion.keyword, style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             Text(suggestion.subtitle, style = MaterialTheme.typography.labelSmall, color = AnimeMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
+                        RouteStatusBadge(suggestion.badgeLabel, accent)
                     }
                 }
             }

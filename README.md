@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.215
+
+English:
+
+- Search landing suggestions now carry visible source badges so users can distinguish schedule-driven entries from fallback hot keywords before searching.
+- Search suggestion chips now use a wider stable layout that preserves long anime names while keeping the source badge visible.
+- Added model coverage for suggestion badge ordering across schedule and fallback search suggestions.
+- App version labels, request user agents, and README notes are now updated to `0.5.215`.
+
 ### v0.5.214
 
 English:

@@ -1696,6 +1696,7 @@ class PlaybackUiModelsTest {
         assertEquals(2, state.scheduleSuggestionCount)
         assertEquals(3, state.searchableSourceCount)
         assertEquals(listOf("Alpha CN", "Beta", "Gamma"), state.suggestions.map { it.keyword })
+        assertEquals(listOf("\u65e5\u7a0b", "\u65e5\u7a0b", "\u70ed\u95e8"), state.suggestions.map { it.badgeLabel })
         assertEquals(SourceLibraryTone.Primary, state.suggestions.first().tone)
         assertEquals(SourceLibraryTone.Online, state.suggestions.last().tone)
         assertTrue(state.summary.contains("\u661f\u671f\u4e8c"))
@@ -1720,6 +1721,7 @@ class PlaybackUiModelsTest {
         assertEquals(0, state.scheduleSuggestionCount)
         assertEquals(0, state.searchableSourceCount)
         assertEquals(listOf("Gamma", "Delta"), state.suggestions.map { it.keyword })
+        assertEquals(listOf("\u70ed\u95e8", "\u70ed\u95e8"), state.suggestions.map { it.badgeLabel })
         assertTrue(state.summary.contains("\u641c\u7d22\u6e90\u5f85\u63a5\u5165"))
         assertEquals("\u7b49\u5f85\u53ef\u641c\u7d22\u6765\u6e90", state.inputSubtitle)
     }

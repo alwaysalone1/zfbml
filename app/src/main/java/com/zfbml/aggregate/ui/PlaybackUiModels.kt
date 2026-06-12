@@ -502,6 +502,7 @@ internal data class SearchSuggestionUiState(
     val keyword: String,
     val subtitle: String,
     val tone: SourceLibraryTone,
+    val badgeLabel: String,
 )
 
 internal data class SearchLandingUiState(
@@ -3754,6 +3755,7 @@ internal fun buildSearchLandingUiState(
                     scheduleState.selectedDayTitle
                 },
                 tone = SourceLibraryTone.Primary,
+                badgeLabel = "\u65e5\u7a0b",
             )
         }
     val fallbackSuggestions = fallbackKeywords
@@ -3767,6 +3769,7 @@ internal fun buildSearchLandingUiState(
                 keyword = keyword,
                 subtitle = "热门搜索",
                 tone = SourceLibraryTone.Online,
+                badgeLabel = "\u70ed\u95e8",
             )
         }
     val suggestions = scheduleSuggestions + fallbackSuggestions
