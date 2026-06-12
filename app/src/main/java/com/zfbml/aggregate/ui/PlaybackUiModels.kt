@@ -158,6 +158,14 @@ internal data class DetailRouteFocusChipUiState(
     val label: String,
     val value: String,
     val tone: SourceLibraryTone,
+    val minHeight: Dp = 54.dp,
+    val cornerRadius: Dp = 8.dp,
+    val containerAlpha: Float = 0.11f,
+    val horizontalPadding: Dp = 10.dp,
+    val verticalPadding: Dp = 8.dp,
+    val contentSpacing: Dp = 4.dp,
+    val labelAlpha: Float = 1f,
+    val valueAlpha: Float = 1f,
 )
 
 internal data class DetailRouteMetricUiState(

@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.154")
+                setRequestProperty("User-Agent", "ZFBML/0.5.155")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2984,7 +2984,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.154",
+            version = "0.5.155",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -4703,9 +4703,7 @@ private fun RouteSourceFocusRow(chips: List<DetailRouteFocusChipUiState>) {
     ) {
         chips.take(3).forEach { chip ->
             RouteSourceFocusChip(
-                label = chip.label,
-                value = chip.value,
-                accent = sourceLibraryToneColor(chip.tone),
+                state = chip,
                 modifier = Modifier.weight(1f),
             )
         }
@@ -4714,21 +4712,33 @@ private fun RouteSourceFocusRow(chips: List<DetailRouteFocusChipUiState>) {
 
 @Composable
 private fun RouteSourceFocusChip(
-    label: String,
-    value: String,
-    accent: Color,
+    state: DetailRouteFocusChipUiState,
     modifier: Modifier = Modifier,
 ) {
+    val accent = sourceLibraryToneColor(state.tone)
     Column(
         modifier = modifier
-            .heightIn(min = 54.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(accent.copy(alpha = 0.11f))
-            .padding(horizontal = 10.dp, vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+            .heightIn(min = state.minHeight)
+            .clip(RoundedCornerShape(state.cornerRadius))
+            .background(accent.copy(alpha = state.containerAlpha))
+            .padding(horizontal = state.horizontalPadding, vertical = state.verticalPadding),
+        verticalArrangement = Arrangement.spacedBy(state.contentSpacing),
     ) {
-        Text(label, style = MaterialTheme.typography.labelSmall, color = accent, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Text(value, style = MaterialTheme.typography.bodySmall, color = Color.White, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(
+            state.label,
+            style = MaterialTheme.typography.labelSmall,
+            color = accent.copy(alpha = state.labelAlpha),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            state.value,
+            style = MaterialTheme.typography.bodySmall,
+            color = Color.White.copy(alpha = state.valueAlpha),
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 

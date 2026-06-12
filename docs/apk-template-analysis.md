@@ -316,3 +316,5 @@ This pass upgrades portrait recovery action chrome. `PlayerActionUiState` now ow
 This pass upgrades player route-source chip chrome. `PlayerRouteSourceChipUiState` now owns chip radius, border width, header spacing, title alpha, footer alpha, and the existing size/padding/container/detail controls so fullscreen route-source filtering keeps a tested model contract instead of relying on Compose-local chip constants.
 
 This pass upgrades detail route-status card chrome. `DetailRouteStatusUiState` now owns card radius, border width, padding, compact/expanded spacing, header spacing, icon-box sizing, progress sizing, action height, and diagnostics spacing so route matching on the detail playback page follows the same tested model contract as player route-source controls.
+
+This pass upgrades detail route-focus chip chrome. `DetailRouteFocusChipUiState` now owns minimum height, radius, container alpha, padding, spacing, label alpha, and value alpha so detail playback route diagnostics use the same tested model-driven presentation as the route-status card and fullscreen route-source filters.
