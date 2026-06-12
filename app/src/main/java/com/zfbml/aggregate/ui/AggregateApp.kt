@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.152")
+                setRequestProperty("User-Agent", "ZFBML/0.5.153")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2984,7 +2984,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.152",
+            version = "0.5.153",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -8793,22 +8793,22 @@ private fun PlayerRouteSourceChip(
     Card(
         onClick = onClick,
         modifier = Modifier.width(state.width).height(state.height),
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(state.cornerRadius),
         colors = CardDefaults.cardColors(
             containerColor = Color.White.copy(alpha = state.containerAlpha),
         ),
-        border = BorderStroke(1.dp, accent.copy(alpha = state.borderAlpha)),
+        border = BorderStroke(state.borderWidth, accent.copy(alpha = state.borderAlpha)),
     ) {
         Column(
             modifier = Modifier.fillMaxSize().padding(state.contentPadding),
             verticalArrangement = if (state.detailVisible) Arrangement.SpaceBetween else Arrangement.Center,
         ) {
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(horizontalArrangement = Arrangement.spacedBy(state.headerSpacing), verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     group.name,
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.labelLarge,
-                    color = Color.White,
+                    color = Color.White.copy(alpha = state.titleAlpha),
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -8826,7 +8826,7 @@ private fun PlayerRouteSourceChip(
                 Text(
                     group.footerLabel,
                     style = MaterialTheme.typography.labelSmall,
-                    color = if (state.footerError) MaterialTheme.colorScheme.error else accent,
+                    color = (if (state.footerError) MaterialTheme.colorScheme.error else accent).copy(alpha = state.footerAlpha),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )

@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.153
+
+English:
+
+- Player route-source chips now use `PlayerRouteSourceChipUiState` for card radius, border width, header spacing, title alpha, footer alpha, and existing sizing/opacity values.
+- `PlayerRouteSourceChip` now renders its shell and text opacity from model chrome instead of keeping route-source chip constants inside Compose.
+- Added unit coverage for route-source chip chrome.
+- App version labels, request user agents, and README notes are now updated to `0.5.153`.
+
 ### v0.5.152
 
 English:
