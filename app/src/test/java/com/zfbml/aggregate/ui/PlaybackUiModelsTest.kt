@@ -4940,6 +4940,7 @@ class PlaybackUiModelsTest {
         assertEquals(19.dp, enabled.fullscreenAction.iconSize)
         assertFalse(enabled.fullscreenAction.selected)
         assertTrue(enabled.fullscreenAction.enabled)
+        assertTrue(enabled.fullscreenAction.focusEnabled)
         assertNull(enabled.fullscreenAction.containerTone)
         assertEquals(PlayerChromeBaseColor.White, enabled.fullscreenAction.containerBaseColor)
         assertEquals(0.08f, enabled.fullscreenAction.containerAlpha, 0.001f)

@@ -374,3 +374,5 @@ This pass upgrades player panel-tab focus behavior. `PlayerPanelTabUiState` now 
 This pass upgrades player bottom-action focus behavior. `PlayerActionUiState` now owns action focus eligibility so disabled bottom controls and compact recovery fallbacks remain visible with their disabled presentation but no longer enter the TV or keyboard focus sequence.
 
 This pass upgrades fullscreen side-dock focus behavior. `PlayerFullscreenDockActionUiState` now owns focus eligibility so disabled Episode and Route shortcuts stay visible for playback context while TV and keyboard navigation skip them.
+
+This pass upgrades compact fullscreen-entry focus behavior. `PlayerCompactFullscreenActionUiState` now owns focus eligibility so the compact fullscreen button keeps its enabled/disabled presentation and TV or keyboard focus state under the same tested model contract.
