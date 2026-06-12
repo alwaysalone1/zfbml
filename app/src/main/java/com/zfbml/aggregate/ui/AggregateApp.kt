@@ -2459,7 +2459,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.194")
+                setRequestProperty("User-Agent", "ZFBML/0.5.195")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -2992,7 +2992,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.194",
+            version = "0.5.195",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -9658,8 +9658,8 @@ private fun PlayerTextAction(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val chrome = remember(selected, enabled) {
-        buildPlayerTextActionChromeUiState(selected = selected, enabled = enabled)
+    val chrome = remember(selected, enabled, focusEnabled) {
+        buildPlayerTextActionChromeUiState(selected = selected, enabled = enabled, focusEnabled = focusEnabled)
     }
     val containerBaseColor = chrome.containerTone?.let(::sourceLibraryToneColor) ?: Color.Black
     val disabledContainerBaseColor = chrome.disabledContainerTone?.let(::sourceLibraryToneColor) ?: Color.Black
@@ -9671,7 +9671,7 @@ private fun PlayerTextAction(
         enabled = enabled,
         modifier = modifier
             .height(chrome.height)
-            .focusable(enabled = focusEnabled),
+            .focusable(enabled = chrome.focusEnabled),
         shape = RoundedCornerShape(chrome.cornerRadius),
         colors = ButtonDefaults.textButtonColors(
             containerColor = containerBaseColor.copy(alpha = chrome.containerAlpha),

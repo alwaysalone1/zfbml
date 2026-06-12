@@ -4212,6 +4212,7 @@ class PlaybackUiModelsTest {
         val selected = buildPlayerTextActionChromeUiState(selected = true, enabled = true)
         val normal = buildPlayerTextActionChromeUiState(selected = false, enabled = true)
         val disabled = buildPlayerTextActionChromeUiState(selected = false, enabled = false)
+        val skipped = buildPlayerTextActionChromeUiState(selected = false, enabled = true, focusEnabled = false)
 
         assertEquals(34.dp, selected.height)
         assertEquals(999.dp, selected.cornerRadius)
@@ -4224,14 +4225,20 @@ class PlaybackUiModelsTest {
         assertEquals(SourceLibraryTone.Primary, selected.contentTone)
         assertEquals(1f, selected.contentAlpha, 0.001f)
         assertEquals(0.68f, selected.valueAlpha, 0.001f)
+        assertTrue(selected.focusEnabled)
         assertNull(normal.containerTone)
         assertEquals(0.16f, normal.containerAlpha, 0.001f)
         assertNull(normal.contentTone)
         assertEquals(0.9f, normal.contentAlpha, 0.001f)
+        assertTrue(normal.focusEnabled)
         assertEquals(0.1f, disabled.containerAlpha, 0.001f)
         assertEquals(0.34f, disabled.contentAlpha, 0.001f)
         assertEquals(0.36f, disabled.disabledButtonContentAlpha, 0.001f)
         assertEquals(0.5f, disabled.valueAlpha, 0.001f)
+        assertFalse(disabled.focusEnabled)
+        assertEquals(0.16f, skipped.containerAlpha, 0.001f)
+        assertEquals(0.9f, skipped.contentAlpha, 0.001f)
+        assertFalse(skipped.focusEnabled)
     }
 
     @Test

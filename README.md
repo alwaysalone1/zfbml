@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.195
+
+English:
+
+- Player text action chrome now owns final TV/keyboard focus eligibility through `PlayerTextActionChromeUiState.focusEnabled`.
+- Bottom action buttons can keep enabled visual presentation while being intentionally skipped by focus navigation when a higher-level action model requests it.
+- Added unit coverage for selected, normal, disabled, and focus-skipped text action states.
+- App version labels, request user agents, and README notes are now updated to `0.5.195`.
+
 ### v0.5.194
 
 English:

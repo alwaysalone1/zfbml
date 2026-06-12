@@ -1346,6 +1346,7 @@ internal data class PlayerTextActionChromeUiState(
     val disabledButtonContentTone: SourceLibraryTone?,
     val disabledButtonContentAlpha: Float,
     val valueAlpha: Float,
+    val focusEnabled: Boolean,
 )
 
 internal enum class PlayerChromeBaseColor {
@@ -6372,6 +6373,7 @@ internal fun buildPlayerActionBarUiState(
 internal fun buildPlayerTextActionChromeUiState(
     selected: Boolean,
     enabled: Boolean,
+    focusEnabled: Boolean = enabled,
 ): PlayerTextActionChromeUiState {
     return PlayerTextActionChromeUiState(
         height = 34.dp,
@@ -6397,6 +6399,7 @@ internal fun buildPlayerTextActionChromeUiState(
         disabledButtonContentTone = null,
         disabledButtonContentAlpha = 0.36f,
         valueAlpha = if (enabled) 0.68f else 0.5f,
+        focusEnabled = focusEnabled,
     )
 }
 

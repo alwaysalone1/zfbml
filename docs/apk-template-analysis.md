@@ -396,3 +396,5 @@ This pass upgrades player top route-status focus behavior. `PlayerRouteStatusUiS
 This pass upgrades shared player circle-button focus behavior. `PlayerCircleButtonChromeUiState` now owns focus eligibility so disabled circular playback controls keep their muted chrome but are skipped by TV and keyboard navigation.
 
 This pass upgrades shared player selectable-row focus behavior. `PlayerSelectableRowUiState` now owns row focus eligibility so disabled danmaku, quality, speed, and mapping rows can remain visible for context while TV or keyboard navigation skips unavailable actions.
+
+This pass upgrades shared player text-action focus behavior. `PlayerTextActionChromeUiState` now owns final focus eligibility so bottom playback actions can preserve their enabled or selected chrome while the tested player action model decides whether TV and keyboard navigation should land on them.
