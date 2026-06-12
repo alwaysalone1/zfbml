@@ -417,6 +417,8 @@ class PlaybackUiModelsTest {
         assertTrue(state.decision.contains("\u7b2c 8 \u96c6"))
         assertTrue(state.decision.contains("Online"))
         assertEquals("\u63a8\u8350\u64ad\u653e", state.actionLabel)
+        assertEquals("\u5df2\u5c31\u7eea", state.statusLabel)
+        assertEquals(SourceLibraryTone.Cache, state.statusTone)
         assertFalse(state.showProgress)
         assertTrue(state.useReadyIcon)
         assertEquals(SourceLibraryTone.Cache, state.tone)
@@ -455,10 +457,16 @@ class PlaybackUiModelsTest {
             selectedEpisode = episode(index = 2),
             routeState = buildRouteUiState(episode(index = 2), emptyList(), loading = false, error = null),
         )
+        val failed = buildDetailFirstPlayUiState(
+            selectedEpisode = episode(index = 2),
+            routeState = buildRouteUiState(episode(index = 2), emptyList(), loading = false, error = "HTTP 500"),
+        )
 
         assertEquals("\u5339\u914d\u64ad\u653e\u6e90", loading.title)
         assertTrue(loading.decision.contains("\u4f18\u5148\u5339\u914d"))
         assertEquals("\u81ea\u52a8\u5339\u914d", loading.actionLabel)
+        assertEquals("\u5339\u914d\u4e2d", loading.statusLabel)
+        assertEquals(SourceLibraryTone.Online, loading.statusTone)
         assertTrue(loading.showProgress)
         assertFalse(loading.useReadyIcon)
         assertEquals(SourceLibraryTone.Online, loading.tone)
@@ -466,9 +474,17 @@ class PlaybackUiModelsTest {
 
         assertEquals("\u7b49\u5f85\u53ef\u7528\u64ad\u653e\u6e90", empty.title)
         assertEquals("\u81ea\u52a8\u5339\u914d", empty.actionLabel)
+        assertEquals("\u5f85\u8865\u6e90", empty.statusLabel)
+        assertEquals(SourceLibraryTone.Backup, empty.statusTone)
         assertFalse(empty.showProgress)
         assertEquals(SourceLibraryTone.Backup, empty.tone)
         assertTrue(empty.chips.any { it.label == "\u6e05\u6670\u5ea6" && it.value == "\u5f85\u8865\u6e90" })
+
+        assertEquals("\u64ad\u653e\u6e90\u5f02\u5e38", failed.title)
+        assertEquals("\u5f02\u5e38", failed.statusLabel)
+        assertEquals(SourceLibraryTone.Web, failed.statusTone)
+        assertFalse(failed.showProgress)
+        assertEquals(SourceLibraryTone.Web, failed.tone)
     }
 
     @Test

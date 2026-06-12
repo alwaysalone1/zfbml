@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.217
+
+English:
+
+- Detail first-play guidance now exposes a visible status badge for ready, matching, empty, and failed route states before playback starts.
+- The first-play strip now keeps the action copy, decision text, and route readiness badge in the tested model contract.
+- Added model coverage for first-play status labels and tones alongside existing route decision chips.
+- App version labels, request user agents, and README notes are now updated to `0.5.217`.
+
 ### v0.5.216
 
 English:

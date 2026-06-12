@@ -158,6 +158,8 @@ internal data class DetailFirstPlayUiState(
     val title: String,
     val decision: String,
     val actionLabel: String,
+    val statusLabel: String,
+    val statusTone: SourceLibraryTone,
     val showProgress: Boolean,
     val useReadyIcon: Boolean,
     val tone: SourceLibraryTone,
@@ -2699,6 +2701,13 @@ internal fun buildDetailFirstPlayUiState(
         RouteLoadStatus.Empty -> SourceLibraryTone.Backup
         RouteLoadStatus.Idle -> SourceLibraryTone.Muted
     }
+    val statusLabel = when (routeState.status) {
+        RouteLoadStatus.Ready -> "\u5df2\u5c31\u7eea"
+        RouteLoadStatus.Loading -> "\u5339\u914d\u4e2d"
+        RouteLoadStatus.Failed -> "\u5f02\u5e38"
+        RouteLoadStatus.Empty -> "\u5f85\u8865\u6e90"
+        RouteLoadStatus.Idle -> "\u5f85\u9009\u96c6"
+    }
     val chips = buildList {
         add(DetailFirstPlayChipUiState("\u5f53\u524d\u96c6", episodeLabel, SourceLibraryTone.Primary))
         add(DetailFirstPlayChipUiState("\u63a8\u8350\u6e90", routeState.recommendationTitle, SourceLibraryTone.Online))
@@ -2715,6 +2724,8 @@ internal fun buildDetailFirstPlayUiState(
         title = title,
         decision = decision,
         actionLabel = if (routeState.canPlay) "\u63a8\u8350\u64ad\u653e" else "\u81ea\u52a8\u5339\u914d",
+        statusLabel = statusLabel,
+        statusTone = tone,
         showProgress = routeState.status == RouteLoadStatus.Loading,
         useReadyIcon = routeState.status == RouteLoadStatus.Ready,
         tone = tone,
