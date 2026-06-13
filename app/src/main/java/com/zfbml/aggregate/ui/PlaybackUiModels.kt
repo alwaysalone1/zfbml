@@ -7,6 +7,7 @@ import com.zfbml.aggregate.danmaku.DanmakuEffectStyle
 import com.zfbml.aggregate.danmaku.DanmakuMatch
 import com.zfbml.aggregate.danmaku.DanmakuMatchSource
 import com.zfbml.aggregate.danmaku.DanmakuPlatform
+import com.zfbml.aggregate.danmaku.resolveDanmakuEffectStyle
 import com.zfbml.aggregate.source.Episode
 import com.zfbml.aggregate.source.DownloadPolicy
 import com.zfbml.aggregate.source.MediaDetail
@@ -1530,6 +1531,7 @@ internal data class PlayerDanmakuSettingsUiState(
     val alphaSlider: PlayerDanmakuSliderUiState,
     val fontScaleSlider: PlayerDanmakuSliderUiState,
     val effectOptions: List<PlayerDanmakuEffectOptionUiState>,
+    val effectPlatformProfiles: List<PlayerDanmakuEffectPlatformUiState>,
     val mapping: PlayerDanmakuMappingUiState,
     val search: PlayerDanmakuSearchUiState,
     val safetySummary: String,
@@ -1551,6 +1553,17 @@ internal data class PlayerDanmakuEffectOptionUiState(
     val subtitleAlpha: Float,
     val trailingTone: SourceLibraryTone,
     val rowState: PlayerSelectableRowUiState,
+)
+
+internal data class PlayerDanmakuEffectPlatformUiState(
+    val platform: DanmakuPlatform,
+    val platformLabel: String,
+    val effectStyle: DanmakuEffectStyle,
+    val effectLabel: String,
+    val effectTone: SourceLibraryTone,
+    val modeLabel: String,
+    val modeTone: SourceLibraryTone,
+    val summary: String,
 )
 
 internal data class PlayerDanmakuSearchUiState(
@@ -5697,6 +5710,7 @@ internal fun buildPlayerDanmakuSettingsUiState(
             inactiveTrackAlpha = 0.22f,
         ),
         effectOptions = buildPlayerDanmakuEffectOptionsUiState(effectStyle),
+        effectPlatformProfiles = buildPlayerDanmakuEffectPlatformProfilesUiState(effectStyle),
         mapping = mapping,
         search = search,
         safetySummary = safetySummary,
@@ -5704,6 +5718,36 @@ internal fun buildPlayerDanmakuSettingsUiState(
         safetyTone = safetyTone,
         tone = tone,
     )
+}
+
+internal fun buildPlayerDanmakuEffectPlatformProfilesUiState(
+    selectedStyle: DanmakuEffectStyle,
+): List<PlayerDanmakuEffectPlatformUiState> {
+    val adaptive = selectedStyle == DanmakuEffectStyle.PlatformAdaptive
+    return listOf(
+        DanmakuPlatform.Bilibili,
+        DanmakuPlatform.Tencent,
+        DanmakuPlatform.Iqiyi,
+        DanmakuPlatform.Youku,
+        DanmakuPlatform.Local,
+    ).map { platform ->
+        val resolvedStyle = resolveDanmakuEffectStyle(selectedStyle, platform)
+        val effectLabel = resolvedStyle.danmakuEffectTitle()
+        PlayerDanmakuEffectPlatformUiState(
+            platform = platform,
+            platformLabel = platform.uiDanmakuPlatformLabel(),
+            effectStyle = resolvedStyle,
+            effectLabel = effectLabel,
+            effectTone = resolvedStyle.danmakuEffectTone(),
+            modeLabel = if (adaptive) "按平台" else "全局",
+            modeTone = if (adaptive) SourceLibraryTone.Online else selectedStyle.danmakuEffectTone(),
+            summary = if (adaptive) {
+                "${platform.uiDanmakuPlatformLabel()} 弹幕自动使用 $effectLabel 特效"
+            } else {
+                "${platform.uiDanmakuPlatformLabel()} 弹幕跟随全局 $effectLabel 特效"
+            },
+        )
+    }
 }
 
 internal fun buildPlayerDanmakuEffectOptionsUiState(

@@ -2481,7 +2481,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.233")
+                setRequestProperty("User-Agent", "ZFBML/0.5.234")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -3014,7 +3014,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.233",
+            version = "0.5.234",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -8910,6 +8910,47 @@ private fun PlayerDanmakuSettingsPanel(
                     rowState = option.rowState,
                     onClick = { onEffectStyleChange(option.style) },
                 )
+            }
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(
+                "平台特效映射",
+                style = MaterialTheme.typography.labelMedium,
+                color = Color.White.copy(alpha = 0.84f),
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+            )
+            state.effectPlatformProfiles.forEach { profile ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color.White.copy(alpha = 0.05f))
+                        .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(8.dp))
+                        .padding(horizontal = 10.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        profile.platformLabel,
+                        modifier = Modifier.width(44.dp),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.White.copy(alpha = 0.9f),
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    RouteStatusBadge(profile.effectLabel, sourceLibraryToneColor(profile.effectTone))
+                    RouteStatusBadge(profile.modeLabel, sourceLibraryToneColor(profile.modeTone))
+                    Text(
+                        profile.summary,
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White.copy(alpha = 0.62f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {

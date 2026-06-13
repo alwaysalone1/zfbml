@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.234
+
+English:
+
+- Danmaku effect settings now expose a tested platform mapping preview for Bilibili, Tencent, iQiyi, Youku, and local danmaku sources.
+- `PlayerDanmakuSettingsUiState` now uses the same platform-effect resolver as the Canvas renderer, so the UI explains the actual adaptive or global effect applied at draw time.
+- The danmaku settings panel now shows per-platform effect badges next to the selectable effect styles.
+- App version labels, request user agents, and README notes are now updated to `0.5.234`.
+
 ### v0.5.233
 
 English:

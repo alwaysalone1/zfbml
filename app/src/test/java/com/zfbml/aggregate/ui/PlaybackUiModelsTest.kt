@@ -3525,6 +3525,27 @@ class PlaybackUiModelsTest {
         assertEquals("高对比", highContrastEffect.title)
         assertEquals("清晰", highContrastEffect.statusLabel)
         assertFalse(highContrastEffect.selected)
+        assertEquals(
+            listOf(
+                DanmakuPlatform.Bilibili,
+                DanmakuPlatform.Tencent,
+                DanmakuPlatform.Iqiyi,
+                DanmakuPlatform.Youku,
+                DanmakuPlatform.Local,
+            ),
+            enabled.effectPlatformProfiles.map { it.platform },
+        )
+        assertEquals("B站", enabled.effectPlatformProfiles[0].platformLabel)
+        assertEquals(DanmakuEffectStyle.ClassicStroke, enabled.effectPlatformProfiles[0].effectStyle)
+        assertEquals("经典描边", enabled.effectPlatformProfiles[0].effectLabel)
+        assertEquals("按平台", enabled.effectPlatformProfiles[0].modeLabel)
+        assertEquals(SourceLibraryTone.Online, enabled.effectPlatformProfiles[0].modeTone)
+        assertEquals(DanmakuEffectStyle.CinemaGlow, enabled.effectPlatformProfiles[1].effectStyle)
+        assertEquals(DanmakuEffectStyle.HighContrast, enabled.effectPlatformProfiles[2].effectStyle)
+        val forcedEffect = buildPlayerDanmakuEffectPlatformProfilesUiState(DanmakuEffectStyle.Lightweight)
+        assertEquals(setOf(DanmakuEffectStyle.Lightweight), forcedEffect.map { it.effectStyle }.toSet())
+        assertEquals("全局", forcedEffect.first().modeLabel)
+        assertEquals(SourceLibraryTone.Muted, forcedEffect.first().modeTone)
         assertEquals("弹幕源待校准", enabled.mapping.title)
         assertEquals("搜索弹幕", enabled.mapping.actionLabel)
         assertEquals(listOf("自动匹配"), enabled.mapping.badges.map { it.label })

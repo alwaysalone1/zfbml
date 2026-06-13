@@ -474,3 +474,5 @@ This pass upgrades player panel tab readiness visibility. `PlayerPanelTabUiState
 This pass upgrades player action-bar readiness visibility. `PlayerActionUiState` now carries tested status labels and tones for recovery, quality, speed, route, episode, next-episode, cache, and settings actions, so fullscreen and recovery controls expose their current action state before users open a deeper panel.
 
 This pass upgrades danmaku rendering effects. `DanmakuSettings` now carries a selectable effect style with platform-adaptive rendering as the default, and the Canvas renderer resolves Bilibili, Tencent, iQiyi, Youku, and local danmaku platforms into source-appropriate stroke, glow, contrast, or lightweight paint profiles while the settings panel exposes user-selectable effect rows.
+
+This pass upgrades danmaku effect mapping visibility. `PlayerDanmakuSettingsUiState` now exposes the same per-platform effect resolution used by the Canvas renderer, so the settings panel shows how Bilibili, Tencent, iQiyi, Youku, and local danmaku sources map to adaptive or globally forced render effects before playback draws them.
