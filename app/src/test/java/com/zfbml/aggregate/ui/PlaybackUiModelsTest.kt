@@ -69,6 +69,23 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun routeUiStateUsesSelectedSourceForBestRouteWhenPlayable() {
+        val globalBest = route("global-best", StreamProtocol.HLS, 900, quality = "1080p", sourceId = "source-a")
+        val selectedSource = route("selected-source", StreamProtocol.HLS, 300, quality = "720p", sourceId = "source-b")
+
+        val state = buildRouteUiState(
+            selectedEpisode = episode(),
+            routes = listOf(globalBest, selectedSource),
+            loading = false,
+            error = null,
+            selectedSourceId = "source-b",
+        )
+
+        assertEquals("selected-source", state.bestRoute?.stream?.id)
+        assertEquals(listOf("selected-source"), state.visibleRoutes.map { it.stream.id })
+    }
+
+    @Test
     fun routeUiStateReportsLoadingAndEmptyClearly() {
         val loading = buildRouteUiState(episode(), emptyList(), loading = true, error = null)
         val empty = buildRouteUiState(episode(), emptyList(), loading = false, error = null)
@@ -862,6 +879,35 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun preferredRouteForNextEpisodeUsesRememberedSourceBeforeCurrentSource() {
+        val currentSource = route(
+            id = "current-source",
+            protocol = StreamProtocol.HLS,
+            score = 900,
+            quality = "1080p",
+            sourceId = "source-a",
+            sourceName = "Source A",
+        )
+        val rememberedSource = route(
+            id = "remembered-source",
+            protocol = StreamProtocol.HLS,
+            score = 100,
+            quality = "720p",
+            sourceId = "source-b",
+            sourceName = "Source B",
+        )
+
+        val preferred = preferredRouteForNextEpisode(
+            routes = listOf(currentSource, rememberedSource),
+            preferredSourceId = "source-b",
+            currentSourceId = "source-a",
+            currentProviderId = "provider-a",
+        )
+
+        assertEquals("remembered-source", preferred?.stream?.id)
+    }
+
+    @Test
     fun preferredRouteForNextEpisodeFallsBackWhenCurrentSourceIsNotPlayable() {
         val webViewOnly = route(
             id = "same-source-webview",
@@ -887,6 +933,27 @@ class PlaybackUiModelsTest {
         )
 
         assertEquals("fallback", preferred?.stream?.id)
+    }
+
+    @Test
+    fun preferredSourceIdForRoutesFallsBackWhenRememberedSourceIsUnavailable() {
+        val preferred = route(
+            id = "preferred",
+            protocol = StreamProtocol.HLS,
+            score = 200,
+            quality = "720p",
+            sourceId = "source-b",
+        )
+        val recommended = route(
+            id = "recommended",
+            protocol = StreamProtocol.HLS,
+            score = 900,
+            quality = "1080p",
+            sourceId = "source-a",
+        )
+
+        assertEquals("source-b", preferredSourceIdForRoutes(listOf(recommended, preferred), "source-b"))
+        assertEquals("source-a", preferredSourceIdForRoutes(listOf(recommended, preferred), "missing"))
     }
 
     @Test

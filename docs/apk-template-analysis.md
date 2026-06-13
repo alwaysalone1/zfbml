@@ -484,3 +484,5 @@ This pass upgrades danmaku effect preference durability. The player now restores
 This pass upgrades full danmaku display preference durability. The player now restores and persists danmaku enablement, density, opacity, and font scale in the same local preference store as the effect style, with tested clamping so stale slider values cannot escape the supported rendering ranges.
 
 This pass upgrades playback-speed preference durability. The player now restores speed from local preferences, writes speed choices from the player sheet, and clamps stale values to the supported 0.5x to 2.0x selector range before they reach ExoPlayer or player chrome.
+
+This pass upgrades route-source preference durability. Detail route recommendations, detail playback entry, player manual route selection, next-route switching, and next-episode selection now share a remembered source preference, while unavailable remembered sources fall back to the normal recommended route instead of blocking playback.

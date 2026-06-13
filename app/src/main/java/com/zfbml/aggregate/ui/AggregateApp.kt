@@ -176,6 +176,7 @@ private const val PREF_DANMAKU_ALPHA = "danmaku_alpha"
 private const val PREF_DANMAKU_FONT_SCALE = "danmaku_font_scale"
 private const val PREF_DANMAKU_EFFECT_STYLE = "danmaku_effect_style"
 private const val PREF_PLAYBACK_SPEED = "playback_speed"
+private const val PREF_ROUTE_SOURCE_ID = "route_source_id"
 
 @Composable
 fun AggregateApp(graph: AppGraph, initialQuery: String? = null) {
@@ -2498,7 +2499,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.238")
+                setRequestProperty("User-Agent", "ZFBML/0.5.239")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -3031,7 +3032,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.238",
+            version = "0.5.239",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -3757,7 +3758,14 @@ private fun DetailScreen(
     onBack: () -> Unit,
     onPlay: (MediaDetail, Episode, MediaStream, List<RouteCandidate>) -> Unit,
 ) {
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val playerPreferences = remember(context) {
+        context.applicationContext.getSharedPreferences(PLAYER_PREFERENCES_NAME, Context.MODE_PRIVATE)
+    }
+    var preferredRouteSourceId by remember(playerPreferences) {
+        mutableStateOf(playerPreferences.getString(PREF_ROUTE_SOURCE_ID, null)?.takeIf { it.isNotBlank() })
+    }
     var detail by remember(result) { mutableStateOf<MediaDetail?>(null) }
     var loading by remember(result) { mutableStateOf(true) }
     var error by remember(result) { mutableStateOf<String?>(null) }
@@ -3772,21 +3780,45 @@ private fun DetailScreen(
     var routePrefetchedEpisodeIds by remember(result) { mutableStateOf<Set<String>>(emptySet()) }
     var routePrefetchEmptyEpisodeIds by remember(result) { mutableStateOf<Set<String>>(emptySet()) }
 
+    fun updatePreferredRouteSource(sourceId: String?) {
+        preferredRouteSourceId = sourceId?.takeIf { it.isNotBlank() }
+        playerPreferences
+            .edit()
+            .apply {
+                if (preferredRouteSourceId == null) {
+                    remove(PREF_ROUTE_SOURCE_ID)
+                } else {
+                    putString(PREF_ROUTE_SOURCE_ID, preferredRouteSourceId)
+                }
+            }
+            .apply()
+    }
+
+    fun firstPlayableRouteForPreferredSource(candidates: List<RouteCandidate>): RouteCandidate? {
+        return firstPlayableRouteForSelectedSource(
+            routes = candidates,
+            selectedSourceId = preferredRouteSourceId,
+        )
+    }
+
     fun loadRoutesFor(episode: Episode, autoPlay: Boolean = false) {
         val cachedRoutes = graph.sourceRegistry.peekRouteCandidates(episode)
             ?.let { sortRoutesForUi(it) }
         selectedEpisode = episode
         routes = cachedRoutes ?: emptyList()
         routesError = null
-        routeSourceFilter = cachedRoutes?.let { recommendedSourceIdForRoutes(it) }
+        routeSourceFilter = cachedRoutes?.let {
+            preferredSourceIdForRoutes(it, preferredRouteSourceId)
+        }
         routesFromCache = cachedRoutes != null
         routesExpanded = false
         routesLoading = cachedRoutes == null
         if (cachedRoutes != null) {
             if (autoPlay) {
                 val media = detail
-                val firstRoute = firstPlayableRouteForAutoplay(cachedRoutes)
+                val firstRoute = firstPlayableRouteForPreferredSource(cachedRoutes)
                 if (media != null && firstRoute != null) {
+                    updatePreferredRouteSource(firstRoute.sourceId)
                     onPlay(media, episode, firstRoute.stream, cachedRoutes)
                 }
             }
@@ -3798,12 +3830,13 @@ private fun DetailScreen(
                     if (selectedEpisode?.id != episode.id) return@onSuccess
                     val sortedCandidates = sortRoutesForUi(candidates)
                     routes = sortedCandidates
-                    routeSourceFilter = recommendedSourceIdForRoutes(sortedCandidates)
+                    routeSourceFilter = preferredSourceIdForRoutes(sortedCandidates, preferredRouteSourceId)
                     routesFromCache = false
                     if (autoPlay) {
                         val media = detail
-                        val firstRoute = firstPlayableRouteForAutoplay(sortedCandidates)
+                        val firstRoute = firstPlayableRouteForPreferredSource(sortedCandidates)
                         if (media != null && firstRoute != null) {
+                            updatePreferredRouteSource(firstRoute.sourceId)
                             onPlay(media, episode, firstRoute.stream, sortedCandidates)
                         }
                     }
@@ -3973,6 +4006,7 @@ private fun DetailScreen(
                         if (episode != null) {
                             val bestRoute = routeUiState.bestRoute
                             if (bestRoute != null) {
+                                updatePreferredRouteSource(bestRoute.sourceId)
                                 onPlay(media, episode, bestRoute.stream, sortRoutesForUi(routes))
                             } else {
                                 loadRoutesFor(episode, autoPlay = true)
@@ -4004,6 +4038,7 @@ private fun DetailScreen(
                     onPlayBest = {
                         val episode = selectedEpisode ?: return@DetailRouteStatusCard
                         routeUiState.bestRoute?.let { route ->
+                            updatePreferredRouteSource(route.sourceId)
                             onPlay(media, episode, route.stream, sortRoutesForUi(routes))
                         }
                     },
@@ -4025,7 +4060,10 @@ private fun DetailScreen(
                             routes = routes,
                             selectedSourceId = routeSourceFilter,
                             recommendedSourceId = routeUiState.bestRoute?.sourceId,
-                            onSelected = { routeSourceFilter = it },
+                            onSelected = {
+                                routeSourceFilter = it
+                                updatePreferredRouteSource(it)
+                            },
                             modifier = Modifier.padding(horizontal = 18.dp),
                         )
                     }
@@ -4060,6 +4098,7 @@ private fun DetailScreen(
                         recommended = route.stream.id == routeUiState.bestRoute?.stream?.id,
                         onClick = {
                             val episode = selectedEpisode ?: return@RouteCandidateRow
+                            updatePreferredRouteSource(route.sourceId)
                             onPlay(media, episode, route.stream, sortRoutesForUi(routes))
                         },
                         modifier = Modifier.padding(horizontal = 18.dp),
@@ -5646,6 +5685,9 @@ private fun PlayerScreen(
             ),
         )
     }
+    var preferredRouteSourceId by remember(playerPreferences) {
+        mutableStateOf(playerPreferences.getString(PREF_ROUTE_SOURCE_ID, null)?.takeIf { it.isNotBlank() })
+    }
     var activePanel by remember(stream.id) { mutableStateOf<PlayerPanel?>(null) }
     var episodeLoadingId by remember { mutableStateOf<String?>(null) }
     var controlsVisible by remember(currentStream.id) { mutableStateOf(true) }
@@ -5740,6 +5782,20 @@ private fun PlayerScreen(
         playerPreferences
             .edit()
             .putFloat(PREF_PLAYBACK_SPEED, normalized)
+            .apply()
+    }
+
+    fun updatePreferredRouteSource(sourceId: String?) {
+        preferredRouteSourceId = sourceId?.takeIf { it.isNotBlank() }
+        playerPreferences
+            .edit()
+            .apply {
+                if (preferredRouteSourceId == null) {
+                    remove(PREF_ROUTE_SOURCE_ID)
+                } else {
+                    putString(PREF_ROUTE_SOURCE_ID, preferredRouteSourceId)
+                }
+            }
             .apply()
     }
 
@@ -6011,6 +6067,7 @@ private fun PlayerScreen(
         activePanel = null
         failedStreamIds = emptySet()
         clearRouteNotice()
+        updatePreferredRouteSource(route.sourceId)
         currentStream = route.stream
     }
 
@@ -6036,6 +6093,7 @@ private fun PlayerScreen(
         failedStreamIds = failedIds
         val route = nextPlayableRoute(playerRoutes, currentStream.id, failedIds)
         if (route != null) {
+            updatePreferredRouteSource(route.sourceId)
             showRouteNotice("已切换到 ${route.primaryRouteLabel()}")
             currentStream = route.stream
         } else {
@@ -6053,6 +6111,7 @@ private fun PlayerScreen(
             val sortedCandidates = sortRoutesForUi(candidates)
             val preferredRoute = preferredRouteForNextEpisode(
                 routes = sortedCandidates,
+                preferredSourceId = preferredRouteSourceId,
                 currentSourceId = previousSourceId,
                 currentProviderId = previousProviderId,
             )

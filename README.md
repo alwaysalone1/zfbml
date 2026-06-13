@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.239
+
+English:
+
+- Playback route source preference now remembers the most recently used source and applies it on detail-page route selection and next-episode switching when that source remains playable.
+- Detail-page route recommendations now honor the selected or remembered source before falling back to the global best route.
+- Player route switching and manual next-route actions now write the preferred source through the shared local player preference store.
+- App version labels, request user agents, and README notes are now updated to `0.5.239`.
+
 ### v0.5.238
 
 English:

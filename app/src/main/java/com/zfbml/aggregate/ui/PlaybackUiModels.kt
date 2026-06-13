@@ -2477,7 +2477,11 @@ internal fun buildRouteUiState(
 ): RouteUiState {
     val sortedRoutes = sortRoutesForUi(routes, failedStreamIds)
     val visibleRoutes = sortedRoutes.filter { selectedSourceId == null || it.sourceId == selectedSourceId }
-    val bestRoute = firstPlayableRouteForAutoplay(routes, failedStreamIds)
+    val bestRoute = firstPlayableRouteForSelectedSource(
+        routes = routes,
+        selectedSourceId = selectedSourceId,
+        failedStreamIds = failedStreamIds,
+    )
     val onlineRoutes = routes.filter { it.protocol != StreamProtocol.BITTORRENT && it.protocol != StreamProtocol.WEBVIEW_ONLY }
     val btRoutes = routes.filter { it.protocol == StreamProtocol.BITTORRENT }
     val onlineCount = onlineRoutes.size
@@ -3600,6 +3604,7 @@ internal fun nextPlayableRoute(
 
 internal fun preferredRouteForNextEpisode(
     routes: List<RouteCandidate>,
+    preferredSourceId: String? = null,
     currentSourceId: String?,
     currentProviderId: String?,
     failedStreamIds: Set<String> = emptySet(),
@@ -3613,6 +3618,8 @@ internal fun preferredRouteForNextEpisode(
     if (playableRoutes.isEmpty()) return null
 
     return playableRoutes.firstOrNull { route ->
+        preferredSourceId != null && route.sourceId == preferredSourceId
+    } ?: playableRoutes.firstOrNull { route ->
         currentSourceId != null && route.sourceId == currentSourceId
     } ?: playableRoutes.firstOrNull { route ->
         currentProviderId != null && route.stream.providerId == currentProviderId
@@ -7912,6 +7919,28 @@ internal fun recommendedSourceIdForRoutes(
     failedStreamIds: Set<String> = emptySet(),
 ): String? {
     return firstPlayableRouteForAutoplay(routes, failedStreamIds)?.sourceId
+}
+
+internal fun preferredSourceIdForRoutes(
+    routes: List<RouteCandidate>,
+    preferredSourceId: String?,
+    failedStreamIds: Set<String> = emptySet(),
+): String? {
+    val rememberedSourceId = preferredSourceId?.takeIf { sourceId ->
+        firstPlayableRouteForAutoplay(routes.filter { it.sourceId == sourceId }, failedStreamIds) != null
+    }
+    return rememberedSourceId ?: recommendedSourceIdForRoutes(routes, failedStreamIds)
+}
+
+internal fun firstPlayableRouteForSelectedSource(
+    routes: List<RouteCandidate>,
+    selectedSourceId: String?,
+    failedStreamIds: Set<String> = emptySet(),
+): RouteCandidate? {
+    val sourceRoutes = selectedSourceId?.let { sourceId -> routes.filter { it.sourceId == sourceId } }
+    return sourceRoutes
+        ?.let { firstPlayableRouteForAutoplay(it, failedStreamIds) }
+        ?: firstPlayableRouteForAutoplay(routes, failedStreamIds)
 }
 
 internal fun routeRecommendationReason(route: RouteCandidate?): String {
