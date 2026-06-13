@@ -129,6 +129,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.zfbml.aggregate.AppGraph
+import com.zfbml.aggregate.danmaku.DanmakuEffectStyle
 import com.zfbml.aggregate.danmaku.DanmakuItem
 import com.zfbml.aggregate.danmaku.DanmakuManualMapping
 import com.zfbml.aggregate.danmaku.DanmakuMatch
@@ -2480,7 +2481,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.232")
+                setRequestProperty("User-Agent", "ZFBML/0.5.233")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -3013,7 +3014,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.232",
+            version = "0.5.233",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -5574,6 +5575,7 @@ private fun PlayerScreen(
     var density by remember { mutableFloatStateOf(0.32f) }
     var danmakuAlpha by remember { mutableFloatStateOf(0.76f) }
     var danmakuFontScale by remember { mutableFloatStateOf(0.72f) }
+    var danmakuEffectStyle by remember { mutableStateOf(DanmakuEffectStyle.PlatformAdaptive) }
     var playbackSpeed by remember { mutableFloatStateOf(1f) }
     var activePanel by remember(stream.id) { mutableStateOf<PlayerPanel?>(null) }
     var episodeLoadingId by remember { mutableStateOf<String?>(null) }
@@ -6040,6 +6042,7 @@ private fun PlayerScreen(
                     alpha = danmakuAlpha,
                     density = density,
                     fontScale = danmakuFontScale,
+                    effectStyle = danmakuEffectStyle,
                 ),
                 isPlaying = state.isPlaying,
                 playbackSpeed = playbackSpeed,
@@ -6329,6 +6332,7 @@ private fun PlayerScreen(
                     density = density,
                     danmakuAlpha = danmakuAlpha,
                     danmakuFontScale = danmakuFontScale,
+                    danmakuEffectStyle = danmakuEffectStyle,
                     danmakuSafeAreaState = currentDanmakuSafeAreaState,
                     playbackSpeed = playbackSpeed,
                     episodeLoadingId = episodeLoadingId,
@@ -6352,6 +6356,10 @@ private fun PlayerScreen(
                     onDanmakuFontScaleChange = {
                         revealControls()
                         danmakuFontScale = it
+                    },
+                    onDanmakuEffectStyleChange = {
+                        revealControls()
+                        danmakuEffectStyle = it
                     },
                     onSearchDanmaku = ::refreshDanmakuMapping,
                     onDanmakuSearchQueryChange = { danmakuSearchQuery = it },
@@ -7672,6 +7680,7 @@ private fun PlayerFullscreenDockButton(
     val disabledContentColor = state.disabledContentTone
         ?.let { sourceLibraryToneColor(it) }
         ?: Color.White
+    val statusColor = sourceLibraryToneColor(state.statusTone).copy(alpha = state.statusAlpha)
     TextButton(
         onClick = onClick,
         enabled = state.enabled,
@@ -7694,6 +7703,13 @@ private fun PlayerFullscreenDockButton(
                 state.label,
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                state.statusLabel,
+                style = MaterialTheme.typography.labelSmall,
+                color = statusColor,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -8150,6 +8166,7 @@ private fun PlayerOptionPanel(
     density: Float,
     danmakuAlpha: Float,
     danmakuFontScale: Float,
+    danmakuEffectStyle: DanmakuEffectStyle,
     danmakuSafeAreaState: PlayerDanmakuSafeAreaUiState,
     playbackSpeed: Float,
     episodeLoadingId: String?,
@@ -8162,6 +8179,7 @@ private fun PlayerOptionPanel(
     onDensityChange: (Float) -> Unit,
     onDanmakuAlphaChange: (Float) -> Unit,
     onDanmakuFontScaleChange: (Float) -> Unit,
+    onDanmakuEffectStyleChange: (DanmakuEffectStyle) -> Unit,
     onSearchDanmaku: (String) -> Unit,
     onDanmakuSearchQueryChange: (String) -> Unit,
     onDanmakuCandidateSelected: (DanmakuMatch) -> Unit,
@@ -8293,6 +8311,7 @@ private fun PlayerOptionPanel(
                             density = density,
                             alpha = danmakuAlpha,
                             fontScale = danmakuFontScale,
+                            effectStyle = danmakuEffectStyle,
                             safeArea = danmakuSafeAreaState,
                             onToggleDanmaku = onToggleDanmaku,
                             onSearchDanmaku = onSearchDanmaku,
@@ -8301,6 +8320,7 @@ private fun PlayerOptionPanel(
                             onDensityChange = onDensityChange,
                             onAlphaChange = onDanmakuAlphaChange,
                             onFontScaleChange = onDanmakuFontScaleChange,
+                            onEffectStyleChange = onDanmakuEffectStyleChange,
                         )
                         PlayerPanel.Quality -> PlayerQualityPanel(
                             routes = routeOptions,
@@ -8749,6 +8769,7 @@ private fun PlayerDanmakuSettingsPanel(
     density: Float,
     alpha: Float,
     fontScale: Float,
+    effectStyle: DanmakuEffectStyle,
     safeArea: PlayerDanmakuSafeAreaUiState,
     onToggleDanmaku: () -> Unit,
     onSearchDanmaku: (String) -> Unit,
@@ -8757,13 +8778,15 @@ private fun PlayerDanmakuSettingsPanel(
     onDensityChange: (Float) -> Unit,
     onAlphaChange: (Float) -> Unit,
     onFontScaleChange: (Float) -> Unit,
+    onEffectStyleChange: (DanmakuEffectStyle) -> Unit,
 ) {
-    val state = remember(danmakuEnabled, density, alpha, fontScale, matches, matching, timelineCount, searchQuery, safeArea) {
+    val state = remember(danmakuEnabled, density, alpha, fontScale, effectStyle, matches, matching, timelineCount, searchQuery, safeArea) {
         buildPlayerDanmakuSettingsUiState(
             enabled = danmakuEnabled,
             density = density,
             alpha = alpha,
             fontScale = fontScale,
+            effectStyle = effectStyle,
             matches = matches,
             matching = matching,
             timelineCount = timelineCount,
@@ -8870,6 +8893,25 @@ private fun PlayerDanmakuSettingsPanel(
             state = state.fontScaleSlider,
             onValueChange = onFontScaleChange,
         )
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            state.effectOptions.forEach { option ->
+                PlayerSelectableRow(
+                    title = option.title,
+                    subtitle = option.subtitle,
+                    selected = option.selected,
+                    icon = Icons.Filled.ClosedCaption,
+                    trailing = option.actionLabel,
+                    badges = listOf(SourceLibraryChipUiState(option.statusLabel, option.statusTone)),
+                    actionEnabled = true,
+                    iconAlpha = option.iconAlpha,
+                    titleAlpha = option.titleAlpha,
+                    subtitleAlpha = option.subtitleAlpha,
+                    trailingTone = option.trailingTone,
+                    rowState = option.rowState,
+                    onClick = { onEffectStyleChange(option.style) },
+                )
+            }
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             RouteStatusBadge(state.safetyLabel, sourceLibraryToneColor(state.safetyTone))
             Text(

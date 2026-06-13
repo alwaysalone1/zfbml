@@ -1,6 +1,7 @@
 package com.zfbml.aggregate.ui
 
 import androidx.compose.ui.unit.dp
+import com.zfbml.aggregate.danmaku.DanmakuEffectStyle
 import com.zfbml.aggregate.danmaku.DanmakuMatch
 import com.zfbml.aggregate.danmaku.DanmakuMatchSource
 import com.zfbml.aggregate.danmaku.DanmakuPlatform
@@ -3513,6 +3514,17 @@ class PlaybackUiModelsTest {
         assertEquals(SourceLibraryTone.Backup, enabled.fontScaleSlider.thumbTone)
         assertEquals(SourceLibraryTone.Backup, enabled.fontScaleSlider.activeTrackTone)
         assertEquals(30.dp, enabled.fontScaleSlider.sliderHeight)
+        assertEquals(DanmakuEffectStyle.entries.toList(), enabled.effectOptions.map { it.style })
+        val adaptiveEffect = enabled.effectOptions.first { it.style == DanmakuEffectStyle.PlatformAdaptive }
+        assertEquals("按平台自适应", adaptiveEffect.title)
+        assertEquals("推荐", adaptiveEffect.statusLabel)
+        assertEquals(SourceLibraryTone.Online, adaptiveEffect.statusTone)
+        assertTrue(adaptiveEffect.selected)
+        assertEquals("使用中", adaptiveEffect.actionLabel)
+        val highContrastEffect = enabled.effectOptions.first { it.style == DanmakuEffectStyle.HighContrast }
+        assertEquals("高对比", highContrastEffect.title)
+        assertEquals("清晰", highContrastEffect.statusLabel)
+        assertFalse(highContrastEffect.selected)
         assertEquals("弹幕源待校准", enabled.mapping.title)
         assertEquals("搜索弹幕", enabled.mapping.actionLabel)
         assertEquals(listOf("自动匹配"), enabled.mapping.badges.map { it.label })
@@ -4067,10 +4079,13 @@ class PlaybackUiModelsTest {
         assertTrue(danmaku.focusEnabled)
         assertEquals(SourceLibraryTone.Primary, danmaku.tone)
         assertEquals(48.dp, danmaku.width)
-        assertEquals(48.dp, danmaku.height)
+        assertEquals(56.dp, danmaku.height)
         assertEquals(8.dp, danmaku.cornerRadius)
-        assertEquals(18.dp, danmaku.iconSize)
-        assertEquals(3.dp, danmaku.contentSpacing)
+        assertEquals(16.dp, danmaku.iconSize)
+        assertEquals(1.dp, danmaku.contentSpacing)
+        assertEquals("已开", danmaku.statusLabel)
+        assertEquals(SourceLibraryTone.Primary, danmaku.statusTone)
+        assertEquals(1f, danmaku.statusAlpha)
         assertEquals(SourceLibraryTone.Primary, danmaku.containerTone)
         assertEquals(0.16f, danmaku.containerAlpha)
         assertEquals(SourceLibraryTone.Primary, danmaku.contentTone)
@@ -4080,11 +4095,16 @@ class PlaybackUiModelsTest {
         assertNull(danmaku.disabledContentTone)
         assertEquals(0.32f, danmaku.disabledContentAlpha)
         assertEquals("选集", rich.actions.first { it.kind == PlayerMoreActionKind.Episode }.label)
+        assertEquals("12集", rich.actions.first { it.kind == PlayerMoreActionKind.Episode }.statusLabel)
+        assertEquals(SourceLibraryTone.Cache, rich.actions.first { it.kind == PlayerMoreActionKind.Episode }.statusTone)
         assertTrue(rich.actions.first { it.kind == PlayerMoreActionKind.Episode }.enabled)
         assertTrue(rich.actions.first { it.kind == PlayerMoreActionKind.Episode }.focusEnabled)
+        assertEquals("可换源", rich.actions.first { it.kind == PlayerMoreActionKind.Route }.statusLabel)
+        assertEquals(SourceLibraryTone.Online, rich.actions.first { it.kind == PlayerMoreActionKind.Route }.statusTone)
         assertTrue(rich.actions.first { it.kind == PlayerMoreActionKind.Route }.enabled)
         assertTrue(rich.actions.first { it.kind == PlayerMoreActionKind.Route }.focusEnabled)
         assertEquals("更多", rich.actions.last().label)
+        assertEquals("全部", rich.actions.last().statusLabel)
 
         val disabledDanmaku = limited.actions.first { it.kind == PlayerMoreActionKind.Danmaku }
         assertEquals("弹幕关", disabledDanmaku.label)
@@ -4096,10 +4116,19 @@ class PlaybackUiModelsTest {
         assertEquals(0f, disabledDanmaku.containerAlpha)
         assertNull(disabledDanmaku.contentTone)
         assertEquals(0.82f, disabledDanmaku.contentAlpha)
-        assertFalse(limited.actions.first { it.kind == PlayerMoreActionKind.Episode }.enabled)
-        assertFalse(limited.actions.first { it.kind == PlayerMoreActionKind.Episode }.focusEnabled)
-        assertFalse(limited.actions.first { it.kind == PlayerMoreActionKind.Route }.enabled)
-        assertFalse(limited.actions.first { it.kind == PlayerMoreActionKind.Route }.focusEnabled)
+        assertEquals("已关", disabledDanmaku.statusLabel)
+        assertEquals(SourceLibraryTone.Muted, disabledDanmaku.statusTone)
+        val limitedEpisode = limited.actions.first { it.kind == PlayerMoreActionKind.Episode }
+        assertFalse(limitedEpisode.enabled)
+        assertFalse(limitedEpisode.focusEnabled)
+        assertEquals("单集", limitedEpisode.statusLabel)
+        assertEquals(SourceLibraryTone.Muted, limitedEpisode.statusTone)
+        assertEquals(0.36f, limitedEpisode.statusAlpha)
+        val limitedRoute = limited.actions.first { it.kind == PlayerMoreActionKind.Route }
+        assertFalse(limitedRoute.enabled)
+        assertFalse(limitedRoute.focusEnabled)
+        assertEquals("单线路", limitedRoute.statusLabel)
+        assertEquals(SourceLibraryTone.Muted, limitedRoute.statusTone)
     }
 
     @Test

@@ -17,11 +17,64 @@ class DanmakuSurfaceTest {
         val full = danmakuStrokeColor(alpha = 1f)
         val faded = danmakuStrokeColor(alpha = 0.25f)
         val hidden = danmakuStrokeColor(alpha = 0f)
+        val lightweight = danmakuStrokeColor(alpha = 1f, strokeAlpha = 0.5f)
 
         assertEquals(204, full ushr 24)
         assertEquals(51, faded ushr 24)
         assertEquals(0, hidden ushr 24)
+        assertEquals(127, lightweight ushr 24)
         assertEquals(0x000000, faded and 0x00FFFFFF)
+    }
+
+    @Test
+    fun platformAdaptiveEffectStyleResolvesByDanmakuSourcePlatform() {
+        assertEquals(
+            DanmakuEffectStyle.ClassicStroke,
+            resolveDanmakuEffectStyle(DanmakuEffectStyle.PlatformAdaptive, DanmakuPlatform.Bilibili),
+        )
+        assertEquals(
+            DanmakuEffectStyle.CinemaGlow,
+            resolveDanmakuEffectStyle(DanmakuEffectStyle.PlatformAdaptive, DanmakuPlatform.Tencent),
+        )
+        assertEquals(
+            DanmakuEffectStyle.HighContrast,
+            resolveDanmakuEffectStyle(DanmakuEffectStyle.PlatformAdaptive, DanmakuPlatform.Iqiyi),
+        )
+        assertEquals(
+            DanmakuEffectStyle.CinemaGlow,
+            resolveDanmakuEffectStyle(DanmakuEffectStyle.PlatformAdaptive, DanmakuPlatform.Youku),
+        )
+        assertEquals(
+            DanmakuEffectStyle.Lightweight,
+            resolveDanmakuEffectStyle(DanmakuEffectStyle.Lightweight, DanmakuPlatform.Bilibili),
+        )
+    }
+
+    @Test
+    fun danmakuEffectPaintStyleBuildsDistinctRendererProfiles() {
+        val profile = DanmakuProfile(
+            platform = DanmakuPlatform.Local,
+            strokeWidthPx = 4f,
+            shadowRadiusPx = 4f,
+        )
+
+        val classic = danmakuEffectPaintStyle(DanmakuEffectStyle.ClassicStroke, DanmakuPlatform.Bilibili, profile)
+        val cinema = danmakuEffectPaintStyle(DanmakuEffectStyle.CinemaGlow, DanmakuPlatform.Tencent, profile)
+        val highContrast = danmakuEffectPaintStyle(DanmakuEffectStyle.HighContrast, DanmakuPlatform.Iqiyi, profile)
+        val lightweight = danmakuEffectPaintStyle(DanmakuEffectStyle.Lightweight, DanmakuPlatform.Youku, profile)
+        val adaptiveTencent = danmakuEffectPaintStyle(DanmakuEffectStyle.PlatformAdaptive, DanmakuPlatform.Tencent, profile)
+
+        assertEquals(4f, classic.strokeWidthPx, 0.001f)
+        assertEquals(4f, classic.shadowRadiusPx, 0.001f)
+        assertEquals(0.8f, classic.strokeAlpha, 0.001f)
+        assertEquals(2.88f, cinema.strokeWidthPx, 0.001f)
+        assertEquals(7.2f, cinema.shadowRadiusPx, 0.001f)
+        assertEquals(0.58f, cinema.strokeAlpha, 0.001f)
+        assertEquals(5.4f, highContrast.strokeWidthPx, 0.001f)
+        assertEquals(0.94f, highContrast.strokeAlpha, 0.001f)
+        assertEquals(1.8f, lightweight.strokeWidthPx, 0.001f)
+        assertEquals(0f, lightweight.shadowRadiusPx, 0.001f)
+        assertEquals(cinema, adaptiveTencent)
     }
 
     @Test

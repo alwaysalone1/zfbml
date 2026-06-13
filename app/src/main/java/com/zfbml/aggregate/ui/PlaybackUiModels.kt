@@ -3,6 +3,7 @@ package com.zfbml.aggregate.ui
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.zfbml.aggregate.danmaku.DANMAKU_AUTOMATIC_TIMELINE_MIN_SCORE
+import com.zfbml.aggregate.danmaku.DanmakuEffectStyle
 import com.zfbml.aggregate.danmaku.DanmakuMatch
 import com.zfbml.aggregate.danmaku.DanmakuMatchSource
 import com.zfbml.aggregate.danmaku.DanmakuPlatform
@@ -1297,6 +1298,9 @@ internal data class PlayerFullscreenSideDockUiState(
 internal data class PlayerFullscreenDockActionUiState(
     val kind: PlayerMoreActionKind,
     val label: String,
+    val statusLabel: String,
+    val statusTone: SourceLibraryTone,
+    val statusAlpha: Float,
     val selected: Boolean,
     val enabled: Boolean,
     val focusEnabled: Boolean,
@@ -1525,12 +1529,28 @@ internal data class PlayerDanmakuSettingsUiState(
     val densitySlider: PlayerDanmakuSliderUiState,
     val alphaSlider: PlayerDanmakuSliderUiState,
     val fontScaleSlider: PlayerDanmakuSliderUiState,
+    val effectOptions: List<PlayerDanmakuEffectOptionUiState>,
     val mapping: PlayerDanmakuMappingUiState,
     val search: PlayerDanmakuSearchUiState,
     val safetySummary: String,
     val safetyLabel: String,
     val safetyTone: SourceLibraryTone,
     val tone: SourceLibraryTone,
+)
+
+internal data class PlayerDanmakuEffectOptionUiState(
+    val style: DanmakuEffectStyle,
+    val title: String,
+    val subtitle: String,
+    val selected: Boolean,
+    val statusLabel: String,
+    val statusTone: SourceLibraryTone,
+    val actionLabel: String,
+    val iconAlpha: Float,
+    val titleAlpha: Float,
+    val subtitleAlpha: Float,
+    val trailingTone: SourceLibraryTone,
+    val rowState: PlayerSelectableRowUiState,
 )
 
 internal data class PlayerDanmakuSearchUiState(
@@ -5578,6 +5598,7 @@ internal fun buildPlayerDanmakuSettingsUiState(
     density: Float,
     alpha: Float,
     fontScale: Float,
+    effectStyle: DanmakuEffectStyle = DanmakuEffectStyle.PlatformAdaptive,
     matches: List<DanmakuMatch> = emptyList(),
     matching: Boolean = false,
     timelineCount: Int = 0,
@@ -5675,6 +5696,7 @@ internal fun buildPlayerDanmakuSettingsUiState(
             inactiveTrackTone = null,
             inactiveTrackAlpha = 0.22f,
         ),
+        effectOptions = buildPlayerDanmakuEffectOptionsUiState(effectStyle),
         mapping = mapping,
         search = search,
         safetySummary = safetySummary,
@@ -5682,6 +5704,65 @@ internal fun buildPlayerDanmakuSettingsUiState(
         safetyTone = safetyTone,
         tone = tone,
     )
+}
+
+internal fun buildPlayerDanmakuEffectOptionsUiState(
+    selectedStyle: DanmakuEffectStyle,
+): List<PlayerDanmakuEffectOptionUiState> {
+    return DanmakuEffectStyle.entries.map { style ->
+        val selected = style == selectedStyle
+        val tone = style.danmakuEffectTone()
+        PlayerDanmakuEffectOptionUiState(
+            style = style,
+            title = style.danmakuEffectTitle(),
+            subtitle = style.danmakuEffectSubtitle(),
+            selected = selected,
+            statusLabel = style.danmakuEffectStatusLabel(),
+            statusTone = tone,
+            actionLabel = if (selected) "使用中" else "切换",
+            iconAlpha = if (selected) 1f else 0.72f,
+            titleAlpha = if (selected) 0.96f else 0.82f,
+            subtitleAlpha = if (selected) 0.82f else 0.62f,
+            trailingTone = tone,
+            rowState = buildPlayerSelectableRowUiState(
+                enabled = true,
+                highlighted = selected,
+                prominent = selected,
+            ),
+        )
+    }
+}
+
+private fun DanmakuEffectStyle.danmakuEffectTitle(): String = when (this) {
+    DanmakuEffectStyle.PlatformAdaptive -> "按平台自适应"
+    DanmakuEffectStyle.ClassicStroke -> "经典描边"
+    DanmakuEffectStyle.CinemaGlow -> "柔光影院"
+    DanmakuEffectStyle.HighContrast -> "高对比"
+    DanmakuEffectStyle.Lightweight -> "轻量性能"
+}
+
+private fun DanmakuEffectStyle.danmakuEffectSubtitle(): String = when (this) {
+    DanmakuEffectStyle.PlatformAdaptive -> "根据 B站、腾讯、爱奇艺、优酷或本地弹幕源自动套用对应特效。"
+    DanmakuEffectStyle.ClassicStroke -> "黑色描边和轻阴影，兼容多数视频底色。"
+    DanmakuEffectStyle.CinemaGlow -> "弱描边加青色柔光，适合暗场动画和沉浸观影。"
+    DanmakuEffectStyle.HighContrast -> "加粗描边和强阴影，适合亮场画面和字幕密集场景。"
+    DanmakuEffectStyle.Lightweight -> "减少阴影和描边成本，适合低性能设备或高弹幕密度。"
+}
+
+private fun DanmakuEffectStyle.danmakuEffectStatusLabel(): String = when (this) {
+    DanmakuEffectStyle.PlatformAdaptive -> "推荐"
+    DanmakuEffectStyle.ClassicStroke -> "均衡"
+    DanmakuEffectStyle.CinemaGlow -> "柔光"
+    DanmakuEffectStyle.HighContrast -> "清晰"
+    DanmakuEffectStyle.Lightweight -> "省电"
+}
+
+private fun DanmakuEffectStyle.danmakuEffectTone(): SourceLibraryTone = when (this) {
+    DanmakuEffectStyle.PlatformAdaptive -> SourceLibraryTone.Online
+    DanmakuEffectStyle.ClassicStroke -> SourceLibraryTone.Primary
+    DanmakuEffectStyle.CinemaGlow -> SourceLibraryTone.Online
+    DanmakuEffectStyle.HighContrast -> SourceLibraryTone.Cache
+    DanmakuEffectStyle.Lightweight -> SourceLibraryTone.Muted
 }
 
 internal fun buildPlayerDanmakuSearchUiState(
@@ -7226,6 +7307,8 @@ internal fun buildPlayerFullscreenSideDockUiState(
     fun dockAction(
         kind: PlayerMoreActionKind,
         label: String,
+        statusLabel: String,
+        statusTone: SourceLibraryTone,
         enabled: Boolean = true,
         selected: Boolean = false,
         tone: SourceLibraryTone,
@@ -7233,15 +7316,22 @@ internal fun buildPlayerFullscreenSideDockUiState(
         return PlayerFullscreenDockActionUiState(
             kind = kind,
             label = label,
+            statusLabel = statusLabel,
+            statusTone = statusTone,
+            statusAlpha = when {
+                !enabled -> 0.36f
+                selected -> 1f
+                else -> 0.74f
+            },
             selected = selected,
             enabled = enabled,
             focusEnabled = enabled,
             tone = tone,
             width = 48.dp,
-            height = 48.dp,
+            height = 56.dp,
             cornerRadius = 8.dp,
-            iconSize = 18.dp,
-            contentSpacing = 3.dp,
+            iconSize = 16.dp,
+            contentSpacing = 1.dp,
             containerTone = if (selected) SourceLibraryTone.Primary else null,
             containerAlpha = if (selected) 0.16f else 0f,
             contentTone = if (selected) SourceLibraryTone.Primary else null,
@@ -7257,34 +7347,47 @@ internal fun buildPlayerFullscreenSideDockUiState(
             dockAction(
                 kind = PlayerMoreActionKind.Danmaku,
                 label = if (danmakuEnabled) "弹幕开" else "弹幕关",
+                statusLabel = if (danmakuEnabled) "已开" else "已关",
+                statusTone = if (danmakuEnabled) SourceLibraryTone.Primary else SourceLibraryTone.Muted,
                 selected = danmakuEnabled,
                 tone = if (danmakuEnabled) SourceLibraryTone.Primary else SourceLibraryTone.Muted,
             ),
             dockAction(
                 kind = PlayerMoreActionKind.Quality,
                 label = "清晰度",
-                tone = SourceLibraryTone.Primary,
+                statusLabel = if (routeCount > 0) "可切" else "待线路",
+                statusTone = if (routeCount > 0) SourceLibraryTone.Primary else SourceLibraryTone.Muted,
+                enabled = routeCount > 0,
+                tone = if (routeCount > 0) SourceLibraryTone.Primary else SourceLibraryTone.Muted,
             ),
             dockAction(
                 kind = PlayerMoreActionKind.Speed,
                 label = "倍速",
+                statusLabel = "可调",
+                statusTone = SourceLibraryTone.Online,
                 tone = SourceLibraryTone.Online,
             ),
             dockAction(
                 kind = PlayerMoreActionKind.Episode,
                 label = "选集",
+                statusLabel = if (episodeCount > 1) "${episodeCount}集" else "单集",
+                statusTone = if (episodeCount > 1) SourceLibraryTone.Cache else SourceLibraryTone.Muted,
                 enabled = episodeCount > 1,
-                tone = SourceLibraryTone.Backup,
+                tone = if (episodeCount > 1) SourceLibraryTone.Backup else SourceLibraryTone.Muted,
             ),
             dockAction(
                 kind = PlayerMoreActionKind.Route,
                 label = "换源",
+                statusLabel = if (routeCount > 1) "可换源" else "单线路",
+                statusTone = if (routeCount > 1) SourceLibraryTone.Online else SourceLibraryTone.Muted,
                 enabled = routeCount > 1,
-                tone = SourceLibraryTone.Online,
+                tone = if (routeCount > 1) SourceLibraryTone.Online else SourceLibraryTone.Muted,
             ),
             dockAction(
                 kind = PlayerMoreActionKind.More,
                 label = "更多",
+                statusLabel = "全部",
+                statusTone = SourceLibraryTone.Muted,
                 tone = SourceLibraryTone.Muted,
             ),
         ),

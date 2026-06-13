@@ -472,3 +472,5 @@ This pass upgrades player fullscreen strategy visibility. `PlayerFullscreenStatu
 This pass upgrades player panel tab readiness visibility. `PlayerPanelTabUiState` now carries tested status labels and tones for quality, speed, route, episode, danmaku, and settings tabs, so the player sheet exposes whether each control is switchable, single-state, enabled, or waiting for routes before users open the panel.
 
 This pass upgrades player action-bar readiness visibility. `PlayerActionUiState` now carries tested status labels and tones for recovery, quality, speed, route, episode, next-episode, cache, and settings actions, so fullscreen and recovery controls expose their current action state before users open a deeper panel.
+
+This pass upgrades danmaku rendering effects. `DanmakuSettings` now carries a selectable effect style with platform-adaptive rendering as the default, and the Canvas renderer resolves Bilibili, Tencent, iQiyi, Youku, and local danmaku platforms into source-appropriate stroke, glow, contrast, or lightweight paint profiles while the settings panel exposes user-selectable effect rows.

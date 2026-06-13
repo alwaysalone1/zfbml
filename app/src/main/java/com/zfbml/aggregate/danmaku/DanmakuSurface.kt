@@ -18,6 +18,15 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 
+internal data class DanmakuEffectPaintStyle(
+    val strokeWidthPx: Float,
+    val shadowRadiusPx: Float,
+    val shadowOffsetXPx: Float,
+    val shadowOffsetYPx: Float,
+    val shadowColor: Int,
+    val strokeAlpha: Float,
+)
+
 @Composable
 fun DanmakuSurface(
     items: List<DanmakuItem>,
@@ -109,22 +118,28 @@ fun DanmakuSurface(
         }
         drawIntoCanvas { canvas ->
             val native = canvas.nativeCanvas
-            paintCache.applyFrameStyle(
-                fillPaint = fillPaint,
-                strokePaint = strokePaint,
-                strokeWidthPx = profile.strokeWidthPx,
-                shadowRadiusPx = profile.shadowRadiusPx,
-            )
             preparedLayout.forEachVisible(playbackMs, settings.alpha) { entry, x, entryAlpha ->
+                val effectPaintStyle = danmakuEffectPaintStyle(
+                    effectStyle = settings.effectStyle,
+                    platform = entry.item.platform,
+                    profile = profile,
+                )
                 val metrics = entry.metrics
+                paintCache.applyFrameStyle(
+                    fillPaint = fillPaint,
+                    strokePaint = strokePaint,
+                    effectPaintStyle = effectPaintStyle,
+                )
                 paintCache.applyEntryStyle(
                     fillPaint = fillPaint,
                     strokePaint = strokePaint,
                     textSizePx = metrics.textSizePx,
                     fillColor = danmakuFillColor(entry.item.color, entryAlpha),
-                    strokeColor = danmakuStrokeColor(entryAlpha),
+                    strokeColor = danmakuStrokeColor(entryAlpha, effectPaintStyle.strokeAlpha),
                 )
-                native.drawText(entry.item.text, x, entry.y, strokePaint)
+                if (effectPaintStyle.strokeWidthPx > 0f && effectPaintStyle.strokeAlpha > 0f) {
+                    native.drawText(entry.item.text, x, entry.y, strokePaint)
+                }
                 native.drawText(entry.item.text, x, entry.y, fillPaint)
             }
         }
@@ -159,6 +174,9 @@ internal class DanmakuFrameSnapshot(initialPlaybackMs: Long) {
 private class DanmakuPaintCache {
     private var strokeWidthPx = Float.NaN
     private var shadowRadiusPx = Float.NaN
+    private var shadowOffsetXPx = Float.NaN
+    private var shadowOffsetYPx = Float.NaN
+    private var shadowColor: Int? = null
     private var textSizePx = Float.NaN
     private var fillColor: Int? = null
     private var strokeColor: Int? = null
@@ -166,18 +184,32 @@ private class DanmakuPaintCache {
     fun applyFrameStyle(
         fillPaint: Paint,
         strokePaint: Paint,
-        strokeWidthPx: Float,
-        shadowRadiusPx: Float,
+        effectPaintStyle: DanmakuEffectPaintStyle,
     ) {
-        val safeStrokeWidth = strokeWidthPx.coerceFiniteAtLeast(0f)
+        val safeStrokeWidth = effectPaintStyle.strokeWidthPx.coerceFiniteAtLeast(0f)
         if (this.strokeWidthPx != safeStrokeWidth) {
             strokePaint.strokeWidth = safeStrokeWidth
             this.strokeWidthPx = safeStrokeWidth
         }
-        val safeShadowRadius = shadowRadiusPx.coerceFiniteAtLeast(0f)
-        if (this.shadowRadiusPx != safeShadowRadius) {
-            fillPaint.setShadowLayer(safeShadowRadius, 1f, 1f, DanmakuShadowColor)
+        val safeShadowRadius = effectPaintStyle.shadowRadiusPx.coerceFiniteAtLeast(0f)
+        val safeShadowOffsetX = effectPaintStyle.shadowOffsetXPx.coerceFiniteAtLeast(0f)
+        val safeShadowOffsetY = effectPaintStyle.shadowOffsetYPx.coerceFiniteAtLeast(0f)
+        if (
+            this.shadowRadiusPx != safeShadowRadius ||
+            this.shadowOffsetXPx != safeShadowOffsetX ||
+            this.shadowOffsetYPx != safeShadowOffsetY ||
+            this.shadowColor != effectPaintStyle.shadowColor
+        ) {
+            fillPaint.setShadowLayer(
+                safeShadowRadius,
+                safeShadowOffsetX,
+                safeShadowOffsetY,
+                effectPaintStyle.shadowColor,
+            )
             this.shadowRadiusPx = safeShadowRadius
+            this.shadowOffsetXPx = safeShadowOffsetX
+            this.shadowOffsetYPx = safeShadowOffsetY
+            this.shadowColor = effectPaintStyle.shadowColor
         }
     }
 
@@ -286,8 +318,71 @@ internal fun danmakuFillColor(color: Long, alpha: Float): Int {
 }
 
 internal fun danmakuStrokeColor(alpha: Float): Int {
-    val a = (alpha * DanmakuStrokeAlpha * 255).toInt().coerceIn(0, 255)
+    return danmakuStrokeColor(alpha, DanmakuStrokeAlpha)
+}
+
+internal fun danmakuStrokeColor(alpha: Float, strokeAlpha: Float): Int {
+    val a = (alpha * strokeAlpha.coerceIn(0f, 1f) * 255).toInt().coerceIn(0, 255)
     return a shl 24
+}
+
+internal fun danmakuEffectPaintStyle(
+    effectStyle: DanmakuEffectStyle,
+    platform: DanmakuPlatform,
+    profile: DanmakuProfile,
+): DanmakuEffectPaintStyle {
+    val resolvedStyle = resolveDanmakuEffectStyle(effectStyle, platform)
+    val strokeWidth = profile.strokeWidthPx.coerceFiniteAtLeast(0f)
+    val shadowRadius = profile.shadowRadiusPx.coerceFiniteAtLeast(0f)
+    return when (resolvedStyle) {
+        DanmakuEffectStyle.PlatformAdaptive,
+        DanmakuEffectStyle.ClassicStroke -> DanmakuEffectPaintStyle(
+            strokeWidthPx = strokeWidth,
+            shadowRadiusPx = shadowRadius,
+            shadowOffsetXPx = 1f,
+            shadowOffsetYPx = 1f,
+            shadowColor = DanmakuShadowColor,
+            strokeAlpha = 0.8f,
+        )
+        DanmakuEffectStyle.CinemaGlow -> DanmakuEffectPaintStyle(
+            strokeWidthPx = strokeWidth * 0.72f,
+            shadowRadiusPx = (shadowRadius * 1.8f).coerceAtLeast(6f),
+            shadowOffsetXPx = 0f,
+            shadowOffsetYPx = 0f,
+            shadowColor = 0xAA40E8FF.toInt(),
+            strokeAlpha = 0.58f,
+        )
+        DanmakuEffectStyle.HighContrast -> DanmakuEffectPaintStyle(
+            strokeWidthPx = (strokeWidth * 1.35f).coerceAtLeast(4f),
+            shadowRadiusPx = (shadowRadius * 0.8f).coerceAtLeast(2f),
+            shadowOffsetXPx = 1f,
+            shadowOffsetYPx = 1f,
+            shadowColor = 0xCC000000.toInt(),
+            strokeAlpha = 0.94f,
+        )
+        DanmakuEffectStyle.Lightweight -> DanmakuEffectPaintStyle(
+            strokeWidthPx = strokeWidth * 0.45f,
+            shadowRadiusPx = 0f,
+            shadowOffsetXPx = 0f,
+            shadowOffsetYPx = 0f,
+            shadowColor = 0x00000000,
+            strokeAlpha = 0.5f,
+        )
+    }
+}
+
+internal fun resolveDanmakuEffectStyle(
+    effectStyle: DanmakuEffectStyle,
+    platform: DanmakuPlatform,
+): DanmakuEffectStyle {
+    if (effectStyle != DanmakuEffectStyle.PlatformAdaptive) return effectStyle
+    return when (platform) {
+        DanmakuPlatform.Bilibili -> DanmakuEffectStyle.ClassicStroke
+        DanmakuPlatform.Tencent -> DanmakuEffectStyle.CinemaGlow
+        DanmakuPlatform.Iqiyi -> DanmakuEffectStyle.HighContrast
+        DanmakuPlatform.Youku -> DanmakuEffectStyle.CinemaGlow
+        DanmakuPlatform.Local -> DanmakuEffectStyle.ClassicStroke
+    }
 }
 
 internal fun danmakuFrameDelayMs(

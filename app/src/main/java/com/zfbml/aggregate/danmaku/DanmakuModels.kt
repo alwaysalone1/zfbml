@@ -40,6 +40,14 @@ enum class DanmakuPlatform {
     Local,
 }
 
+enum class DanmakuEffectStyle {
+    PlatformAdaptive,
+    ClassicStroke,
+    CinemaGlow,
+    HighContrast,
+    Lightweight,
+}
+
 data class DanmakuProfile(
     val platform: DanmakuPlatform,
     val fontScale: Float = 1f,
@@ -58,6 +66,7 @@ data class DanmakuSettings(
     val alpha: Float = 0.9f,
     val density: Float = 1f,
     val fontScale: Float = 1f,
+    val effectStyle: DanmakuEffectStyle = DanmakuEffectStyle.PlatformAdaptive,
     val blockedWords: Set<String> = emptySet(),
 )
 
