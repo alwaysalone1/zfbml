@@ -175,6 +175,7 @@ private const val PREF_DANMAKU_DENSITY = "danmaku_density"
 private const val PREF_DANMAKU_ALPHA = "danmaku_alpha"
 private const val PREF_DANMAKU_FONT_SCALE = "danmaku_font_scale"
 private const val PREF_DANMAKU_EFFECT_STYLE = "danmaku_effect_style"
+private const val PREF_PLAYBACK_SPEED = "playback_speed"
 
 @Composable
 fun AggregateApp(graph: AppGraph, initialQuery: String? = null) {
@@ -2497,7 +2498,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.237")
+                setRequestProperty("User-Agent", "ZFBML/0.5.238")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -3030,7 +3031,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.237",
+            version = "0.5.238",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -5635,7 +5636,16 @@ private fun PlayerScreen(
             ),
         )
     }
-    var playbackSpeed by remember { mutableFloatStateOf(1f) }
+    var playbackSpeed by remember(playerPreferences) {
+        mutableFloatStateOf(
+            normalizePlayerPlaybackSpeedPreference(
+                playerPreferences.getFloat(
+                    PREF_PLAYBACK_SPEED,
+                    PLAYER_PLAYBACK_SPEED_DEFAULT,
+                ),
+            ),
+        )
+    }
     var activePanel by remember(stream.id) { mutableStateOf<PlayerPanel?>(null) }
     var episodeLoadingId by remember { mutableStateOf<String?>(null) }
     var controlsVisible by remember(currentStream.id) { mutableStateOf(true) }
@@ -5721,6 +5731,15 @@ private fun PlayerScreen(
         playerPreferences
             .edit()
             .putString(PREF_DANMAKU_EFFECT_STYLE, style.toPreferenceValue())
+            .apply()
+    }
+
+    fun updatePlaybackSpeed(speed: Float) {
+        val normalized = normalizePlayerPlaybackSpeedPreference(speed)
+        playbackSpeed = normalized
+        playerPreferences
+            .edit()
+            .putFloat(PREF_PLAYBACK_SPEED, normalized)
             .apply()
     }
 
@@ -6468,7 +6487,7 @@ private fun PlayerScreen(
                     onDanmakuCandidateSelected = ::calibrateDanmakuMapping,
                     onSpeedSelected = {
                         revealControls()
-                        playbackSpeed = it
+                        updatePlaybackSpeed(it)
                         activePanel = null
                     },
                     onShowPanel = { nextPanel ->

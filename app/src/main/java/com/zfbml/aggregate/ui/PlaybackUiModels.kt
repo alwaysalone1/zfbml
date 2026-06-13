@@ -7587,6 +7587,15 @@ internal fun formatPlaybackSpeedForUi(speed: Float): String {
     return "${if (number.contains(".")) number else "$number.0"}x"
 }
 
+internal const val PLAYER_PLAYBACK_SPEED_DEFAULT = 1f
+
+internal fun normalizePlayerPlaybackSpeedPreference(value: Float): Float {
+    return value
+        .takeIf { it.isFinite() }
+        ?.coerceIn(defaultPlayerSpeedOptions.first(), defaultPlayerSpeedOptions.last())
+        ?: PLAYER_PLAYBACK_SPEED_DEFAULT
+}
+
 private val defaultPlayerSpeedOptions = listOf(0.5f, 0.75f, 1f, 1.25f, 1.5f, 2f)
 
 private fun Float.nearlyEquals(other: Float): Boolean {

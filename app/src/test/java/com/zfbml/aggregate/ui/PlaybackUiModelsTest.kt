@@ -3993,6 +3993,15 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun playerPlaybackSpeedPreferenceClampsPersistedValues() {
+        assertEquals(PLAYER_PLAYBACK_SPEED_DEFAULT, normalizePlayerPlaybackSpeedPreference(Float.NaN))
+        assertEquals(PLAYER_PLAYBACK_SPEED_DEFAULT, normalizePlayerPlaybackSpeedPreference(Float.POSITIVE_INFINITY))
+        assertEquals(0.5f, normalizePlayerPlaybackSpeedPreference(0.25f))
+        assertEquals(2f, normalizePlayerPlaybackSpeedPreference(3f))
+        assertEquals(1.25f, normalizePlayerPlaybackSpeedPreference(1.25f))
+    }
+
+    @Test
     fun playerMorePanelUiStateBuildsSummaryAndActionGrid() {
         val state = buildPlayerMorePanelUiState(
             routeCount = 3,
