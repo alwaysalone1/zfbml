@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.236
+
+English:
+
+- Danmaku effect style choices now persist through local player preferences instead of resetting to the default after the player is recreated.
+- Danmaku effect preference parsing now round-trips every supported style and falls back safely to platform-adaptive rendering for stale values.
+- The persisted choice still feeds the same Canvas renderer and platform mapping preview, preserving source-specific rendering and manual calibration behavior.
+- App version labels, request user agents, and README notes are now updated to `0.5.236`.
+
 ### v0.5.235
 
 English:

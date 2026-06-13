@@ -48,6 +48,14 @@ enum class DanmakuEffectStyle {
     Lightweight,
 }
 
+internal fun DanmakuEffectStyle.toPreferenceValue(): String = name
+
+internal fun danmakuEffectStyleFromPreference(value: String?): DanmakuEffectStyle {
+    return value
+        ?.let { stored -> DanmakuEffectStyle.entries.firstOrNull { it.name == stored } }
+        ?: DanmakuEffectStyle.PlatformAdaptive
+}
+
 data class DanmakuProfile(
     val platform: DanmakuPlatform,
     val fontScale: Float = 1f,

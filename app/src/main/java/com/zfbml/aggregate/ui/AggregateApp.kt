@@ -138,6 +138,8 @@ import com.zfbml.aggregate.danmaku.DanmakuProfile
 import com.zfbml.aggregate.danmaku.DanmakuSafeArea
 import com.zfbml.aggregate.danmaku.DanmakuSettings
 import com.zfbml.aggregate.danmaku.DanmakuSurface
+import com.zfbml.aggregate.danmaku.danmakuEffectStyleFromPreference
+import com.zfbml.aggregate.danmaku.toPreferenceValue
 import com.zfbml.aggregate.player.ExoPlayerEngine
 import com.zfbml.aggregate.player.PlayerViewSurface
 import com.zfbml.aggregate.source.Episode
@@ -159,6 +161,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+private const val PLAYER_PREFERENCES_NAME = "player_preferences"
+private const val PREF_DANMAKU_EFFECT_STYLE = "danmaku_effect_style"
 
 @Composable
 fun AggregateApp(graph: AppGraph, initialQuery: String? = null) {
@@ -2481,7 +2486,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.235")
+                setRequestProperty("User-Agent", "ZFBML/0.5.236")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -3014,7 +3019,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.235",
+            version = "0.5.236",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -5549,6 +5554,9 @@ private fun PlayerScreen(
 ) {
     val context = LocalContext.current
     val activity = remember(context) { context.findActivity() }
+    val playerPreferences = remember(context) {
+        context.applicationContext.getSharedPreferences(PLAYER_PREFERENCES_NAME, Context.MODE_PRIVATE)
+    }
     val scope = rememberCoroutineScope()
     val engine = remember { ExoPlayerEngine(context) }
     val state by engine.state.collectAsState()
@@ -5575,7 +5583,13 @@ private fun PlayerScreen(
     var density by remember { mutableFloatStateOf(0.32f) }
     var danmakuAlpha by remember { mutableFloatStateOf(0.76f) }
     var danmakuFontScale by remember { mutableFloatStateOf(0.72f) }
-    var danmakuEffectStyle by remember { mutableStateOf(DanmakuEffectStyle.PlatformAdaptive) }
+    var danmakuEffectStyle by remember(playerPreferences) {
+        mutableStateOf(
+            danmakuEffectStyleFromPreference(
+                playerPreferences.getString(PREF_DANMAKU_EFFECT_STYLE, null),
+            ),
+        )
+    }
     var playbackSpeed by remember { mutableFloatStateOf(1f) }
     var activePanel by remember(stream.id) { mutableStateOf<PlayerPanel?>(null) }
     var episodeLoadingId by remember { mutableStateOf<String?>(null) }
@@ -6360,6 +6374,10 @@ private fun PlayerScreen(
                     onDanmakuEffectStyleChange = {
                         revealControls()
                         danmakuEffectStyle = it
+                        playerPreferences
+                            .edit()
+                            .putString(PREF_DANMAKU_EFFECT_STYLE, it.toPreferenceValue())
+                            .apply()
                     },
                     onSearchDanmaku = ::refreshDanmakuMapping,
                     onDanmakuSearchQueryChange = { danmakuSearchQuery = it },
