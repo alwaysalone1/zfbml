@@ -2048,6 +2048,8 @@ internal data class RoutePanelUiState(
     val btCount: Int,
     val failedCount: Int,
     val recommendationReason: String,
+    val statusLabel: String,
+    val statusTone: SourceLibraryTone,
     val compactTitle: String,
     val compactSummary: String,
     val detailedTitle: String,
@@ -7573,6 +7575,23 @@ internal fun buildRoutePanelUiState(
     val btCount = availableRoutes.count { it.protocol == StreamProtocol.BITTORRENT }
     val failedCount = failedStreamIds.count { failedId -> routes.any { it.stream.id == failedId } }
     val recommendationReason = routeRecommendationReason(recommendedRoute)
+    val selectedRouteFailed = selectedRoute?.stream?.id in failedStreamIds
+    val statusLabel = when {
+        availableCount <= 0 -> "\u65e0\u53ef\u64ad"
+        selectedRouteFailed && recommendedRoute != null -> "\u5efa\u8bae\u6362\u6e90"
+        failedCount > 0 -> "\u6545\u969c\u515c\u5e95"
+        recommendedRoute?.protocol == StreamProtocol.BITTORRENT -> "\u5907\u7528\u7ebf\u8def"
+        availableCount > 1 -> "\u53ef\u6362\u6e90"
+        else -> "\u5355\u7ebf\u8def"
+    }
+    val statusTone = when {
+        availableCount <= 0 -> SourceLibraryTone.Web
+        selectedRouteFailed && recommendedRoute != null -> SourceLibraryTone.Web
+        failedCount > 0 -> SourceLibraryTone.Backup
+        recommendedRoute?.protocol == StreamProtocol.BITTORRENT -> SourceLibraryTone.Backup
+        availableCount > 1 -> SourceLibraryTone.Online
+        else -> SourceLibraryTone.Cache
+    }
     fun metric(label: String, value: String, tone: SourceLibraryTone): RoutePanelMetricUiState {
         return RoutePanelMetricUiState(
             label = label,
@@ -7613,6 +7632,8 @@ internal fun buildRoutePanelUiState(
         btCount = btCount,
         failedCount = failedCount,
         recommendationReason = recommendationReason,
+        statusLabel = statusLabel,
+        statusTone = statusTone,
         compactTitle = "推荐源 · 可播 $availableCount 源",
         compactSummary = recommendedRoute?.let { recommendationReason } ?: "暂时没有推荐源",
         detailedTitle = "自动推荐 · 共 ${routes.size} 源",

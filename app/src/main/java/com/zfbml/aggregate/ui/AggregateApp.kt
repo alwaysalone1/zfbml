@@ -2480,7 +2480,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.224")
+                setRequestProperty("User-Agent", "ZFBML/0.5.225")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -3013,7 +3013,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.224",
+            version = "0.5.225",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -9335,12 +9335,22 @@ private fun RoutePanelSummaryCard(
                     modifier = Modifier.size(state.iconSize),
                 )
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(state.textSpacing)) {
-                    Text(
-                        if (detailedMode) state.detailedTitle else state.compactTitle,
-                        style = MaterialTheme.typography.titleSmall,
-                        color = Color.White.copy(alpha = state.titleAlpha),
-                        fontWeight = FontWeight.Bold,
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(7.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            if (detailedMode) state.detailedTitle else state.compactTitle,
+                            modifier = Modifier.weight(1f),
+                            style = MaterialTheme.typography.titleSmall,
+                            color = Color.White.copy(alpha = state.titleAlpha),
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        RouteStatusBadge(state.statusLabel, sourceLibraryToneColor(state.statusTone))
+                    }
                     Text(
                         if (detailedMode) state.detailedSummary else state.compactSummary,
                         style = MaterialTheme.typography.bodySmall,

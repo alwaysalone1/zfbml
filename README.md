@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.225
+
+English:
+
+- Player route summaries now expose a visible route-health badge for suggested failover, fallback recovery, switchable routes, single-route playback, BT fallback, and no-playable-route states.
+- `RoutePanelUiState` now keeps route status labels and tones in the tested model contract used by the route summary card.
+- Added model coverage for route-health labels across failed selected routes, single online routes, BT-only fallback, and empty route sets.
+- App version labels, request user agents, and README notes are now updated to `0.5.225`.
+
 ### v0.5.224
 
 English:

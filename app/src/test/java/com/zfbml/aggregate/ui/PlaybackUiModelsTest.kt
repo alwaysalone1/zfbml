@@ -997,6 +997,8 @@ class PlaybackUiModelsTest {
         assertEquals(1, state.onlineCount)
         assertEquals(1, state.btCount)
         assertEquals(1, state.failedCount)
+        assertEquals("\u5efa\u8bae\u6362\u6e90", state.statusLabel)
+        assertEquals(SourceLibraryTone.Web, state.statusTone)
         assertEquals("推荐源 · 可播 2 源", state.compactTitle)
         assertTrue(state.compactSummary.contains("720p"))
         assertEquals("自动推荐 · 共 3 源", state.detailedTitle)
@@ -1045,6 +1047,29 @@ class PlaybackUiModelsTest {
         assertEquals(4.dp, firstMetric.spacing)
         assertEquals(0.7f, firstMetric.labelAlpha)
         assertEquals(1f, firstMetric.valueAlpha, 0.001f)
+    }
+
+    @Test
+    fun routePanelUiStateLabelsRouteHealth() {
+        val single = buildRoutePanelUiState(
+            routes = listOf(route("hls", StreamProtocol.HLS, 900, quality = "1080p")),
+            selectedStreamId = "hls",
+        )
+        val btOnly = buildRoutePanelUiState(
+            routes = listOf(route("bt", StreamProtocol.BITTORRENT, 500, quality = "1080p")),
+            selectedStreamId = "bt",
+        )
+        val empty = buildRoutePanelUiState(
+            routes = emptyList(),
+            selectedStreamId = "",
+        )
+
+        assertEquals("\u5355\u7ebf\u8def", single.statusLabel)
+        assertEquals(SourceLibraryTone.Cache, single.statusTone)
+        assertEquals("\u5907\u7528\u7ebf\u8def", btOnly.statusLabel)
+        assertEquals(SourceLibraryTone.Backup, btOnly.statusTone)
+        assertEquals("\u65e0\u53ef\u64ad", empty.statusLabel)
+        assertEquals(SourceLibraryTone.Web, empty.statusTone)
     }
 
     @Test
