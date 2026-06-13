@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.226
+
+English:
+
+- Player quality panels now expose a visible quality-readiness badge for multi-quality, single-quality, automatic, BT fallback, web-only, and missing-quality states.
+- `PlayerQualityPanelUiState` now keeps quality status labels and tones in the tested model contract used by the quality selector summary.
+- Added model coverage for quality status labels across grouped multi-quality routes, automatic quality, BT-only fallback quality, and empty quality sets.
+- App version labels, request user agents, and README notes are now updated to `0.5.226`.
+
 ### v0.5.225
 
 English:

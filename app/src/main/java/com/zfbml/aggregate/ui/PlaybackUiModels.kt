@@ -1639,6 +1639,8 @@ internal data class PlayerQualityPanelUiState(
     val summary: String,
     val emptyText: String,
     val currentQualityLabel: String,
+    val statusLabel: String,
+    val statusTone: SourceLibraryTone,
     val options: List<PlayerQualityOptionUiState>,
 ) {
     val hasOptions: Boolean = options.isNotEmpty()
@@ -5986,6 +5988,25 @@ internal fun buildPlayerQualityPanelUiState(
                 tone = tone,
             )
         }
+    val hasNativeOption = options.any { it.route.protocol in media3StreamingProtocols }
+    val hasBtOption = options.any { it.route.protocol == StreamProtocol.BITTORRENT }
+    val hasWebOnlyOption = options.any { it.route.protocol == StreamProtocol.WEBVIEW_ONLY }
+    val statusLabel = when {
+        options.isEmpty() -> "\u6682\u65e0\u6863\u4f4d"
+        options.size > 1 && hasNativeOption -> "\u591a\u6863\u53ef\u9009"
+        options.size > 1 -> "\u591a\u6863\u5019\u9009"
+        hasWebOnlyOption -> "\u7f51\u9875\u6863\u4f4d"
+        hasBtOption && !hasNativeOption -> "\u5907\u7528\u6863"
+        currentQualityLabel == "\u81ea\u52a8" -> "\u81ea\u52a8\u6863"
+        else -> "\u5355\u6863\u4f4d"
+    }
+    val statusTone = when {
+        options.isEmpty() -> SourceLibraryTone.Muted
+        hasWebOnlyOption && !hasNativeOption -> SourceLibraryTone.Web
+        hasBtOption && !hasNativeOption -> SourceLibraryTone.Backup
+        options.size > 1 -> SourceLibraryTone.Online
+        else -> SourceLibraryTone.Cache
+    }
     return PlayerQualityPanelUiState(
         summary = if (options.isEmpty()) {
             "当前播放源没有提供可切换清晰度"
@@ -5994,6 +6015,8 @@ internal fun buildPlayerQualityPanelUiState(
         },
         emptyText = "当前播放源没有提供可切换清晰度",
         currentQualityLabel = currentQualityLabel,
+        statusLabel = statusLabel,
+        statusTone = statusTone,
         options = options,
     )
 }

@@ -3762,6 +3762,8 @@ class PlaybackUiModelsTest {
 
         assertTrue(state.hasOptions)
         assertEquals("1080p", state.currentQualityLabel)
+        assertEquals("\u591a\u6863\u53ef\u9009", state.statusLabel)
+        assertEquals(SourceLibraryTone.Online, state.statusTone)
         assertEquals("当前 1080p · 3 档可选", state.summary)
         assertEquals(listOf("1080p", "720p", "4K"), state.options.map { it.title })
         assertEquals("hls-720-better", state.options.first { it.title == "720p" }.route.stream.id)
@@ -3798,10 +3800,15 @@ class PlaybackUiModelsTest {
     @Test
     fun playerQualityPanelUiStateExplainsAutoAndEmptyOptions() {
         val auto = route("auto", StreamProtocol.HLS, 100, quality = "auto")
+        val bt = route("bt", StreamProtocol.BITTORRENT, 200, quality = "1080p")
 
         val state = buildPlayerQualityPanelUiState(
             routes = listOf(auto),
             currentStream = auto.stream,
+        )
+        val btOnly = buildPlayerQualityPanelUiState(
+            routes = listOf(bt),
+            currentStream = bt.stream,
         )
         val empty = buildPlayerQualityPanelUiState(
             routes = emptyList(),
@@ -3809,9 +3816,15 @@ class PlaybackUiModelsTest {
         )
 
         assertEquals("自动", state.currentQualityLabel)
+        assertEquals("\u81ea\u52a8\u6863", state.statusLabel)
+        assertEquals(SourceLibraryTone.Cache, state.statusTone)
         assertEquals("自动", state.options.single().title)
         assertTrue(state.options.single().selected)
+        assertEquals("\u5907\u7528\u6863", btOnly.statusLabel)
+        assertEquals(SourceLibraryTone.Backup, btOnly.statusTone)
         assertFalse(empty.hasOptions)
+        assertEquals("\u6682\u65e0\u6863\u4f4d", empty.statusLabel)
+        assertEquals(SourceLibraryTone.Muted, empty.statusTone)
         assertEquals("当前播放源没有提供可切换清晰度", empty.emptyText)
         assertEquals("当前播放源没有提供可切换清晰度", empty.summary)
     }
