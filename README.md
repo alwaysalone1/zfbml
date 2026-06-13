@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.231
+
+English:
+
+- Player panel tabs now expose short status labels for quality, speed, route, episode, danmaku, and settings availability.
+- `PlayerPanelTabUiState` now keeps tab status labels and tones in the tested model contract used by the player sheet tab strip.
+- Added model coverage for tab status labels across switchable routes, single-route playback, multi-episode lists, single-episode playback, and danmaku on/off states.
+- App version labels, request user agents, and README notes are now updated to `0.5.231`.
+
 ### v0.5.230
 
 English:

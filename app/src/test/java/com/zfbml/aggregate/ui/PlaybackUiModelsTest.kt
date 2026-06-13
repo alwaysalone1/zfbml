@@ -4160,6 +4160,8 @@ class PlaybackUiModelsTest {
         )
         assertTrue(state.tabs.first { it.kind == PlayerPanelKind.Route }.selected)
         assertEquals("在线 3 · BT 1", state.tabs.first { it.kind == PlayerPanelKind.Route }.value)
+        assertEquals("\u53ef\u6362\u6e90", state.tabs.first { it.kind == PlayerPanelKind.Route }.statusLabel)
+        assertEquals(SourceLibraryTone.Online, state.tabs.first { it.kind == PlayerPanelKind.Route }.statusTone)
         assertTrue(state.tabs.first { it.kind == PlayerPanelKind.Route }.enabled)
         val routeTab = state.tabs.first { it.kind == PlayerPanelKind.Route }
         assertTrue(routeTab.actionEnabled)
@@ -4178,8 +4180,12 @@ class PlaybackUiModelsTest {
         assertEquals(4.dp, routeTab.contentSpacing)
         assertEquals(15.dp, routeTab.iconSize)
         assertEquals("12集", state.tabs.first { it.kind == PlayerPanelKind.Episode }.value)
+        assertEquals("12\u96c6", state.tabs.first { it.kind == PlayerPanelKind.Episode }.statusLabel)
+        assertEquals(SourceLibraryTone.Cache, state.tabs.first { it.kind == PlayerPanelKind.Episode }.statusTone)
         assertTrue(state.tabs.first { it.kind == PlayerPanelKind.Danmaku }.highlighted)
         assertEquals("开", state.tabs.first { it.kind == PlayerPanelKind.Danmaku }.value)
+        assertEquals("\u5df2\u5f00", state.tabs.first { it.kind == PlayerPanelKind.Danmaku }.statusLabel)
+        assertEquals(SourceLibraryTone.Primary, state.tabs.first { it.kind == PlayerPanelKind.Danmaku }.statusTone)
         assertEquals(SourceLibraryTone.Primary, state.tabs.first { it.kind == PlayerPanelKind.Danmaku }.tone)
         val danmakuTab = state.tabs.first { it.kind == PlayerPanelKind.Danmaku }
         assertTrue(danmakuTab.actionEnabled)
@@ -4235,6 +4241,8 @@ class PlaybackUiModelsTest {
         assertEquals(1f, moreTab.contentAlpha)
         assertFalse(state.tabs.first { it.kind == PlayerPanelKind.Route }.enabled)
         assertEquals("自动", state.tabs.first { it.kind == PlayerPanelKind.Route }.value)
+        assertEquals("\u5355\u7ebf\u8def", state.tabs.first { it.kind == PlayerPanelKind.Route }.statusLabel)
+        assertEquals(SourceLibraryTone.Muted, state.tabs.first { it.kind == PlayerPanelKind.Route }.statusTone)
         val routeTab = state.tabs.first { it.kind == PlayerPanelKind.Route }
         assertFalse(routeTab.actionEnabled)
         assertFalse(routeTab.tabFocusEnabled)
@@ -4247,8 +4255,12 @@ class PlaybackUiModelsTest {
         assertFalse(episodeTab.enabled)
         assertFalse(episodeTab.tabFocusEnabled)
         assertEquals("单集", state.tabs.first { it.kind == PlayerPanelKind.Episode }.value)
+        assertEquals("\u5355\u96c6", state.tabs.first { it.kind == PlayerPanelKind.Episode }.statusLabel)
+        assertEquals(SourceLibraryTone.Muted, state.tabs.first { it.kind == PlayerPanelKind.Episode }.statusTone)
         assertFalse(state.tabs.first { it.kind == PlayerPanelKind.Danmaku }.highlighted)
         assertEquals("关", state.tabs.first { it.kind == PlayerPanelKind.Danmaku }.value)
+        assertEquals("\u5df2\u5173", state.tabs.first { it.kind == PlayerPanelKind.Danmaku }.statusLabel)
+        assertEquals(SourceLibraryTone.Muted, state.tabs.first { it.kind == PlayerPanelKind.Danmaku }.statusTone)
         assertEquals(SourceLibraryTone.Muted, state.tabs.first { it.kind == PlayerPanelKind.Danmaku }.tone)
         val danmakuTab = state.tabs.first { it.kind == PlayerPanelKind.Danmaku }
         assertTrue(danmakuTab.actionEnabled)

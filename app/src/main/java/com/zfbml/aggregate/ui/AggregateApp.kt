@@ -2480,7 +2480,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.230")
+                setRequestProperty("User-Agent", "ZFBML/0.5.231")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -3013,7 +3013,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.230",
+            version = "0.5.231",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -8478,11 +8478,12 @@ private fun PlayerPanelQuickTab(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            tab.value?.let {
+            val stateText = tab.statusLabel.ifBlank { tab.value.orEmpty() }
+            stateText.takeIf { it.isNotBlank() }?.let {
                 Text(
                     text = it,
                     style = MaterialTheme.typography.labelSmall,
-                    color = baseColor.copy(alpha = tab.valueAlpha),
+                    color = sourceLibraryToneColor(tab.statusTone).copy(alpha = tab.valueAlpha),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
