@@ -2481,7 +2481,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.234")
+                setRequestProperty("User-Agent", "ZFBML/0.5.235")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -3014,7 +3014,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.234",
+            version = "0.5.235",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -8921,32 +8921,59 @@ private fun PlayerDanmakuSettingsPanel(
                 maxLines = 1,
             )
             state.effectPlatformProfiles.forEach { profile ->
+                val rowTone = if (profile.active) {
+                    sourceLibraryToneColor(profile.activeTone)
+                } else {
+                    Color.White
+                }
+                val rowShape = RoundedCornerShape(profile.rowCornerRadius)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Color.White.copy(alpha = 0.05f))
-                        .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(8.dp))
-                        .padding(horizontal = 10.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        .clip(rowShape)
+                        .background(
+                            rowTone.copy(
+                                alpha = if (profile.active) {
+                                    profile.activeRowContainerAlpha
+                                } else {
+                                    profile.rowContainerAlpha
+                                },
+                            ),
+                        )
+                        .border(
+                            1.dp,
+                            rowTone.copy(
+                                alpha = if (profile.active) {
+                                    profile.activeRowBorderAlpha
+                                } else {
+                                    profile.rowBorderAlpha
+                                },
+                            ),
+                            rowShape,
+                        )
+                        .padding(horizontal = profile.horizontalPadding, vertical = profile.verticalPadding),
+                    horizontalArrangement = Arrangement.spacedBy(profile.contentSpacing),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text(
                         profile.platformLabel,
-                        modifier = Modifier.width(44.dp),
+                        modifier = Modifier.width(profile.platformWidth),
                         style = MaterialTheme.typography.labelMedium,
-                        color = Color.White.copy(alpha = 0.9f),
+                        color = Color.White.copy(alpha = profile.platformAlpha),
                         fontWeight = FontWeight.SemiBold,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
                     RouteStatusBadge(profile.effectLabel, sourceLibraryToneColor(profile.effectTone))
                     RouteStatusBadge(profile.modeLabel, sourceLibraryToneColor(profile.modeTone))
+                    if (profile.active) {
+                        RouteStatusBadge(profile.activeLabel, sourceLibraryToneColor(profile.activeTone))
+                    }
                     Text(
                         profile.summary,
                         modifier = Modifier.weight(1f),
                         style = MaterialTheme.typography.labelSmall,
-                        color = Color.White.copy(alpha = 0.62f),
+                        color = Color.White.copy(alpha = profile.summaryAlpha),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )

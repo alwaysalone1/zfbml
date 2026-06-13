@@ -1563,7 +1563,21 @@ internal data class PlayerDanmakuEffectPlatformUiState(
     val effectTone: SourceLibraryTone,
     val modeLabel: String,
     val modeTone: SourceLibraryTone,
+    val active: Boolean,
+    val activeLabel: String,
+    val activeTone: SourceLibraryTone,
     val summary: String,
+    val rowCornerRadius: Dp = 8.dp,
+    val rowContainerAlpha: Float = 0.05f,
+    val activeRowContainerAlpha: Float = 0.1f,
+    val rowBorderAlpha: Float = 0.08f,
+    val activeRowBorderAlpha: Float = 0.32f,
+    val platformWidth: Dp = 44.dp,
+    val horizontalPadding: Dp = 10.dp,
+    val verticalPadding: Dp = 8.dp,
+    val contentSpacing: Dp = 8.dp,
+    val platformAlpha: Float = 0.9f,
+    val summaryAlpha: Float = 0.62f,
 )
 
 internal data class PlayerDanmakuSearchUiState(
@@ -5710,7 +5724,10 @@ internal fun buildPlayerDanmakuSettingsUiState(
             inactiveTrackAlpha = 0.22f,
         ),
         effectOptions = buildPlayerDanmakuEffectOptionsUiState(effectStyle),
-        effectPlatformProfiles = buildPlayerDanmakuEffectPlatformProfilesUiState(effectStyle),
+        effectPlatformProfiles = buildPlayerDanmakuEffectPlatformProfilesUiState(
+            selectedStyle = effectStyle,
+            activePlatform = activeDanmakuTimelinePlatform(matches, timelineCount),
+        ),
         mapping = mapping,
         search = search,
         safetySummary = safetySummary,
@@ -5722,6 +5739,7 @@ internal fun buildPlayerDanmakuSettingsUiState(
 
 internal fun buildPlayerDanmakuEffectPlatformProfilesUiState(
     selectedStyle: DanmakuEffectStyle,
+    activePlatform: DanmakuPlatform? = null,
 ): List<PlayerDanmakuEffectPlatformUiState> {
     val adaptive = selectedStyle == DanmakuEffectStyle.PlatformAdaptive
     return listOf(
@@ -5733,21 +5751,39 @@ internal fun buildPlayerDanmakuEffectPlatformProfilesUiState(
     ).map { platform ->
         val resolvedStyle = resolveDanmakuEffectStyle(selectedStyle, platform)
         val effectLabel = resolvedStyle.danmakuEffectTitle()
+        val platformLabel = platform.uiDanmakuPlatformLabel()
+        val active = platform == activePlatform
         PlayerDanmakuEffectPlatformUiState(
             platform = platform,
-            platformLabel = platform.uiDanmakuPlatformLabel(),
+            platformLabel = platformLabel,
             effectStyle = resolvedStyle,
             effectLabel = effectLabel,
             effectTone = resolvedStyle.danmakuEffectTone(),
             modeLabel = if (adaptive) "按平台" else "全局",
             modeTone = if (adaptive) SourceLibraryTone.Online else selectedStyle.danmakuEffectTone(),
-            summary = if (adaptive) {
-                "${platform.uiDanmakuPlatformLabel()} 弹幕自动使用 $effectLabel 特效"
-            } else {
-                "${platform.uiDanmakuPlatformLabel()} 弹幕跟随全局 $effectLabel 特效"
+            active = active,
+            activeLabel = if (active) "当前源" else "映射",
+            activeTone = if (active) SourceLibraryTone.Primary else SourceLibraryTone.Muted,
+            summary = when {
+                active -> "$platformLabel 是当前弹幕源，正在使用 $effectLabel 特效"
+                adaptive -> "$platformLabel 弹幕自动使用 $effectLabel 特效"
+                else -> "$platformLabel 弹幕跟随全局 $effectLabel 特效"
             },
         )
     }
+}
+
+private fun activeDanmakuTimelinePlatform(
+    matches: List<DanmakuMatch>,
+    timelineCount: Int,
+): DanmakuPlatform? {
+    if (timelineCount <= 0 || matches.isEmpty()) return null
+    return matches.firstOrNull { it.source == DanmakuMatchSource.Manual }?.platform
+        ?: matches
+            .filter { it.score >= DANMAKU_AUTOMATIC_TIMELINE_MIN_SCORE }
+            .maxByOrNull { it.score }
+            ?.platform
+        ?: matches.maxByOrNull { it.score }?.platform
 }
 
 internal fun buildPlayerDanmakuEffectOptionsUiState(

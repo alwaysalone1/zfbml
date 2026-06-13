@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.235
+
+English:
+
+- Danmaku effect mapping now highlights the currently loaded danmaku source platform, so users can see which platform-specific render effect is active during playback.
+- Manual danmaku calibration now wins the active platform-effect marker over higher-scoring automatic candidates once a timeline is loaded.
+- The danmaku settings panel now renders the current-source platform row from tested UI model chrome instead of Compose-local constants.
+- App version labels, request user agents, and README notes are now updated to `0.5.235`.
+
 ### v0.5.234
 
 English:

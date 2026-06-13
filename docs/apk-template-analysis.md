@@ -476,3 +476,5 @@ This pass upgrades player action-bar readiness visibility. `PlayerActionUiState`
 This pass upgrades danmaku rendering effects. `DanmakuSettings` now carries a selectable effect style with platform-adaptive rendering as the default, and the Canvas renderer resolves Bilibili, Tencent, iQiyi, Youku, and local danmaku platforms into source-appropriate stroke, glow, contrast, or lightweight paint profiles while the settings panel exposes user-selectable effect rows.
 
 This pass upgrades danmaku effect mapping visibility. `PlayerDanmakuSettingsUiState` now exposes the same per-platform effect resolution used by the Canvas renderer, so the settings panel shows how Bilibili, Tencent, iQiyi, Youku, and local danmaku sources map to adaptive or globally forced render effects before playback draws them.
+
+This pass upgrades current danmaku-source effect visibility. The settings model now derives the active platform from the loaded timeline, prefers manual calibration over automatic candidates, and highlights the exact platform-effect row that the Canvas renderer will use for the current danmaku source.

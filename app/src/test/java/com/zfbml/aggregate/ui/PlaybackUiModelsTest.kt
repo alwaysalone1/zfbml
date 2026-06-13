@@ -3540,8 +3540,48 @@ class PlaybackUiModelsTest {
         assertEquals("经典描边", enabled.effectPlatformProfiles[0].effectLabel)
         assertEquals("按平台", enabled.effectPlatformProfiles[0].modeLabel)
         assertEquals(SourceLibraryTone.Online, enabled.effectPlatformProfiles[0].modeTone)
+        assertFalse(enabled.effectPlatformProfiles[0].active)
+        assertEquals("映射", enabled.effectPlatformProfiles[0].activeLabel)
+        assertEquals(SourceLibraryTone.Muted, enabled.effectPlatformProfiles[0].activeTone)
+        assertEquals(8.dp, enabled.effectPlatformProfiles[0].rowCornerRadius)
+        assertEquals(0.05f, enabled.effectPlatformProfiles[0].rowContainerAlpha)
+        assertEquals(0.1f, enabled.effectPlatformProfiles[0].activeRowContainerAlpha)
+        assertEquals(0.08f, enabled.effectPlatformProfiles[0].rowBorderAlpha)
+        assertEquals(0.32f, enabled.effectPlatformProfiles[0].activeRowBorderAlpha)
+        assertEquals(44.dp, enabled.effectPlatformProfiles[0].platformWidth)
+        assertEquals(10.dp, enabled.effectPlatformProfiles[0].horizontalPadding)
+        assertEquals(8.dp, enabled.effectPlatformProfiles[0].verticalPadding)
+        assertEquals(8.dp, enabled.effectPlatformProfiles[0].contentSpacing)
+        assertEquals(0.9f, enabled.effectPlatformProfiles[0].platformAlpha)
+        assertEquals(0.62f, enabled.effectPlatformProfiles[0].summaryAlpha)
         assertEquals(DanmakuEffectStyle.CinemaGlow, enabled.effectPlatformProfiles[1].effectStyle)
         assertEquals(DanmakuEffectStyle.HighContrast, enabled.effectPlatformProfiles[2].effectStyle)
+        val loadedTencent = buildPlayerDanmakuSettingsUiState(
+            enabled = true,
+            density = 0.62f,
+            alpha = 0.76f,
+            fontScale = 0.72f,
+            matches = listOf(danmakuMatch("danmaku-tencent", score = 88)),
+            timelineCount = 240,
+        ).effectPlatformProfiles.first { it.platform == DanmakuPlatform.Tencent }
+        assertTrue(loadedTencent.active)
+        assertEquals("当前源", loadedTencent.activeLabel)
+        assertEquals(SourceLibraryTone.Primary, loadedTencent.activeTone)
+        assertTrue(loadedTencent.summary.contains("当前弹幕源"))
+        assertTrue(loadedTencent.summary.contains("柔光影院"))
+        val manualYouku = buildPlayerDanmakuSettingsUiState(
+            enabled = true,
+            density = 0.62f,
+            alpha = 0.76f,
+            fontScale = 0.72f,
+            matches = listOf(
+                danmakuMatch("danmaku-bilibili", score = 96),
+                danmakuMatch("danmaku-youku", score = 100_000, source = DanmakuMatchSource.Manual),
+            ),
+            timelineCount = 120,
+        ).effectPlatformProfiles
+        assertFalse(manualYouku.first { it.platform == DanmakuPlatform.Bilibili }.active)
+        assertTrue(manualYouku.first { it.platform == DanmakuPlatform.Youku }.active)
         val forcedEffect = buildPlayerDanmakuEffectPlatformProfilesUiState(DanmakuEffectStyle.Lightweight)
         assertEquals(setOf(DanmakuEffectStyle.Lightweight), forcedEffect.map { it.effectStyle }.toSet())
         assertEquals("全局", forcedEffect.first().modeLabel)
