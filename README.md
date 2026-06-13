@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.228
+
+English:
+
+- Player episode panels now expose a visible episode-readiness badge for playable-next, switching, single-episode, finished-season, and missing-episode states.
+- `PlayerEpisodePanelUiState` now keeps episode status labels and tones in the tested model contract used by the episode summary card.
+- Added model coverage for episode status labels across playable next episodes, loading episode switches, empty episode sets, single-episode playback, and final-episode playback.
+- App version labels, request user agents, and README notes are now updated to `0.5.228`.
+
 ### v0.5.227
 
 English:

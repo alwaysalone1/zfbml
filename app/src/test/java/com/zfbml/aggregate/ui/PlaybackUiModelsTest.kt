@@ -3122,6 +3122,8 @@ class PlaybackUiModelsTest {
         assertTrue(idle.hasItems)
         assertEquals("Alpha", idle.title)
         assertEquals("当前 第 1 集 · 共 3 集", idle.summary)
+        assertEquals("\u53ef\u7eed\u64ad", idle.statusLabel)
+        assertEquals(SourceLibraryTone.Online, idle.statusTone)
         assertEquals("全部选集", idle.listTitle)
         assertEquals(listOf("正在看", "自动匹配", "3集"), idle.chips.map { it.label })
         assertEquals(9.dp, idle.listSpacing)
@@ -3202,6 +3204,8 @@ class PlaybackUiModelsTest {
         assertEquals(0.045f, loading.items[2].containerAlpha)
         assertEquals(0.08f, loading.items[2].borderAlpha)
         assertEquals(SourceLibraryTone.Muted, loading.items[2].tone)
+        assertEquals("\u5207\u6362\u4e2d", loading.statusLabel)
+        assertEquals(SourceLibraryTone.Backup, loading.statusTone)
     }
 
     @Test
@@ -3223,7 +3227,35 @@ class PlaybackUiModelsTest {
         assertFalse(state.hasItems)
         assertEquals("当前条目没有可切换选集", state.summary)
         assertEquals("当前条目没有可切换选集", state.emptyText)
+        assertEquals("\u6682\u65e0\u9009\u96c6", state.statusLabel)
+        assertEquals(SourceLibraryTone.Muted, state.statusTone)
         assertEquals(listOf("正在看", "自动匹配"), state.chips.map { it.label })
+    }
+
+    @Test
+    fun playerEpisodePanelUiStateLabelsSingleAndLastEpisodeStates() {
+        val singleEpisode = episode(id = "only", index = 1)
+        val singleDetail = MediaDetail(
+            providerId = "provider",
+            title = "Single",
+            url = "https://example.invalid/single",
+            episodes = listOf(singleEpisode),
+        )
+        val episodes = listOf(episode(id = "ep-1", index = 1), episode(id = "ep-2", index = 2))
+        val lastDetail = MediaDetail(
+            providerId = "provider",
+            title = "Last",
+            url = "https://example.invalid/last",
+            episodes = episodes,
+        )
+
+        val single = buildPlayerEpisodePanelUiState(singleDetail, singleEpisode, episodeLoadingId = null)
+        val last = buildPlayerEpisodePanelUiState(lastDetail, episodes[1], episodeLoadingId = null)
+
+        assertEquals("\u5355\u96c6\u64ad\u653e", single.statusLabel)
+        assertEquals(SourceLibraryTone.Cache, single.statusTone)
+        assertEquals("\u5df2\u5230\u672b\u96c6", last.statusLabel)
+        assertEquals(SourceLibraryTone.Primary, last.statusTone)
     }
 
     @Test

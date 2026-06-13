@@ -2480,7 +2480,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.227")
+                setRequestProperty("User-Agent", "ZFBML/0.5.228")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -3013,7 +3013,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.227",
+            version = "0.5.228",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -9491,7 +9491,21 @@ private fun PlayerEpisodePanel(
         )
     }
     if (!state.hasItems) {
-        Text(state.emptyText, style = MaterialTheme.typography.bodyMedium, color = AnimeMuted)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                state.emptyText,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.bodyMedium,
+                color = AnimeMuted,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            RouteStatusBadge(state.statusLabel, sourceLibraryToneColor(state.statusTone))
+        }
         return
     }
     LazyColumn(verticalArrangement = Arrangement.spacedBy(state.listSpacing)) {
@@ -9551,14 +9565,22 @@ private fun PlayerEpisodeSummaryCard(
                 )
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(state.summaryTextSpacing)) {
-                Text(
-                    state.title,
-                    style = MaterialTheme.typography.titleSmall,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(7.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        state.title,
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    RouteStatusBadge(state.statusLabel, sourceLibraryToneColor(state.statusTone))
+                }
                 Text(
                     state.summary,
                     style = MaterialTheme.typography.bodySmall,

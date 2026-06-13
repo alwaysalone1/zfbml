@@ -1435,6 +1435,8 @@ internal data class PlayerEpisodePanelUiState(
     val summary: String,
     val listTitle: String,
     val emptyText: String,
+    val statusLabel: String,
+    val statusTone: SourceLibraryTone,
     val chips: List<SearchResultChipUiState>,
     val items: List<PlayerEpisodeOptionUiState>,
     val listSpacing: Dp,
@@ -5225,10 +5227,25 @@ internal fun buildPlayerEpisodePanelUiState(
         ?: "当前集"
     val episodeCount = detail.episodes.size
     val loadingEpisode = detail.episodes.firstOrNull { it.id == episodeLoadingId }
+    val nextEpisode = nextEpisodeForPlayer(detail.episodes, currentEpisode)
     val summary = when {
         episodeCount <= 0 -> "当前条目没有可切换选集"
         loadingEpisode != null -> "${episodeTitleForPlayer(loadingEpisode)} 正在准备播放源"
         else -> "当前 $currentEpisodeLabel · 共 $episodeCount 集"
+    }
+    val statusLabel = when {
+        episodeCount <= 0 -> "\u6682\u65e0\u9009\u96c6"
+        loadingEpisode != null -> "\u5207\u6362\u4e2d"
+        episodeCount == 1 -> "\u5355\u96c6\u64ad\u653e"
+        nextEpisode != null -> "\u53ef\u7eed\u64ad"
+        else -> "\u5df2\u5230\u672b\u96c6"
+    }
+    val statusTone = when {
+        episodeCount <= 0 -> SourceLibraryTone.Muted
+        loadingEpisode != null -> SourceLibraryTone.Backup
+        episodeCount == 1 -> SourceLibraryTone.Cache
+        nextEpisode != null -> SourceLibraryTone.Online
+        else -> SourceLibraryTone.Primary
     }
     val chips = buildList {
         add(SearchResultChipUiState("正在看", SourceLibraryTone.Primary))
@@ -5311,6 +5328,8 @@ internal fun buildPlayerEpisodePanelUiState(
         summary = summary,
         listTitle = "全部选集",
         emptyText = "当前条目没有可切换选集",
+        statusLabel = statusLabel,
+        statusTone = statusTone,
         chips = chips,
         items = items,
         listSpacing = 9.dp,

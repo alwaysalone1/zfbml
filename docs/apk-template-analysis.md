@@ -462,3 +462,5 @@ This pass upgrades player route-health visibility. `RoutePanelUiState` now carri
 This pass upgrades player quality readiness visibility. `PlayerQualityPanelUiState` now carries a tested status badge for multi-quality, single-quality, automatic, BT fallback, web-only, and missing-quality states, so the quality selector explains whether users can switch quality, rely on automatic selection, or need another route for more quality choices.
 
 This pass upgrades player speed readiness visibility. `PlayerSpeedPanelUiState` now carries a tested status badge for standard, slow, fast, high-speed, custom, and missing preset states, so the speed selector explains whether playback is using a known preset or a custom speed before users adjust it.
+
+This pass upgrades player episode readiness visibility. `PlayerEpisodePanelUiState` now carries a tested status badge for playable-next, switching, single-episode, finished-season, and missing-episode states, so the episode selector explains whether users can continue, are waiting on a switch, or have reached the end of the available list.
