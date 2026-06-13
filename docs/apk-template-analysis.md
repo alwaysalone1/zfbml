@@ -466,3 +466,5 @@ This pass upgrades player speed readiness visibility. `PlayerSpeedPanelUiState` 
 This pass upgrades player episode readiness visibility. `PlayerEpisodePanelUiState` now carries a tested status badge for playable-next, switching, single-episode, finished-season, and missing-episode states, so the episode selector explains whether users can continue, are waiting on a switch, or have reached the end of the available list.
 
 This pass upgrades player top-state visibility. `PlayerTopStatusStripUiState` now includes a tested playback-state chip and `PlayerStartupOverlayUiState` carries a tested loading badge for streaming, progressive, BT, WebView, RTSP, and unknown protocols, so the player explains playback and startup state before users open a deeper panel.
+
+This pass upgrades player fullscreen strategy visibility. `PlayerFullscreenStatusStripUiState` now carries a tested strategy badge for recovery-needed, multi-route multi-episode, source-switchable, episode-switchable, speed-active, and stable playback states, so fullscreen controls expose both playback health and the next available user strategy without opening a panel.

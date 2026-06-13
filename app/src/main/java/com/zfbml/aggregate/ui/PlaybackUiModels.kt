@@ -1090,6 +1090,8 @@ internal data class PlayerStatusChipUiState(
 
 internal data class PlayerFullscreenStatusStripUiState(
     val statusLabel: String,
+    val readinessLabel: String,
+    val readinessTone: SourceLibraryTone,
     val routeSummary: String,
     val tags: List<PlayerFullscreenStatusTagUiState>,
     val error: Boolean,
@@ -6577,8 +6579,25 @@ internal fun buildPlayerFullscreenStatusStripUiState(
     playbackSpeed: Float,
     hasPlaybackIssue: Boolean,
 ): PlayerFullscreenStatusStripUiState {
+    val readinessLabel = when {
+        hasPlaybackIssue -> "\u5f85\u6062\u590d"
+        routeCount > 1 && episodeCount > 1 -> "\u591a\u7ebf\u591a\u96c6"
+        routeCount > 1 -> "\u53ef\u6362\u6e90"
+        episodeCount > 1 -> "\u53ef\u9009\u96c6"
+        !playbackSpeed.nearlyEquals(1f) -> "\u500d\u901f\u4e2d"
+        else -> "\u7a33\u5b9a\u64ad\u653e"
+    }
+    val readinessTone = when {
+        hasPlaybackIssue -> SourceLibraryTone.Web
+        routeCount > 1 -> SourceLibraryTone.Online
+        episodeCount > 1 -> SourceLibraryTone.Cache
+        !playbackSpeed.nearlyEquals(1f) -> SourceLibraryTone.Backup
+        else -> SourceLibraryTone.Cache
+    }
     return PlayerFullscreenStatusStripUiState(
         statusLabel = if (hasPlaybackIssue) "播放异常" else "正在播放",
+        readinessLabel = readinessLabel,
+        readinessTone = readinessTone,
         routeSummary = routeSummary.ifBlank { "自动线路" },
         tags = listOfNotNull(
             quality.ifBlank { "自动" },

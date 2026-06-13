@@ -4443,6 +4443,8 @@ class PlaybackUiModelsTest {
         assertEquals("自动源", top.chips.first { it.label == "来源" }.value)
         assertEquals("自动", top.chips.first { it.label == "清晰度" }.value)
         assertEquals("播放异常", fullscreen.statusLabel)
+        assertEquals("\u5f85\u6062\u590d", fullscreen.readinessLabel)
+        assertEquals(SourceLibraryTone.Web, fullscreen.readinessTone)
         assertEquals("自动线路", fullscreen.routeSummary)
         assertEquals(listOf("自动", "1.0x"), fullscreen.tags.map { it.label })
         assertTrue(fullscreen.error)
@@ -4461,6 +4463,33 @@ class PlaybackUiModelsTest {
         assertEquals(0.86f, fullscreen.routeTextAlpha, 0.001f)
         assertEquals(PlayerChromeBaseColor.White, fullscreen.tags.first().textBaseColor)
         assertEquals(0.62f, fullscreen.tags.first().textAlpha, 0.001f)
+    }
+
+    @Test
+    fun playerFullscreenStatusStripUiStateLabelsPlaybackStrategy() {
+        val rich = buildPlayerFullscreenStatusStripUiState(
+            routeSummary = "Animeko · HLS",
+            quality = "1080p",
+            routeCount = 3,
+            routeCoverageLabel = "在线 2 · BT 1",
+            episodeCount = 12,
+            playbackSpeed = 1f,
+            hasPlaybackIssue = false,
+        )
+        val speed = buildPlayerFullscreenStatusStripUiState(
+            routeSummary = "Animeko · HLS",
+            quality = "1080p",
+            routeCount = 1,
+            routeCoverageLabel = "",
+            episodeCount = 1,
+            playbackSpeed = 1.5f,
+            hasPlaybackIssue = false,
+        )
+
+        assertEquals("\u591a\u7ebf\u591a\u96c6", rich.readinessLabel)
+        assertEquals(SourceLibraryTone.Online, rich.readinessTone)
+        assertEquals("\u500d\u901f\u4e2d", speed.readinessLabel)
+        assertEquals(SourceLibraryTone.Backup, speed.readinessTone)
     }
 
     @Test

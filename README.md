@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.230
+
+English:
+
+- Player fullscreen status strips now expose a second strategy badge for recovery-needed, multi-route multi-episode, source-switchable, episode-switchable, speed-active, and stable playback states.
+- `PlayerFullscreenStatusStripUiState` now keeps strategy labels and tones in the tested model contract used by the fullscreen control chrome.
+- Added model coverage for fullscreen strategy badges across playback issues, rich multi-route playback, and active speed playback.
+- App version labels, request user agents, and README notes are now updated to `0.5.230`.
+
 ### v0.5.229
 
 English:
