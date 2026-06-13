@@ -460,3 +460,5 @@ This pass upgrades player cache action readiness visibility. `PlayerCacheActionU
 This pass upgrades player route-health visibility. `RoutePanelUiState` now carries a tested status badge for suggested failover, fallback recovery, switchable routes, single-route playback, BT fallback, and no-playable-route states, so the player route panel explains whether users should trust the current line, switch source, or wait for another playable route.
 
 This pass upgrades player quality readiness visibility. `PlayerQualityPanelUiState` now carries a tested status badge for multi-quality, single-quality, automatic, BT fallback, web-only, and missing-quality states, so the quality selector explains whether users can switch quality, rely on automatic selection, or need another route for more quality choices.
+
+This pass upgrades player speed readiness visibility. `PlayerSpeedPanelUiState` now carries a tested status badge for standard, slow, fast, high-speed, custom, and missing preset states, so the speed selector explains whether playback is using a known preset or a custom speed before users adjust it.

@@ -3837,6 +3837,8 @@ class PlaybackUiModelsTest {
         )
 
         assertEquals("当前 1.25x · 4 档可选", state.summary)
+        assertEquals("\u5feb\u901f\u64ad\u653e", state.statusLabel)
+        assertEquals(SourceLibraryTone.Online, state.statusTone)
         assertEquals(listOf(0.5f, 1f, 1.25f, 2f), state.options.map { it.speed })
         assertEquals(listOf("0.5x", "1.0x", "1.25x", "2.0x"), state.options.map { it.title })
         assertEquals("慢速回看", state.options.first { it.speed == 0.5f }.subtitle)
@@ -3866,6 +3868,23 @@ class PlaybackUiModelsTest {
         assertEquals(0.76f, fastSpeed.iconAlpha)
         assertNull(fastSpeed.rowState.containerTone)
         assertEquals(0.06f, fastSpeed.rowState.containerAlpha)
+    }
+
+    @Test
+    fun playerSpeedPanelUiStateLabelsPlaybackSpeedStatus() {
+        val standard = buildPlayerSpeedPanelUiState(playbackSpeed = 1f, speeds = listOf(0.5f, 1f, 2f))
+        val slow = buildPlayerSpeedPanelUiState(playbackSpeed = 0.5f, speeds = listOf(0.5f, 1f, 2f))
+        val custom = buildPlayerSpeedPanelUiState(playbackSpeed = 1.33f, speeds = listOf(1f, 1.25f, 1.5f))
+        val empty = buildPlayerSpeedPanelUiState(playbackSpeed = 1f, speeds = emptyList())
+
+        assertEquals("\u6807\u51c6\u500d\u901f", standard.statusLabel)
+        assertEquals(SourceLibraryTone.Cache, standard.statusTone)
+        assertEquals("\u6162\u901f\u56de\u770b", slow.statusLabel)
+        assertEquals(SourceLibraryTone.Backup, slow.statusTone)
+        assertEquals("\u81ea\u5b9a\u4e49\u500d\u901f", custom.statusLabel)
+        assertEquals(SourceLibraryTone.Primary, custom.statusTone)
+        assertEquals("\u65e0\u500d\u901f\u6863", empty.statusLabel)
+        assertEquals(SourceLibraryTone.Muted, empty.statusTone)
     }
 
     @Test

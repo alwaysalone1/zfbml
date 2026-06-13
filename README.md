@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.227
+
+English:
+
+- Player speed panels now expose a visible speed-readiness badge for standard, slow, fast, high-speed, custom, and missing preset states.
+- `PlayerSpeedPanelUiState` now keeps speed status labels and tones in the tested model contract used by the speed selector summary.
+- Added model coverage for speed status labels across preset fast playback, standard playback, slow playback, custom speed, and empty speed preset sets.
+- App version labels, request user agents, and README notes are now updated to `0.5.227`.
+
 ### v0.5.226
 
 English:

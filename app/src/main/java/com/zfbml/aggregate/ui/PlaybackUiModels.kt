@@ -1666,6 +1666,8 @@ internal data class PlayerQualityOptionUiState(
 
 internal data class PlayerSpeedPanelUiState(
     val summary: String,
+    val statusLabel: String,
+    val statusTone: SourceLibraryTone,
     val options: List<PlayerSpeedOptionUiState>,
 )
 
@@ -6071,8 +6073,27 @@ internal fun buildPlayerSpeedPanelUiState(
             tone = tone,
         )
     }
+    val matchedPreset = options.any { it.selected }
+    val statusLabel = when {
+        options.isEmpty() -> "\u65e0\u500d\u901f\u6863"
+        !matchedPreset -> "\u81ea\u5b9a\u4e49\u500d\u901f"
+        playbackSpeed.nearlyEquals(1f) -> "\u6807\u51c6\u500d\u901f"
+        playbackSpeed < 1f -> "\u6162\u901f\u56de\u770b"
+        playbackSpeed >= 2f -> "\u9ad8\u901f\u64ad\u653e"
+        else -> "\u5feb\u901f\u64ad\u653e"
+    }
+    val statusTone = when {
+        options.isEmpty() -> SourceLibraryTone.Muted
+        !matchedPreset -> SourceLibraryTone.Primary
+        playbackSpeed.nearlyEquals(1f) -> SourceLibraryTone.Cache
+        playbackSpeed < 1f -> SourceLibraryTone.Backup
+        playbackSpeed >= 2f -> SourceLibraryTone.Primary
+        else -> SourceLibraryTone.Online
+    }
     return PlayerSpeedPanelUiState(
         summary = "当前 ${formatPlaybackSpeedForUi(playbackSpeed)} · ${options.size} 档可选",
+        statusLabel = statusLabel,
+        statusTone = statusTone,
         options = options,
     )
 }
