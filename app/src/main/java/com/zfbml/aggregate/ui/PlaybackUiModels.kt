@@ -2472,14 +2472,16 @@ internal fun buildRouteUiState(
     loading: Boolean,
     error: String?,
     selectedSourceId: String? = null,
+    preferredQualityLabel: String? = null,
     failedStreamIds: Set<String> = emptySet(),
     loadedFromCache: Boolean = false,
 ): RouteUiState {
     val sortedRoutes = sortRoutesForUi(routes, failedStreamIds)
     val visibleRoutes = sortedRoutes.filter { selectedSourceId == null || it.sourceId == selectedSourceId }
-    val bestRoute = firstPlayableRouteForSelectedSource(
+    val bestRoute = firstPlayableRouteForSelectedSourceAndQuality(
         routes = routes,
         selectedSourceId = selectedSourceId,
+        preferredQualityLabel = preferredQualityLabel,
         failedStreamIds = failedStreamIds,
     )
     val onlineRoutes = routes.filter { it.protocol != StreamProtocol.BITTORRENT && it.protocol != StreamProtocol.WEBVIEW_ONLY }
@@ -3605,6 +3607,7 @@ internal fun nextPlayableRoute(
 internal fun preferredRouteForNextEpisode(
     routes: List<RouteCandidate>,
     preferredSourceId: String? = null,
+    preferredQualityLabel: String? = null,
     currentSourceId: String?,
     currentProviderId: String?,
     failedStreamIds: Set<String> = emptySet(),
@@ -3618,7 +3621,15 @@ internal fun preferredRouteForNextEpisode(
     if (playableRoutes.isEmpty()) return null
 
     return playableRoutes.firstOrNull { route ->
+        preferredSourceId != null &&
+            route.sourceId == preferredSourceId &&
+            route.matchesQualityPreference(preferredQualityLabel)
+    } ?: playableRoutes.firstOrNull { route ->
         preferredSourceId != null && route.sourceId == preferredSourceId
+    } ?: playableRoutes.firstOrNull { route ->
+        currentSourceId != null &&
+            route.sourceId == currentSourceId &&
+            route.matchesQualityPreference(preferredQualityLabel)
     } ?: playableRoutes.firstOrNull { route ->
         currentSourceId != null && route.sourceId == currentSourceId
     } ?: playableRoutes.firstOrNull { route ->
@@ -6230,6 +6241,18 @@ internal fun routeQualityLabelForUi(route: RouteCandidate): String {
     }
 }
 
+internal const val PLAYER_QUALITY_AUTO = "自动"
+
+internal fun normalizePlayerQualityPreference(value: String?): String? {
+    val normalized = value?.trim().orEmpty()
+    if (normalized.isBlank()) return null
+    return if (normalized.equals("auto", ignoreCase = true) || normalized == PLAYER_QUALITY_AUTO) {
+        PLAYER_QUALITY_AUTO
+    } else {
+        normalized
+    }
+}
+
 internal fun buildPlayerSpeedPanelUiState(
     playbackSpeed: Float,
     speeds: List<Float> = defaultPlayerSpeedOptions,
@@ -7941,6 +7964,46 @@ internal fun firstPlayableRouteForSelectedSource(
     return sourceRoutes
         ?.let { firstPlayableRouteForAutoplay(it, failedStreamIds) }
         ?: firstPlayableRouteForAutoplay(routes, failedStreamIds)
+}
+
+internal fun preferredQualityRouteForRoutes(
+    routes: List<RouteCandidate>,
+    preferredQualityLabel: String?,
+    selectedSourceId: String? = null,
+    failedStreamIds: Set<String> = emptySet(),
+): RouteCandidate? {
+    val normalizedQuality = normalizePlayerQualityPreference(preferredQualityLabel) ?: return null
+    val scopedRoutes = selectedSourceId?.let { sourceId -> routes.filter { it.sourceId == sourceId } } ?: routes
+    return sortRoutesForUi(scopedRoutes, failedStreamIds)
+        .distinctBy { it.stream.id }
+        .firstOrNull { route ->
+            route.stream.id !in failedStreamIds &&
+                route.stream.protocol != StreamProtocol.WEBVIEW_ONLY &&
+                route.matchesQualityPreference(normalizedQuality)
+        }
+}
+
+internal fun firstPlayableRouteForSelectedSourceAndQuality(
+    routes: List<RouteCandidate>,
+    selectedSourceId: String?,
+    preferredQualityLabel: String?,
+    failedStreamIds: Set<String> = emptySet(),
+): RouteCandidate? {
+    return preferredQualityRouteForRoutes(
+        routes = routes,
+        preferredQualityLabel = preferredQualityLabel,
+        selectedSourceId = selectedSourceId,
+        failedStreamIds = failedStreamIds,
+    ) ?: firstPlayableRouteForSelectedSource(
+        routes = routes,
+        selectedSourceId = selectedSourceId,
+        failedStreamIds = failedStreamIds,
+    )
+}
+
+private fun RouteCandidate.matchesQualityPreference(preferredQualityLabel: String?): Boolean {
+    val normalizedQuality = normalizePlayerQualityPreference(preferredQualityLabel) ?: return false
+    return routeQualityLabelForUi(this).equals(normalizedQuality, ignoreCase = true)
 }
 
 internal fun routeRecommendationReason(route: RouteCandidate?): String {

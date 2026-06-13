@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.240
+
+English:
+
+- Playback quality preference now remembers the most recently selected quality label from detail-page playback and in-player quality or route switching.
+- Detail-page route recommendations and auto-play now prefer the remembered quality inside the selected or remembered source, while still falling back to the normal best route when that quality is unavailable.
+- Next-episode switching now applies the remembered quality together with the remembered source before falling back to current-source and provider continuity.
+- App version labels, request user agents, and README notes are now updated to `0.5.240`.
+
 ### v0.5.239
 
 English:

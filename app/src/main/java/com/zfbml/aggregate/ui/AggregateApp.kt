@@ -176,6 +176,7 @@ private const val PREF_DANMAKU_ALPHA = "danmaku_alpha"
 private const val PREF_DANMAKU_FONT_SCALE = "danmaku_font_scale"
 private const val PREF_DANMAKU_EFFECT_STYLE = "danmaku_effect_style"
 private const val PREF_PLAYBACK_SPEED = "playback_speed"
+private const val PREF_PLAYBACK_QUALITY = "playback_quality"
 private const val PREF_ROUTE_SOURCE_ID = "route_source_id"
 
 @Composable
@@ -2499,7 +2500,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.239")
+                setRequestProperty("User-Agent", "ZFBML/0.5.240")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -3032,7 +3033,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.239",
+            version = "0.5.240",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -3766,6 +3767,9 @@ private fun DetailScreen(
     var preferredRouteSourceId by remember(playerPreferences) {
         mutableStateOf(playerPreferences.getString(PREF_ROUTE_SOURCE_ID, null)?.takeIf { it.isNotBlank() })
     }
+    var preferredQualityLabel by remember(playerPreferences) {
+        mutableStateOf(normalizePlayerQualityPreference(playerPreferences.getString(PREF_PLAYBACK_QUALITY, null)))
+    }
     var detail by remember(result) { mutableStateOf<MediaDetail?>(null) }
     var loading by remember(result) { mutableStateOf(true) }
     var error by remember(result) { mutableStateOf<String?>(null) }
@@ -3794,10 +3798,30 @@ private fun DetailScreen(
             .apply()
     }
 
+    fun updatePreferredQuality(route: RouteCandidate?) {
+        preferredQualityLabel = route?.let { normalizePlayerQualityPreference(routeQualityLabelForUi(it)) }
+        playerPreferences
+            .edit()
+            .apply {
+                if (preferredQualityLabel == null) {
+                    remove(PREF_PLAYBACK_QUALITY)
+                } else {
+                    putString(PREF_PLAYBACK_QUALITY, preferredQualityLabel)
+                }
+            }
+            .apply()
+    }
+
+    fun updatePreferredPlaybackRoute(route: RouteCandidate) {
+        updatePreferredRouteSource(route.sourceId)
+        updatePreferredQuality(route)
+    }
+
     fun firstPlayableRouteForPreferredSource(candidates: List<RouteCandidate>): RouteCandidate? {
-        return firstPlayableRouteForSelectedSource(
+        return firstPlayableRouteForSelectedSourceAndQuality(
             routes = candidates,
             selectedSourceId = preferredRouteSourceId,
+            preferredQualityLabel = preferredQualityLabel,
         )
     }
 
@@ -3818,7 +3842,7 @@ private fun DetailScreen(
                 val media = detail
                 val firstRoute = firstPlayableRouteForPreferredSource(cachedRoutes)
                 if (media != null && firstRoute != null) {
-                    updatePreferredRouteSource(firstRoute.sourceId)
+                    updatePreferredPlaybackRoute(firstRoute)
                     onPlay(media, episode, firstRoute.stream, cachedRoutes)
                 }
             }
@@ -3836,7 +3860,7 @@ private fun DetailScreen(
                         val media = detail
                         val firstRoute = firstPlayableRouteForPreferredSource(sortedCandidates)
                         if (media != null && firstRoute != null) {
-                            updatePreferredRouteSource(firstRoute.sourceId)
+                            updatePreferredPlaybackRoute(firstRoute)
                             onPlay(media, episode, firstRoute.stream, sortedCandidates)
                         }
                     }
@@ -3881,6 +3905,7 @@ private fun DetailScreen(
         loading = routesLoading,
         error = routesError,
         selectedSourceId = routeSourceFilter,
+        preferredQualityLabel = preferredQualityLabel,
         loadedFromCache = routesFromCache,
     )
     val detailEntryState = buildDetailEntryUiState(
@@ -4006,7 +4031,7 @@ private fun DetailScreen(
                         if (episode != null) {
                             val bestRoute = routeUiState.bestRoute
                             if (bestRoute != null) {
-                                updatePreferredRouteSource(bestRoute.sourceId)
+                                updatePreferredPlaybackRoute(bestRoute)
                                 onPlay(media, episode, bestRoute.stream, sortRoutesForUi(routes))
                             } else {
                                 loadRoutesFor(episode, autoPlay = true)
@@ -4038,7 +4063,7 @@ private fun DetailScreen(
                     onPlayBest = {
                         val episode = selectedEpisode ?: return@DetailRouteStatusCard
                         routeUiState.bestRoute?.let { route ->
-                            updatePreferredRouteSource(route.sourceId)
+                            updatePreferredPlaybackRoute(route)
                             onPlay(media, episode, route.stream, sortRoutesForUi(routes))
                         }
                     },
@@ -4098,7 +4123,7 @@ private fun DetailScreen(
                         recommended = route.stream.id == routeUiState.bestRoute?.stream?.id,
                         onClick = {
                             val episode = selectedEpisode ?: return@RouteCandidateRow
-                            updatePreferredRouteSource(route.sourceId)
+                            updatePreferredPlaybackRoute(route)
                             onPlay(media, episode, route.stream, sortRoutesForUi(routes))
                         },
                         modifier = Modifier.padding(horizontal = 18.dp),
@@ -5688,6 +5713,9 @@ private fun PlayerScreen(
     var preferredRouteSourceId by remember(playerPreferences) {
         mutableStateOf(playerPreferences.getString(PREF_ROUTE_SOURCE_ID, null)?.takeIf { it.isNotBlank() })
     }
+    var preferredQualityLabel by remember(playerPreferences) {
+        mutableStateOf(normalizePlayerQualityPreference(playerPreferences.getString(PREF_PLAYBACK_QUALITY, null)))
+    }
     var activePanel by remember(stream.id) { mutableStateOf<PlayerPanel?>(null) }
     var episodeLoadingId by remember { mutableStateOf<String?>(null) }
     var controlsVisible by remember(currentStream.id) { mutableStateOf(true) }
@@ -5797,6 +5825,25 @@ private fun PlayerScreen(
                 }
             }
             .apply()
+    }
+
+    fun updatePreferredQuality(route: RouteCandidate?) {
+        preferredQualityLabel = route?.let { normalizePlayerQualityPreference(routeQualityLabelForUi(it)) }
+        playerPreferences
+            .edit()
+            .apply {
+                if (preferredQualityLabel == null) {
+                    remove(PREF_PLAYBACK_QUALITY)
+                } else {
+                    putString(PREF_PLAYBACK_QUALITY, preferredQualityLabel)
+                }
+            }
+            .apply()
+    }
+
+    fun updatePreferredPlaybackRoute(route: RouteCandidate) {
+        updatePreferredRouteSource(route.sourceId)
+        updatePreferredQuality(route)
     }
 
     fun clearRouteNotice() {
@@ -6067,7 +6114,7 @@ private fun PlayerScreen(
         activePanel = null
         failedStreamIds = emptySet()
         clearRouteNotice()
-        updatePreferredRouteSource(route.sourceId)
+        updatePreferredPlaybackRoute(route)
         currentStream = route.stream
     }
 
@@ -6093,7 +6140,7 @@ private fun PlayerScreen(
         failedStreamIds = failedIds
         val route = nextPlayableRoute(playerRoutes, currentStream.id, failedIds)
         if (route != null) {
-            updatePreferredRouteSource(route.sourceId)
+            updatePreferredPlaybackRoute(route)
             showRouteNotice("已切换到 ${route.primaryRouteLabel()}")
             currentStream = route.stream
         } else {
@@ -6112,6 +6159,7 @@ private fun PlayerScreen(
             val preferredRoute = preferredRouteForNextEpisode(
                 routes = sortedCandidates,
                 preferredSourceId = preferredRouteSourceId,
+                preferredQualityLabel = preferredQualityLabel,
                 currentSourceId = previousSourceId,
                 currentProviderId = previousProviderId,
             )

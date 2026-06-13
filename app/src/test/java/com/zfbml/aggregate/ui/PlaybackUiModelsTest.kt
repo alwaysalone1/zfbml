@@ -86,6 +86,24 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun routeUiStateUsesPreferredQualityInsideSelectedSource() {
+        val selectedBest = route("source-1080", StreamProtocol.HLS, 900, quality = "1080p", sourceId = "source-b")
+        val selectedQuality = route("source-720", StreamProtocol.HLS, 100, quality = "720p", sourceId = "source-b")
+        val globalBest = route("global-best", StreamProtocol.HLS, 1_000, quality = "1080p", sourceId = "source-a")
+
+        val state = buildRouteUiState(
+            selectedEpisode = episode(),
+            routes = listOf(globalBest, selectedBest, selectedQuality),
+            loading = false,
+            error = null,
+            selectedSourceId = "source-b",
+            preferredQualityLabel = "720p",
+        )
+
+        assertEquals("source-720", state.bestRoute?.stream?.id)
+    }
+
+    @Test
     fun routeUiStateReportsLoadingAndEmptyClearly() {
         val loading = buildRouteUiState(episode(), emptyList(), loading = true, error = null)
         val empty = buildRouteUiState(episode(), emptyList(), loading = false, error = null)
@@ -908,6 +926,44 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun preferredRouteForNextEpisodeUsesRememberedQualityInsideRememberedSource() {
+        val rememberedBest = route(
+            id = "remembered-1080",
+            protocol = StreamProtocol.HLS,
+            score = 900,
+            quality = "1080p",
+            sourceId = "source-b",
+            sourceName = "Source B",
+        )
+        val rememberedQuality = route(
+            id = "remembered-720",
+            protocol = StreamProtocol.HLS,
+            score = 100,
+            quality = "720p",
+            sourceId = "source-b",
+            sourceName = "Source B",
+        )
+        val currentSource = route(
+            id = "current-720",
+            protocol = StreamProtocol.HLS,
+            score = 1_000,
+            quality = "720p",
+            sourceId = "source-a",
+            sourceName = "Source A",
+        )
+
+        val preferred = preferredRouteForNextEpisode(
+            routes = listOf(currentSource, rememberedBest, rememberedQuality),
+            preferredSourceId = "source-b",
+            preferredQualityLabel = "720p",
+            currentSourceId = "source-a",
+            currentProviderId = "provider-a",
+        )
+
+        assertEquals("remembered-720", preferred?.stream?.id)
+    }
+
+    @Test
     fun preferredRouteForNextEpisodeFallsBackWhenCurrentSourceIsNotPlayable() {
         val webViewOnly = route(
             id = "same-source-webview",
@@ -954,6 +1010,21 @@ class PlaybackUiModelsTest {
 
         assertEquals("source-b", preferredSourceIdForRoutes(listOf(recommended, preferred), "source-b"))
         assertEquals("source-a", preferredSourceIdForRoutes(listOf(recommended, preferred), "missing"))
+    }
+
+    @Test
+    fun firstPlayableRouteForSelectedSourceAndQualityFallsBackWhenQualityIsMissing() {
+        val selectedBest = route("source-1080", StreamProtocol.HLS, 900, quality = "1080p", sourceId = "source-b")
+        val selectedLower = route("source-720", StreamProtocol.HLS, 100, quality = "720p", sourceId = "source-b")
+        val globalQuality = route("global-4k", StreamProtocol.HLS, 1_000, quality = "4K", sourceId = "source-a")
+
+        val preferred = firstPlayableRouteForSelectedSourceAndQuality(
+            routes = listOf(globalQuality, selectedBest, selectedLower),
+            selectedSourceId = "source-b",
+            preferredQualityLabel = "4K",
+        )
+
+        assertEquals("source-1080", preferred?.stream?.id)
     }
 
     @Test
@@ -4066,6 +4137,15 @@ class PlaybackUiModelsTest {
         assertEquals(0.5f, normalizePlayerPlaybackSpeedPreference(0.25f))
         assertEquals(2f, normalizePlayerPlaybackSpeedPreference(3f))
         assertEquals(1.25f, normalizePlayerPlaybackSpeedPreference(1.25f))
+    }
+
+    @Test
+    fun playerQualityPreferenceNormalizesPersistedValues() {
+        assertNull(normalizePlayerQualityPreference(null))
+        assertNull(normalizePlayerQualityPreference("   "))
+        assertEquals(PLAYER_QUALITY_AUTO, normalizePlayerQualityPreference("auto"))
+        assertEquals(PLAYER_QUALITY_AUTO, normalizePlayerQualityPreference("自动"))
+        assertEquals("1080p", normalizePlayerQualityPreference(" 1080p "))
     }
 
     @Test
