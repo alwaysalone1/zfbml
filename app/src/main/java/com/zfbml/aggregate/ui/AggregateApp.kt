@@ -2480,7 +2480,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.231")
+                setRequestProperty("User-Agent", "ZFBML/0.5.232")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -3013,7 +3013,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.231",
+            version = "0.5.232",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -8078,7 +8078,8 @@ private fun PlayerActionBar(
                 PlayerTextAction(
                     icon = action.icon,
                     title = action.state.title,
-                    value = if (compactValues) null else action.state.value,
+                    value = if (compactValues) null else action.state.statusLabel.ifBlank { action.state.value.orEmpty() },
+                    valueTone = action.state.statusTone,
                     selected = action.state.selected,
                     enabled = action.state.enabled,
                     focusEnabled = action.state.actionFocusEnabled,
@@ -9854,6 +9855,7 @@ private fun PlayerTextAction(
     icon: ImageVector?,
     title: String,
     value: String? = null,
+    valueTone: SourceLibraryTone? = null,
     selected: Boolean = false,
     enabled: Boolean = true,
     focusEnabled: Boolean = enabled,
@@ -9868,6 +9870,7 @@ private fun PlayerTextAction(
     val contentBaseColor = chrome.contentTone?.let(::sourceLibraryToneColor) ?: Color.White
     val disabledContentBaseColor = chrome.disabledButtonContentTone?.let(::sourceLibraryToneColor) ?: Color.White
     val contentColor = contentBaseColor.copy(alpha = chrome.contentAlpha)
+    val valueBaseColor = valueTone?.let(::sourceLibraryToneColor) ?: contentBaseColor
     TextButton(
         onClick = onClick,
         enabled = enabled,
@@ -9903,7 +9906,7 @@ private fun PlayerTextAction(
                 Text(
                     text = it,
                     style = MaterialTheme.typography.labelSmall,
-                    color = contentBaseColor.copy(alpha = chrome.valueAlpha),
+                    color = valueBaseColor.copy(alpha = chrome.valueAlpha),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )

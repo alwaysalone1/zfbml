@@ -1413,6 +1413,8 @@ internal data class PlayerActionUiState(
     val enabled: Boolean,
     val actionFocusEnabled: Boolean = enabled,
     val tone: SourceLibraryTone,
+    val statusLabel: String = value.orEmpty(),
+    val statusTone: SourceLibraryTone = tone,
     val portraitRecoveryHeight: Dp = 38.dp,
     val portraitRecoveryCornerRadius: Dp = 8.dp,
     val portraitRecoveryContainerBaseColor: PlayerChromeBaseColor = PlayerChromeBaseColor.White,
@@ -6800,6 +6802,8 @@ internal fun buildPlayerActionBarUiState(
                     selected = true,
                     enabled = true,
                     tone = SourceLibraryTone.Primary,
+                    statusLabel = "需恢复",
+                    statusTone = SourceLibraryTone.Primary,
                 ),
             )
             add(
@@ -6810,6 +6814,8 @@ internal fun buildPlayerActionBarUiState(
                     selected = false,
                     enabled = canSelectNextRoute,
                     tone = SourceLibraryTone.Online,
+                    statusLabel = if (canSelectNextRoute) "可切" else "无备用",
+                    statusTone = if (canSelectNextRoute) SourceLibraryTone.Online else SourceLibraryTone.Muted,
                 ),
             )
         }
@@ -6821,6 +6827,16 @@ internal fun buildPlayerActionBarUiState(
                 selected = activePanel == PlayerPanelKind.Quality,
                 enabled = routeCount > 0,
                 tone = SourceLibraryTone.Primary,
+                statusLabel = when {
+                    routeCount <= 0 -> "待线路"
+                    quality.isBlank() -> "自动"
+                    else -> "可切"
+                },
+                statusTone = when {
+                    routeCount <= 0 -> SourceLibraryTone.Muted
+                    quality.isBlank() -> SourceLibraryTone.Cache
+                    else -> SourceLibraryTone.Primary
+                },
             ),
         )
         add(
@@ -6831,6 +6847,8 @@ internal fun buildPlayerActionBarUiState(
                 selected = activePanel == PlayerPanelKind.Speed,
                 enabled = true,
                 tone = SourceLibraryTone.Online,
+                statusLabel = "可调",
+                statusTone = SourceLibraryTone.Online,
             ),
         )
         add(
@@ -6841,6 +6859,8 @@ internal fun buildPlayerActionBarUiState(
                 selected = activePanel == PlayerPanelKind.Route,
                 enabled = routeCount > 1,
                 tone = SourceLibraryTone.Online,
+                statusLabel = if (routeCount > 1) "可换源" else "单线路",
+                statusTone = if (routeCount > 1) SourceLibraryTone.Online else SourceLibraryTone.Muted,
             ),
         )
         add(
@@ -6851,6 +6871,8 @@ internal fun buildPlayerActionBarUiState(
                 selected = activePanel == PlayerPanelKind.Episode,
                 enabled = episodeCount > 1,
                 tone = SourceLibraryTone.Backup,
+                statusLabel = if (episodeCount > 1) "${episodeCount}集" else "单集",
+                statusTone = if (episodeCount > 1) SourceLibraryTone.Cache else SourceLibraryTone.Muted,
             ),
         )
         add(
@@ -6861,6 +6883,8 @@ internal fun buildPlayerActionBarUiState(
                 selected = false,
                 enabled = nextEpisode != null,
                 tone = SourceLibraryTone.Backup,
+                statusLabel = if (nextEpisode != null) "可续播" else "已到末集",
+                statusTone = if (nextEpisode != null) SourceLibraryTone.Cache else SourceLibraryTone.Muted,
             ),
         )
         add(
@@ -6871,6 +6895,8 @@ internal fun buildPlayerActionBarUiState(
                 selected = false,
                 enabled = cacheAction.enabled,
                 tone = cacheAction.statusTone,
+                statusLabel = cacheAction.statusLabel,
+                statusTone = cacheAction.statusTone,
             ),
         )
         add(
@@ -6881,6 +6907,8 @@ internal fun buildPlayerActionBarUiState(
                 selected = activePanel == PlayerPanelKind.More,
                 enabled = true,
                 tone = SourceLibraryTone.Muted,
+                statusLabel = "全部",
+                statusTone = SourceLibraryTone.Muted,
             ),
         )
     }
@@ -7107,6 +7135,8 @@ internal fun buildPortraitRecoveryActionsUiState(
                 selected = true,
                 enabled = true,
                 tone = SourceLibraryTone.Primary,
+                statusLabel = "需恢复",
+                statusTone = SourceLibraryTone.Primary,
             ),
             PlayerActionUiState(
                 kind = PlayerActionKind.NextRoute,
@@ -7115,6 +7145,8 @@ internal fun buildPortraitRecoveryActionsUiState(
                 selected = false,
                 enabled = canSelectNextRoute,
                 tone = if (canSelectNextRoute) SourceLibraryTone.Online else SourceLibraryTone.Muted,
+                statusLabel = if (canSelectNextRoute) "可切" else "无备用",
+                statusTone = if (canSelectNextRoute) SourceLibraryTone.Online else SourceLibraryTone.Muted,
             ),
         ),
     )
@@ -7134,6 +7166,8 @@ internal fun buildPlayerCompactRecoveryUiState(
                     selected = true,
                     enabled = true,
                     tone = SourceLibraryTone.Primary,
+                    statusLabel = "需恢复",
+                    statusTone = SourceLibraryTone.Primary,
                 ),
                 label = "重试",
                 weight = 1f,
@@ -7156,6 +7190,8 @@ internal fun buildPlayerCompactRecoveryUiState(
                     selected = false,
                     enabled = canSelectNextRoute,
                     tone = if (canSelectNextRoute) SourceLibraryTone.Online else SourceLibraryTone.Muted,
+                    statusLabel = if (canSelectNextRoute) "可切" else "无备用",
+                    statusTone = if (canSelectNextRoute) SourceLibraryTone.Online else SourceLibraryTone.Muted,
                 ),
                 label = "换个源",
                 weight = 1f,

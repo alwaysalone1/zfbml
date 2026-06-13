@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.232
+
+English:
+
+- Player action bar buttons now expose tested status labels and tones for recovery, quality, speed, route, episode, next episode, cache, and settings actions.
+- `PlayerActionUiState` now keeps action status labels and tones in the model contract shared by fullscreen, portrait recovery, and compact recovery controls.
+- The fullscreen action bar now renders the modeled status label with semantic tone coloring instead of reusing raw value text.
+- App version labels, request user agents, and README notes are now updated to `0.5.232`.
+
 ### v0.5.231
 
 English:

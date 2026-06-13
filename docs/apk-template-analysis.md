@@ -470,3 +470,5 @@ This pass upgrades player top-state visibility. `PlayerTopStatusStripUiState` no
 This pass upgrades player fullscreen strategy visibility. `PlayerFullscreenStatusStripUiState` now carries a tested strategy badge for recovery-needed, multi-route multi-episode, source-switchable, episode-switchable, speed-active, and stable playback states, so fullscreen controls expose both playback health and the next available user strategy without opening a panel.
 
 This pass upgrades player panel tab readiness visibility. `PlayerPanelTabUiState` now carries tested status labels and tones for quality, speed, route, episode, danmaku, and settings tabs, so the player sheet exposes whether each control is switchable, single-state, enabled, or waiting for routes before users open the panel.
+
+This pass upgrades player action-bar readiness visibility. `PlayerActionUiState` now carries tested status labels and tones for recovery, quality, speed, route, episode, next-episode, cache, and settings actions, so fullscreen and recovery controls expose their current action state before users open a deeper panel.
