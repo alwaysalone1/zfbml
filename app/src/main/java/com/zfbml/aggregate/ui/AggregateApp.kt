@@ -138,7 +138,14 @@ import com.zfbml.aggregate.danmaku.DanmakuProfile
 import com.zfbml.aggregate.danmaku.DanmakuSafeArea
 import com.zfbml.aggregate.danmaku.DanmakuSettings
 import com.zfbml.aggregate.danmaku.DanmakuSurface
+import com.zfbml.aggregate.danmaku.PLAYER_DANMAKU_ALPHA_DEFAULT
+import com.zfbml.aggregate.danmaku.PLAYER_DANMAKU_DENSITY_DEFAULT
+import com.zfbml.aggregate.danmaku.PLAYER_DANMAKU_ENABLED_DEFAULT
+import com.zfbml.aggregate.danmaku.PLAYER_DANMAKU_FONT_SCALE_DEFAULT
 import com.zfbml.aggregate.danmaku.danmakuEffectStyleFromPreference
+import com.zfbml.aggregate.danmaku.normalizePlayerDanmakuAlphaPreference
+import com.zfbml.aggregate.danmaku.normalizePlayerDanmakuDensityPreference
+import com.zfbml.aggregate.danmaku.normalizePlayerDanmakuFontScalePreference
 import com.zfbml.aggregate.danmaku.toPreferenceValue
 import com.zfbml.aggregate.player.ExoPlayerEngine
 import com.zfbml.aggregate.player.PlayerViewSurface
@@ -163,6 +170,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private const val PLAYER_PREFERENCES_NAME = "player_preferences"
+private const val PREF_DANMAKU_ENABLED = "danmaku_enabled"
+private const val PREF_DANMAKU_DENSITY = "danmaku_density"
+private const val PREF_DANMAKU_ALPHA = "danmaku_alpha"
+private const val PREF_DANMAKU_FONT_SCALE = "danmaku_font_scale"
 private const val PREF_DANMAKU_EFFECT_STYLE = "danmaku_effect_style"
 
 @Composable
@@ -2486,7 +2497,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.236")
+                setRequestProperty("User-Agent", "ZFBML/0.5.237")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -3019,7 +3030,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.236",
+            version = "0.5.237",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -5579,10 +5590,44 @@ private fun PlayerScreen(
     var danmakuSearchQuery by remember(detail.providerId, detail.url) {
         mutableStateOf(defaultDanmakuSearchQuery(detail, episode))
     }
-    var danmakuEnabled by remember { mutableStateOf(true) }
-    var density by remember { mutableFloatStateOf(0.32f) }
-    var danmakuAlpha by remember { mutableFloatStateOf(0.76f) }
-    var danmakuFontScale by remember { mutableFloatStateOf(0.72f) }
+    var danmakuEnabled by remember(playerPreferences) {
+        mutableStateOf(
+            playerPreferences.getBoolean(
+                PREF_DANMAKU_ENABLED,
+                PLAYER_DANMAKU_ENABLED_DEFAULT,
+            ),
+        )
+    }
+    var density by remember(playerPreferences) {
+        mutableFloatStateOf(
+            normalizePlayerDanmakuDensityPreference(
+                playerPreferences.getFloat(
+                    PREF_DANMAKU_DENSITY,
+                    PLAYER_DANMAKU_DENSITY_DEFAULT,
+                ),
+            ),
+        )
+    }
+    var danmakuAlpha by remember(playerPreferences) {
+        mutableFloatStateOf(
+            normalizePlayerDanmakuAlphaPreference(
+                playerPreferences.getFloat(
+                    PREF_DANMAKU_ALPHA,
+                    PLAYER_DANMAKU_ALPHA_DEFAULT,
+                ),
+            ),
+        )
+    }
+    var danmakuFontScale by remember(playerPreferences) {
+        mutableFloatStateOf(
+            normalizePlayerDanmakuFontScalePreference(
+                playerPreferences.getFloat(
+                    PREF_DANMAKU_FONT_SCALE,
+                    PLAYER_DANMAKU_FONT_SCALE_DEFAULT,
+                ),
+            ),
+        )
+    }
     var danmakuEffectStyle by remember(playerPreferences) {
         mutableStateOf(
             danmakuEffectStyleFromPreference(
@@ -5634,6 +5679,49 @@ private fun PlayerScreen(
             tone = notice.tone,
             maxLines = notice.maxLines,
         )
+    }
+
+    fun updateDanmakuEnabled(enabled: Boolean) {
+        danmakuEnabled = enabled
+        playerPreferences
+            .edit()
+            .putBoolean(PREF_DANMAKU_ENABLED, enabled)
+            .apply()
+    }
+
+    fun updateDanmakuDensity(value: Float) {
+        val normalized = normalizePlayerDanmakuDensityPreference(value)
+        density = normalized
+        playerPreferences
+            .edit()
+            .putFloat(PREF_DANMAKU_DENSITY, normalized)
+            .apply()
+    }
+
+    fun updateDanmakuAlpha(value: Float) {
+        val normalized = normalizePlayerDanmakuAlphaPreference(value)
+        danmakuAlpha = normalized
+        playerPreferences
+            .edit()
+            .putFloat(PREF_DANMAKU_ALPHA, normalized)
+            .apply()
+    }
+
+    fun updateDanmakuFontScale(value: Float) {
+        val normalized = normalizePlayerDanmakuFontScalePreference(value)
+        danmakuFontScale = normalized
+        playerPreferences
+            .edit()
+            .putFloat(PREF_DANMAKU_FONT_SCALE, normalized)
+            .apply()
+    }
+
+    fun updateDanmakuEffectStyle(style: DanmakuEffectStyle) {
+        danmakuEffectStyle = style
+        playerPreferences
+            .edit()
+            .putString(PREF_DANMAKU_EFFECT_STYLE, style.toPreferenceValue())
+            .apply()
     }
 
     fun clearRouteNotice() {
@@ -6210,7 +6298,7 @@ private fun PlayerScreen(
                     },
                     onToggleDanmaku = {
                         revealControls()
-                        danmakuEnabled = !danmakuEnabled
+                        updateDanmakuEnabled(!danmakuEnabled)
                     },
                     onOffline = ::enqueueCurrentStreamForOffline,
                     onRetryRoute = ::retryCurrentRoute,
@@ -6247,7 +6335,7 @@ private fun PlayerScreen(
                     episodeCount = detail.episodes.size,
                     onToggleDanmaku = {
                         revealControls()
-                        danmakuEnabled = !danmakuEnabled
+                        updateDanmakuEnabled(!danmakuEnabled)
                     },
                     onShowPanel = { panel ->
                         revealControls()
@@ -6357,27 +6445,23 @@ private fun PlayerScreen(
                     onEpisodeSelected = ::selectEpisode,
                     onToggleDanmaku = {
                         revealControls()
-                        danmakuEnabled = !danmakuEnabled
+                        updateDanmakuEnabled(!danmakuEnabled)
                     },
                     onDensityChange = {
                         revealControls()
-                        density = it
+                        updateDanmakuDensity(it)
                     },
                     onDanmakuAlphaChange = {
                         revealControls()
-                        danmakuAlpha = it
+                        updateDanmakuAlpha(it)
                     },
                     onDanmakuFontScaleChange = {
                         revealControls()
-                        danmakuFontScale = it
+                        updateDanmakuFontScale(it)
                     },
                     onDanmakuEffectStyleChange = {
                         revealControls()
-                        danmakuEffectStyle = it
-                        playerPreferences
-                            .edit()
-                            .putString(PREF_DANMAKU_EFFECT_STYLE, it.toPreferenceValue())
-                            .apply()
+                        updateDanmakuEffectStyle(it)
                     },
                     onSearchDanmaku = ::refreshDanmakuMapping,
                     onDanmakuSearchQueryChange = { danmakuSearchQuery = it },

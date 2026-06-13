@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.237
+
+English:
+
+- Danmaku display preferences now persist the enabled state, density, opacity, and font-scale settings alongside the selected render effect style.
+- Persisted danmaku slider values are normalized through tested model helpers before they reach the player, preventing stale or corrupt values from breaking the render controls.
+- Every player danmaku toggle and settings-panel slider now writes through the same local preference path, so fullscreen and compact controls stay consistent.
+- App version labels, request user agents, and README notes are now updated to `0.5.237`.
+
 ### v0.5.236
 
 English:

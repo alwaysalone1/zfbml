@@ -3,6 +3,10 @@ package com.zfbml.aggregate.danmaku
 import kotlinx.serialization.Serializable
 
 internal const val DANMAKU_AUTOMATIC_TIMELINE_MIN_SCORE = 60
+internal const val PLAYER_DANMAKU_ENABLED_DEFAULT = true
+internal const val PLAYER_DANMAKU_DENSITY_DEFAULT = 0.32f
+internal const val PLAYER_DANMAKU_ALPHA_DEFAULT = 0.76f
+internal const val PLAYER_DANMAKU_FONT_SCALE_DEFAULT = 0.72f
 
 data class DanmakuItem(
     val timeMs: Long,
@@ -54,6 +58,22 @@ internal fun danmakuEffectStyleFromPreference(value: String?): DanmakuEffectStyl
     return value
         ?.let { stored -> DanmakuEffectStyle.entries.firstOrNull { it.name == stored } }
         ?: DanmakuEffectStyle.PlatformAdaptive
+}
+
+internal fun normalizePlayerDanmakuDensityPreference(value: Float): Float {
+    return value.finiteOr(PLAYER_DANMAKU_DENSITY_DEFAULT).coerceIn(0.3f, 1f)
+}
+
+internal fun normalizePlayerDanmakuAlphaPreference(value: Float): Float {
+    return value.finiteOr(PLAYER_DANMAKU_ALPHA_DEFAULT).coerceIn(0.35f, 1f)
+}
+
+internal fun normalizePlayerDanmakuFontScalePreference(value: Float): Float {
+    return value.finiteOr(PLAYER_DANMAKU_FONT_SCALE_DEFAULT).coerceIn(0.62f, 1.08f)
+}
+
+private fun Float.finiteOr(defaultValue: Float): Float {
+    return if (isFinite()) this else defaultValue
 }
 
 data class DanmakuProfile(

@@ -480,3 +480,5 @@ This pass upgrades danmaku effect mapping visibility. `PlayerDanmakuSettingsUiSt
 This pass upgrades current danmaku-source effect visibility. The settings model now derives the active platform from the loaded timeline, prefers manual calibration over automatic candidates, and highlights the exact platform-effect row that the Canvas renderer will use for the current danmaku source.
 
 This pass upgrades danmaku effect preference durability. The player now restores the user's selected render effect style from local preferences, writes changes immediately from the settings panel, and safely falls back to platform-adaptive rendering if an old or unknown preference value is encountered.
+
+This pass upgrades full danmaku display preference durability. The player now restores and persists danmaku enablement, density, opacity, and font scale in the same local preference store as the effect style, with tested clamping so stale slider values cannot escape the supported rendering ranges.
