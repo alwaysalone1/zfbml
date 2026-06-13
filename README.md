@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.229
+
+English:
+
+- Player top status strips now expose a visible playback-state chip for playing, buffering, ready, switching, ended, and error states.
+- Startup overlays now expose a visible loading-state badge for streaming, progressive, BT, WebView, RTSP, and unknown protocols.
+- Added model coverage for top playback-state chips and startup loading badges across normal playback, route switching, HLS loading, and progressive loading.
+- App version labels, request user agents, and README notes are now updated to `0.5.229`.
+
 ### v0.5.228
 
 English:

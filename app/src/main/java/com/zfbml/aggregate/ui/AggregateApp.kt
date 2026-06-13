@@ -2480,7 +2480,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.228")
+                setRequestProperty("User-Agent", "ZFBML/0.5.229")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -3013,7 +3013,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.228",
+            version = "0.5.229",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -10092,6 +10092,7 @@ private fun VideoStartupOverlay(
                 maxLines = state.titleMaxLines,
                 overflow = TextOverflow.Ellipsis,
             )
+            RouteStatusBadge(state.statusLabel, sourceLibraryToneColor(state.statusTone))
             Text(
                 state.metadataLine,
                 style = MaterialTheme.typography.bodySmall,

@@ -1157,6 +1157,8 @@ internal data class PlayerNoticeUiState(
 internal data class PlayerStartupOverlayUiState(
     val title: String,
     val metadataLine: String,
+    val statusLabel: String,
+    val statusTone: SourceLibraryTone,
     val progressTone: SourceLibraryTone,
     val width: Dp,
     val cornerRadius: Dp,
@@ -6436,6 +6438,11 @@ internal fun buildPlayerTopStatusStripUiState(
                 tone = SourceLibraryTone.Primary,
             ),
             playerStatusChipUiState(
+                label = "\u72b6\u6001",
+                value = playerPlaybackStatusValueForUi(overlayState),
+                tone = playerPlaybackStatusToneForUi(overlayState),
+            ),
+            playerStatusChipUiState(
                 label = "来源",
                 value = playerSourceStatusValueForUi(
                     sourceLabel = overlayState.sourceLabel,
@@ -6459,6 +6466,30 @@ internal fun buildPlayerTopStatusStripUiState(
         itemSpacing = 7.dp,
         endPadding = 2.dp,
     )
+}
+
+private fun playerPlaybackStatusValueForUi(overlayState: PlayerOverlayState): String {
+    return when {
+        !overlayState.error.isNullOrBlank() -> "\u5f02\u5e38"
+        !overlayState.notice.isNullOrBlank() -> "\u5207\u6e90\u4e2d"
+        else -> overlayState.statusLabel.ifBlank {
+            overlayState.playbackState.ifBlank { "\u64ad\u653e\u4e2d" }
+        }
+    }
+}
+
+private fun playerPlaybackStatusToneForUi(overlayState: PlayerOverlayState): SourceLibraryTone {
+    val label = playerPlaybackStatusValueForUi(overlayState)
+    return when {
+        !overlayState.error.isNullOrBlank() -> SourceLibraryTone.Web
+        !overlayState.notice.isNullOrBlank() -> SourceLibraryTone.Backup
+        label.contains("\u7b49\u5f85", ignoreCase = true) -> SourceLibraryTone.Muted
+        label.contains("\u7f13\u51b2", ignoreCase = true) -> SourceLibraryTone.Backup
+        label.contains("\u5c31\u7eea", ignoreCase = true) -> SourceLibraryTone.Cache
+        label.contains("\u5df2\u64ad", ignoreCase = true) -> SourceLibraryTone.Primary
+        label.contains("\u64ad\u653e", ignoreCase = true) -> SourceLibraryTone.Online
+        else -> SourceLibraryTone.Muted
+    }
 }
 
 private fun playerStatusChipUiState(
@@ -6671,9 +6702,28 @@ internal fun buildPlayerStartupOverlayUiState(
         protocol.uiProtocolName(),
         videoSize?.trim()?.takeIf { it.isNotBlank() },
     ).joinToString(" / ")
+    val statusLabel = when (protocol) {
+        StreamProtocol.HLS,
+        StreamProtocol.DASH,
+        StreamProtocol.SMOOTH_STREAMING -> "\u6d41\u5a92\u4f53\u52a0\u8f7d"
+        StreamProtocol.PROGRESSIVE -> "\u76f4\u8fde\u52a0\u8f7d"
+        StreamProtocol.BITTORRENT -> "BT \u51c6\u5907"
+        StreamProtocol.WEBVIEW_ONLY -> "\u7f51\u9875\u63a5\u7ba1"
+        StreamProtocol.RTSP -> "\u5b9e\u65f6\u6d41\u52a0\u8f7d"
+        StreamProtocol.UNKNOWN -> "\u7f13\u51b2\u4e2d"
+    }
+    val statusTone = when (protocol) {
+        StreamProtocol.BITTORRENT -> SourceLibraryTone.Backup
+        StreamProtocol.WEBVIEW_ONLY -> SourceLibraryTone.Web
+        StreamProtocol.PROGRESSIVE -> SourceLibraryTone.Cache
+        StreamProtocol.UNKNOWN -> SourceLibraryTone.Muted
+        else -> SourceLibraryTone.Online
+    }
     return PlayerStartupOverlayUiState(
         title = "\u6b63\u5728\u52a0\u8f7d\u753b\u9762",
         metadataLine = metadataLine,
+        statusLabel = statusLabel,
+        statusTone = statusTone,
         progressTone = SourceLibraryTone.Online,
         width = 300.dp,
         cornerRadius = 8.dp,

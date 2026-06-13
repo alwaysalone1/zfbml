@@ -4312,8 +4312,10 @@ class PlaybackUiModelsTest {
             playbackSpeed = 1.5f,
         )
 
-        assertEquals(listOf("本集", "来源", "清晰度", "倍速"), state.chips.map { it.label })
+        assertEquals(listOf("本集", "状态", "来源", "清晰度", "倍速"), state.chips.map { it.label })
         assertEquals("3/12", state.chips.first { it.label == "本集" }.value)
+        assertEquals("播放中", state.chips.first { it.label == "状态" }.value)
+        assertEquals(SourceLibraryTone.Online, state.chips.first { it.label == "状态" }.tone)
         assertEquals("Animeko · 在线 3 · BT 1", state.chips.first { it.label == "来源" }.value)
         assertEquals("1080p", state.chips.first { it.label == "清晰度" }.value)
         assertEquals("1.5x", state.chips.first { it.label == "倍速" }.value)
@@ -4365,6 +4367,7 @@ class PlaybackUiModelsTest {
         assertNull(state.compactNotice)
         assertEquals("Animeko · HLS", state.routeStatus.routeLabel)
         assertEquals("3/12", state.statusStrip.chips.first { it.label == "本集" }.value)
+        assertEquals("播放中", state.statusStrip.chips.first { it.label == "状态" }.value)
         assertEquals("1.25x", state.statusStrip.chips.first { it.label == "倍速" }.value)
     }
 
@@ -4402,6 +4405,8 @@ class PlaybackUiModelsTest {
         assertEquals("当前集", state.subtitle)
         assertEquals("正在切换线路", checkNotNull(state.compactNotice).message)
         assertEquals("当前集", state.statusStrip.chips.first { it.label == "本集" }.value)
+        assertEquals("\u5207\u6e90\u4e2d", state.statusStrip.chips.first { it.label == "状态" }.value)
+        assertEquals(SourceLibraryTone.Backup, state.statusStrip.chips.first { it.label == "状态" }.tone)
         assertEquals("自动源", state.statusStrip.chips.first { it.label == "来源" }.value)
     }
 
@@ -5187,6 +5192,8 @@ class PlaybackUiModelsTest {
 
         assertEquals("\u6b63\u5728\u52a0\u8f7d\u753b\u9762", loading.title)
         assertEquals("\u7f13\u51b2\u4e2d / HLS / 1920x1080", loading.metadataLine)
+        assertEquals("\u6d41\u5a92\u4f53\u52a0\u8f7d", loading.statusLabel)
+        assertEquals(SourceLibraryTone.Online, loading.statusTone)
         assertEquals(SourceLibraryTone.Online, loading.progressTone)
         assertEquals(300.dp, loading.width)
         assertEquals(8.dp, loading.cornerRadius)
@@ -5202,6 +5209,8 @@ class PlaybackUiModelsTest {
         assertEquals(1f, loading.metadataAlpha, 0.001f)
         assertEquals(1, loading.metadataMaxLines)
         assertEquals("Buffering / MP4", progressive.metadataLine)
+        assertEquals("\u76f4\u8fde\u52a0\u8f7d", progressive.statusLabel)
+        assertEquals(SourceLibraryTone.Cache, progressive.statusTone)
     }
 
     @Test

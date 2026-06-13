@@ -464,3 +464,5 @@ This pass upgrades player quality readiness visibility. `PlayerQualityPanelUiSta
 This pass upgrades player speed readiness visibility. `PlayerSpeedPanelUiState` now carries a tested status badge for standard, slow, fast, high-speed, custom, and missing preset states, so the speed selector explains whether playback is using a known preset or a custom speed before users adjust it.
 
 This pass upgrades player episode readiness visibility. `PlayerEpisodePanelUiState` now carries a tested status badge for playable-next, switching, single-episode, finished-season, and missing-episode states, so the episode selector explains whether users can continue, are waiting on a switch, or have reached the end of the available list.
+
+This pass upgrades player top-state visibility. `PlayerTopStatusStripUiState` now includes a tested playback-state chip and `PlayerStartupOverlayUiState` carries a tested loading badge for streaming, progressive, BT, WebView, RTSP, and unknown protocols, so the player explains playback and startup state before users open a deeper panel.
