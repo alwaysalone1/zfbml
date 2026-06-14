@@ -799,6 +799,23 @@ internal data class HomeSectionHeaderUiState(
     val actionTone: SourceLibraryTone,
 )
 
+internal data class PlaybackHistoryEntry(
+    val providerId: String,
+    val title: String,
+    val url: String,
+    val posterUrl: String?,
+    val episodeId: String,
+    val episodeTitle: String,
+    val episodeIndex: Int?,
+    val positionMs: Long,
+    val durationMs: Long,
+    val updatedAtMs: Long,
+)
+
+internal const val PLAYBACK_HISTORY_EPISODE_ID_RAW = "playbackHistoryEpisodeId"
+internal const val PLAYBACK_HISTORY_POSITION_MS_RAW = "playbackHistoryPositionMs"
+internal const val PLAYBACK_HISTORY_DURATION_MS_RAW = "playbackHistoryDurationMs"
+
 internal data class HomeContinueWatchingUiState(
     val result: SearchResult,
     val eyebrow: String,
@@ -4443,6 +4460,82 @@ internal fun buildHomeContinueWatchingUiState(
         posterCornerRadius = 6.dp,
     )
 }
+
+internal fun buildPlaybackHistoryEntry(
+    detail: MediaDetail,
+    episode: Episode,
+    positionMs: Long,
+    durationMs: Long,
+    updatedAtMs: Long,
+): PlaybackHistoryEntry {
+    return PlaybackHistoryEntry(
+        providerId = detail.providerId,
+        title = detail.title,
+        url = detail.url,
+        posterUrl = detail.posterUrl,
+        episodeId = episode.id,
+        episodeTitle = episode.title,
+        episodeIndex = episode.index,
+        positionMs = positionMs.coerceAtLeast(0L),
+        durationMs = durationMs.coerceAtLeast(0L),
+        updatedAtMs = updatedAtMs.coerceAtLeast(0L),
+    )
+}
+
+internal fun playbackHistoryProgressFraction(entry: PlaybackHistoryEntry): Float {
+    return playbackHistoryProgressFraction(
+        positionMs = entry.positionMs,
+        durationMs = entry.durationMs,
+    )
+}
+
+internal fun playbackHistoryProgressFraction(positionMs: Long, durationMs: Long): Float {
+    if (durationMs <= 0L) return 0f
+    return (positionMs.coerceAtLeast(0L).toFloat() / durationMs.toFloat()).coerceIn(0f, 1f)
+}
+
+internal fun playbackHistoryShouldPersist(positionMs: Long, durationMs: Long): Boolean {
+    val normalizedPositionMs = positionMs.coerceAtLeast(0L)
+    return normalizedPositionMs >= PLAYBACK_HISTORY_MIN_POSITION_MS ||
+        playbackHistoryProgressFraction(normalizedPositionMs, durationMs) >= PLAYBACK_HISTORY_MIN_PROGRESS_FRACTION
+}
+
+internal fun playbackHistoryResumePositionMs(positionMs: Long, durationMs: Long): Long {
+    val normalizedPositionMs = positionMs.coerceAtLeast(0L)
+    if (durationMs <= 0L) return normalizedPositionMs
+    val remainingMs = (durationMs - normalizedPositionMs).coerceAtLeast(0L)
+    return if (
+        remainingMs <= PLAYBACK_HISTORY_FINISHED_REMAINING_MS ||
+        playbackHistoryProgressFraction(normalizedPositionMs, durationMs) >= PLAYBACK_HISTORY_FINISHED_FRACTION
+    ) {
+        0L
+    } else {
+        normalizedPositionMs.coerceAtMost(durationMs)
+    }
+}
+
+internal fun playbackHistoryEntryToSearchResult(entry: PlaybackHistoryEntry): SearchResult {
+    val episodeLabel = entry.episodeIndex?.takeIf { it > 0 }?.let { "第 $it 集" }
+        ?: entry.episodeTitle.ifBlank { "当前集" }
+    val progressLabel = "已看至 ${(playbackHistoryProgressFraction(entry) * 100f).toInt()}%"
+    return SearchResult(
+        providerId = entry.providerId,
+        title = entry.title,
+        url = entry.url,
+        posterUrl = entry.posterUrl,
+        subtitle = "$episodeLabel · $progressLabel",
+        raw = mapOf(
+            PLAYBACK_HISTORY_EPISODE_ID_RAW to entry.episodeId,
+            PLAYBACK_HISTORY_POSITION_MS_RAW to entry.positionMs.toString(),
+            PLAYBACK_HISTORY_DURATION_MS_RAW to entry.durationMs.toString(),
+        ),
+    )
+}
+
+private const val PLAYBACK_HISTORY_MIN_POSITION_MS = 15_000L
+private const val PLAYBACK_HISTORY_MIN_PROGRESS_FRACTION = 0.02f
+private const val PLAYBACK_HISTORY_FINISHED_REMAINING_MS = 30_000L
+private const val PLAYBACK_HISTORY_FINISHED_FRACTION = 0.95f
 
 internal fun buildHomePosterRailUiState(
     items: List<SearchResult>,

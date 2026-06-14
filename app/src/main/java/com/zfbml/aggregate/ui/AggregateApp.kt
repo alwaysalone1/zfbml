@@ -3,6 +3,7 @@ package com.zfbml.aggregate.ui
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import android.content.SharedPreferences
 import android.content.pm.ActivityInfo
 import android.graphics.BitmapFactory
 import android.os.Build
@@ -178,9 +179,84 @@ private const val PREF_DANMAKU_EFFECT_STYLE = "danmaku_effect_style"
 private const val PREF_PLAYBACK_SPEED = "playback_speed"
 private const val PREF_PLAYBACK_QUALITY = "playback_quality"
 private const val PREF_ROUTE_SOURCE_ID = "route_source_id"
+private const val PLAYBACK_HISTORY_PREFERENCES_NAME = "playback_history_preferences"
+private const val PREF_HISTORY_PROVIDER_ID = "provider_id"
+private const val PREF_HISTORY_TITLE = "title"
+private const val PREF_HISTORY_URL = "url"
+private const val PREF_HISTORY_POSTER_URL = "poster_url"
+private const val PREF_HISTORY_EPISODE_ID = "episode_id"
+private const val PREF_HISTORY_EPISODE_TITLE = "episode_title"
+private const val PREF_HISTORY_EPISODE_INDEX = "episode_index"
+private const val PREF_HISTORY_POSITION_MS = "position_ms"
+private const val PREF_HISTORY_DURATION_MS = "duration_ms"
+private const val PREF_HISTORY_UPDATED_AT_MS = "updated_at_ms"
+
+private fun readLatestPlaybackHistory(preferences: SharedPreferences): PlaybackHistoryEntry? {
+    val providerId = preferences.getString(PREF_HISTORY_PROVIDER_ID, null)?.takeIf { it.isNotBlank() }
+        ?: return null
+    val title = preferences.getString(PREF_HISTORY_TITLE, null)?.takeIf { it.isNotBlank() }
+        ?: return null
+    val url = preferences.getString(PREF_HISTORY_URL, null)?.takeIf { it.isNotBlank() }
+        ?: return null
+    val episodeId = preferences.getString(PREF_HISTORY_EPISODE_ID, null)?.takeIf { it.isNotBlank() }
+        ?: return null
+    val episodeTitle = preferences.getString(PREF_HISTORY_EPISODE_TITLE, null).orEmpty()
+    return PlaybackHistoryEntry(
+        providerId = providerId,
+        title = title,
+        url = url,
+        posterUrl = preferences.getString(PREF_HISTORY_POSTER_URL, null)?.takeIf { it.isNotBlank() },
+        episodeId = episodeId,
+        episodeTitle = episodeTitle,
+        episodeIndex = preferences.getInt(PREF_HISTORY_EPISODE_INDEX, -1).takeIf { it > 0 },
+        positionMs = preferences.getLong(PREF_HISTORY_POSITION_MS, 0L).coerceAtLeast(0L),
+        durationMs = preferences.getLong(PREF_HISTORY_DURATION_MS, 0L).coerceAtLeast(0L),
+        updatedAtMs = preferences.getLong(PREF_HISTORY_UPDATED_AT_MS, 0L).coerceAtLeast(0L),
+    )
+}
+
+private fun writeLatestPlaybackHistory(preferences: SharedPreferences, entry: PlaybackHistoryEntry) {
+    preferences
+        .edit()
+        .putString(PREF_HISTORY_PROVIDER_ID, entry.providerId)
+        .putString(PREF_HISTORY_TITLE, entry.title)
+        .putString(PREF_HISTORY_URL, entry.url)
+        .putString(PREF_HISTORY_EPISODE_ID, entry.episodeId)
+        .putString(PREF_HISTORY_EPISODE_TITLE, entry.episodeTitle)
+        .putLong(PREF_HISTORY_POSITION_MS, entry.positionMs)
+        .putLong(PREF_HISTORY_DURATION_MS, entry.durationMs)
+        .putLong(PREF_HISTORY_UPDATED_AT_MS, entry.updatedAtMs)
+        .apply {
+            if (entry.posterUrl.isNullOrBlank()) {
+                remove(PREF_HISTORY_POSTER_URL)
+            } else {
+                putString(PREF_HISTORY_POSTER_URL, entry.posterUrl)
+            }
+            val episodeIndex = entry.episodeIndex
+            if (episodeIndex == null) {
+                remove(PREF_HISTORY_EPISODE_INDEX)
+            } else {
+                putInt(PREF_HISTORY_EPISODE_INDEX, episodeIndex)
+            }
+        }
+        .apply()
+}
 
 @Composable
 fun AggregateApp(graph: AppGraph, initialQuery: String? = null) {
+    val context = LocalContext.current
+    val playbackHistoryPreferences = remember(context) {
+        context.applicationContext.getSharedPreferences(PLAYBACK_HISTORY_PREFERENCES_NAME, Context.MODE_PRIVATE)
+    }
+    var latestPlaybackHistory by remember(playbackHistoryPreferences) {
+        mutableStateOf(readLatestPlaybackHistory(playbackHistoryPreferences))
+    }
+
+    fun updatePlaybackHistory(entry: PlaybackHistoryEntry) {
+        latestPlaybackHistory = entry
+        writeLatestPlaybackHistory(playbackHistoryPreferences, entry)
+    }
+
     var selectedTab by remember(initialQuery) {
         mutableStateOf(if (initialQuery.isNullOrBlank()) AppTab.Discover else AppTab.Search)
     }
@@ -209,13 +285,16 @@ fun AggregateApp(graph: AppGraph, initialQuery: String? = null) {
                     selectedTab = selectedTab,
                     onTabSelected = { selectedTab = it },
                     initialQuery = initialQuery,
+                    latestPlaybackHistory = latestPlaybackHistory,
                     onOpenDetail = { screen = AppScreen.Detail(it) },
                 )
                 is AppScreen.Detail -> DetailScreen(
                     graph = graph,
                     result = current.result,
                     onBack = { screen = AppScreen.Main },
-                    onPlay = { detail, episode, stream, routes -> screen = AppScreen.Player(detail, episode, stream, routes) },
+                    onPlay = { detail, episode, stream, routes, resumePositionMs ->
+                        screen = AppScreen.Player(detail, episode, stream, routes, resumePositionMs)
+                    },
                 )
                 is AppScreen.Player -> PlayerScreen(
                     graph = graph,
@@ -223,6 +302,8 @@ fun AggregateApp(graph: AppGraph, initialQuery: String? = null) {
                     episode = current.episode,
                     stream = current.stream,
                     routes = current.routes,
+                    resumePositionMs = current.resumePositionMs,
+                    onPlaybackHistoryChanged = ::updatePlaybackHistory,
                     onBack = { screen = AppScreen.Detail(SearchResult(current.detail.providerId, current.detail.title, current.detail.url)) },
                 )
             }
@@ -585,6 +666,7 @@ private sealed interface AppScreen {
         val episode: Episode,
         val stream: MediaStream,
         val routes: List<RouteCandidate>,
+        val resumePositionMs: Long,
     ) : AppScreen
 }
 
@@ -809,6 +891,7 @@ private fun MainScaffold(
     selectedTab: AppTab,
     onTabSelected: (AppTab) -> Unit,
     initialQuery: String?,
+    latestPlaybackHistory: PlaybackHistoryEntry?,
     onOpenDetail: (SearchResult) -> Unit,
 ) {
     val sourceManifests = graph.sourceRegistry.manifests
@@ -872,6 +955,7 @@ private fun MainScaffold(
                     onOpenDetail = onOpenDetail,
                     onTabSelected = onTabSelected,
                     scheduleUiState = scheduleUiState,
+                    latestPlaybackHistory = latestPlaybackHistory,
                     selectedDayId = selectedDayId,
                     currentDayId = currentDayId,
                     onDaySelected = { selectedDayId = it },
@@ -889,6 +973,7 @@ private fun MainScaffold(
                     onOpenDetail = onOpenDetail,
                     onTabSelected = onTabSelected,
                     scheduleUiState = scheduleUiState,
+                    latestPlaybackHistory = latestPlaybackHistory,
                     selectedDayId = selectedDayId,
                     currentDayId = currentDayId,
                     onDaySelected = { selectedDayId = it },
@@ -913,6 +998,7 @@ private fun MainTabContent(
     onOpenDetail: (SearchResult) -> Unit,
     onTabSelected: (AppTab) -> Unit,
     scheduleUiState: HomeScheduleUiState,
+    latestPlaybackHistory: PlaybackHistoryEntry?,
     selectedDayId: Int,
     currentDayId: Int,
     onDaySelected: (Int) -> Unit,
@@ -925,6 +1011,7 @@ private fun MainTabContent(
             AppTab.Discover -> DiscoverScreen(
                 graph = graph,
                 scheduleUiState = scheduleUiState,
+                latestPlaybackHistory = latestPlaybackHistory,
                 selectedDayId = selectedDayId,
                 currentDayId = currentDayId,
                 onDaySelected = onDaySelected,
@@ -1146,6 +1233,7 @@ private fun AppRailNavItem(
 private fun DiscoverScreen(
     graph: AppGraph,
     scheduleUiState: HomeScheduleUiState,
+    latestPlaybackHistory: PlaybackHistoryEntry?,
     selectedDayId: Int,
     currentDayId: Int,
     onDaySelected: (Int) -> Unit,
@@ -1229,6 +1317,7 @@ private fun DiscoverScreen(
                     featured = featured,
                     homeLoading = homePicksLoading,
                     scheduleUiState = scheduleUiState,
+                    latestPlaybackHistory = latestPlaybackHistory,
                     selectedDayId = selectedDayId,
                     currentDayId = currentDayId,
                     onDaySelected = onDaySelected,
@@ -1402,6 +1491,7 @@ private fun HomeFeedPage(
     featured: List<SearchResult>,
     homeLoading: Boolean,
     scheduleUiState: HomeScheduleUiState,
+    latestPlaybackHistory: PlaybackHistoryEntry?,
     selectedDayId: Int,
     currentDayId: Int,
     onDaySelected: (Int) -> Unit,
@@ -1416,9 +1506,7 @@ private fun HomeFeedPage(
     val selectedItems = scheduleUiState.selectedItems
     val feedSelection = splitSpotlightFeed(featured, spotlightCount = 5)
     val remainder = feedSelection.remainder.ifEmpty { featured.distinctBy { it.stableMediaKey() } }
-    val continueItem = selectedItems.firstOrNull()
-        ?: remainder.firstOrNull()
-        ?: feedSelection.spotlight.firstOrNull()
+    val continueItem = latestPlaybackHistory?.let { playbackHistoryEntryToSearchResult(it) }
     val guessItems = remainder.rotatingWindow(start = guessBatch * 5, count = 6)
     val recommendationCount = remainder.size.coerceAtLeast(feedSelection.spotlight.size)
     val watchHubState = remember(continueItem, scheduleUiState.todayCount, recommendationCount) {
@@ -1516,7 +1604,11 @@ private fun HomeFeedPage(
                 SectionHeader(title = "\u7ee7\u7eed\u89c2\u770b", action = "\u8ffd\u756a", onAction = {})
             }
             item {
-                ContinueWatchingRow(result = result, onClick = { onOpenDetail(result) })
+                ContinueWatchingRow(
+                    result = result,
+                    progressFraction = latestPlaybackHistory?.let { playbackHistoryProgressFraction(it) } ?: 0f,
+                    onClick = { onOpenDetail(result) },
+                )
             }
         }
         item {
@@ -2390,8 +2482,14 @@ private fun fallbackScheduleDayChips(
 }
 
 @Composable
-private fun ContinueWatchingRow(result: SearchResult, onClick: () -> Unit) {
-    val state = remember(result) { buildHomeContinueWatchingUiState(result) }
+private fun ContinueWatchingRow(
+    result: SearchResult,
+    progressFraction: Float,
+    onClick: () -> Unit,
+) {
+    val state = remember(result, progressFraction) {
+        buildHomeContinueWatchingUiState(result, progressFraction)
+    }
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth().focusable(),
@@ -2500,7 +2598,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.240")
+                setRequestProperty("User-Agent", "ZFBML/0.5.241")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -3033,7 +3131,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.240",
+            version = "0.5.241",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
@@ -3757,7 +3855,7 @@ private fun DetailScreen(
     graph: AppGraph,
     result: SearchResult,
     onBack: () -> Unit,
-    onPlay: (MediaDetail, Episode, MediaStream, List<RouteCandidate>) -> Unit,
+    onPlay: (MediaDetail, Episode, MediaStream, List<RouteCandidate>, Long) -> Unit,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -3783,6 +3881,9 @@ private fun DetailScreen(
     var routePrefetchingEpisodeIds by remember(result) { mutableStateOf<Set<String>>(emptySet()) }
     var routePrefetchedEpisodeIds by remember(result) { mutableStateOf<Set<String>>(emptySet()) }
     var routePrefetchEmptyEpisodeIds by remember(result) { mutableStateOf<Set<String>>(emptySet()) }
+    val historyEpisodeId = remember(result) { result.raw[PLAYBACK_HISTORY_EPISODE_ID_RAW] }
+    val historyPositionMs = remember(result) { result.raw[PLAYBACK_HISTORY_POSITION_MS_RAW]?.toLongOrNull() ?: 0L }
+    val historyDurationMs = remember(result) { result.raw[PLAYBACK_HISTORY_DURATION_MS_RAW]?.toLongOrNull() ?: 0L }
 
     fun updatePreferredRouteSource(sourceId: String?) {
         preferredRouteSourceId = sourceId?.takeIf { it.isNotBlank() }
@@ -3825,6 +3926,14 @@ private fun DetailScreen(
         )
     }
 
+    fun resumePositionFor(episode: Episode): Long {
+        return if (historyEpisodeId != null && episode.id == historyEpisodeId) {
+            playbackHistoryResumePositionMs(historyPositionMs, historyDurationMs)
+        } else {
+            0L
+        }
+    }
+
     fun loadRoutesFor(episode: Episode, autoPlay: Boolean = false) {
         val cachedRoutes = graph.sourceRegistry.peekRouteCandidates(episode)
             ?.let { sortRoutesForUi(it) }
@@ -3843,7 +3952,7 @@ private fun DetailScreen(
                 val firstRoute = firstPlayableRouteForPreferredSource(cachedRoutes)
                 if (media != null && firstRoute != null) {
                     updatePreferredPlaybackRoute(firstRoute)
-                    onPlay(media, episode, firstRoute.stream, cachedRoutes)
+                    onPlay(media, episode, firstRoute.stream, cachedRoutes, resumePositionFor(episode))
                 }
             }
             return
@@ -3861,7 +3970,7 @@ private fun DetailScreen(
                         val firstRoute = firstPlayableRouteForPreferredSource(sortedCandidates)
                         if (media != null && firstRoute != null) {
                             updatePreferredPlaybackRoute(firstRoute)
-                            onPlay(media, episode, firstRoute.stream, sortedCandidates)
+                            onPlay(media, episode, firstRoute.stream, sortedCandidates, resumePositionFor(episode))
                         }
                     }
                 }
@@ -3891,7 +4000,10 @@ private fun DetailScreen(
         runCatching { graph.sourceRegistry.loadDetail(result) }
             .onSuccess { media ->
                 detail = media
-                media.episodes.firstOrNull()?.let { episode ->
+                val initialEpisode = historyEpisodeId
+                    ?.let { id -> media.episodes.firstOrNull { episode -> episode.id == id } }
+                    ?: media.episodes.firstOrNull()
+                initialEpisode?.let { episode ->
                     loadRoutesFor(episode)
                 }
             }
@@ -4032,7 +4144,7 @@ private fun DetailScreen(
                             val bestRoute = routeUiState.bestRoute
                             if (bestRoute != null) {
                                 updatePreferredPlaybackRoute(bestRoute)
-                                onPlay(media, episode, bestRoute.stream, sortRoutesForUi(routes))
+                                onPlay(media, episode, bestRoute.stream, sortRoutesForUi(routes), resumePositionFor(episode))
                             } else {
                                 loadRoutesFor(episode, autoPlay = true)
                             }
@@ -4064,7 +4176,7 @@ private fun DetailScreen(
                         val episode = selectedEpisode ?: return@DetailRouteStatusCard
                         routeUiState.bestRoute?.let { route ->
                             updatePreferredPlaybackRoute(route)
-                            onPlay(media, episode, route.stream, sortRoutesForUi(routes))
+                            onPlay(media, episode, route.stream, sortRoutesForUi(routes), resumePositionFor(episode))
                         }
                     },
                     modifier = Modifier.padding(horizontal = 18.dp),
@@ -4124,7 +4236,7 @@ private fun DetailScreen(
                         onClick = {
                             val episode = selectedEpisode ?: return@RouteCandidateRow
                             updatePreferredPlaybackRoute(route)
-                            onPlay(media, episode, route.stream, sortRoutesForUi(routes))
+                            onPlay(media, episode, route.stream, sortRoutesForUi(routes), resumePositionFor(episode))
                         },
                         modifier = Modifier.padding(horizontal = 18.dp),
                     )
@@ -5626,6 +5738,8 @@ private fun PlayerScreen(
     episode: Episode,
     stream: MediaStream,
     routes: List<RouteCandidate>,
+    resumePositionMs: Long,
+    onPlaybackHistoryChanged: (PlaybackHistoryEntry) -> Unit,
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -5723,6 +5837,10 @@ private fun PlayerScreen(
     var controlsRevealSerial by remember(currentStream.id) { mutableIntStateOf(0) }
     var playbackPositionMs by remember(currentStream.id) { mutableStateOf(0L) }
     var playbackDurationMs by remember(currentStream.id) { mutableStateOf(0L) }
+    var pendingResumeStreamId by remember(stream.id, resumePositionMs) {
+        mutableStateOf(stream.id.takeIf { resumePositionMs > 0L })
+    }
+    var lastPlaybackHistoryWriteAtMs by remember { mutableStateOf(0L) }
     var seekFeedbackText by remember(currentStream.id) { mutableStateOf<String?>(null) }
     var seekFeedbackPlacement by remember(currentStream.id) { mutableStateOf(PlayerSeekFeedbackPlacement.Center) }
     var seekFeedbackSerial by remember(currentStream.id) { mutableIntStateOf(0) }
@@ -5846,6 +5964,21 @@ private fun PlayerScreen(
         updatePreferredQuality(route)
     }
 
+    fun savePlaybackHistorySnapshot(positionMs: Long, durationMs: Long, nowMs: Long) {
+        if (!playbackHistoryShouldPersist(positionMs, durationMs)) return
+        if (nowMs - lastPlaybackHistoryWriteAtMs < 5_000L) return
+        lastPlaybackHistoryWriteAtMs = nowMs
+        onPlaybackHistoryChanged(
+            buildPlaybackHistoryEntry(
+                detail = detail,
+                episode = currentEpisode,
+                positionMs = positionMs,
+                durationMs = durationMs,
+                updatedAtMs = nowMs,
+            ),
+        )
+    }
+
     fun clearRouteNotice() {
         routeNotice = null
         routeNoticeTone = null
@@ -5914,6 +6047,10 @@ private fun PlayerScreen(
             graph.torrentEngine.release()
             engine.prepare(currentStream)
         }
+        if (pendingResumeStreamId == currentStream.id && resumePositionMs > 0L) {
+            engine.player.seekTo(resumePositionMs)
+            pendingResumeStreamId = null
+        }
     }
     LaunchedEffect(detail.providerId, detail.url, currentEpisode.providerId, currentEpisode.id) {
         danmakuMatching = true
@@ -5954,6 +6091,11 @@ private fun PlayerScreen(
         while (true) {
             playbackPositionMs = engine.currentPositionMs().coerceAtLeast(0L)
             playbackDurationMs = normalizePlaybackDurationMs(engine.player.duration)
+            savePlaybackHistorySnapshot(
+                positionMs = playbackPositionMs,
+                durationMs = playbackDurationMs,
+                nowMs = System.currentTimeMillis(),
+            )
             delay(
                 playerProgressPollDelayMs(
                     isPlaying = state.isPlaying,

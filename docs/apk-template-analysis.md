@@ -488,3 +488,5 @@ This pass upgrades playback-speed preference durability. The player now restores
 This pass upgrades route-source preference durability. Detail route recommendations, detail playback entry, player manual route selection, next-route switching, and next-episode selection now share a remembered source preference, while unavailable remembered sources fall back to the normal recommended route instead of blocking playback.
 
 This pass upgrades playback-quality preference durability. Detail playback entry, route rows, and in-player quality or route switching now persist the selected quality label, and route selection applies it inside the selected or remembered source before safely falling back to the best playable route.
+
+This pass upgrades continue-watching durability. The player now writes real local playback history with title, episode, position, duration, and timestamp, the home continue card uses that record instead of placeholder recommendations, and opening it restores the recorded episode plus resume position unless the episode is already near finished.

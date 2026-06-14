@@ -2571,6 +2571,47 @@ class PlaybackUiModelsTest {
     }
 
     @Test
+    fun playbackHistoryBuildsContinueResultAndProgress() {
+        val detail = MediaDetail(
+            providerId = "bangumi-catalog",
+            title = "Alpha",
+            url = "bangumi://subject/1",
+            posterUrl = "https://example.invalid/alpha.jpg",
+        )
+        val entry = buildPlaybackHistoryEntry(
+            detail = detail,
+            episode = episode(id = "ep-3", index = 3),
+            positionMs = 360_000L,
+            durationMs = 1_200_000L,
+            updatedAtMs = 12_345L,
+        )
+
+        val result = playbackHistoryEntryToSearchResult(entry)
+
+        assertEquals(0.3f, playbackHistoryProgressFraction(entry), 0.001f)
+        assertEquals("Alpha", result.title)
+        assertEquals("https://example.invalid/alpha.jpg", result.posterUrl)
+        assertEquals("第 3 集 · 已看至 30%", result.subtitle)
+        assertEquals("ep-3", result.raw[PLAYBACK_HISTORY_EPISODE_ID_RAW])
+        assertEquals("360000", result.raw[PLAYBACK_HISTORY_POSITION_MS_RAW])
+        assertEquals("1200000", result.raw[PLAYBACK_HISTORY_DURATION_MS_RAW])
+    }
+
+    @Test
+    fun playbackHistoryResumePositionResetsNearFinishedEpisodes() {
+        assertEquals(360_000L, playbackHistoryResumePositionMs(positionMs = 360_000L, durationMs = 1_200_000L))
+        assertEquals(0L, playbackHistoryResumePositionMs(positionMs = 1_180_000L, durationMs = 1_200_000L))
+        assertEquals(75_000L, playbackHistoryResumePositionMs(positionMs = 75_000L, durationMs = 0L))
+    }
+
+    @Test
+    fun playbackHistoryPersistenceSkipsTinySamples() {
+        assertFalse(playbackHistoryShouldPersist(positionMs = 2_000L, durationMs = 1_200_000L))
+        assertTrue(playbackHistoryShouldPersist(positionMs = 16_000L, durationMs = 1_200_000L))
+        assertTrue(playbackHistoryShouldPersist(positionMs = 12_000L, durationMs = 300_000L))
+    }
+
+    @Test
     fun homePosterRailUiStateDeduplicatesItemsAndUsesFallback() {
         val alpha = SearchResult(
             providerId = "bangumi-catalog",

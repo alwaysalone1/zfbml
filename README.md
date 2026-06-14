@@ -25,6 +25,15 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.241
+
+English:
+
+- Continue-watching now uses real local playback history instead of a schedule or recommendation placeholder.
+- The player periodically persists the current title, episode, position, duration, and timestamp once playback has meaningful progress.
+- Opening the continue-watching card now selects the recorded episode and resumes from the saved position, while near-finished episodes restart from the beginning.
+- App version labels, request user agents, and README notes are now updated to `0.5.241`.
+
 ### v0.5.240
 
 English:
