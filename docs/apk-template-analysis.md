@@ -490,3 +490,5 @@ This pass upgrades route-source preference durability. Detail route recommendati
 This pass upgrades playback-quality preference durability. Detail playback entry, route rows, and in-player quality or route switching now persist the selected quality label, and route selection applies it inside the selected or remembered source before safely falling back to the best playable route.
 
 This pass upgrades continue-watching durability. The player now writes real local playback history with title, episode, position, duration, and timestamp, the home continue card uses that record instead of placeholder recommendations, and opening it restores the recorded episode plus resume position unless the episode is already near finished.
+
+This pass starts the requested systematic rebuild instead of continuing the old visual direction. The launcher icon, themed icon, Compose splash BrandMark, splash background, home header, navigation shell, and shared splash/navigation copy now move to a library-console system influenced by the analyzed APKs' stable video-app entry points, while intentionally avoiding ad surfaces.

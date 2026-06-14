@@ -2459,7 +2459,7 @@ class PlaybackUiModelsTest {
             calendarExpanded = true,
         )
 
-        assertEquals("\u8ffd\u756a\u4e0d\u8ff7\u8def", state.headline)
+        assertEquals("\u8ffd\u756a\u63a7\u5236\u53f0", state.headline)
         assertEquals("ZFBML", state.brandLabel)
         assertEquals("\u6536\u8d77", state.calendarActionLabel)
         assertEquals(SourceLibraryTone.Online, state.calendarTone)
@@ -2471,7 +2471,7 @@ class PlaybackUiModelsTest {
         )
         assertTrue(state.tabs.first { it.id == "japanese" }.selected)
         assertEquals(SourceLibraryTone.Online, state.tabs.first { it.id == "japanese" }.tone)
-        assertTrue(state.subtitle.contains("\u65e5\u5386"))
+        assertTrue(state.subtitle.contains("\u65e5\u7a0b"))
         assertTrue(state.searchPlaceholder.contains("\u64ad\u653e\u7ebf\u8def"))
     }
 
@@ -2487,7 +2487,7 @@ class PlaybackUiModelsTest {
         assertTrue(state.tabs.single().selected)
         assertEquals("\u65e5\u5386", state.calendarActionLabel)
         assertEquals(SourceLibraryTone.Muted, state.calendarTone)
-        assertTrue(state.subtitle.contains("\u5206\u7c7b\u6d4f\u89c8"))
+        assertTrue(state.subtitle.contains("\u9996\u9875\u805a\u5408"))
     }
 
     @Test
@@ -2956,16 +2956,16 @@ class PlaybackUiModelsTest {
         )
 
         assertEquals("discover", state.selectedTabId)
-        assertEquals("首页", state.selectedTab?.label)
-        assertEquals("推荐", state.tabs.first { it.id == "discover" }.statusLabel)
+        assertEquals("总览", state.selectedTab?.label)
+        assertEquals("片单", state.tabs.first { it.id == "discover" }.statusLabel)
         assertEquals("待索引", state.tabs.first { it.id == "search" }.statusLabel)
         assertEquals(SourceLibraryTone.Muted, state.tabs.first { it.id == "search" }.tone)
         assertEquals("待接入", state.tabs.first { it.id == "sources" }.statusLabel)
         assertEquals(SourceLibraryTone.Muted, state.tabs.first { it.id == "sources" }.tone)
         assertEquals("我的", state.tabs.first { it.id == "settings" }.statusLabel)
         assertEquals(SourceLibraryTone.Muted, state.tabs.first { it.id == "settings" }.tone)
-        assertEquals("首页", state.chrome.selectedTitle)
-        assertTrue(state.chrome.selectedSummary.contains("推荐"))
+        assertEquals("总览", state.chrome.selectedTitle)
+        assertTrue(state.chrome.selectedSummary.contains("片单"))
         assertEquals(SourceLibraryTone.Online, state.chrome.selectedTone)
     }
 
@@ -3009,24 +3009,24 @@ class PlaybackUiModelsTest {
             danmakuProviderCount = 4,
         )
 
-        assertEquals("追番不迷路", state.headline)
+        assertEquals("片库控制台", state.headline)
         assertEquals("ZFBML", state.brand)
-        assertEquals("5 个搜索源 · 弹幕自动匹配", state.tagline)
-        assertEquals("缓存与片单已就绪", state.progressLabel)
-        assertEquals("全能力就绪", state.statusLabel)
+        assertEquals("5 个搜索源 · 弹幕自动映射", state.tagline)
+        assertEquals("索引、缓存与弹幕就绪", state.progressLabel)
+        assertEquals("全域就绪", state.statusLabel)
         assertEquals(SourceLibraryTone.Cache, state.statusTone)
-        assertEquals(1_100, state.startupDurationMillis)
-        assertEquals(112.dp, state.logoSize)
-        assertEquals(190.dp, state.orbitSize)
-        assertEquals(164.dp, state.progressWidth)
-        assertEquals(listOf("今日片单", "5 源搜索", "4 路弹幕"), state.statusPills.map { it.label })
+        assertEquals(1_000, state.startupDurationMillis)
+        assertEquals(118.dp, state.logoSize)
+        assertEquals(210.dp, state.orbitSize)
+        assertEquals(190.dp, state.progressWidth)
+        assertEquals(listOf("片库索引", "5 源索引", "4 路弹幕"), state.statusPills.map { it.label })
         assertEquals(listOf(SourceLibraryTone.Primary, SourceLibraryTone.Online, SourceLibraryTone.Backup), state.statusPills.map { it.tone })
         assertEquals(5, state.posterTiles.size)
         assertEquals(1, state.posterTiles.count { it.emphasized })
         assertEquals(4, state.danmakuStreaks.size)
         assertEquals(BrandSplashStreakAnchor.TopStart, state.danmakuStreaks.first().anchor)
         assertEquals(3, state.signalRails.size)
-        assertEquals(54.dp, state.signalRails.last().offsetRange)
+        assertEquals(62.dp, state.signalRails.last().offsetRange)
     }
 
     @Test
@@ -3038,13 +3038,13 @@ class PlaybackUiModelsTest {
             danmakuProviderCount = 0,
         )
 
-        assertEquals("今晚继续追", state.tagline)
-        assertEquals("片单已就绪", state.progressLabel)
+        assertEquals("片库启动中", state.tagline)
+        assertEquals("索引与片单就绪", state.progressLabel)
         assertEquals("轻量启动", state.statusLabel)
         assertEquals(SourceLibraryTone.Muted, state.statusTone)
-        assertEquals("源站待接入", state.statusPills[1].label)
+        assertEquals("来源待索引", state.statusPills[1].label)
         assertEquals(SourceLibraryTone.Muted, state.statusPills[1].tone)
-        assertEquals("弹幕同步", state.statusPills[2].label)
+        assertEquals("弹幕待同步", state.statusPills[2].label)
     }
 
     @Test

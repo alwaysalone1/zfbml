@@ -25,6 +25,20 @@ The project targets Android SDK 36 and uses the JBR bundled with the local Andro
 
 ## 版本更新 / Version Notes
 
+### v0.5.242
+
+中文：
+
+- 第一批系统性重构开始替换旧入口设计：应用图标、Android 单色图标、Compose 开屏 BrandMark、开屏背景和主导航壳统一为“片库控制台”视觉。
+- 开屏与首页/导航模型文案改为片库索引、线路、弹幕和缓存就绪语义，不再沿用旧“今晚继续追/书签”入口表达。
+- App 内版本号、请求 UA 和 README 记录同步到 `0.5.242`。
+
+English:
+
+- The first systematic rebuild slice replaces the old entry design: launcher icon, themed icon, Compose splash BrandMark, splash background, and main navigation shell now share the new library-console visual system.
+- Splash, home chrome, and navigation model copy now use library index, route, danmaku, and cache readiness language instead of the previous bookmark/continue-tonight entry identity.
+- App version labels, request user agents, and README notes are now updated to `0.5.242`.
+
 ### v0.5.241
 
 English:

@@ -4340,22 +4340,22 @@ internal fun buildHomeBrowseChromeUiState(
     val tabs = listOf(
         HomeBrowseTabUiState(
             id = HomeBrowseHomeTabId,
-            title = "首页",
+            title = "总览",
             selected = selectedId == HomeBrowseHomeTabId,
             tone = SourceLibraryTone.Primary,
         ),
     ) + categoryTabs
     val selectedTab = tabs.firstOrNull { it.selected } ?: tabs.first()
     val subtitle = when {
-        calendarExpanded -> "日历已展开 · 今日更新和推荐同屏查看"
-        selectedTab.id == HomeBrowseHomeTabId -> "推荐、日程和分类浏览统一入口"
-        else -> "${selectedTab.title}频道 · 按评分、热度和来源整理"
+        calendarExpanded -> "日程、继续看和推荐同屏校准"
+        selectedTab.id == HomeBrowseHomeTabId -> "首页聚合日程、推荐、搜索与继续观看"
+        else -> "${selectedTab.title}频道 · 按热度、评分和来源过滤"
     }
     return HomeBrowseChromeUiState(
-        headline = "追番不迷路",
+        headline = "追番控制台",
         brandLabel = "ZFBML",
         subtitle = subtitle,
-        searchPlaceholder = "搜番名、粘贴链接或找播放线路",
+        searchPlaceholder = "搜索番名、剧集、资源站或播放线路",
         searchActionLabel = "搜索",
         calendarActionLabel = if (calendarExpanded) "收起" else "日历",
         calendarExpanded = calendarExpanded,
@@ -4863,8 +4863,8 @@ internal fun buildAppNavigationUiState(
         tabs = listOf(
             tab(
                 id = NAV_DISCOVER_ID,
-                label = "首页",
-                statusLabel = if (today > 0) "今日 $today" else "推荐",
+                label = "总览",
+                statusLabel = if (today > 0) "今日 $today" else "片单",
                 tone = if (today > 0) SourceLibraryTone.Primary else SourceLibraryTone.Online,
             ),
             tab(
@@ -4875,7 +4875,7 @@ internal fun buildAppNavigationUiState(
             ),
             tab(
                 id = NAV_SOURCES_ID,
-                label = "频道",
+                label = "片库",
                 statusLabel = if (sources > 0) "$sources 来源" else "待接入",
                 tone = if (sources > 0) SourceLibraryTone.Backup else SourceLibraryTone.Muted,
             ),
@@ -4913,9 +4913,9 @@ private fun buildAppNavigationChromeUiState(
 ): AppNavigationChromeUiState {
     val selectedTitle = when (selectedId) {
         NAV_SEARCH_ID -> "搜索"
-        NAV_SOURCES_ID -> "频道"
+        NAV_SOURCES_ID -> "片库"
         NAV_SETTINGS_ID -> "我的"
-        else -> "首页"
+        else -> "总览"
     }
     val selectedTone = when (selectedId) {
         NAV_DISCOVER_ID -> if (today > 0) SourceLibraryTone.Primary else SourceLibraryTone.Online
@@ -4930,19 +4930,19 @@ private fun buildAppNavigationChromeUiState(
     }
     val selectedSummary = when (selectedId) {
         NAV_DISCOVER_ID -> if (today > 0) {
-            "今日 $today 部更新，先看日程和推荐"
+            "今日 $today 部更新，日程、继续看和推荐合并呈现"
         } else {
-            "推荐、日程和分类保持在同一首页"
+            "片单、日程、推荐和继续观看保持在同一总览"
         }
         NAV_SEARCH_ID -> if (searchable > 0) {
-            "$searchable 个搜索源并行索引，进详情后继续匹配线路"
+            "$searchable 个搜索源并行索引，进入详情后继续匹配可播线路"
         } else {
-            "搜索源待接入，可先从推荐和分类进入详情"
+            "搜索源待接入，可先从推荐、日程和片库进入详情"
         }
         NAV_SOURCES_ID -> if (sources > 0) {
-            "$sources 个来源已接入，在线优先，BT 和规则源兜底"
+            "$sources 个来源已接入，在线优先，BT 与规则源作为备用"
         } else {
-            "等待接入在线、BT 或规则来源"
+            "等待接入在线、BT 或规则片库来源"
         }
         NAV_SETTINGS_ID -> if (cacheable > 0) {
             "$cacheable 个来源可缓存，管理离线、弹幕和线路策略"
@@ -4953,7 +4953,7 @@ private fun buildAppNavigationChromeUiState(
     }
     return AppNavigationChromeUiState(
         brandLabel = "ZFBML",
-        brandSubtitle = "追番 · 搜索 · 线路 · 弹幕",
+        brandSubtitle = "片库 · 线路 · 弹幕 · 缓存",
         selectedTitle = selectedTitle,
         selectedSummary = selectedSummary,
         selectedTone = selectedTone,
@@ -5005,24 +5005,24 @@ internal fun buildBrandSplashUiState(
     val safeCacheableCount = cacheableSourceCount.coerceAtLeast(0)
     val safeDanmakuCount = danmakuProviderCount.coerceAtLeast(0)
     val tagline = when {
-        safeSearchableCount > 0 && safeDanmakuCount > 0 -> "$safeSearchableCount 个搜索源 · 弹幕自动匹配"
+        safeSearchableCount > 0 && safeDanmakuCount > 0 -> "$safeSearchableCount 个搜索源 · 弹幕自动映射"
         safeSearchableCount > 0 -> "$safeSearchableCount 个搜索源 · 线路自动优选"
-        safeSourceCount > 0 -> "$safeSourceCount 个来源待搜索"
-        else -> "今晚继续追"
+        safeSourceCount > 0 -> "$safeSourceCount 个来源待索引"
+        else -> "片库启动中"
     }
-    val progressLabel = if (safeCacheableCount > 0) "缓存与片单已就绪" else "片单已就绪"
+    val progressLabel = if (safeCacheableCount > 0) "索引、缓存与弹幕就绪" else "索引与片单就绪"
     val sourcePill = if (safeSearchableCount > 0) {
-        BrandSplashStatusPillUiState("$safeSearchableCount 源搜索", SourceLibraryTone.Online, 0.14f)
+        BrandSplashStatusPillUiState("$safeSearchableCount 源索引", SourceLibraryTone.Online, 0.14f)
     } else {
-        BrandSplashStatusPillUiState("源站待接入", SourceLibraryTone.Muted, 0.14f)
+        BrandSplashStatusPillUiState("来源待索引", SourceLibraryTone.Muted, 0.14f)
     }
     val danmakuPill = if (safeDanmakuCount > 0) {
         BrandSplashStatusPillUiState("$safeDanmakuCount 路弹幕", SourceLibraryTone.Backup, 0.28f)
     } else {
-        BrandSplashStatusPillUiState("弹幕同步", SourceLibraryTone.Backup, 0.28f)
+        BrandSplashStatusPillUiState("弹幕待同步", SourceLibraryTone.Backup, 0.28f)
     }
     val statusLabel = when {
-        safeSearchableCount > 0 && safeDanmakuCount > 0 && safeCacheableCount > 0 -> "全能力就绪"
+        safeSearchableCount > 0 && safeDanmakuCount > 0 && safeCacheableCount > 0 -> "全域就绪"
         safeSearchableCount > 0 && safeDanmakuCount > 0 -> "播放就绪"
         safeSearchableCount > 0 -> "搜索就绪"
         safeSourceCount > 0 -> "待补搜索"
@@ -5035,28 +5035,28 @@ internal fun buildBrandSplashUiState(
         else -> SourceLibraryTone.Muted
     }
     return BrandSplashUiState(
-        headline = "追番不迷路",
+        headline = "片库控制台",
         brand = "ZFBML",
         tagline = tagline,
         progressLabel = progressLabel,
         statusLabel = statusLabel,
         statusTone = statusTone,
-        startupDurationMillis = 1_100,
-        logoSize = 112.dp,
-        orbitSize = 190.dp,
-        glowSize = 152.dp,
-        progressWidth = 164.dp,
+        startupDurationMillis = 1_000,
+        logoSize = 118.dp,
+        orbitSize = 210.dp,
+        glowSize = 168.dp,
+        progressWidth = 190.dp,
         statusPills = listOf(
-            BrandSplashStatusPillUiState("今日片单", SourceLibraryTone.Primary, 0f),
+            BrandSplashStatusPillUiState("片库索引", SourceLibraryTone.Primary, 0f),
             sourcePill,
             danmakuPill,
         ),
         posterTiles = listOf(
-            BrandSplashPosterTileUiState(SourceLibraryTone.Primary, 34.dp, 48.dp, false),
-            BrandSplashPosterTileUiState(SourceLibraryTone.Online, 34.dp, 48.dp, false),
-            BrandSplashPosterTileUiState(SourceLibraryTone.Backup, 42.dp, 58.dp, true),
-            BrandSplashPosterTileUiState(SourceLibraryTone.Web, 34.dp, 48.dp, false),
-            BrandSplashPosterTileUiState(SourceLibraryTone.Cache, 34.dp, 48.dp, false),
+            BrandSplashPosterTileUiState(SourceLibraryTone.Primary, 30.dp, 52.dp, false),
+            BrandSplashPosterTileUiState(SourceLibraryTone.Online, 30.dp, 52.dp, false),
+            BrandSplashPosterTileUiState(SourceLibraryTone.Backup, 44.dp, 62.dp, true),
+            BrandSplashPosterTileUiState(SourceLibraryTone.Web, 30.dp, 52.dp, false),
+            BrandSplashPosterTileUiState(SourceLibraryTone.Cache, 30.dp, 52.dp, false),
         ),
         danmakuStreaks = listOf(
             BrandSplashStreakUiState(
@@ -5097,9 +5097,9 @@ internal fun buildBrandSplashUiState(
             ),
         ),
         signalRails = listOf(
-            BrandSplashSignalRailUiState(132.dp, SourceLibraryTone.Online, 0.18f, 18.dp),
-            BrandSplashSignalRailUiState(92.dp, SourceLibraryTone.Primary, 0.28f, 36.dp),
-            BrandSplashSignalRailUiState(118.dp, SourceLibraryTone.Backup, 0.12f, 54.dp),
+            BrandSplashSignalRailUiState(154.dp, SourceLibraryTone.Online, 0.2f, 22.dp),
+            BrandSplashSignalRailUiState(108.dp, SourceLibraryTone.Primary, 0.3f, 42.dp),
+            BrandSplashSignalRailUiState(132.dp, SourceLibraryTone.Backup, 0.14f, 62.dp),
         ),
     )
 }

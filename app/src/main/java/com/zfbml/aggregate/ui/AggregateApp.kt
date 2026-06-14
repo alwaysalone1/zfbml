@@ -341,9 +341,9 @@ private fun BrandSplashScreen(state: BrandSplashUiState) {
             .background(
                 Brush.verticalGradient(
                     listOf(
-                        Color(0xFF171018),
+                        Color(0xFF03060C),
+                        Color(0xFF091421),
                         AnimeBackground,
-                        Color(0xFF10141A),
                     ),
                 ),
             ),
@@ -357,8 +357,22 @@ private fun BrandSplashScreen(state: BrandSplashUiState) {
                 .background(
                     Brush.verticalGradient(
                         listOf(
-                            AnimeAccentPink.copy(alpha = 0.18f),
-                            AnimeAccentCyan.copy(alpha = 0.07f),
+                            AnimeAccentCyan.copy(alpha = 0.16f),
+                            AnimeAccentPink.copy(alpha = 0.08f),
+                            Color.Transparent,
+                        ),
+                    ),
+                ),
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .fillMaxHeight()
+                .width(84.dp)
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(
+                            AnimeAccentCyan.copy(alpha = 0.12f),
                             Color.Transparent,
                         ),
                     ),
@@ -369,7 +383,7 @@ private fun BrandSplashScreen(state: BrandSplashUiState) {
             progress = railProgress,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 78.dp)
+                .padding(bottom = 58.dp)
                 .alpha(contentAlpha),
         )
         SplashPosterRibbon(
@@ -397,7 +411,15 @@ private fun BrandSplashScreen(state: BrandSplashUiState) {
                         .size(state.glowSize)
                         .scale(glowScale)
                         .clip(CircleShape)
-                        .background(AnimeAccentCyan.copy(alpha = 0.1f)),
+                        .background(
+                            Brush.radialGradient(
+                                listOf(
+                                    AnimeAccentCyan.copy(alpha = 0.18f),
+                                    AnimeAccentPink.copy(alpha = 0.08f),
+                                    Color.Transparent,
+                                ),
+                            ),
+                        ),
                 )
                 BrandMark(
                     modifier = Modifier
@@ -416,7 +438,7 @@ private fun BrandSplashScreen(state: BrandSplashUiState) {
                     Text(
                         text = state.brand,
                         style = MaterialTheme.typography.titleMedium,
-                        color = AnimeAccentCyan,
+                        color = AnimeAccentGreen,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
                     )
@@ -752,135 +774,119 @@ private fun Activity.setPlayerImmersive(immersive: Boolean) {
     }
 }
 
-private val AnimeBackground = Color(0xFF0D0D10)
-private val AnimePanel = Color(0xFF18181C)
-private val AnimePanelSoft = Color(0xFF22242A)
-private val AnimeBorder = Color(0xFF303139)
-private val AnimeMuted = Color(0xFFB8BAC4)
-private val AnimeAccentPink = Color(0xFFFF5C8A)
-private val AnimeAccentCyan = Color(0xFF32D3E6)
-private val AnimeAccentAmber = Color(0xFFFFC857)
-private val AnimeAccentViolet = Color(0xFF8E7CFF)
-private val AnimeAccentGreen = Color(0xFF64D67B)
+private val AnimeBackground = Color(0xFF050812)
+private val AnimePanel = Color(0xFF101827)
+private val AnimePanelSoft = Color(0xFF172235)
+private val AnimeBorder = Color(0xFF2B3952)
+private val AnimeMuted = Color(0xFFB6C0D4)
+private val AnimeAccentPink = Color(0xFFFF4F8B)
+private val AnimeAccentCyan = Color(0xFF38D6FF)
+private val AnimeAccentAmber = Color(0xFFFFC85A)
+private val AnimeAccentViolet = Color(0xFF9B7CFF)
+private val AnimeAccentGreen = Color(0xFF58E087)
 
 @Composable
 private fun BrandMark(modifier: Modifier = Modifier) {
     Box(
-        modifier = modifier.background(Color(0xFF191B22), RoundedCornerShape(8.dp)),
+        modifier = modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        Color(0xFF1C2940),
+                        Color(0xFF0B101B),
+                    ),
+                ),
+            )
+            .border(1.dp, AnimeAccentCyan.copy(alpha = 0.42f), RoundedCornerShape(14.dp)),
         contentAlignment = Alignment.Center,
     ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(7.dp)
-                .background(Color(0xFF25242F), RoundedCornerShape(8.dp)),
-        )
-        Row(Modifier.fillMaxSize().padding(7.dp)) {
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .background(AnimeAccentPink, RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp)),
-            )
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .background(AnimeAccentCyan, RoundedCornerShape(topEnd = 8.dp, bottomEnd = 8.dp)),
-            )
-        }
-        Box(
-            modifier = Modifier
-                .width(24.dp)
-                .height(44.dp)
-                .align(Alignment.TopStart)
-                .padding(start = 13.dp)
-                .background(AnimeAccentAmber, RoundedCornerShape(bottomStart = 6.dp, bottomEnd = 6.dp)),
+                .clip(RoundedCornerShape(11.dp))
+                .background(Color(0xFF0D1524)),
         )
         Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(32.dp)
-                .align(Alignment.BottomCenter)
-                .padding(horizontal = 7.dp)
-                .background(Color.Black.copy(alpha = 0.32f), RoundedCornerShape(bottomStart = 8.dp, bottomEnd = 8.dp)),
+                .align(Alignment.CenterStart)
+                .padding(start = 15.dp)
+                .width(8.dp)
+                .height(64.dp)
+                .clip(RoundedCornerShape(999.dp))
+                .background(AnimeAccentCyan),
         )
         Column(
             modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(top = 20.dp, end = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(5.dp),
-            horizontalAlignment = Alignment.End,
+                .align(Alignment.TopStart)
+                .padding(start = 30.dp, top = 18.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Box(
                 modifier = Modifier
-                    .width(28.dp)
+                    .width(38.dp)
                     .height(4.dp)
-                    .background(Color.White.copy(alpha = 0.72f), RoundedCornerShape(999.dp)),
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(AnimeAccentPink.copy(alpha = 0.92f)),
             )
             Box(
                 modifier = Modifier
-                    .width(18.dp)
+                    .width(24.dp)
                     .height(4.dp)
-                    .background(AnimeAccentCyan.copy(alpha = 0.82f), RoundedCornerShape(999.dp)),
+                    .clip(RoundedCornerShape(999.dp))
+                    .background(Color.White.copy(alpha = 0.76f)),
             )
         }
         Box(
             modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(start = 26.dp, bottom = 20.dp)
-                .width(52.dp)
-                .height(4.dp)
-                .background(AnimeAccentCyan, RoundedCornerShape(999.dp)),
+                .size(58.dp)
+                .clip(CircleShape)
+                .background(AnimeAccentPink.copy(alpha = 0.22f))
+                .border(1.dp, AnimeAccentPink.copy(alpha = 0.5f), CircleShape),
         )
         Box(
             modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(start = 20.dp, bottom = 12.dp)
-                .width(31.dp)
+                .size(44.dp)
+                .clip(CircleShape)
+                .background(Color(0xFF07101D))
+                .border(1.dp, Color.White.copy(alpha = 0.2f), CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(32.dp))
+        }
+        Column(
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = 17.dp),
+            verticalArrangement = Arrangement.spacedBy(7.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            listOf(AnimeAccentGreen, AnimeAccentAmber, AnimeAccentViolet).forEach { dotColor ->
+                Box(
+                    modifier = Modifier
+                        .size(7.dp)
+                        .clip(CircleShape)
+                        .background(dotColor),
+                )
+            }
+        }
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(start = 20.dp, end = 20.dp, bottom = 16.dp)
+                .fillMaxWidth()
                 .height(4.dp)
-                .background(Color.White.copy(alpha = 0.88f), RoundedCornerShape(999.dp)),
-        )
-        Box(
-            modifier = Modifier
-                .size(55.dp)
-                .background(Color.Black.copy(alpha = 0.28f), CircleShape),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(Icons.Filled.PlayArrow, contentDescription = null, tint = Color.White, modifier = Modifier.size(40.dp))
-        }
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(end = 12.dp, top = 7.dp)
-                .size(20.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Box(
-                modifier = Modifier
-                    .width(20.dp)
-                    .height(3.dp)
-                    .background(AnimeAccentAmber, RoundedCornerShape(999.dp)),
-            )
-            Box(
-                modifier = Modifier
-                    .width(3.dp)
-                    .height(20.dp)
-                    .background(AnimeAccentAmber, RoundedCornerShape(999.dp)),
-            )
-            Box(
-                modifier = Modifier
-                    .size(7.dp)
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.9f)),
-            )
-        }
-        Text(
-            text = "Z",
-            style = MaterialTheme.typography.labelLarge,
-            color = AnimeAccentCyan,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.align(Alignment.BottomEnd).padding(end = 15.dp, bottom = 10.dp),
+                .clip(RoundedCornerShape(999.dp))
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(
+                            AnimeAccentCyan,
+                            AnimeAccentGreen,
+                            AnimeAccentPink,
+                        ),
+                    ),
+                ),
         )
     }
 }
@@ -1040,7 +1046,7 @@ private fun AppNavigationBar(
     val chrome = navigationState.chrome
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = AnimePanel,
+        color = Color(0xFF0A111E),
         border = BorderStroke(1.dp, AnimeBorder),
     ) {
         Row(
@@ -1075,7 +1081,7 @@ private fun AppNavigationRail(
     val selectedColor = sourceLibraryToneColor(chrome.selectedTone)
     Surface(
         modifier = Modifier.width(chrome.railWidth).fillMaxHeight(),
-        color = AnimePanel,
+        color = Color(0xFF0A111E),
         border = BorderStroke(1.dp, AnimeBorder),
     ) {
         Column(
@@ -1089,7 +1095,7 @@ private fun AppNavigationRail(
             Text(
                 chrome.brandLabel,
                 style = MaterialTheme.typography.labelMedium,
-                color = AnimeAccentCyan,
+                color = AnimeAccentGreen,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
             )
@@ -1370,7 +1376,14 @@ private fun HomePinnedHeader(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(AnimeBackground)
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        Color(0xFF0D182A),
+                        AnimeBackground,
+                    ),
+                ),
+            )
             .padding(horizontal = state.headerHorizontalPadding, vertical = state.headerVerticalPadding),
         verticalArrangement = Arrangement.spacedBy(state.headerSpacing),
     ) {
@@ -1392,7 +1405,7 @@ private fun HomePinnedHeader(
                 Text(
                     text = state.brandLabel,
                     style = MaterialTheme.typography.labelLarge,
-                    color = AnimeAccentCyan,
+                    color = AnimeAccentGreen,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
                 )
@@ -1425,14 +1438,14 @@ private fun HomePinnedHeader(
             modifier = Modifier.fillMaxWidth().height(state.searchHeight).focusable(),
             shape = RoundedCornerShape(8.dp),
             colors = CardDefaults.cardColors(containerColor = AnimePanel),
-            border = BorderStroke(1.dp, AnimeBorder),
+            border = BorderStroke(1.dp, AnimeAccentCyan.copy(alpha = 0.22f)),
         ) {
             Row(
                 modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(Icons.Filled.Search, contentDescription = null, tint = AnimeAccentCyan, modifier = Modifier.size(22.dp))
+                Icon(Icons.Filled.Search, contentDescription = null, tint = AnimeAccentGreen, modifier = Modifier.size(22.dp))
                 Text(
                     text = state.searchPlaceholder,
                     style = MaterialTheme.typography.bodyMedium,
@@ -1441,7 +1454,7 @@ private fun HomePinnedHeader(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f),
                 )
-                Text(state.searchActionLabel, style = MaterialTheme.typography.labelLarge, color = AnimeAccentCyan)
+                Text(state.searchActionLabel, style = MaterialTheme.typography.labelLarge, color = AnimeAccentGreen)
             }
         }
     }
@@ -2598,7 +2611,7 @@ private suspend fun loadRemotePoster(url: String): ImageBitmap? = withContext(Di
             connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = 8_000
                 readTimeout = 12_000
-                setRequestProperty("User-Agent", "ZFBML/0.5.241")
+                setRequestProperty("User-Agent", "ZFBML/0.5.242")
             }
             connection.inputStream.use { input ->
                 BitmapFactory.decodeStream(input)?.asImageBitmap()
@@ -3131,7 +3144,7 @@ private fun SettingsScreen(graph: AppGraph) {
     }
     val profileState = remember(sourceCount, danmakuCount, cacheState) {
         buildProfileCenterUiState(
-            version = "0.5.241",
+            version = "0.5.242",
             sourceCount = sourceCount,
             danmakuCount = danmakuCount,
             cacheState = cacheState,
